@@ -1,8 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Maximize2, Minimize2, Music, StickyNote, Trash2 } from "lucide-react";
+import { Check, Clock, Maximize2, Minimize2, Music, StickyNote, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import DateInput from "@/components/forms/DateInput";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -32,6 +33,22 @@ import { useAuth } from "@/lib/auth";
 const TUTTO = "__tutto_il_ghiaccio";
 
 const ora_breve = (valore: string | null) => (valore ? String(valore).slice(0, 5) : "");
+
+/** Minuti dalla mezzanotte, oppure null se l'orario manca o non è leggibile. */
+const minuti_da_ora = (valore: string | null | undefined): number | null => {
+  if (!valore) return null;
+  const [h, m] = String(valore).slice(0, 5).split(":");
+  const hn = Number(h);
+  const mn = Number(m);
+  if (!Number.isFinite(hn) || !Number.isFinite(mn)) return null;
+  return hn * 60 + mn;
+};
+
+const da_minuti = (minuti: number) =>
+  `${String(Math.floor(Math.max(minuti, 0) / 60)).padStart(2, "0")}:${String(Math.max(minuti, 0) % 60).padStart(2, "0")}`;
+
+/** Quanto prima dell'inizio della lezione si può registrare l'appello. */
+const ANTICIPO_APPELLO_MIN = 15;
 
 const chiave_bozza = (sessione_id: string) => `appello_${sessione_id}`;
 
@@ -90,8 +107,12 @@ const PistaPage: React.FC = () => {
   const { t, i18n } = useTranslation("common");
   const { session } = useAuth();
   const [adesso, set_adesso] = React.useState(() => new Date());
-  const [tab, set_tab] = React.useState<string | null>(null);
-  const [scelta_manuale_istruttore, set_scelta_manuale_istruttore] = React.useState(false);
+  // Istante di riferimento: di norma adesso; presidenza, dt e superadmin possono sceglierne un altro.
+  const [istante_scelto, set_istante_scelto] = React.useState<Date | null>(null);
+  const [pannello_momento, set_pannello_momento] = React.useState(false);
+  const [bozza_data, set_bozza_data] = React.useState("");
+  const [bozza_ora, set_bozza_ora] = React.useState("");
+  const [tab, set_tab] = React.useState<string>(TUTTO);
   const [sessione_id, set_sessione_id] = React.useState<string | null>(null);
   const [scelta_manuale, set_scelta_manuale] = React.useState(false);
   const [assenti, set_assenti] = React.useState<Set<string>>(new Set());
@@ -122,13 +143,19 @@ const PistaPage: React.FC = () => {
     return () => window.clearInterval(timer);
   }, []);
 
-  const giorno = chiave_giorno(adesso);
+  const riferimento = istante_scelto ?? adesso;
+  const giorno = chiave_giorno(riferimento);
+  const minuti_riferimento = riferimento.getHours() * 60 + riferimento.getMinutes();
+  const momento_simulato = istante_scelto !== null;
+  const puo_scegliere_momento =
+    session?.ruolo === "presidente" || session?.ruolo === "dt" || session?.ruolo === "superadmin";
+  const senza_club = !session?.club_id;
 
   const compleanni_query = useQuery({
     queryKey: ["pista_compleanni", giorno],
     refetchInterval: 30 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("pista_compleanni", { p_data: null });
+      const { data, error } = await supabase.rpc("pista_compleanni", { p_data: giorno });
       if (error) {
         segnala_errore("PistaPage", "pista_compleanni", error);
         throw new Error(error.message);
@@ -141,7 +168,7 @@ const PistaPage: React.FC = () => {
     queryKey: ["pista_istruttori", giorno],
     refetchInterval: 5 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("pista_istruttori", { p_data: null });
+      const { data, error } = await supabase.rpc("pista_istruttori", { p_data: giorno });
       if (error) {
         segnala_errore("PistaPage", "pista_istruttori", error);
         throw new Error(error.message);
@@ -152,33 +179,16 @@ const PistaPage: React.FC = () => {
 
   const istruttori = React.useMemo(() => istruttori_query.data ?? [], [istruttori_query.data]);
 
-  // Selezione automatica istruttore: solo finché l'utente non sceglie a mano
-  // e finché non ci sono modifiche non registrate. La scelta manuale resta valida
-  // solo se la linguetta è ancora presente nella lista corrente.
-  React.useEffect(() => {
-    if (istruttori.length === 0) return;
-    if (modificato) return;
-    if (scelta_manuale_istruttore && tab && (tab === TUTTO || istruttori.some((i) => i.istruttore_id === tab))) return;
-    const scelta = (istruttori.find((i) => i.ha_sessione_in_corso) ?? istruttori[0]).istruttore_id;
-    if (scelta !== tab) {
-      // Anche il cambio automatico azzera l'appello e la sessione, come quello manuale.
-      azzera_appello();
-      set_tab(scelta);
-      set_sessione_id(null);
-      set_scelta_manuale(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [istruttori, tab, adesso, modificato, scelta_manuale_istruttore]);
-
+  // «Tutti» è la linguetta predefinita: si cambia solo toccandone un'altra.
   const in_tutto = tab === TUTTO;
   const istruttore_id = in_tutto ? null : tab;
 
+  // Sempre attiva: serve anche a costruire le linguette degli istruttori del giorno.
   const sessioni_tutte_query = useQuery({
     queryKey: ["pista_sessioni", giorno],
-    enabled: in_tutto,
     refetchInterval: 5 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("pista_sessioni", { p_data: null });
+      const { data, error } = await supabase.rpc("pista_sessioni", { p_data: giorno });
       if (error) {
         segnala_errore("PistaPage", "pista_sessioni", error);
         throw new Error(error.message);
@@ -194,7 +204,7 @@ const PistaPage: React.FC = () => {
     queryFn: async () => {
       const { data, error } = await supabase.rpc("pista_sessioni_istruttore", {
         p_istruttore_id: istruttore_id as string,
-        p_data: null,
+        p_data: giorno,
       });
       if (error) {
         segnala_errore("PistaPage", "pista_sessioni_istruttore", error);
@@ -212,6 +222,7 @@ const PistaPage: React.FC = () => {
     specialita: string | null;
     n_atleti: number | null;
     in_corso: boolean | null;
+    istruttori_ids?: string[] | null;
     altri_istruttori?: string | null;
     istruttori?: string | null;
   };
@@ -222,15 +233,48 @@ const PistaPage: React.FC = () => {
     [sessioni_query.data],
   );
 
+  // "In corso" si calcola sull'istante di riferimento: quello del server è su now().
+  const e_in_corso = React.useCallback(
+    (s: Sessione) => {
+      const inizio = minuti_da_ora(s.ora_inizio);
+      const fine = minuti_da_ora(s.ora_fine);
+      if (inizio == null || fine == null) return false;
+      return minuti_riferimento >= inizio && minuti_riferimento < fine;
+    },
+    [minuti_riferimento],
+  );
+
+  // Linguette: istruttori davvero sul ghiaccio quel giorno, ricavati dagli id delle sessioni.
+  const ids_istruttori_oggi = React.useMemo(() => {
+    const insieme = new Set<string>();
+    for (const s of (sessioni_tutte_query.data ?? []) as Sessione[]) {
+      for (const id of s.istruttori_ids ?? []) insieme.add(id);
+    }
+    return insieme;
+  }, [sessioni_tutte_query.data]);
+
+  const istruttori_presenti = React.useMemo(
+    () => istruttori.filter((i) => ids_istruttori_oggi.has(i.istruttore_id)),
+    [istruttori, ids_istruttori_oggi],
+  );
+
+  // Se la linguetta scelta non esiste più (cambio di giorno) si torna a «Tutti»,
+  // ma solo quando la lettura è davvero riuscita: mai su una lista non ancora arrivata.
+  React.useEffect(() => {
+    if (in_tutto) return;
+    if (!sessioni_tutte_query.isSuccess) return;
+    if (ids_istruttori_oggi.has(tab)) return;
+    set_tab(TUTTO);
+  }, [in_tutto, ids_istruttori_oggi, tab, sessioni_tutte_query.isSuccess]);
+
   // Selezione automatica sessione: si aggiorna a ogni scatto dell'orologio, ma mai
   // se ci sono modifiche non registrate o se l'utente ha scelto a mano.
   React.useEffect(() => {
     if (sessioni.length === 0) return;
     if (modificato) return;
     if (scelta_manuale && sessione_id && sessioni.some((s) => s.sessione_id === sessione_id)) return;
-    const ora_corrente = `${String(adesso.getHours()).padStart(2, "0")}:${String(adesso.getMinutes()).padStart(2, "0")}`;
-    const in_corso = sessioni.find((s) => s.in_corso);
-    const prossima = sessioni.find((s) => ora_breve(s.ora_inizio) >= ora_corrente);
+    const in_corso = sessioni.find((s) => e_in_corso(s));
+    const prossima = sessioni.find((s) => (minuti_da_ora(s.ora_inizio) ?? 0) >= minuti_riferimento);
     const scelta = (in_corso ?? prossima ?? sessioni[sessioni.length - 1]).sessione_id;
     if (scelta !== sessione_id) {
       // Cambio automatico di sessione: si riparte dall'appello della nuova
@@ -239,7 +283,7 @@ const PistaPage: React.FC = () => {
       set_sessione_id(scelta);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessioni, sessione_id, adesso, modificato, scelta_manuale]);
+  }, [sessioni, sessione_id, minuti_riferimento, modificato, scelta_manuale]);
 
   const atleti_query = useQuery({
     queryKey: ["pista_atleti", sessione_id],
@@ -454,7 +498,7 @@ const PistaPage: React.FC = () => {
   const applica_istruttore = (id: string) => {
     azzera_appello();
     set_tab(id);
-    set_scelta_manuale_istruttore(true);
+    
     set_sessione_id(null);
     set_scelta_manuale(false);
   };
@@ -477,8 +521,26 @@ const PistaPage: React.FC = () => {
     applica_istruttore(id);
   };
 
+  /** Applica l'istante scelto: la pagina si ricalcola tutta su quel momento. */
+  const applica_momento = () => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(bozza_data) || !/^\d{2}:\d{2}$/.test(bozza_ora)) return;
+    if (modificato) {
+      // Un appello non ancora registrato non si butta via cambiando momento.
+      toast({ title: t("pista.momento_appello_aperto") });
+      return;
+    }
+    const [y, m, d] = bozza_data.split("-").map(Number);
+    const [hh, mi] = bozza_ora.split(":").map(Number);
+    azzera_appello();
+    set_istante_scelto(new Date(y, m - 1, d, hh, mi, 0, 0));
+    set_sessione_id(null);
+    set_scelta_manuale(false);
+    set_pannello_momento(false);
+  };
+
   const registra = async () => {
     if (!sessione_id || !lista_pronta) return;
+    if (!appello_sbloccato) return;
     set_salvataggio(true);
     try {
       const elenco = atleti.filter((a) => assenti.has(a.atleta_id)).map((a) => a.atleta_id);
@@ -500,14 +562,21 @@ const PistaPage: React.FC = () => {
     }
   };
 
+  // Corrimano orario: si registra da 15 minuti prima dell'inizio in poi. Dopo la
+  // fine della lezione resta aperto: l'istruttore registra quando scende dal ghiaccio.
+  const inizio_sessione_min = minuti_da_ora(sessione_selezionata?.ora_inizio ?? null);
+  const minuti_sblocco = inizio_sessione_min == null ? null : inizio_sessione_min - ANTICIPO_APPELLO_MIN;
+  const appello_sbloccato = minuti_sblocco == null ? true : minuti_riferimento >= minuti_sblocco;
+  const ora_sblocco = minuti_sblocco == null ? "" : da_minuti(minuti_sblocco);
+
   const lingua = i18n.language || "it";
-  const data_estesa = adesso.toLocaleDateString(lingua, {
+  const data_estesa = riferimento.toLocaleDateString(lingua, {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   });
-  const ora_corrente = adesso.toLocaleTimeString(lingua, { hour: "2-digit", minute: "2-digit" });
+  const ora_corrente = riferimento.toLocaleTimeString(lingua, { hour: "2-digit", minute: "2-digit" });
 
   const compleanni = compleanni_query.data ?? [];
 
@@ -664,8 +733,7 @@ const PistaPage: React.FC = () => {
     if (sessioni_tutte_query.isLoading) return <Caricamento />;
     if (sessioni_tutte_query.error)
       return <MessaggioCentrale variante="errore" testo={(sessioni_tutte_query.error as Error).message} />;
-    if (sessioni.length === 0)
-      return <MessaggioCentrale testo={session?.club_id ? t("pista.nessuna_sessione") : t("pista.serve_club")} />;
+    if (sessioni.length === 0) return <MessaggioCentrale testo={t("pista.nessuna_sessione")} />;
     return (
       <>
         <div className="flex gap-3 overflow-x-auto pb-2">
@@ -678,7 +746,7 @@ const PistaPage: React.FC = () => {
                 className={`min-w-[190px] min-h-[96px] shrink-0 rounded-xl border-2 px-4 py-3 text-left transition-colors ${
                   attiva
                     ? "border-primary bg-primary text-primary-foreground"
-                    : s.in_corso
+                    : e_in_corso(s)
                       ? "border-primary bg-primary/10 text-foreground"
                       : "border-border bg-card text-foreground hover:bg-muted"
                 }`}
@@ -708,8 +776,7 @@ const PistaPage: React.FC = () => {
   };
 
   const vista_istruttore = () => {
-    // Finché la linguetta non è stata scelta la query è disabilitata: è ancora caricamento.
-    if (tab === null || sessioni_istruttore_query.isLoading) return <Caricamento />;
+    if (sessioni_istruttore_query.isLoading) return <Caricamento />;
     if (sessioni_istruttore_query.error)
       return <MessaggioCentrale variante="errore" testo={(sessioni_istruttore_query.error as Error).message} />;
     if (sessioni.length === 0) return <MessaggioCentrale testo={t("pista.istruttore_senza_sessioni")} />;
@@ -727,7 +794,7 @@ const PistaPage: React.FC = () => {
                   className={`min-w-[160px] min-h-[72px] shrink-0 rounded-xl border-2 px-4 py-2 text-left transition-colors ${
                     attiva
                       ? "border-primary bg-primary text-primary-foreground"
-                      : s.in_corso
+                      : e_in_corso(s)
                         ? "border-primary bg-primary/10 text-foreground"
                         : "border-border bg-card text-foreground hover:bg-muted"
                   }`}
@@ -768,11 +835,12 @@ const PistaPage: React.FC = () => {
   };
 
   const contenuto = () => {
+    // Un account senza club (per esempio un superadmin) non ha nessun ghiaccio da mostrare:
+    // va detto com'è, non confuso con "nessuna sessione pubblicata".
+    if (senza_club) return <MessaggioCentrale testo={t("pista.senza_club")} />;
     if (istruttori_query.isLoading) return <Caricamento />;
     if (istruttori_query.error)
       return <MessaggioCentrale variante="errore" testo={(istruttori_query.error as Error).message} />;
-    if (istruttori.length === 0 && !in_tutto)
-      return <MessaggioCentrale testo={session?.club_id ? t("pista.nessuna_sessione") : t("pista.serve_club")} />;
     return in_tutto ? vista_tutto() : vista_istruttore();
   };
 
@@ -785,15 +853,68 @@ const PistaPage: React.FC = () => {
           <h1 className="text-2xl md:text-3xl font-bold capitalize">{data_estesa}</h1>
           <p className="text-4xl font-bold tabular-nums">{ora_corrente}</p>
         </div>
-        <Button
-          variant={schermo_intero ? "default" : "outline"}
-          size="lg"
-          onClick={() => set_schermo_intero((v) => !v)}
-        >
-          {schermo_intero ? <Minimize2 className="mr-2 h-5 w-5" /> : <Maximize2 className="mr-2 h-5 w-5" />}
-          {schermo_intero ? t("pista.esci_schermo_intero") : t("pista.schermo_intero")}
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Selettore del momento: solo presidenza, direzione tecnica e superadmin. */}
+          {puo_scegliere_momento && (
+            <Button
+              variant={momento_simulato ? "default" : "ghost"}
+              size="lg"
+              onClick={() => {
+                set_bozza_data(giorno);
+                set_bozza_ora(da_minuti(minuti_riferimento));
+                set_pannello_momento((v) => !v);
+              }}
+            >
+              <Clock className="mr-2 h-5 w-5" />
+              {momento_simulato ? t("pista.momento_attivo") : t("pista.momento_scegli")}
+            </Button>
+          )}
+          <Button
+            variant={schermo_intero ? "default" : "outline"}
+            size="lg"
+            onClick={() => set_schermo_intero((v) => !v)}
+          >
+            {schermo_intero ? <Minimize2 className="mr-2 h-5 w-5" /> : <Maximize2 className="mr-2 h-5 w-5" />}
+            {schermo_intero ? t("pista.esci_schermo_intero") : t("pista.schermo_intero")}
+          </Button>
+        </div>
       </header>
+
+      {puo_scegliere_momento && pannello_momento && (
+        <div className="mb-3 rounded-xl border-2 border-border bg-card px-4 py-3">
+          <p className="mb-2 text-base font-semibold">{t("pista.momento_titolo")}</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <DateInput value={bozza_data} onChange={set_bozza_data} />
+            <input
+              type="time"
+              value={bozza_ora}
+              onChange={(e) => set_bozza_ora(e.target.value)}
+              className="h-12 rounded-lg border-2 border-border bg-background px-3 text-lg tabular-nums"
+            />
+            <Button size="lg" className="h-12" onClick={applica_momento}>
+              {t("pista.momento_applica")}
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-12"
+              onClick={() => {
+                if (modificato) {
+                  toast({ title: t("pista.momento_appello_aperto") });
+                  return;
+                }
+                azzera_appello();
+                set_istante_scelto(null);
+                set_sessione_id(null);
+                set_scelta_manuale(false);
+                set_pannello_momento(false);
+              }}
+            >
+              {t("pista.momento_adesso")}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {compleanni.length > 0 && (
         <div className="mb-3 rounded-lg border border-border bg-muted/50 px-4 py-2 text-base">
@@ -808,62 +929,65 @@ const PistaPage: React.FC = () => {
         </div>
       )}
 
-      {/* Linguette istruttori + Tutto il ghiaccio */}
-      <div className="flex gap-3 overflow-x-auto border-b border-border pb-2">
-        {istruttori.map((i) => {
-          const attiva = i.istruttore_id === tab;
-          return (
-            <button
-              key={i.istruttore_id}
-              onClick={() => cambia_istruttore(i.istruttore_id)}
-              className={`min-w-[170px] min-h-[72px] shrink-0 rounded-xl border-2 px-4 py-2 text-left transition-colors ${
-                attiva
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : i.ha_sessione_in_corso
-                    ? "border-primary bg-primary/10 text-foreground"
+      {/* Linguette: «Tutti» (predefinita) più gli istruttori sul ghiaccio quel giorno */}
+      {!senza_club && (
+        <div className="flex gap-3 overflow-x-auto border-b border-border pb-2">
+          <button
+            onClick={() => cambia_istruttore(TUTTO)}
+            className={`min-w-[170px] min-h-[72px] shrink-0 rounded-xl border-2 px-4 py-2 text-left transition-colors ${
+              in_tutto
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-foreground hover:bg-muted"
+            }`}
+          >
+            <span className="text-lg font-bold">{t("pista.tutti")}</span>
+          </button>
+          {istruttori_presenti.map((i) => {
+            const attiva = i.istruttore_id === tab;
+            return (
+              <button
+                key={i.istruttore_id}
+                onClick={() => cambia_istruttore(i.istruttore_id)}
+                className={`min-w-[170px] min-h-[72px] shrink-0 rounded-xl border-2 px-4 py-2 text-left transition-colors ${
+                  attiva
+                    ? "border-primary bg-primary text-primary-foreground"
                     : "border-border bg-card text-foreground hover:bg-muted"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                {i.ha_sessione_in_corso && (
-                  <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${attiva ? "bg-primary-foreground" : "bg-primary"}`} />
-                )}
+                }`}
+              >
                 <span className="truncate text-lg font-bold">
                   {i.nome} {i.cognome}
                 </span>
-              </div>
-              <div className="text-sm tabular-nums opacity-80">{ora_breve(i.prima_ora)}</div>
-            </button>
-          );
-        })}
-        <button
-          onClick={() => cambia_istruttore(TUTTO)}
-          className={`min-w-[170px] min-h-[72px] shrink-0 rounded-xl border-2 px-4 py-2 text-left transition-colors ${
-            in_tutto
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border bg-card text-foreground hover:bg-muted"
-          }`}
-        >
-          <span className="text-lg font-bold">{t("pista.tutto_il_ghiaccio")}</span>
-        </button>
-      </div>
+                <div className="text-sm tabular-nums opacity-80">{ora_breve(i.prima_ora)}</div>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {contenuto()}
 
-      {mostra_barra && (
+      {mostra_barra && !senza_club && (
         <div
           className={`${schermo_intero ? "absolute" : "sticky"} inset-x-0 bottom-0 z-20 border-t border-border bg-background p-3`}
         >
           <div className="mx-auto flex max-w-5xl flex-col gap-1">
             {momento === "appello" ? (
-              <Button
-                size="lg"
-                className="h-16 w-full text-lg font-bold"
-                disabled={salvataggio || !sessione_id || !lista_pronta}
-                onClick={registra}
-              >
-                {salvataggio ? t("pista.registrazione_in_corso") : t("pista.registra_appello")}
-              </Button>
+              <>
+                <Button
+                  size="lg"
+                  className="h-16 w-full text-lg font-bold"
+                  disabled={salvataggio || !sessione_id || !lista_pronta || !appello_sbloccato}
+                  onClick={registra}
+                >
+                  {salvataggio ? t("pista.registrazione_in_corso") : t("pista.registra_appello")}
+                </Button>
+                {/* Prima dell'inizio si spiega il perché e da che ora si sblocca. */}
+                {!appello_sbloccato && (
+                  <p className="text-center text-base font-medium text-muted-foreground">
+                    {t("pista.appello_non_ancora", { ora: ora_sblocco })}
+                  </p>
+                )}
+              </>
             ) : (
               <Button
                 size="lg"

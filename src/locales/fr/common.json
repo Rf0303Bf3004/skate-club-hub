@@ -285,7 +285,16 @@
     "note_conteggio_other": "{{count}} notes",
     "note_errore": "Les notes ne sont pas disponibles : cela ne veut pas dire qu'il n'y en a pas.",
     "note_titolo": "Notes",
-    "nota_firma": "{{autore}} · {{ora}}"
+    "nota_firma": "{{autore}} · {{ora}}",
+    "tutti": "Tous",
+    "senza_club": "Ce compte n’est rattaché à aucun club : le bord de piste s’ouvre avec un utilisateur du club.",
+    "appello_non_ancora": "La leçon n’a pas encore commencé : l’appel pourra être enregistré dès {{ora}}.",
+    "momento_titolo": "Moment depuis lequel regarder la glace",
+    "momento_scegli": "Choisir le moment",
+    "momento_attivo": "Moment choisi",
+    "momento_applica": "Voir ce moment",
+    "momento_adesso": "Revenir à maintenant",
+    "momento_appello_aperto": "Un appel n’est pas encore enregistré : enregistrez-le ou changez d’onglet avant de changer de moment."
   },
   "richieste_private": {
     "titolo": "Demandes de leçon privée",
