@@ -111,6 +111,94 @@ const PistaLoginPage: React.FC = () => {
     }
   }, [entra, t]);
 
+  // ---- Lettura del QR con la fotocamera posteriore -------------------------
+  const [lettore_aperto, set_lettore_aperto] = React.useState(false);
+  const [errore_fotocamera, set_errore_fotocamera] = React.useState<string | null>(null);
+  const [avviso_qr, set_avviso_qr] = React.useState<string | null>(null);
+  const lettore = React.useRef<{ stop: () => Promise<void>; clear: () => void } | null>(null);
+  const mostra_bottone_qr = React.useMemo(() => fotocamera_disponibile(), []);
+
+  /** Spegne davvero la fotocamera: nessuna traccia viva dopo la chiusura. */
+  const spegni_fotocamera = React.useCallback(async () => {
+    const attivo = lettore.current;
+    lettore.current = null;
+    if (attivo) {
+      try {
+        await attivo.stop();
+        attivo.clear();
+      } catch {
+        /* se era già ferma non c'è altro da fare */
+      }
+    }
+    const contenitore = document.getElementById(ID_RIQUADRO_QR);
+    contenitore?.querySelectorAll("video").forEach((video) => {
+      const flusso = video.srcObject as MediaStream | null;
+      flusso?.getTracks().forEach((traccia) => traccia.stop());
+      video.srcObject = null;
+    });
+  }, []);
+
+  const chiudi_lettore = React.useCallback(async () => {
+    await spegni_fotocamera();
+    set_lettore_aperto(false);
+    set_avviso_qr(null);
+  }, [spegni_fotocamera]);
+
+  // Allo smontaggio la fotocamera non resta accesa.
+  React.useEffect(() => {
+    return () => {
+      void spegni_fotocamera();
+    };
+  }, [spegni_fotocamera]);
+
+  const avvia_lettore = React.useCallback(async () => {
+    set_errore(null);
+    set_errore_fotocamera(null);
+    set_avviso_qr(null);
+    set_lettore_aperto(true);
+    try {
+      const { Html5Qrcode } = await import("html5-qrcode");
+      // Il riquadro deve esistere nel DOM prima di avviare la fotocamera.
+      await new Promise((r) => requestAnimationFrame(() => r(null)));
+      const istanza = new Html5Qrcode(ID_RIQUADRO_QR, { verbose: false });
+      lettore.current = istanza as unknown as { stop: () => Promise<void>; clear: () => void };
+      await istanza.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 260, height: 260 } },
+        (testo) => {
+          const grezzo = codice_da_qr(testo);
+          if (!grezzo) {
+            set_avviso_qr(t("pista_login.qr_non_valido"));
+            return; // un QR qualunque non chiude il lettore: si continua a leggere
+          }
+          const pulito = maschera(grezzo);
+          if (!codice_pista_completo(pulito)) {
+            set_avviso_qr(t("pista_login.qr_non_valido"));
+            return;
+          }
+          set_codice(pulito);
+          void (async () => {
+            await chiudi_lettore();
+            await entra(pulito);
+          })();
+        },
+        () => {
+          /* fotogramma senza QR: normale, non è un errore */
+        },
+      );
+    } catch (e) {
+      await spegni_fotocamera();
+      set_lettore_aperto(false);
+      const nome = (e as { name?: string } | null)?.name ?? "";
+      const negato = nome === "NotAllowedError" || nome === "SecurityError";
+      set_errore_fotocamera(
+        negato ? t("pista_login.qr_permesso_negato") : t("pista_login.qr_fotocamera_assente"),
+      );
+      segnala_errore("PistaLoginPage", "pista-login-qr", e, undefined, "avviso");
+    }
+  }, [chiudi_lettore, entra, spegni_fotocamera, t]);
+
+
   const digita = (car: string) => {
     set_errore(null);
     set_codice((v) => maschera(v + car));
