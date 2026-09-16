@@ -131,6 +131,16 @@ const LoginPage: React.FC = () => {
             <a href="/portale-recovery" className="text-xs text-muted-foreground hover:text-primary hover:underline block">
               Password dimenticata?
             </a>
+            {/* <a href> e non <Link>: PublicRoutes legge window.location.pathname
+                una sola volta al caricamento; una navigazione interna di
+                react-router non troverebbe /pista-login e darebbe una schermata
+                bianca senza errori. */}
+            <a
+              href="/pista-login"
+              className="text-xs text-muted-foreground hover:text-primary hover:underline block"
+            >
+              {t('login.tablet_pista')}
+            </a>
             <p className="text-sm text-muted-foreground">
               {t('login.new_club_question')} <a href="/registrati" className="text-primary underline">{t('login.register_here')}</a>
             </p>
