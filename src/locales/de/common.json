@@ -485,5 +485,32 @@
     "riuscita_other": "Anfrage genehmigt: {{count}} Stunden erstellt",
     "riuscita_parziale_one": "Anfrage genehmigt, {{count}} Stunde erstellt, aber etwas muss geprüft werden",
     "riuscita_parziale_other": "Anfrage genehmigt, {{count}} Stunden erstellt, aber etwas muss geprüft werden"
+  },
+  "istruttore_home": {
+    "titolo": "Mein Tag",
+    "turni_oggi": "Heute — meine Einheiten",
+    "sessione": "Einheit",
+    "appello_fatto": "Anwesenheit erfasst",
+    "appello_da_fare": "Anwesenheit offen",
+    "fai_appello": "Anwesenheit erfassen",
+    "niente_oggi": "Heute hast du keine Einheiten auf dem Eis.",
+    "prossimo_turno": "Deine nächste Einheit",
+    "nessun_prossimo": "In den nächsten Tagen ist noch keine Einheit geplant.",
+    "mie_atlete": "Meine Läuferinnen",
+    "vai_atleti": "Läuferinnen öffnen",
+    "nessuna_atleta": "Heute sind keine Läuferinnen in deinen Einheiten.",
+    "miei_messaggi": "Meine Nachrichten",
+    "messaggio": "Nachricht",
+    "attende_risposta": "Wartet auf deine Antwort",
+    "non_letto": "Ungelesen",
+    "nessun_messaggio": "Du hast keine Nachrichten zu lesen.",
+    "vai_comunicazioni": "Mitteilungen öffnen",
+    "non_collegato_titolo": "Dein Zugang ist mit keinem Trainerprofil verknüpft",
+    "non_collegato_testo": "Deshalb können wir deine Einheiten und deine Läuferinnen nicht anzeigen. Bitte das Klub, deinen Zugang mit deinem Trainerprofil zu verknüpfen.",
+    "errore_collegamento": "Dein Trainerprofil konnte nicht gelesen werden. Bitte versuche es gleich erneut.",
+    "errore_turni": "Deine heutigen Einheiten konnten nicht gelesen werden. Bitte versuche es gleich erneut.",
+    "errore_prossimo": "Deine nächste Einheit konnte nicht gelesen werden.",
+    "errore_atlete": "Die vollständige Liste der Läuferinnen konnte nicht gelesen werden.",
+    "errore_messaggi": "Deine Nachrichten konnten nicht gelesen werden. Bitte versuche es gleich erneut."
   }
 }

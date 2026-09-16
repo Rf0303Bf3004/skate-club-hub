@@ -485,5 +485,32 @@
     "riuscita_other": "Request approved: {{count}} lessons created",
     "riuscita_parziale_one": "Request approved, {{count}} lesson created, but something needs attention",
     "riuscita_parziale_other": "Request approved, {{count}} lessons created, but something needs attention"
+  },
+  "istruttore_home": {
+    "titolo": "My day",
+    "turni_oggi": "Today — my sessions",
+    "sessione": "Session",
+    "appello_fatto": "Attendance taken",
+    "appello_da_fare": "Attendance to take",
+    "fai_appello": "Take attendance",
+    "niente_oggi": "You have no sessions on the ice today.",
+    "prossimo_turno": "Your next session",
+    "nessun_prossimo": "You have no sessions scheduled in the coming days.",
+    "mie_atlete": "My skaters",
+    "vai_atleti": "Open skaters",
+    "nessuna_atleta": "There are no skaters in your sessions today.",
+    "miei_messaggi": "My messages",
+    "messaggio": "Message",
+    "attende_risposta": "Waiting for your answer",
+    "non_letto": "Unread",
+    "nessun_messaggio": "You have no messages to read.",
+    "vai_comunicazioni": "Open messages",
+    "non_collegato_titolo": "Your account is not linked to an instructor record",
+    "non_collegato_testo": "That is why we cannot show your sessions and your skaters. Ask the club to link your account to your instructor record.",
+    "errore_collegamento": "We could not read your instructor record. Please try again shortly.",
+    "errore_turni": "We could not read today's sessions. Please try again shortly.",
+    "errore_prossimo": "We could not read your next session.",
+    "errore_atlete": "We could not read the full list of skaters.",
+    "errore_messaggi": "We could not read your messages. Please try again shortly."
   }
 }
