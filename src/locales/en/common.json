@@ -294,7 +294,10 @@
     "momento_attivo": "Chosen moment",
     "momento_applica": "Show this moment",
     "momento_adesso": "Back to now",
-    "momento_appello_aperto": "Attendance has not been saved yet: save it or switch tab before changing the moment."
+    "momento_appello_aperto": "Attendance has not been saved yet: save it or switch tab before changing the moment.",
+    "esci": "Sign out tablet",
+    "esci_titolo": "Sign out this tablet?",
+    "esci_testo": "The code stored on this device will be deleted: to get back in you will need the club code or its QR code."
   },
   "richieste_private": {
     "titolo": "Private lesson requests",
@@ -521,6 +524,7 @@
     "accesso_in_corso": "Signing in…",
     "codice_errato": "Invalid code. Check the sheet and try again.",
     "troppi_tentativi": "Too many attempts. Please try again shortly.",
-    "aiuto": "You can find the code in the club settings, under the rink tablet section."
+    "aiuto": "You can find the code in the club settings, under the rink tablet section.",
+    "codice_cambiato": "The club code has changed: ask the club for it and type it here."
   }
 }

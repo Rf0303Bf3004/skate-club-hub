@@ -379,7 +379,10 @@
     "momento_attivo": "Momento scelto",
     "momento_applica": "Guarda questo momento",
     "momento_adesso": "Torna ad adesso",
-    "momento_appello_aperto": "C'è un appello non ancora registrato: registralo o cambia linguetta prima di cambiare momento."
+    "momento_appello_aperto": "C'è un appello non ancora registrato: registralo o cambia linguetta prima di cambiare momento.",
+    "esci": "Esci dal tablet",
+    "esci_titolo": "Uscire dal tablet?",
+    "esci_testo": "Il codice conservato su questo dispositivo viene cancellato: per rientrare servirà il codice del club o il suo QR."
   },
   "richieste_private": {
     "titolo": "Richieste di lezione privata",
@@ -599,6 +602,7 @@
     "accesso_in_corso": "Accesso in corso…",
     "codice_errato": "Codice non valido. Controlla il foglio e riprova.",
     "troppi_tentativi": "Troppi tentativi. Riprova fra poco.",
-    "aiuto": "Il codice lo trovi nelle impostazioni del club, alla voce del tablet di bordo pista."
+    "aiuto": "Il codice lo trovi nelle impostazioni del club, alla voce del tablet di bordo pista.",
+    "codice_cambiato": "Il codice del club è cambiato: chiedilo al club e digitalo qui."
   }
 }
