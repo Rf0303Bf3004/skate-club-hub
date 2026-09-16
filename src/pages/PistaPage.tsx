@@ -139,6 +139,8 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
   const [nota_salvataggio, set_nota_salvataggio] = React.useState(false);
   const [note_aperte, set_note_aperte] = React.useState<{ atleta_id: string; titolo: string } | null>(null);
   const [nota_in_eliminazione, set_nota_in_eliminazione] = React.useState<string | null>(null);
+  const [scollega_aperto, set_scollega_aperto] = React.useState(false);
+
 
 
   React.useEffect(() => {
@@ -890,22 +892,22 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
             {schermo_intero ? <Minimize2 className="mr-2 h-5 w-5" /> : <Maximize2 className="mr-2 h-5 w-5" />}
             {schermo_intero ? t("pista.esci_schermo_intero") : t("pista.schermo_intero")}
           </Button>
-          {/* Uscita definitiva del tablet: dimentica il codice conservato. */}
+          {/* Uscita definitiva del tablet, dietro un menu discreto: dimentica il codice
+              conservato ed è rara, non deve stare accanto a bottoni toccati di continuo. */}
           {sessione_pista && (
-            <ConfirmButton
-              titolo={t("pista.esci_titolo")}
-              descrizione={t("pista.esci_testo")}
-              conferma_label={t("pista.esci")}
-              variante="pericolo"
-              on_conferma={() => {
-                void esci_dalla_pista().then(() => window.location.replace("/pista-login"));
-              }}
-            >
-              <Button variant="outline" size="lg">
-                <LogOut className="mr-2 h-5 w-5" />
-                {t("pista.esci")}
-              </Button>
-            </ConfirmButton>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="lg" aria-label={t("pista.scollega")}>
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => set_scollega_aperto(true)}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  {t("pista.scollega")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </header>
