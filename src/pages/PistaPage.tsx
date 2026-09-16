@@ -24,7 +24,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { toast } from "@/hooks/use-toast";
 import { segnala_errore } from "@/lib/errori";
 import { useAuth } from "@/lib/auth";
-import ConfirmButton from "@/components/common/ConfirmButton";
 import { esci_dalla_pista } from "@/lib/pista-codice";
 
 /**
