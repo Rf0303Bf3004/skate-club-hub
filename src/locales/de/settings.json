@@ -21,11 +21,24 @@
       "auguri_compleanno_modello_post": " angepasst werden: Erstellen Sie eine Vorlage namens \"Auguri di compleanno\" mit den Platzhaltern {nome_atleta} und {eta}. Ohne Vorlage wird ein Standardtext verwendet."
     },
     "sezioni": {
-      "auguri_compleanno": "🎂 Geburtstagswünsche"
+      "auguri_compleanno": "🎂 Geburtstagswünsche",
+      "codice_pista": "Code für das Eisrand-Tablet"
     },
     "fields": {
       "auguri_compleanno_attivo": "Geburtstagswünsche an Familien",
       "auguri_compleanno_orario": "Sendezeit der Glückwünsche (Schweizer Ortszeit)"
+    },
+    "pista": {
+      "spiegazione": "Das Tablet am Eisrand meldet sich mit diesem Vereinscode an, nicht mit dem Zugang einer Person. Es öffnet nur die Eisfläche: heutige Einheiten, Anwesenheit und Notizen.",
+      "caricamento": "Code wird gelesen…",
+      "errore_lettura": "Der Vereinscode konnte nicht gelesen werden. Bitte gleich nochmals versuchen.",
+      "assente": "Kein Code",
+      "rigenera": "Code neu erzeugen",
+      "rigenerato": "Neuer Code erstellt",
+      "conferma_titolo": "Code der Eisfläche neu erzeugen?",
+      "conferma_testo": "Der aktuelle Code funktioniert sofort nicht mehr: bereits angemeldete Tablets müssen mit dem neuen Code neu eingerichtet werden.",
+      "avviso": "Erzeuge den Code neu, wenn ein Tablet verloren geht oder jemand den Verein verlässt.",
+      "senza_club": "Kein Verein ausgewählt."
     }
   },
   "seasons": {

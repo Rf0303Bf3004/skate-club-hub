@@ -103,7 +103,7 @@ const Caricamento: React.FC = () => (
   </div>
 );
 
-const PistaPage: React.FC = () => {
+const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = false }) => {
   const { t, i18n } = useTranslation("common");
   const { session } = useAuth();
   const [adesso, set_adesso] = React.useState(() => new Date());
@@ -148,8 +148,10 @@ const PistaPage: React.FC = () => {
   const minuti_riferimento = riferimento.getHours() * 60 + riferimento.getMinutes();
   const momento_simulato = istante_scelto !== null;
   const puo_scegliere_momento =
-    session?.ruolo === "presidente" || session?.ruolo === "dt" || session?.ruolo === "superadmin";
-  const senza_club = !session?.club_id;
+    !sessione_pista &&
+    (session?.ruolo === "presidente" || session?.ruolo === "dt" || session?.ruolo === "superadmin");
+  // La sessione pista non ha riga in utenti_club: il club arriva dal suo gettone.
+  const senza_club = !sessione_pista && !session?.club_id;
 
   const compleanni_query = useQuery({
     queryKey: ["pista_compleanni", giorno],

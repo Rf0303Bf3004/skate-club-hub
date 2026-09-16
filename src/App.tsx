@@ -82,10 +82,39 @@ import SegreteriaFatturaDetailPage from "@/pages/SegreteriaFatturaDetailPage";
 import LandingPage from "@/pages/LandingPage";
 import CaricaFotoPage from "@/pages/CaricaFotoPage";
 import IscrizioneAtletaPage from "@/pages/IscrizioneAtletaPage";
-
+import PistaLoginPage from "@/pages/PistaLoginPage";
+import { usePistaSession } from "@/lib/pista-sessione";
 
 
 const queryClient = new QueryClient();
+
+/**
+ * Sessione «pista»: il tablet entra con il codice del club e resta sulla pista.
+ * Non ha riga in utenti_club, quindi non esiste per l'amministrazione:
+ * qualunque altra rotta riporta a /pista.
+ */
+const PistaGate = ({ children }: { children: React.ReactNode }) => {
+  const { is_pista, is_loading } = usePistaSession();
+
+  if (is_loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (!is_pista) return <>{children}</>;
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/pista" element={<PistaPage sessione_pista />} />
+        <Route path="*" element={<Navigate to="/pista" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
+};
 
 // Pagine pubbliche (no auth) gestite prima del gate di autenticazione.
 const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
@@ -127,6 +156,17 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
       </BrowserRouter>
     );
   }
+
+  if (path === "/pista-login") {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/pista-login" element={<PistaLoginPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
 
   if (path.startsWith("/c/")) {
     return (
@@ -453,11 +493,13 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <PublicRoutes>
-          <AuthProvider>
-            <AuthenticatedApp />
-          </AuthProvider>
-        </PublicRoutes>
+        <PistaGate>
+          <PublicRoutes>
+            <AuthProvider>
+              <AuthenticatedApp />
+            </AuthProvider>
+          </PublicRoutes>
+        </PistaGate>
       </TooltipProvider>
     </I18nProvider>
   </QueryClientProvider>

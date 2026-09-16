@@ -512,5 +512,15 @@
     "errore_prossimo": "Impossible de lire votre prochaine séance.",
     "errore_atlete": "Impossible de lire la liste complète des patineuses.",
     "errore_messaggi": "Impossible de lire vos messages. Réessayez dans un instant."
+  },
+  "pista_login": {
+    "titolo": "Accès bord de piste",
+    "sottotitolo": "Saisissez le code du club imprimé sur la feuille.",
+    "entra": "Entrer",
+    "cancella": "Effacer",
+    "accesso_in_corso": "Connexion en cours…",
+    "codice_errato": "Code non valide. Vérifiez la feuille et réessayez.",
+    "troppi_tentativi": "Trop de tentatives. Réessayez dans un instant.",
+    "aiuto": "Le code se trouve dans les paramètres du club, à la rubrique de la tablette de bord de piste."
   }
 }

@@ -512,5 +512,15 @@
     "errore_prossimo": "We could not read your next session.",
     "errore_atlete": "We could not read the full list of skaters.",
     "errore_messaggi": "We could not read your messages. Please try again shortly."
+  },
+  "pista_login": {
+    "titolo": "Rink-side access",
+    "sottotitolo": "Type the club code printed on the sheet.",
+    "entra": "Enter",
+    "cancella": "Delete",
+    "accesso_in_corso": "Signing in…",
+    "codice_errato": "Invalid code. Check the sheet and try again.",
+    "troppi_tentativi": "Too many attempts. Please try again shortly.",
+    "aiuto": "You can find the code in the club settings, under the rink tablet section."
   }
 }

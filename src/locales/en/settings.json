@@ -21,11 +21,24 @@
       "auguri_compleanno_modello_post": ": create a template named \"Auguri di compleanno\" with the placeholders {nome_atleta} and {eta}. Without a template, a standard text is used."
     },
     "sezioni": {
-      "auguri_compleanno": "🎂 Birthday wishes"
+      "auguri_compleanno": "🎂 Birthday wishes",
+      "codice_pista": "Rink tablet code"
     },
     "fields": {
       "auguri_compleanno_attivo": "Birthday wishes to families",
       "auguri_compleanno_orario": "Birthday wishes send time (Swiss local time)"
+    },
+    "pista": {
+      "spiegazione": "The rink-side tablet signs in with this club code, not with a person's account. It only opens the rink: today's sessions, attendance and notes.",
+      "caricamento": "Reading the code…",
+      "errore_lettura": "The club code could not be read. Please try again shortly.",
+      "assente": "No code",
+      "rigenera": "Regenerate code",
+      "rigenerato": "New code created",
+      "conferma_titolo": "Regenerate the rink code?",
+      "conferma_testo": "The current code stops working immediately: tablets already signed in must be set up again with the new code.",
+      "avviso": "Regenerate the code when a tablet is lost or someone leaves the club.",
+      "senza_club": "No club selected."
     }
   },
   "seasons": {
