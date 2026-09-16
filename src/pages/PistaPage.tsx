@@ -33,6 +33,22 @@ const TUTTO = "__tutto_il_ghiaccio";
 
 const ora_breve = (valore: string | null) => (valore ? String(valore).slice(0, 5) : "");
 
+/** Minuti dalla mezzanotte, oppure null se l'orario manca o non è leggibile. */
+const minuti_da_ora = (valore: string | null | undefined): number | null => {
+  if (!valore) return null;
+  const [h, m] = String(valore).slice(0, 5).split(":");
+  const hn = Number(h);
+  const mn = Number(m);
+  if (!Number.isFinite(hn) || !Number.isFinite(mn)) return null;
+  return hn * 60 + mn;
+};
+
+const da_minuti = (minuti: number) =>
+  `${String(Math.floor(Math.max(minuti, 0) / 60)).padStart(2, "0")}:${String(Math.max(minuti, 0) % 60).padStart(2, "0")}`;
+
+/** Quanto prima dell'inizio della lezione si può registrare l'appello. */
+const ANTICIPO_APPELLO_MIN = 15;
+
 const chiave_bozza = (sessione_id: string) => `appello_${sessione_id}`;
 
 const leggi_bozza = (sessione_id: string): string[] | null => {
@@ -90,8 +106,12 @@ const PistaPage: React.FC = () => {
   const { t, i18n } = useTranslation("common");
   const { session } = useAuth();
   const [adesso, set_adesso] = React.useState(() => new Date());
-  const [tab, set_tab] = React.useState<string | null>(null);
-  const [scelta_manuale_istruttore, set_scelta_manuale_istruttore] = React.useState(false);
+  // Istante di riferimento: di norma adesso; presidenza, dt e superadmin possono sceglierne un altro.
+  const [istante_scelto, set_istante_scelto] = React.useState<Date | null>(null);
+  const [pannello_momento, set_pannello_momento] = React.useState(false);
+  const [bozza_data, set_bozza_data] = React.useState("");
+  const [bozza_ora, set_bozza_ora] = React.useState("");
+  const [tab, set_tab] = React.useState<string>(TUTTO);
   const [sessione_id, set_sessione_id] = React.useState<string | null>(null);
   const [scelta_manuale, set_scelta_manuale] = React.useState(false);
   const [assenti, set_assenti] = React.useState<Set<string>>(new Set());
@@ -122,13 +142,19 @@ const PistaPage: React.FC = () => {
     return () => window.clearInterval(timer);
   }, []);
 
-  const giorno = chiave_giorno(adesso);
+  const riferimento = istante_scelto ?? adesso;
+  const giorno = chiave_giorno(riferimento);
+  const minuti_riferimento = riferimento.getHours() * 60 + riferimento.getMinutes();
+  const momento_simulato = istante_scelto !== null;
+  const puo_scegliere_momento =
+    session?.ruolo === "presidente" || session?.ruolo === "dt" || session?.ruolo === "superadmin";
+  const senza_club = !session?.club_id;
 
   const compleanni_query = useQuery({
     queryKey: ["pista_compleanni", giorno],
     refetchInterval: 30 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("pista_compleanni", { p_data: null });
+      const { data, error } = await supabase.rpc("pista_compleanni", { p_data: giorno });
       if (error) {
         segnala_errore("PistaPage", "pista_compleanni", error);
         throw new Error(error.message);
@@ -141,7 +167,7 @@ const PistaPage: React.FC = () => {
     queryKey: ["pista_istruttori", giorno],
     refetchInterval: 5 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("pista_istruttori", { p_data: null });
+      const { data, error } = await supabase.rpc("pista_istruttori", { p_data: giorno });
       if (error) {
         segnala_errore("PistaPage", "pista_istruttori", error);
         throw new Error(error.message);
@@ -152,33 +178,16 @@ const PistaPage: React.FC = () => {
 
   const istruttori = React.useMemo(() => istruttori_query.data ?? [], [istruttori_query.data]);
 
-  // Selezione automatica istruttore: solo finché l'utente non sceglie a mano
-  // e finché non ci sono modifiche non registrate. La scelta manuale resta valida
-  // solo se la linguetta è ancora presente nella lista corrente.
-  React.useEffect(() => {
-    if (istruttori.length === 0) return;
-    if (modificato) return;
-    if (scelta_manuale_istruttore && tab && (tab === TUTTO || istruttori.some((i) => i.istruttore_id === tab))) return;
-    const scelta = (istruttori.find((i) => i.ha_sessione_in_corso) ?? istruttori[0]).istruttore_id;
-    if (scelta !== tab) {
-      // Anche il cambio automatico azzera l'appello e la sessione, come quello manuale.
-      azzera_appello();
-      set_tab(scelta);
-      set_sessione_id(null);
-      set_scelta_manuale(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [istruttori, tab, adesso, modificato, scelta_manuale_istruttore]);
-
+  // «Tutti» è la linguetta predefinita: si cambia solo toccandone un'altra.
   const in_tutto = tab === TUTTO;
   const istruttore_id = in_tutto ? null : tab;
 
+  // Sempre attiva: serve anche a costruire le linguette degli istruttori del giorno.
   const sessioni_tutte_query = useQuery({
     queryKey: ["pista_sessioni", giorno],
-    enabled: in_tutto,
     refetchInterval: 5 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("pista_sessioni", { p_data: null });
+      const { data, error } = await supabase.rpc("pista_sessioni", { p_data: giorno });
       if (error) {
         segnala_errore("PistaPage", "pista_sessioni", error);
         throw new Error(error.message);
@@ -194,7 +203,7 @@ const PistaPage: React.FC = () => {
     queryFn: async () => {
       const { data, error } = await supabase.rpc("pista_sessioni_istruttore", {
         p_istruttore_id: istruttore_id as string,
-        p_data: null,
+        p_data: giorno,
       });
       if (error) {
         segnala_errore("PistaPage", "pista_sessioni_istruttore", error);
@@ -212,6 +221,7 @@ const PistaPage: React.FC = () => {
     specialita: string | null;
     n_atleti: number | null;
     in_corso: boolean | null;
+    istruttori_ids?: string[] | null;
     altri_istruttori?: string | null;
     istruttori?: string | null;
   };
@@ -222,15 +232,48 @@ const PistaPage: React.FC = () => {
     [sessioni_query.data],
   );
 
+  // "In corso" si calcola sull'istante di riferimento: quello del server è su now().
+  const e_in_corso = React.useCallback(
+    (s: Sessione) => {
+      const inizio = minuti_da_ora(s.ora_inizio);
+      const fine = minuti_da_ora(s.ora_fine);
+      if (inizio == null || fine == null) return false;
+      return minuti_riferimento >= inizio && minuti_riferimento < fine;
+    },
+    [minuti_riferimento],
+  );
+
+  // Linguette: istruttori davvero sul ghiaccio quel giorno, ricavati dagli id delle sessioni.
+  const ids_istruttori_oggi = React.useMemo(() => {
+    const insieme = new Set<string>();
+    for (const s of (sessioni_tutte_query.data ?? []) as Sessione[]) {
+      for (const id of s.istruttori_ids ?? []) insieme.add(id);
+    }
+    return insieme;
+  }, [sessioni_tutte_query.data]);
+
+  const istruttori_presenti = React.useMemo(
+    () => istruttori.filter((i) => ids_istruttori_oggi.has(i.istruttore_id)),
+    [istruttori, ids_istruttori_oggi],
+  );
+
+  // Se la linguetta scelta non esiste più (cambio di giorno) si torna a «Tutti»,
+  // ma solo quando la lettura è davvero riuscita: mai su una lista non ancora arrivata.
+  React.useEffect(() => {
+    if (in_tutto) return;
+    if (!sessioni_tutte_query.isSuccess) return;
+    if (ids_istruttori_oggi.has(tab)) return;
+    set_tab(TUTTO);
+  }, [in_tutto, ids_istruttori_oggi, tab, sessioni_tutte_query.isSuccess]);
+
   // Selezione automatica sessione: si aggiorna a ogni scatto dell'orologio, ma mai
   // se ci sono modifiche non registrate o se l'utente ha scelto a mano.
   React.useEffect(() => {
     if (sessioni.length === 0) return;
     if (modificato) return;
     if (scelta_manuale && sessione_id && sessioni.some((s) => s.sessione_id === sessione_id)) return;
-    const ora_corrente = `${String(adesso.getHours()).padStart(2, "0")}:${String(adesso.getMinutes()).padStart(2, "0")}`;
-    const in_corso = sessioni.find((s) => s.in_corso);
-    const prossima = sessioni.find((s) => ora_breve(s.ora_inizio) >= ora_corrente);
+    const in_corso = sessioni.find((s) => e_in_corso(s));
+    const prossima = sessioni.find((s) => (minuti_da_ora(s.ora_inizio) ?? 0) >= minuti_riferimento);
     const scelta = (in_corso ?? prossima ?? sessioni[sessioni.length - 1]).sessione_id;
     if (scelta !== sessione_id) {
       // Cambio automatico di sessione: si riparte dall'appello della nuova
@@ -239,7 +282,7 @@ const PistaPage: React.FC = () => {
       set_sessione_id(scelta);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessioni, sessione_id, adesso, modificato, scelta_manuale]);
+  }, [sessioni, sessione_id, minuti_riferimento, modificato, scelta_manuale]);
 
   const atleti_query = useQuery({
     queryKey: ["pista_atleti", sessione_id],
