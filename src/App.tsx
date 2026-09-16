@@ -84,6 +84,7 @@ import CaricaFotoPage from "@/pages/CaricaFotoPage";
 import IscrizioneAtletaPage from "@/pages/IscrizioneAtletaPage";
 import PistaLoginPage from "@/pages/PistaLoginPage";
 import { usePistaSession } from "@/lib/pista-sessione";
+import { accedi_pista_con_codice, cancella_codice_pista, leggi_codice_pista } from "@/lib/pista-codice";
 
 
 const queryClient = new QueryClient();
