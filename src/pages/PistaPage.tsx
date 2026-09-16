@@ -987,42 +987,66 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
 
       {contenuto()}
 
-      {mostra_barra && !senza_club && (
+      {/* La barra in fondo resta sempre presente con una sessione pista:
+          così «Esci dal tablet» è a portata anche a schermo intero, quando
+          l'intestazione è fuori dallo schermo. */}
+      {(mostra_barra || sessione_pista) && !senza_club && (
         <div
           className={`${schermo_intero ? "absolute" : "sticky"} inset-x-0 bottom-0 z-20 border-t border-border bg-background p-3`}
         >
-          <div className="mx-auto flex max-w-5xl flex-col gap-1">
-            {momento === "appello" ? (
-              <>
-                <Button
-                  size="lg"
-                  className="h-16 w-full text-lg font-bold"
-                  disabled={salvataggio || !sessione_id || !lista_pronta || !appello_sbloccato}
-                  onClick={registra}
-                >
-                  {salvataggio ? t("pista.registrazione_in_corso") : t("pista.registra_appello")}
-                </Button>
-                {/* Prima dell'inizio si spiega il perché e da che ora si sblocca. */}
-                {!appello_sbloccato && (
-                  <p className="text-center text-base font-medium text-muted-foreground">
-                    {t("pista.appello_non_ancora", { ora: ora_sblocco })}
-                  </p>
-                )}
-              </>
-            ) : (
-              <Button
-                size="lg"
-                variant="outline"
-                className="h-16 w-full text-lg font-bold"
-                onClick={() => set_momento("appello")}
+          <div className="mx-auto flex max-w-5xl items-start gap-2">
+            <div className="flex flex-1 flex-col gap-1">
+              {mostra_barra && (
+                momento === "appello" ? (
+                  <>
+                    <Button
+                      size="lg"
+                      className="h-16 w-full text-lg font-bold"
+                      disabled={salvataggio || !sessione_id || !lista_pronta || !appello_sbloccato}
+                      onClick={registra}
+                    >
+                      {salvataggio ? t("pista.registrazione_in_corso") : t("pista.registra_appello")}
+                    </Button>
+                    {/* Prima dell'inizio si spiega il perché e da che ora si sblocca. */}
+                    {!appello_sbloccato && (
+                      <p className="text-center text-base font-medium text-muted-foreground">
+                        {t("pista.appello_non_ancora", { ora: ora_sblocco })}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="h-16 w-full text-lg font-bold"
+                    onClick={() => set_momento("appello")}
+                  >
+                    {t("pista.correggi_appello")}
+                  </Button>
+                )
+              )}
+              {registrato_alle && (
+                <p className="text-center text-sm text-muted-foreground">
+                  {t("pista.registrato_alle", { ora: registrato_alle })}
+                </p>
+              )}
+            </div>
+            {/* Uscita definitiva anche da qui: dimentica il codice conservato. */}
+            {sessione_pista && (
+              <ConfirmButton
+                titolo={t("pista.esci_titolo")}
+                descrizione={t("pista.esci_testo")}
+                conferma_label={t("pista.esci")}
+                variante="pericolo"
+                on_conferma={() => {
+                  void esci_dalla_pista().then(() => window.location.replace("/pista-login"));
+                }}
               >
-                {t("pista.correggi_appello")}
-              </Button>
-            )}
-            {registrato_alle && (
-              <p className="text-center text-sm text-muted-foreground">
-                {t("pista.registrato_alle", { ora: registrato_alle })}
-              </p>
+                <Button variant="outline" size="lg" className="h-16 shrink-0">
+                  <LogOut className="mr-2 h-5 w-5" />
+                  {t("pista.esci")}
+                </Button>
+              </ConfirmButton>
             )}
           </div>
         </div>
