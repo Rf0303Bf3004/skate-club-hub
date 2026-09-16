@@ -229,6 +229,8 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
     istruttori_ids?: string[] | null;
     altri_istruttori?: string | null;
     istruttori?: string | null;
+    risorsa_nome?: string | null;
+    risorsa_tipo?: string | null;
   };
 
   const sessioni_query = in_tutto ? sessioni_tutte_query : sessioni_istruttore_query;

@@ -25,6 +25,8 @@ type SessioneOggi = {
   altri_istruttori: string | null;
   n_atleti: number | null;
   in_corso: boolean | null;
+  risorsa_nome: string | null;
+  risorsa_tipo: string | null;
 };
 
 type AtletaSessione = {
