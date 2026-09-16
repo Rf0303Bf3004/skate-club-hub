@@ -380,8 +380,9 @@
     "momento_applica": "Guarda questo momento",
     "momento_adesso": "Torna ad adesso",
     "momento_appello_aperto": "C'è un appello non ancora registrato: registralo o cambia linguetta prima di cambiare momento.",
-    "esci": "Esci dal tablet",
-    "esci_titolo": "Uscire dal tablet?",
+    "esci": "Scollega questo tablet",
+    "esci_titolo": "Scollegare questo tablet?",
+    "scollega": "Scollega questo tablet",
     "esci_testo": "Il codice conservato su questo dispositivo viene cancellato: per rientrare servirà il codice del club o il suo QR."
   },
   "richieste_private": {

@@ -295,8 +295,9 @@
     "momento_applica": "Show this moment",
     "momento_adesso": "Back to now",
     "momento_appello_aperto": "Attendance has not been saved yet: save it or switch tab before changing the moment.",
-    "esci": "Sign out tablet",
-    "esci_titolo": "Sign out this tablet?",
+    "esci": "Unlink this tablet",
+    "esci_titolo": "Unlink this tablet?",
+    "scollega": "Unlink this tablet",
     "esci_testo": "The code stored on this device will be deleted: to get back in you will need the club code or its QR code."
   },
   "richieste_private": {
