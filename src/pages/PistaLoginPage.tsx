@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { segnala_errore } from "@/lib/errori";
 import {
