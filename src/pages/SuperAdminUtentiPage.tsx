@@ -195,7 +195,7 @@ const SuperAdminUtentiPage: React.FC = () => {
                 <TableRow key={u.user_id}>
                   <TableCell className="font-mono text-xs">{u.email ?? "—"}</TableCell>
                   <TableCell>
-                    {(in_famiglia ? u.atleta_nome : null) ?? [u.nome, u.cognome].filter(Boolean).join(" ") || "—"}
+                    {(in_famiglia ? u.atleta_nome : null) || [u.nome, u.cognome].filter(Boolean).join(" ") || "—"}
                   </TableCell>
                   {/* Ruolo e club non hanno senso su un portale famiglia */}
                   {!in_famiglia && (
