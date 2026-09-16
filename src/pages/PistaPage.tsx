@@ -1069,6 +1069,29 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Uscita definitiva del tablet: la conferma dice chiaramente che per
+          rientrare servirà il codice del club o il suo QR. */}
+      <AlertDialog open={scollega_aperto} onOpenChange={(aperto) => !aperto && set_scollega_aperto(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("pista.esci_titolo")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("pista.esci_testo")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("annulla", { defaultValue: "Annulla" })}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                set_scollega_aperto(false);
+                void esci_dalla_pista().then(() => window.location.replace("/pista-login"));
+              }}
+            >
+              {t("pista.scollega")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Nota rapida: scrittura */}
       <Dialog
         open={!!nota_target}
