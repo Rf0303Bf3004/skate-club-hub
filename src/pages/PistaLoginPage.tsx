@@ -10,6 +10,28 @@ import {
 
 const ALFABETO = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
+const ID_RIQUADRO_QR = "pista-lettore-qr";
+
+/** La fotocamera esiste solo in contesto sicuro (HTTPS): altrimenti niente bottone. */
+const fotocamera_disponibile = (): boolean =>
+  typeof navigator !== "undefined" &&
+  !!navigator.mediaDevices &&
+  typeof navigator.mediaDevices.getUserMedia === "function";
+
+/** Dal contenuto del QR ricava il codice: indirizzo con parametro `c`, oppure codice nudo. */
+function codice_da_qr(testo: string): string | null {
+  let grezzo = testo.trim();
+  try {
+    const url = new URL(grezzo);
+    const c = url.searchParams.get("c");
+    if (!c) return null;
+    grezzo = c;
+  } catch {
+    /* non è un indirizzo: si prova come codice nudo */
+  }
+  return grezzo;
+}
+
 function maschera(raw: string): string {
   const clean = raw.toUpperCase().replace(/[^A-Z0-9]/g, "");
   const senza_prefisso = clean.startsWith("PI") ? clean.slice(2) : clean;
