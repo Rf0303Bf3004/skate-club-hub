@@ -834,15 +834,68 @@ const PistaPage: React.FC = () => {
           <h1 className="text-2xl md:text-3xl font-bold capitalize">{data_estesa}</h1>
           <p className="text-4xl font-bold tabular-nums">{ora_corrente}</p>
         </div>
-        <Button
-          variant={schermo_intero ? "default" : "outline"}
-          size="lg"
-          onClick={() => set_schermo_intero((v) => !v)}
-        >
-          {schermo_intero ? <Minimize2 className="mr-2 h-5 w-5" /> : <Maximize2 className="mr-2 h-5 w-5" />}
-          {schermo_intero ? t("pista.esci_schermo_intero") : t("pista.schermo_intero")}
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Selettore del momento: solo presidenza, direzione tecnica e superadmin. */}
+          {puo_scegliere_momento && (
+            <Button
+              variant={momento_simulato ? "default" : "ghost"}
+              size="lg"
+              onClick={() => {
+                set_bozza_data(giorno);
+                set_bozza_ora(da_minuti(minuti_riferimento));
+                set_pannello_momento((v) => !v);
+              }}
+            >
+              <Clock className="mr-2 h-5 w-5" />
+              {momento_simulato ? t("pista.momento_attivo") : t("pista.momento_scegli")}
+            </Button>
+          )}
+          <Button
+            variant={schermo_intero ? "default" : "outline"}
+            size="lg"
+            onClick={() => set_schermo_intero((v) => !v)}
+          >
+            {schermo_intero ? <Minimize2 className="mr-2 h-5 w-5" /> : <Maximize2 className="mr-2 h-5 w-5" />}
+            {schermo_intero ? t("pista.esci_schermo_intero") : t("pista.schermo_intero")}
+          </Button>
+        </div>
       </header>
+
+      {puo_scegliere_momento && pannello_momento && (
+        <div className="mb-3 rounded-xl border-2 border-border bg-card px-4 py-3">
+          <p className="mb-2 text-base font-semibold">{t("pista.momento_titolo")}</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <DateInput value={bozza_data} onChange={set_bozza_data} />
+            <input
+              type="time"
+              value={bozza_ora}
+              onChange={(e) => set_bozza_ora(e.target.value)}
+              className="h-12 rounded-lg border-2 border-border bg-background px-3 text-lg tabular-nums"
+            />
+            <Button size="lg" className="h-12" onClick={applica_momento}>
+              {t("pista.momento_applica")}
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-12"
+              onClick={() => {
+                if (modificato) {
+                  toast({ title: t("pista.momento_appello_aperto") });
+                  return;
+                }
+                azzera_appello();
+                set_istante_scelto(null);
+                set_sessione_id(null);
+                set_scelta_manuale(false);
+                set_pannello_momento(false);
+              }}
+            >
+              {t("pista.momento_adesso")}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {compleanni.length > 0 && (
         <div className="mb-3 rounded-lg border border-border bg-muted/50 px-4 py-2 text-base">
@@ -857,62 +910,65 @@ const PistaPage: React.FC = () => {
         </div>
       )}
 
-      {/* Linguette istruttori + Tutto il ghiaccio */}
-      <div className="flex gap-3 overflow-x-auto border-b border-border pb-2">
-        {istruttori.map((i) => {
-          const attiva = i.istruttore_id === tab;
-          return (
-            <button
-              key={i.istruttore_id}
-              onClick={() => cambia_istruttore(i.istruttore_id)}
-              className={`min-w-[170px] min-h-[72px] shrink-0 rounded-xl border-2 px-4 py-2 text-left transition-colors ${
-                attiva
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : i.ha_sessione_in_corso
-                    ? "border-primary bg-primary/10 text-foreground"
+      {/* Linguette: «Tutti» (predefinita) più gli istruttori sul ghiaccio quel giorno */}
+      {!senza_club && (
+        <div className="flex gap-3 overflow-x-auto border-b border-border pb-2">
+          <button
+            onClick={() => cambia_istruttore(TUTTO)}
+            className={`min-w-[170px] min-h-[72px] shrink-0 rounded-xl border-2 px-4 py-2 text-left transition-colors ${
+              in_tutto
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-foreground hover:bg-muted"
+            }`}
+          >
+            <span className="text-lg font-bold">{t("pista.tutti")}</span>
+          </button>
+          {istruttori_presenti.map((i) => {
+            const attiva = i.istruttore_id === tab;
+            return (
+              <button
+                key={i.istruttore_id}
+                onClick={() => cambia_istruttore(i.istruttore_id)}
+                className={`min-w-[170px] min-h-[72px] shrink-0 rounded-xl border-2 px-4 py-2 text-left transition-colors ${
+                  attiva
+                    ? "border-primary bg-primary text-primary-foreground"
                     : "border-border bg-card text-foreground hover:bg-muted"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                {i.ha_sessione_in_corso && (
-                  <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${attiva ? "bg-primary-foreground" : "bg-primary"}`} />
-                )}
+                }`}
+              >
                 <span className="truncate text-lg font-bold">
                   {i.nome} {i.cognome}
                 </span>
-              </div>
-              <div className="text-sm tabular-nums opacity-80">{ora_breve(i.prima_ora)}</div>
-            </button>
-          );
-        })}
-        <button
-          onClick={() => cambia_istruttore(TUTTO)}
-          className={`min-w-[170px] min-h-[72px] shrink-0 rounded-xl border-2 px-4 py-2 text-left transition-colors ${
-            in_tutto
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border bg-card text-foreground hover:bg-muted"
-          }`}
-        >
-          <span className="text-lg font-bold">{t("pista.tutto_il_ghiaccio")}</span>
-        </button>
-      </div>
+                <div className="text-sm tabular-nums opacity-80">{ora_breve(i.prima_ora)}</div>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {contenuto()}
 
-      {mostra_barra && (
+      {mostra_barra && !senza_club && (
         <div
           className={`${schermo_intero ? "absolute" : "sticky"} inset-x-0 bottom-0 z-20 border-t border-border bg-background p-3`}
         >
           <div className="mx-auto flex max-w-5xl flex-col gap-1">
             {momento === "appello" ? (
-              <Button
-                size="lg"
-                className="h-16 w-full text-lg font-bold"
-                disabled={salvataggio || !sessione_id || !lista_pronta}
-                onClick={registra}
-              >
-                {salvataggio ? t("pista.registrazione_in_corso") : t("pista.registra_appello")}
-              </Button>
+              <>
+                <Button
+                  size="lg"
+                  className="h-16 w-full text-lg font-bold"
+                  disabled={salvataggio || !sessione_id || !lista_pronta || !appello_sbloccato}
+                  onClick={registra}
+                >
+                  {salvataggio ? t("pista.registrazione_in_corso") : t("pista.registra_appello")}
+                </Button>
+                {/* Prima dell'inizio si spiega il perché e da che ora si sblocca. */}
+                {!appello_sbloccato && (
+                  <p className="text-center text-base font-medium text-muted-foreground">
+                    {t("pista.appello_non_ancora", { ora: ora_sblocco })}
+                  </p>
+                )}
+              </>
             ) : (
               <Button
                 size="lg"
