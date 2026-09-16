@@ -285,7 +285,16 @@
     "note_conteggio_other": "{{count}} notes",
     "note_errore": "Notes are unavailable: this does not mean there are none.",
     "note_titolo": "Notes",
-    "nota_firma": "{{autore}} · {{ora}}"
+    "nota_firma": "{{autore}} · {{ora}}",
+    "tutti": "Everyone",
+    "senza_club": "This account is not linked to any club: rinkside opens with a club user.",
+    "appello_non_ancora": "The lesson has not started yet: attendance can be saved from {{ora}}.",
+    "momento_titolo": "Moment to look at the ice from",
+    "momento_scegli": "Choose the moment",
+    "momento_attivo": "Chosen moment",
+    "momento_applica": "Show this moment",
+    "momento_adesso": "Back to now",
+    "momento_appello_aperto": "Attendance has not been saved yet: save it or switch tab before changing the moment."
   },
   "richieste_private": {
     "titolo": "Private lesson requests",

@@ -285,7 +285,16 @@
     "note_conteggio_other": "{{count}} Notizen",
     "note_errore": "Die Notizen sind nicht verfügbar: Das heisst nicht, dass es keine gibt.",
     "note_titolo": "Notizen",
-    "nota_firma": "{{autore}} · {{ora}}"
+    "nota_firma": "{{autore}} · {{ora}}",
+    "tutti": "Alle",
+    "senza_club": "Dieses Konto gehört zu keinem Club: die Eisfläche öffnet sich mit einem Club-Konto.",
+    "appello_non_ancora": "Die Lektion hat noch nicht begonnen: die Anwesenheit kann ab {{ora}} gespeichert werden.",
+    "momento_titolo": "Zeitpunkt, von dem aus das Eis gezeigt wird",
+    "momento_scegli": "Zeitpunkt wählen",
+    "momento_attivo": "Gewählter Zeitpunkt",
+    "momento_applica": "Diesen Zeitpunkt anzeigen",
+    "momento_adesso": "Zurück zu jetzt",
+    "momento_appello_aperto": "Eine Anwesenheit ist noch nicht gespeichert: speichern oder Reiter wechseln, bevor der Zeitpunkt geändert wird."
   },
   "richieste_private": {
     "titolo": "Anfragen für Privatlektionen",

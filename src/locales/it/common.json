@@ -370,7 +370,16 @@
     "note_conteggio_other": "{{count}} note",
     "note_errore": "Le note non sono disponibili: non significa che non ce ne siano.",
     "note_titolo": "Note",
-    "nota_firma": "{{autore}} · {{ora}}"
+    "nota_firma": "{{autore}} · {{ora}}",
+    "tutti": "Tutti",
+    "senza_club": "Questo accesso non è associato a nessun club: la pista si apre con un utente del club.",
+    "appello_non_ancora": "La lezione non è ancora cominciata: l'appello si potrà registrare dalle {{ora}}.",
+    "momento_titolo": "Momento da cui guardare la pista",
+    "momento_scegli": "Scegli il momento",
+    "momento_attivo": "Momento scelto",
+    "momento_applica": "Guarda questo momento",
+    "momento_adesso": "Torna ad adesso",
+    "momento_appello_aperto": "C'è un appello non ancora registrato: registralo o cambia linguetta prima di cambiare momento."
   },
   "richieste_private": {
     "titolo": "Richieste di lezione privata",
