@@ -9084,6 +9084,7 @@ export type Database = {
         Returns: {
           in_corso: boolean
           istruttori: string
+          istruttori_ids: string[]
           n_atleti: number
           ora_fine: string
           ora_inizio: string
