@@ -38,7 +38,10 @@
       "conferma_titolo": "Régénérer le code de la piste ?",
       "conferma_testo": "Le code actuel cesse immédiatement de fonctionner : les tablettes déjà connectées devront être reconfigurées avec le nouveau code.",
       "avviso": "Régénérez le code lorsqu'une tablette est perdue ou que quelqu'un quitte le club.",
-      "senza_club": "Aucun club sélectionné."
+      "senza_club": "Aucun club sélectionné.",
+      "qr_alt": "Code QR pour la connexion de la tablette de bord de piste",
+      "qr_istruzione": "Scannez le QR avec l'appareil photo de la tablette, puis enregistrez la page sur l'écran d'accueil : la tablette se connectera ensuite toute seule.",
+      "qr_chiave": "Ce code QR et ce lien valent une clé : celui qui les possède entre dans la piste de ce club. En régénérant le code, tous les QR et liens déjà distribués cessent de fonctionner."
     }
   },
   "seasons": {

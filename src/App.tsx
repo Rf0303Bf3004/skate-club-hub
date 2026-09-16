@@ -84,6 +84,7 @@ import CaricaFotoPage from "@/pages/CaricaFotoPage";
 import IscrizioneAtletaPage from "@/pages/IscrizioneAtletaPage";
 import PistaLoginPage from "@/pages/PistaLoginPage";
 import { usePistaSession } from "@/lib/pista-sessione";
+import { accedi_pista_con_codice, cancella_codice_pista, leggi_codice_pista } from "@/lib/pista-codice";
 
 
 const queryClient = new QueryClient();
@@ -95,8 +96,27 @@ const queryClient = new QueryClient();
  */
 const PistaGate = ({ children }: { children: React.ReactNode }) => {
   const { is_pista, is_loading } = usePistaSession();
+  // Riaccredito silenzioso: il tablet ha già il codice conservato, non deve
+  // chiedere niente quando la sessione scade.
+  const [riaccredito, set_riaccredito] = React.useState<"idle" | "in_corso" | "fallito">("idle");
 
-  if (is_loading) {
+  useEffect(() => {
+    if (is_loading || is_pista || riaccredito !== "idle") return;
+    if (typeof window === "undefined") return;
+    if (window.location.pathname !== "/pista") return;
+    const codice = leggi_codice_pista();
+    if (!codice) return;
+    set_riaccredito("in_corso");
+    void accedi_pista_con_codice(codice).then((esito) => {
+      if (esito.ok) return; // la sessione cambia: il gate si ridisegna da solo
+      // Tipicamente il club ha rigenerato il codice: si dimentica e si chiede.
+      cancella_codice_pista();
+      set_riaccredito("fallito");
+      window.location.replace("/pista-login?motivo=codice_cambiato");
+    });
+  }, [is_loading, is_pista, riaccredito]);
+
+  if (is_loading || riaccredito === "in_corso") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />

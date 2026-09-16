@@ -38,7 +38,10 @@
       "conferma_titolo": "Regenerate the rink code?",
       "conferma_testo": "The current code stops working immediately: tablets already signed in must be set up again with the new code.",
       "avviso": "Regenerate the code when a tablet is lost or someone leaves the club.",
-      "senza_club": "No club selected."
+      "senza_club": "No club selected.",
+      "qr_alt": "QR code to sign in the rinkside tablet",
+      "qr_istruzione": "Scan the QR with the tablet camera, then save the page to the home screen: from then on the tablet signs in by itself.",
+      "qr_chiave": "This QR code and this link work like a key: whoever has them gets into this club's rink. Regenerating the code stops every QR code and link already handed out."
     }
   },
   "seasons": {

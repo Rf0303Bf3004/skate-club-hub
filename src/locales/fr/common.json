@@ -294,7 +294,10 @@
     "momento_attivo": "Moment choisi",
     "momento_applica": "Voir ce moment",
     "momento_adesso": "Revenir à maintenant",
-    "momento_appello_aperto": "Un appel n’est pas encore enregistré : enregistrez-le ou changez d’onglet avant de changer de moment."
+    "momento_appello_aperto": "Un appel n’est pas encore enregistré : enregistrez-le ou changez d’onglet avant de changer de moment.",
+    "esci": "Déconnecter la tablette",
+    "esci_titolo": "Déconnecter cette tablette ?",
+    "esci_testo": "Le code conservé sur cet appareil sera supprimé : pour revenir, il faudra le code du club ou son QR."
   },
   "richieste_private": {
     "titolo": "Demandes de leçon privée",
@@ -521,6 +524,7 @@
     "accesso_in_corso": "Connexion en cours…",
     "codice_errato": "Code non valide. Vérifiez la feuille et réessayez.",
     "troppi_tentativi": "Trop de tentatives. Réessayez dans un instant.",
-    "aiuto": "Le code se trouve dans les paramètres du club, à la rubrique de la tablette de bord de piste."
+    "aiuto": "Le code se trouve dans les paramètres du club, à la rubrique de la tablette de bord de piste.",
+    "codice_cambiato": "Le code du club a changé : demandez-le au club et saisissez-le ici."
   }
 }

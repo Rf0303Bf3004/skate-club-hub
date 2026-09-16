@@ -294,7 +294,10 @@
     "momento_attivo": "Gewählter Zeitpunkt",
     "momento_applica": "Diesen Zeitpunkt anzeigen",
     "momento_adesso": "Zurück zu jetzt",
-    "momento_appello_aperto": "Eine Anwesenheit ist noch nicht gespeichert: speichern oder Reiter wechseln, bevor der Zeitpunkt geändert wird."
+    "momento_appello_aperto": "Eine Anwesenheit ist noch nicht gespeichert: speichern oder Reiter wechseln, bevor der Zeitpunkt geändert wird.",
+    "esci": "Tablet abmelden",
+    "esci_titolo": "Dieses Tablet abmelden?",
+    "esci_testo": "Der auf diesem Gerät gespeicherte Code wird gelöscht: Für den erneuten Zugang braucht es den Clubcode oder dessen QR-Code."
   },
   "richieste_private": {
     "titolo": "Anfragen für Privatlektionen",
@@ -521,6 +524,7 @@
     "accesso_in_corso": "Anmeldung läuft…",
     "codice_errato": "Ungültiger Code. Prüfe das Blatt und versuche es erneut.",
     "troppi_tentativi": "Zu viele Versuche. Bitte gleich nochmals versuchen.",
-    "aiuto": "Den Code findest du in den Vereinseinstellungen beim Eisrand-Tablet."
+    "aiuto": "Den Code findest du in den Vereinseinstellungen beim Eisrand-Tablet.",
+    "codice_cambiato": "Der Clubcode hat sich geändert: Fragen Sie den Club danach und geben Sie ihn hier ein."
   }
 }

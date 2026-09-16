@@ -38,7 +38,10 @@
       "conferma_titolo": "Code der Eisfläche neu erzeugen?",
       "conferma_testo": "Der aktuelle Code funktioniert sofort nicht mehr: bereits angemeldete Tablets müssen mit dem neuen Code neu eingerichtet werden.",
       "avviso": "Erzeuge den Code neu, wenn ein Tablet verloren geht oder jemand den Verein verlässt.",
-      "senza_club": "Kein Verein ausgewählt."
+      "senza_club": "Kein Verein ausgewählt.",
+      "qr_alt": "QR-Code für die Anmeldung des Tablets am Eisrand",
+      "qr_istruzione": "Scannen Sie den QR-Code mit der Tablet-Kamera und speichern Sie die Seite auf dem Startbildschirm: Danach meldet sich das Tablet von selbst an.",
+      "qr_chiave": "Dieser QR-Code und dieser Link wirken wie ein Schlüssel: Wer sie hat, gelangt in die Eisfläche dieses Clubs. Wird der Code neu erzeugt, funktionieren alle bereits verteilten QR-Codes und Links nicht mehr."
     }
   },
   "seasons": {

@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Clock, Maximize2, Minimize2, Music, StickyNote, Trash2 } from "lucide-react";
+import { Check, Clock, LogOut, Maximize2, Minimize2, Music, StickyNote, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import DateInput from "@/components/forms/DateInput";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,8 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { segnala_errore } from "@/lib/errori";
 import { useAuth } from "@/lib/auth";
+import ConfirmButton from "@/components/common/ConfirmButton";
+import { esci_dalla_pista } from "@/lib/pista-codice";
 
 /**
  * Bordo pista: tablet condiviso a bordo ghiaccio.
@@ -879,6 +881,23 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
             {schermo_intero ? <Minimize2 className="mr-2 h-5 w-5" /> : <Maximize2 className="mr-2 h-5 w-5" />}
             {schermo_intero ? t("pista.esci_schermo_intero") : t("pista.schermo_intero")}
           </Button>
+          {/* Uscita definitiva del tablet: dimentica il codice conservato. */}
+          {sessione_pista && (
+            <ConfirmButton
+              titolo={t("pista.esci_titolo")}
+              descrizione={t("pista.esci_testo")}
+              conferma_label={t("pista.esci")}
+              variante="pericolo"
+              on_conferma={() => {
+                void esci_dalla_pista().then(() => window.location.replace("/pista-login"));
+              }}
+            >
+              <Button variant="outline" size="lg">
+                <LogOut className="mr-2 h-5 w-5" />
+                {t("pista.esci")}
+              </Button>
+            </ConfirmButton>
+          )}
         </div>
       </header>
 

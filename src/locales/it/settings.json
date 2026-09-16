@@ -160,7 +160,10 @@
       "conferma_titolo": "Rigenerare il codice della pista?",
       "conferma_testo": "Il codice attuale smette subito di funzionare: i tablet già accesi dovranno essere riaccreditati con il nuovo codice.",
       "avviso": "Rigenera il codice quando un tablet si perde o qualcuno lascia il club.",
-      "senza_club": "Nessun club selezionato."
+      "senza_club": "Nessun club selezionato.",
+      "qr_alt": "Codice QR per l'accesso del tablet di bordo pista",
+      "qr_istruzione": "Inquadra il QR con la fotocamera del tablet, poi salva la pagina sulla schermata iniziale: da quel momento il tablet entra da solo.",
+      "qr_chiave": "Questo QR e questo collegamento valgono come una chiave: chi li ha entra nella pista di questo club. Rigenerando il codice, tutti i QR e i collegamenti già distribuiti smettono di funzionare."
     }
   },
   "seasons": {
