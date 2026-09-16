@@ -525,6 +525,11 @@
     "codice_errato": "Ungültiger Code. Prüfe das Blatt und versuche es erneut.",
     "troppi_tentativi": "Zu viele Versuche. Bitte gleich nochmals versuchen.",
     "aiuto": "Den Code findest du in den Vereinseinstellungen beim Eisrand-Tablet.",
-    "codice_cambiato": "Der Clubcode hat sich geändert: Fragen Sie den Club danach und geben Sie ihn hier ein."
+    "codice_cambiato": "Der Clubcode hat sich geändert: Fragen Sie den Club danach und geben Sie ihn hier ein.",
+    "qr_inquadra": "QR-Code scannen",
+    "qr_chiudi": "Kamera schliessen",
+    "qr_permesso_negato": "Kamerazugriff verweigert: Sie können den Code unten eingeben.",
+    "qr_fotocamera_assente": "Keine Kamera verfügbar: Geben Sie den Code unten ein.",
+    "qr_non_valido": "Dieser QR-Code enthält keinen Eisflächen-Code. Weiter scannen."
   }
 }
