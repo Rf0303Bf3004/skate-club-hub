@@ -34,24 +34,26 @@ const PistaLoginPage: React.FC = () => {
       set_in_corso(true);
       set_errore(null);
       const esito = await accedi_pista_con_codice(valore);
-      if (esito.ok) {
+      if (esito.ok === true) {
         salva_codice_pista(valore);
         window.location.replace("/pista");
         return;
       }
+      const motivo = esito.motivo;
+      const messaggio = esito.messaggio;
       set_automatico(false);
       set_in_corso(false);
       set_errore(
-        esito.motivo === "troppi_tentativi"
-          ? esito.messaggio || t("pista_login.troppi_tentativi")
-          : esito.motivo === "guasto"
-            ? esito.messaggio || t("pista_login.codice_errato")
+        motivo === "troppi_tentativi"
+          ? messaggio || t("pista_login.troppi_tentativi")
+          : motivo === "guasto"
+            ? messaggio || t("pista_login.codice_errato")
             : t("pista_login.codice_errato"),
       );
       segnala_errore(
         "PistaLoginPage",
         silenzioso ? "pista-login-collegamento" : "pista-login",
-        new Error(esito.messaggio || esito.motivo),
+        new Error(messaggio || motivo),
         undefined,
         "avviso",
       );
