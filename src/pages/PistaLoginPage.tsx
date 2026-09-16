@@ -1,8 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { segnala_errore } from "@/lib/errori";
+import {
+  accedi_pista_con_codice,
+  codice_pista_completo,
+  salva_codice_pista,
+} from "@/lib/pista-codice";
 
 const ALFABETO = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
@@ -15,16 +19,73 @@ function maschera(raw: string): string {
   return out;
 }
 
-function completo(codice: string): boolean {
-  return /^PI-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(codice);
-}
-
 /** Accesso del tablet di bordo pista: un codice del club, non l'account di una persona. */
 const PistaLoginPage: React.FC = () => {
   const { t } = useTranslation("common");
   const [codice, set_codice] = React.useState("PI-");
   const [in_corso, set_in_corso] = React.useState(false);
   const [errore, set_errore] = React.useState<string | null>(null);
+  const [automatico, set_automatico] = React.useState(false);
+  const tentato = React.useRef(false);
+
+  const entra = React.useCallback(
+    async (valore: string, silenzioso = false) => {
+      if (!codice_pista_completo(valore)) return;
+      set_in_corso(true);
+      set_errore(null);
+      const esito = await accedi_pista_con_codice(valore);
+      if (esito.ok) {
+        salva_codice_pista(valore);
+        window.location.replace("/pista");
+        return;
+      }
+      set_automatico(false);
+      set_in_corso(false);
+      set_errore(
+        esito.motivo === "troppi_tentativi"
+          ? esito.messaggio || t("pista_login.troppi_tentativi")
+          : esito.motivo === "guasto"
+            ? esito.messaggio || t("pista_login.codice_errato")
+            : t("pista_login.codice_errato"),
+      );
+      segnala_errore(
+        "PistaLoginPage",
+        silenzioso ? "pista-login-collegamento" : "pista-login",
+        new Error(esito.messaggio || esito.motivo),
+        undefined,
+        "avviso",
+      );
+    },
+    [t],
+  );
+
+  // Codice passato nell'indirizzo (QR o collegamento): si tenta da soli e si
+  // toglie subito dalla barra, così non resta nella cronologia del tablet.
+  React.useEffect(() => {
+    if (tentato.current) return;
+    tentato.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const dal_link = params.get("c");
+    const motivo = params.get("motivo");
+    if (dal_link || motivo) {
+      try {
+        window.history.replaceState({}, "", window.location.pathname);
+      } catch {
+        /* se la cronologia non si può riscrivere si prosegue comunque */
+      }
+    }
+    if (motivo === "codice_cambiato") set_errore(t("pista_login.codice_cambiato"));
+    if (dal_link) {
+      const pulito = maschera(dal_link);
+      set_codice(pulito);
+      if (codice_pista_completo(pulito)) {
+        set_automatico(true);
+        void entra(pulito, true);
+      } else {
+        set_errore(t("pista_login.codice_errato"));
+      }
+    }
+  }, [entra, t]);
 
   const digita = (car: string) => {
     set_errore(null);
@@ -40,46 +101,14 @@ const PistaLoginPage: React.FC = () => {
     });
   };
 
-  const entra = async () => {
-    if (!completo(codice) || in_corso) return;
-    set_in_corso(true);
-    set_errore(null);
-    try {
-      const { data, error } = await supabase.functions.invoke("pista-login", {
-        body: { codice },
-      });
-      const corpo: any = data ?? {};
-      if (error || corpo?.error) {
-        const motivo = corpo?.message || corpo?.error || error?.message || "";
-        set_errore(
-          corpo?.error === "too_many_attempts"
-            ? corpo?.message || t("pista_login.troppi_tentativi")
-            : t("pista_login.codice_errato"),
-        );
-        segnala_errore("PistaLoginPage", "pista-login", new Error(String(motivo)), undefined, "avviso");
-        return;
-      }
-      if (!corpo?.access_token || !corpo?.refresh_token) {
-        set_errore(t("pista_login.codice_errato"));
-        return;
-      }
-      const { error: err_sessione } = await supabase.auth.setSession({
-        access_token: corpo.access_token,
-        refresh_token: corpo.refresh_token,
-      });
-      if (err_sessione) {
-        segnala_errore("PistaLoginPage", "setSession", err_sessione);
-        set_errore(err_sessione.message);
-        return;
-      }
-      window.location.replace("/pista");
-    } catch (e) {
-      segnala_errore("PistaLoginPage", "pista-login", e);
-      set_errore(e instanceof Error ? e.message : String(e));
-    } finally {
-      set_in_corso(false);
-    }
-  };
+  if (automatico && in_corso) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
+        <p className="text-lg text-muted-foreground">{t("pista_login.accesso_in_corso")}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background px-4 py-8 flex flex-col items-center">
@@ -94,7 +123,7 @@ const PistaLoginPage: React.FC = () => {
             set_codice(maschera(e.target.value));
           }}
           onKeyDown={(e) => {
-            if (e.key === "Enter") void entra();
+            if (e.key === "Enter") void entra(codice);
           }}
           maxLength={12}
           inputMode="text"
@@ -130,8 +159,8 @@ const PistaLoginPage: React.FC = () => {
           <Button
             size="lg"
             className="h-16 text-lg"
-            disabled={!completo(codice) || in_corso}
-            onClick={() => void entra()}
+            disabled={!codice_pista_completo(codice) || in_corso}
+            onClick={() => void entra(codice)}
           >
             {in_corso ? t("pista_login.accesso_in_corso") : t("pista_login.entra")}
           </Button>
