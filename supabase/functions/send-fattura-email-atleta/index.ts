@@ -202,7 +202,7 @@ Deno.serve(async (req) => {
         "X-Connection-Api-Key": RESEND_API_KEY,
       },
       body: JSON.stringify({
-        from: `${clubNome} <onboarding@resend.dev>`,
+        from: `${clubNome} <fatture@send.icearena.ch>`,
         to: [destinatario],
         subject: `Fattura ${f.numero ?? ""} - ${clubNome}`,
         html,
