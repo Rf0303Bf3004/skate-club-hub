@@ -58,14 +58,34 @@ Deno.serve(async (req) => {
       // Lista utenti tramite admin.listUsers + join con utenti_club
       const { data: pages } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
       const users_map = new Map<string, any>();
+      // atleta_id nei metadati applicativi: è il contrassegno dei portali famiglia
+      // (stesso criterio di send-fattura-email-atleta). L'email @portal.local non fa testo.
+      const atleti_ids = new Set<string>();
       for (const u of pages?.users ?? []) {
+        const atleta_id = (u as any).app_metadata?.atleta_id ?? null;
+        if (atleta_id) atleti_ids.add(String(atleta_id));
         users_map.set(u.id, {
           id: u.id,
           email: u.email,
           last_sign_in_at: u.last_sign_in_at,
           created_at: u.created_at,
           banned: !!(u as any).banned_until,
+          atleta_id: atleta_id ? String(atleta_id) : null,
+          tipo: atleta_id ? "famiglia" : "staff",
         });
+      }
+
+      // Nome dell'atleta collegato, così la voce del portale famiglia è riconoscibile.
+      const nomi_atleti = new Map<string, { nome: string | null; cognome: string | null; club_id: string | null }>();
+      if (atleti_ids.size > 0) {
+        const { data: atleti, error: err_atleti } = await admin
+          .from("atleti")
+          .select("id, nome, cognome, club_id")
+          .in("id", Array.from(atleti_ids));
+        if (err_atleti) return json({ error: "list_failed", message: err_atleti.message }, 500);
+        for (const a of atleti ?? []) {
+          nomi_atleti.set(a.id as string, { nome: a.nome ?? null, cognome: a.cognome ?? null, club_id: a.club_id ?? null });
+        }
       }
       const { data: rows } = await admin
         .from("utenti_club")
@@ -80,11 +100,23 @@ Deno.serve(async (req) => {
         ruolo: r.ruolo,
         club_id: r.club_id,
         club_nome: r.clubs?.nome ?? null,
+        tipo: "staff",
       }));
-      // Aggiungi utenti senza utenti_club (rari)
+      // Account senza riga in utenti_club: sono i portali famiglia (e restano tali,
+      // nessuna riga va creata per loro). Vengono marcati, non nascosti.
       for (const [uid, info] of users_map) {
         if (!merged.find((m) => m.user_id === uid)) {
-          merged.push({ ...info, user_id: uid, ruolo: null, club_id: null, club_nome: null });
+          const atleta = info.atleta_id ? nomi_atleti.get(info.atleta_id) ?? null : null;
+          merged.push({
+            ...info,
+            user_id: uid,
+            ruolo: null,
+            club_id: null,
+            club_nome: null,
+            nome: atleta?.nome ?? null,
+            cognome: atleta?.cognome ?? null,
+            atleta_nome: atleta ? [atleta.nome, atleta.cognome].filter(Boolean).join(" ") : null,
+          });
         }
       }
       return json({ utenti: merged });
