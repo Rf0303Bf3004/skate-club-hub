@@ -881,6 +881,23 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
             {schermo_intero ? <Minimize2 className="mr-2 h-5 w-5" /> : <Maximize2 className="mr-2 h-5 w-5" />}
             {schermo_intero ? t("pista.esci_schermo_intero") : t("pista.schermo_intero")}
           </Button>
+          {/* Uscita definitiva del tablet: dimentica il codice conservato. */}
+          {sessione_pista && (
+            <ConfirmButton
+              titolo={t("pista.esci_titolo")}
+              descrizione={t("pista.esci_testo")}
+              conferma_label={t("pista.esci")}
+              variante="pericolo"
+              on_conferma={() => {
+                void esci_dalla_pista().then(() => window.location.replace("/pista-login"));
+              }}
+            >
+              <Button variant="outline" size="lg">
+                <LogOut className="mr-2 h-5 w-5" />
+                {t("pista.esci")}
+              </Button>
+            </ConfirmButton>
+          )}
         </div>
       </header>
 
