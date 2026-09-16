@@ -521,8 +521,26 @@ const PistaPage: React.FC = () => {
     applica_istruttore(id);
   };
 
+  /** Applica l'istante scelto: la pagina si ricalcola tutta su quel momento. */
+  const applica_momento = () => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(bozza_data) || !/^\d{2}:\d{2}$/.test(bozza_ora)) return;
+    if (modificato) {
+      // Un appello non ancora registrato non si butta via cambiando momento.
+      toast({ title: t("pista.momento_appello_aperto") });
+      return;
+    }
+    const [y, m, d] = bozza_data.split("-").map(Number);
+    const [hh, mi] = bozza_ora.split(":").map(Number);
+    azzera_appello();
+    set_istante_scelto(new Date(y, m - 1, d, hh, mi, 0, 0));
+    set_sessione_id(null);
+    set_scelta_manuale(false);
+    set_pannello_momento(false);
+  };
+
   const registra = async () => {
     if (!sessione_id || !lista_pronta) return;
+    if (!appello_sbloccato) return;
     set_salvataggio(true);
     try {
       const elenco = atleti.filter((a) => assenti.has(a.atleta_id)).map((a) => a.atleta_id);
