@@ -52,6 +52,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const is_presidente = (session?.ruolo as string) === "presidente";
   const is_presidenza = is_presidente || is_admin || (session?.ruolo as string) === "vicepresidente";
   const can_manage_users = is_superadmin || is_admin || is_presidente;
+  // Convenzioni: stessi ruoli della guardia di rotta SoloPresidenteGuard.
+  const puo_vedere_convenzioni = is_superadmin || is_presidenza;
   const non_lette_iscrizioni = use_count_iscrizioni_non_lette();
   const richieste_pendenti = use_count_richieste_pendenti();
   const [search_open, set_search_open] = React.useState(false);
