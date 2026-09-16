@@ -244,6 +244,45 @@ const PistaLoginPage: React.FC = () => {
           className="mt-6 w-full h-20 rounded-2xl border-2 border-border bg-card text-center font-mono text-4xl tracking-[0.2em] uppercase focus:border-primary focus:outline-none"
         />
 
+        {/* Due porte pari: il codice digitato e il QR inquadrato. */}
+        {mostra_bottone_qr && !lettore_aperto && (
+          <Button
+            variant="outline"
+            size="lg"
+            className="mt-4 h-16 w-full text-lg"
+            onClick={() => void avvia_lettore()}
+          >
+            <Camera className="mr-2 h-6 w-6" />
+            {t("pista_login.qr_inquadra")}
+          </Button>
+        )}
+
+        {errore_fotocamera && (
+          <p className="mt-3 rounded-xl border-2 border-destructive/40 bg-destructive/10 px-4 py-3 text-center text-base font-medium text-destructive">
+            {errore_fotocamera}
+          </p>
+        )}
+
+        {lettore_aperto && (
+          <div className="mt-4 rounded-2xl border-2 border-border bg-card p-3">
+            <div id={ID_RIQUADRO_QR} className="w-full overflow-hidden rounded-xl" />
+            {avviso_qr && (
+              <p className="mt-3 rounded-xl border-2 border-amber-500/40 bg-amber-500/10 px-4 py-3 text-center text-base font-medium text-amber-700 dark:text-amber-400">
+                {avviso_qr}
+              </p>
+            )}
+            <Button
+              variant="outline"
+              size="lg"
+              className="mt-3 h-14 w-full text-lg"
+              onClick={() => void chiudi_lettore()}
+            >
+              {t("pista_login.qr_chiudi")}
+            </Button>
+          </div>
+        )}
+
+
         {errore && (
           <p className="mt-3 rounded-xl border-2 border-destructive/40 bg-destructive/10 px-4 py-3 text-center text-base font-medium text-destructive">
             {errore}
