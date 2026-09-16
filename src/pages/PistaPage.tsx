@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Clock, LogOut, Maximize2, Minimize2, Music, StickyNote, Trash2 } from "lucide-react";
+import { Check, Clock, LogOut, Maximize2, Minimize2, MoreVertical, Music, StickyNote, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import DateInput from "@/components/forms/DateInput";
 import { Button } from "@/components/ui/button";
@@ -20,10 +20,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
 import { segnala_errore } from "@/lib/errori";
 import { useAuth } from "@/lib/auth";
-import ConfirmButton from "@/components/common/ConfirmButton";
 import { esci_dalla_pista } from "@/lib/pista-codice";
 
 /**
@@ -138,6 +138,8 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
   const [nota_salvataggio, set_nota_salvataggio] = React.useState(false);
   const [note_aperte, set_note_aperte] = React.useState<{ atleta_id: string; titolo: string } | null>(null);
   const [nota_in_eliminazione, set_nota_in_eliminazione] = React.useState<string | null>(null);
+  const [scollega_aperto, set_scollega_aperto] = React.useState(false);
+
 
 
   React.useEffect(() => {
@@ -889,22 +891,22 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
             {schermo_intero ? <Minimize2 className="mr-2 h-5 w-5" /> : <Maximize2 className="mr-2 h-5 w-5" />}
             {schermo_intero ? t("pista.esci_schermo_intero") : t("pista.schermo_intero")}
           </Button>
-          {/* Uscita definitiva del tablet: dimentica il codice conservato. */}
+          {/* Uscita definitiva del tablet, dietro un menu discreto: dimentica il codice
+              conservato ed è rara, non deve stare accanto a bottoni toccati di continuo. */}
           {sessione_pista && (
-            <ConfirmButton
-              titolo={t("pista.esci_titolo")}
-              descrizione={t("pista.esci_testo")}
-              conferma_label={t("pista.esci")}
-              variante="pericolo"
-              on_conferma={() => {
-                void esci_dalla_pista().then(() => window.location.replace("/pista-login"));
-              }}
-            >
-              <Button variant="outline" size="lg">
-                <LogOut className="mr-2 h-5 w-5" />
-                {t("pista.esci")}
-              </Button>
-            </ConfirmButton>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="lg" aria-label={t("pista.scollega")}>
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => set_scollega_aperto(true)}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  {t("pista.scollega")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </header>
@@ -995,43 +997,40 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
 
       {contenuto()}
 
-      {/* La barra in fondo resta sempre presente con una sessione pista:
-          così «Esci dal tablet» è a portata anche a schermo intero, quando
-          l'intestazione è fuori dallo schermo. */}
-      {(mostra_barra || sessione_pista) && !senza_club && (
+      {/* La barra in fondo resta per l'appello, anche a schermo intero:
+          non contiene più l'uscita del tablet, che sta nel menu dell'intestazione. */}
+      {mostra_barra && !senza_club && (
         <div
           className={`${schermo_intero ? "absolute" : "sticky"} inset-x-0 bottom-0 z-20 border-t border-border bg-background p-3`}
         >
           <div className="mx-auto flex max-w-5xl items-start gap-2">
             <div className="flex flex-1 flex-col gap-1">
-              {mostra_barra && (
-                momento === "appello" ? (
-                  <>
-                    <Button
-                      size="lg"
-                      className="h-16 w-full text-lg font-bold"
-                      disabled={salvataggio || !sessione_id || !lista_pronta || !appello_sbloccato}
-                      onClick={registra}
-                    >
-                      {salvataggio ? t("pista.registrazione_in_corso") : t("pista.registra_appello")}
-                    </Button>
-                    {/* Prima dell'inizio si spiega il perché e da che ora si sblocca. */}
-                    {!appello_sbloccato && (
-                      <p className="text-center text-base font-medium text-muted-foreground">
-                        {t("pista.appello_non_ancora", { ora: ora_sblocco })}
-                      </p>
-                    )}
-                  </>
-                ) : (
+              {momento === "appello" ? (
+                <>
                   <Button
                     size="lg"
-                    variant="outline"
                     className="h-16 w-full text-lg font-bold"
-                    onClick={() => set_momento("appello")}
+                    disabled={salvataggio || !sessione_id || !lista_pronta || !appello_sbloccato}
+                    onClick={registra}
                   >
-                    {t("pista.correggi_appello")}
+                    {salvataggio ? t("pista.registrazione_in_corso") : t("pista.registra_appello")}
                   </Button>
-                )
+                  {/* Prima dell'inizio si spiega il perché e da che ora si sblocca. */}
+                  {!appello_sbloccato && (
+                    <p className="text-center text-base font-medium text-muted-foreground">
+                      {t("pista.appello_non_ancora", { ora: ora_sblocco })}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="h-16 w-full text-lg font-bold"
+                  onClick={() => set_momento("appello")}
+                >
+                  {t("pista.correggi_appello")}
+                </Button>
               )}
               {registrato_alle && (
                 <p className="text-center text-sm text-muted-foreground">
@@ -1039,23 +1038,6 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
                 </p>
               )}
             </div>
-            {/* Uscita definitiva anche da qui: dimentica il codice conservato. */}
-            {sessione_pista && (
-              <ConfirmButton
-                titolo={t("pista.esci_titolo")}
-                descrizione={t("pista.esci_testo")}
-                conferma_label={t("pista.esci")}
-                variante="pericolo"
-                on_conferma={() => {
-                  void esci_dalla_pista().then(() => window.location.replace("/pista-login"));
-                }}
-              >
-                <Button variant="outline" size="lg" className="h-16 shrink-0">
-                  <LogOut className="mr-2 h-5 w-5" />
-                  {t("pista.esci")}
-                </Button>
-              </ConfirmButton>
-            )}
           </div>
         </div>
       )}
@@ -1082,6 +1064,29 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
               {in_attesa?.tipo === "istruttore"
                 ? t("pista.conferma_cambio_istruttore_azione")
                 : t("pista.conferma_cambio_azione")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Uscita definitiva del tablet: la conferma dice chiaramente che per
+          rientrare servirà il codice del club o il suo QR. */}
+      <AlertDialog open={scollega_aperto} onOpenChange={(aperto) => !aperto && set_scollega_aperto(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("pista.esci_titolo")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("pista.esci_testo")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("annulla", { defaultValue: "Annulla" })}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                set_scollega_aperto(false);
+                void esci_dalla_pista().then(() => window.location.replace("/pista-login"));
+              }}
+            >
+              {t("pista.scollega")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

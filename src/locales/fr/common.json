@@ -295,8 +295,9 @@
     "momento_applica": "Voir ce moment",
     "momento_adesso": "Revenir à maintenant",
     "momento_appello_aperto": "Un appel n’est pas encore enregistré : enregistrez-le ou changez d’onglet avant de changer de moment.",
-    "esci": "Déconnecter la tablette",
-    "esci_titolo": "Déconnecter cette tablette ?",
+    "esci": "Dissocier cette tablette",
+    "esci_titolo": "Dissocier cette tablette ?",
+    "scollega": "Dissocier cette tablette",
     "esci_testo": "Le code conservé sur cet appareil sera supprimé : pour revenir, il faudra le code du club ou son QR."
   },
   "richieste_private": {
