@@ -14,6 +14,7 @@ import MainLayout from "@/components/MainLayout";
 import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
 import PresidentDashboard from "@/components/dashboard/PresidentDashboard";
+import IstruttoreDashboard from "@/components/dashboard/IstruttoreDashboard";
 import DiagnosticaPage from "@/pages/DiagnosticaPage";
 import AthletesPage from "@/pages/AthletesPage";
 import InstructorsPage from "@/pages/InstructorsPage";
@@ -212,6 +213,10 @@ const SmartHome = () => {
   // Presidenza e amministrazione atterrano sulla Dashboard del presidente.
   if (session?.ruolo === "presidente" || session?.ruolo === "vicepresidente" || session?.ruolo === "admin") {
     return <PresidentDashboard />;
+  }
+  // Istruttori e aiuto monitori: home unica «cosa devo fare adesso».
+  if (session?.ruolo === "istruttore" || session?.ruolo === "aiuto_monitore") {
+    return <IstruttoreDashboard />;
   }
   return <DashboardPage />;
 };

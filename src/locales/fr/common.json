@@ -485,5 +485,32 @@
     "riuscita_other": "Demande approuvée : {{count}} cours créés",
     "riuscita_parziale_one": "Demande approuvée, {{count}} cours créé, mais il y a un point à régler",
     "riuscita_parziale_other": "Demande approuvée, {{count}} cours créés, mais il y a un point à régler"
+  },
+  "istruttore_home": {
+    "titolo": "Ma journée",
+    "turni_oggi": "Aujourd'hui — mes séances",
+    "sessione": "Séance",
+    "appello_fatto": "Appel effectué",
+    "appello_da_fare": "Appel à faire",
+    "fai_appello": "Faire l'appel",
+    "niente_oggi": "Vous n'avez pas de séance sur la glace aujourd'hui.",
+    "prossimo_turno": "Votre prochaine séance",
+    "nessun_prossimo": "Aucune séance n'est encore prévue dans les prochains jours.",
+    "mie_atlete": "Mes patineuses",
+    "vai_atleti": "Ouvrir les patineuses",
+    "nessuna_atleta": "Aucune patineuse dans vos séances aujourd'hui.",
+    "miei_messaggi": "Mes messages",
+    "messaggio": "Message",
+    "attende_risposta": "Attend votre réponse",
+    "non_letto": "Non lu",
+    "nessun_messaggio": "Vous n'avez aucun message à lire.",
+    "vai_comunicazioni": "Ouvrir les communications",
+    "non_collegato_titolo": "Votre accès n'est pas lié à une fiche d'entraîneur",
+    "non_collegato_testo": "C'est pourquoi nous ne pouvons pas afficher vos séances ni vos patineuses. Demandez au club de lier votre accès à votre fiche d'entraîneur.",
+    "errore_collegamento": "Impossible de lire votre fiche d'entraîneur. Réessayez dans un instant.",
+    "errore_turni": "Impossible de lire vos séances d'aujourd'hui. Réessayez dans un instant.",
+    "errore_prossimo": "Impossible de lire votre prochaine séance.",
+    "errore_atlete": "Impossible de lire la liste complète des patineuses.",
+    "errore_messaggi": "Impossible de lire vos messages. Réessayez dans un instant."
   }
 }

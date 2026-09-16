@@ -563,5 +563,32 @@
     "riuscita_other": "Richiesta approvata: {{count}} lezioni create",
     "riuscita_parziale_one": "Richiesta approvata, {{count}} lezione creata, ma c'è qualcosa da sistemare",
     "riuscita_parziale_other": "Richiesta approvata, {{count}} lezioni create, ma c'è qualcosa da sistemare"
+  },
+  "istruttore_home": {
+    "titolo": "La mia giornata",
+    "turni_oggi": "Oggi — i miei turni",
+    "sessione": "Sessione",
+    "appello_fatto": "Appello fatto",
+    "appello_da_fare": "Appello da fare",
+    "fai_appello": "Fai l'appello",
+    "niente_oggi": "Oggi non hai turni sul ghiaccio.",
+    "prossimo_turno": "Il tuo prossimo turno",
+    "nessun_prossimo": "Non hai ancora turni programmati nei prossimi giorni.",
+    "mie_atlete": "Le mie atlete",
+    "vai_atleti": "Apri le atlete",
+    "nessuna_atleta": "Oggi non ci sono atlete nelle tue sessioni.",
+    "miei_messaggi": "I miei messaggi",
+    "messaggio": "Messaggio",
+    "attende_risposta": "Aspetta la tua risposta",
+    "non_letto": "Non letto",
+    "nessun_messaggio": "Non hai messaggi da leggere.",
+    "vai_comunicazioni": "Apri le comunicazioni",
+    "non_collegato_titolo": "Il tuo accesso non è collegato a una scheda istruttore",
+    "non_collegato_testo": "Per questo non possiamo mostrarti i tuoi turni e le tue atlete. Chiedi al club di collegare il tuo accesso alla tua scheda istruttore.",
+    "errore_collegamento": "Non è stato possibile leggere la tua scheda istruttore. Riprova fra poco.",
+    "errore_turni": "Non è stato possibile leggere i tuoi turni di oggi. Riprova fra poco.",
+    "errore_prossimo": "Non è stato possibile leggere il tuo prossimo turno.",
+    "errore_atlete": "Non è stato possibile leggere l'elenco completo delle atlete.",
+    "errore_messaggi": "Non è stato possibile leggere i tuoi messaggi. Riprova fra poco."
   }
 }
