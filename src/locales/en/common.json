@@ -525,6 +525,11 @@
     "codice_errato": "Invalid code. Check the sheet and try again.",
     "troppi_tentativi": "Too many attempts. Please try again shortly.",
     "aiuto": "You can find the code in the club settings, under the rink tablet section.",
-    "codice_cambiato": "The club code has changed: ask the club for it and type it here."
+    "codice_cambiato": "The club code has changed: ask the club for it and type it here.",
+    "qr_inquadra": "Scan the QR code",
+    "qr_chiudi": "Close the camera",
+    "qr_permesso_negato": "Camera permission denied: you can still type the code below.",
+    "qr_fotocamera_assente": "No camera available: type the code below.",
+    "qr_non_valido": "This QR code does not contain a rinkside code. Keep scanning."
   }
 }

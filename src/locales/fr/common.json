@@ -525,6 +525,11 @@
     "codice_errato": "Code non valide. Vérifiez la feuille et réessayez.",
     "troppi_tentativi": "Trop de tentatives. Réessayez dans un instant.",
     "aiuto": "Le code se trouve dans les paramètres du club, à la rubrique de la tablette de bord de piste.",
-    "codice_cambiato": "Le code du club a changé : demandez-le au club et saisissez-le ici."
+    "codice_cambiato": "Le code du club a changé : demandez-le au club et saisissez-le ici.",
+    "qr_inquadra": "Scanner le QR",
+    "qr_chiudi": "Fermer la caméra",
+    "qr_permesso_negato": "Autorisation de la caméra refusée : vous pouvez saisir le code ci-dessous.",
+    "qr_fotocamera_assente": "Aucune caméra disponible : saisissez le code ci-dessous.",
+    "qr_non_valido": "Ce QR ne contient pas de code bord de piste. Continuez à scanner."
   }
 }

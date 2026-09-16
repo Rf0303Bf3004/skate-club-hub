@@ -603,6 +603,11 @@
     "codice_errato": "Codice non valido. Controlla il foglio e riprova.",
     "troppi_tentativi": "Troppi tentativi. Riprova fra poco.",
     "aiuto": "Il codice lo trovi nelle impostazioni del club, alla voce del tablet di bordo pista.",
-    "codice_cambiato": "Il codice del club è cambiato: chiedilo al club e digitalo qui."
+    "codice_cambiato": "Il codice del club è cambiato: chiedilo al club e digitalo qui.",
+    "qr_inquadra": "Inquadra il QR",
+    "qr_chiudi": "Chiudi la fotocamera",
+    "qr_permesso_negato": "Permesso alla fotocamera negato: puoi comunque digitare il codice qui sotto.",
+    "qr_fotocamera_assente": "Nessuna fotocamera disponibile: digita il codice qui sotto.",
+    "qr_non_valido": "Questo QR non contiene un codice di bordo pista. Continua a inquadrare."
   }
 }
