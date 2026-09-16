@@ -54,11 +54,16 @@ const LandingPage: React.FC = () => {
               Registra il tuo club
             </a>
           </p>
+          {/* <a href> e non <Link>: PublicRoutes sceglie l'albero delle rotte
+              leggendo window.location.pathname una sola volta al caricamento.
+              La navigazione interna di react-router non ricaricherebbe la
+              pagina, la rotta /pista-login non verrebbe trovata e si avrebbe
+              una schermata bianca senza errore. */}
           <a
-            href="/staff"
-            className="inline-block text-sm text-white/70 hover:text-white underline-offset-4 hover:underline"
+            href="/pista-login"
+            className="inline-block text-sm text-white/60 hover:text-white/90 underline-offset-4 hover:underline"
           >
-            Accesso staff →
+            Tablet di bordo pista →
           </a>
         </div>
       </div>

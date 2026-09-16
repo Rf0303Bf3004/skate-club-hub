@@ -7,7 +7,8 @@
     "sign_in": "Se connecter",
     "sign_in_failed": "Échec de la connexion",
     "new_club_question": "Nouveau club ?",
-    "register_here": "S'inscrire"
+    "register_here": "S'inscrire",
+    "tablet_pista": "Tablette de bord piste →"
   },
   "register": {
     "title": "Inscrivez votre club",
