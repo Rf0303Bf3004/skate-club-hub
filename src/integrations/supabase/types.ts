@@ -9094,6 +9094,8 @@ export type Database = {
           n_atleti: number
           ora_fine: string
           ora_inizio: string
+          risorsa_nome: string
+          risorsa_tipo: string
           sessione_id: string
           specialita: string
           titolo: string
@@ -9107,6 +9109,8 @@ export type Database = {
           n_atleti: number
           ora_fine: string
           ora_inizio: string
+          risorsa_nome: string
+          risorsa_tipo: string
           sessione_id: string
           specialita: string
           titolo: string
