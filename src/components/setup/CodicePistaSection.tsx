@@ -8,6 +8,7 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { toast } from "@/hooks/use-toast";
 import { segnala_errore } from "@/lib/errori";
+import { use_qr_data_url } from "@/hooks/use-qr-data-url";
 
 interface Props {
   codice: string | null | undefined;
