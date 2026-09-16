@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, CalendarDays, CheckCircle2, ClipboardCheck, Mail, Users } from "lucide-react";
+import { AlertTriangle, CalendarDays, CheckCircle2, ClipboardCheck, Mail, MapPin, Users } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -145,6 +145,17 @@ const IstruttoreDashboard: React.FC = () => {
     elenco.sort((a, b) => (minuti_da_ora(a.ora_inizio) ?? 0) - (minuti_da_ora(b.ora_inizio) ?? 0));
     return elenco;
   }, [sessioni_query.data]);
+
+  // Il posto di ogni turno si mostra solo se oggi ne usa più di uno:
+  // con una risorsa sola (una pista, una palestra) il nome sarebbe rumore.
+  const mostra_risorsa = React.useMemo(() => {
+    const nomi = new Set<string>();
+    for (const s of sessioni) {
+      const n = s.risorsa_nome?.trim();
+      if (n) nomi.add(n);
+    }
+    return nomi.size > 1;
+  }, [sessioni]);
 
   // Atlete e stato dell'appello, una lettura per sessione di oggi.
   const atleti_queries = useQueries({
@@ -339,6 +350,12 @@ const IstruttoreDashboard: React.FC = () => {
                   </span>
                   <span className="font-medium">{s.titolo ?? t("istruttore_home.sessione", "Sessione")}</span>
                   {s.specialita && <Badge variant="secondary">{s.specialita}</Badge>}
+                  {mostra_risorsa && s.risorsa_nome && (
+                    <Badge variant="secondary" className="font-semibold">
+                      <MapPin className="h-3 w-3" />
+                      {s.risorsa_nome}
+                    </Badge>
+                  )}
                   <Badge variant="outline" className="gap-1">
                     <Users className="h-3 w-3" />
                     {s.n_atleti ?? 0}
