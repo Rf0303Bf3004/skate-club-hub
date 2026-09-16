@@ -16,6 +16,7 @@ const SuperAdminUtentiPage: React.FC = () => {
   const { t } = useTranslation("superadmin");
   const [loading, set_loading] = useState(true);
   const [utenti, set_utenti] = useState<any[]>([]);
+  const [scheda, set_scheda] = useState<"staff" | "famiglia">("staff");
   const [filtro_ruolo, set_filtro_ruolo] = useState<string>("all");
   const [filtro_club, set_filtro_club] = useState<string>("all");
   const [search, set_search] = useState("");
@@ -42,16 +43,25 @@ const SuperAdminUtentiPage: React.FC = () => {
 
   useEffect(() => { load(); load_clubs(); }, []);
 
+  // I portali famiglia non spariscono: stanno in una scheda a parte.
+  const n_staff = utenti.filter((u) => u.tipo !== "famiglia").length;
+  const n_famiglia = utenti.filter((u) => u.tipo === "famiglia").length;
+  const in_famiglia = scheda === "famiglia";
+
   const filtered = utenti.filter((u) => {
-    if (filtro_ruolo !== "all" && u.ruolo !== filtro_ruolo) return false;
-    if (filtro_club !== "all" && u.club_id !== filtro_club) return false;
+    if ((u.tipo === "famiglia") !== in_famiglia) return false;
+    if (!in_famiglia) {
+      if (filtro_ruolo !== "all" && u.ruolo !== filtro_ruolo) return false;
+      if (filtro_club !== "all" && u.club_id !== filtro_club) return false;
+    }
     if (search) {
       const q = search.toLowerCase();
-      const blob = `${u.email ?? ""} ${u.nome ?? ""} ${u.cognome ?? ""}`.toLowerCase();
+      const blob = `${u.email ?? ""} ${u.nome ?? ""} ${u.cognome ?? ""} ${u.atleta_nome ?? ""}`.toLowerCase();
       if (!blob.includes(q)) return false;
     }
     return true;
   });
+
 
   const reset_password = async (u: any) => {
     if (!confirm(`Resettare la password di ${u.email}?`)) return;
@@ -122,22 +132,46 @@ const SuperAdminUtentiPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Due schede: il personale dei club e i portali delle famiglie */}
+      <div className="flex flex-wrap gap-2 border-b">
+        <button
+          onClick={() => set_scheda("staff")}
+          className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px ${
+            scheda === "staff" ? "border-primary text-primary" : "border-transparent text-muted-foreground"
+          }`}
+        >
+          Utenti del club ({n_staff})
+        </button>
+        <button
+          onClick={() => set_scheda("famiglia")}
+          className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px ${
+            scheda === "famiglia" ? "border-primary text-primary" : "border-transparent text-muted-foreground"
+          }`}
+        >
+          Portali famiglia ({n_famiglia})
+        </button>
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
         <Input placeholder="Cerca…" value={search} onChange={(e) => set_search(e.target.value)} className="max-w-xs" />
-        <Select value={filtro_ruolo} onValueChange={set_filtro_ruolo}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="Ruolo" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tutti i ruoli</SelectItem>
-            {RUOLI.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filtro_club} onValueChange={set_filtro_club}>
-          <SelectTrigger className="w-56"><SelectValue placeholder="Club" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tutti i club</SelectItem>
-            {all_clubs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        {!in_famiglia && (
+          <>
+            <Select value={filtro_ruolo} onValueChange={set_filtro_ruolo}>
+              <SelectTrigger className="w-44"><SelectValue placeholder="Ruolo" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti i ruoli</SelectItem>
+                {RUOLI.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filtro_club} onValueChange={set_filtro_club}>
+              <SelectTrigger className="w-56"><SelectValue placeholder="Club" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti i club</SelectItem>
+                {all_clubs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </>
+        )}
       </div>
 
       {loading ? (
@@ -148,9 +182,9 @@ const SuperAdminUtentiPage: React.FC = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Email</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Ruolo</TableHead>
-                <TableHead>Club</TableHead>
+                <TableHead>{in_famiglia ? "Atleta" : "Nome"}</TableHead>
+                {!in_famiglia && <TableHead>Ruolo</TableHead>}
+                {!in_famiglia && <TableHead>Club</TableHead>}
                 <TableHead>Ultimo accesso</TableHead>
                 <TableHead>Stato</TableHead>
                 <TableHead className="text-right">Azioni</TableHead>
@@ -160,24 +194,31 @@ const SuperAdminUtentiPage: React.FC = () => {
               {filtered.map((u) => (
                 <TableRow key={u.user_id}>
                   <TableCell className="font-mono text-xs">{u.email ?? "—"}</TableCell>
-                  <TableCell>{[u.nome, u.cognome].filter(Boolean).join(" ") || "—"}</TableCell>
                   <TableCell>
-                    <Select value={u.ruolo ?? ""} onValueChange={(v) => cambia_ruolo(u, v)}>
-                      <SelectTrigger className="h-8 w-36 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
-                      <SelectContent>
-                        {RUOLI.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    {(in_famiglia ? u.atleta_nome : null) || [u.nome, u.cognome].filter(Boolean).join(" ") || "—"}
                   </TableCell>
-                  <TableCell>
-                    <Select value={u.club_id ?? "none"} onValueChange={(v) => cambia_club(u, v)}>
-                      <SelectTrigger className="h-8 w-48 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
-                      <SelectContent>
-                        {(u.ruolo === "superadmin" || !u.club_id) && <SelectItem value="none">— Nessun club —</SelectItem>}
-                        {all_clubs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
+                  {/* Ruolo e club non hanno senso su un portale famiglia */}
+                  {!in_famiglia && (
+                    <TableCell>
+                      <Select value={u.ruolo ?? ""} onValueChange={(v) => cambia_ruolo(u, v)}>
+                        <SelectTrigger className="h-8 w-36 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent>
+                          {RUOLI.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                  )}
+                  {!in_famiglia && (
+                    <TableCell>
+                      <Select value={u.club_id ?? "none"} onValueChange={(v) => cambia_club(u, v)}>
+                        <SelectTrigger className="h-8 w-48 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent>
+                          {(u.ruolo === "superadmin" || !u.club_id) && <SelectItem value="none">— Nessun club —</SelectItem>}
+                          {all_clubs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                  )}
                   <TableCell className="text-xs text-muted-foreground">
                     {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString("it-CH", { dateStyle: "short", timeStyle: "short" }) : "—"}
                   </TableCell>
@@ -197,7 +238,11 @@ const SuperAdminUtentiPage: React.FC = () => {
                 </TableRow>
               ))}
               {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nessun utente</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={in_famiglia ? 5 : 7} className="text-center text-muted-foreground py-8">
+                    {in_famiglia ? "Nessun portale famiglia" : "Nessun utente"}
+                  </TableCell>
+                </TableRow>
               )}
             </TableBody>
           </Table>
