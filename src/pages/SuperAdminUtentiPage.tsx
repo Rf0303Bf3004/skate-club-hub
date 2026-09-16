@@ -16,6 +16,7 @@ const SuperAdminUtentiPage: React.FC = () => {
   const { t } = useTranslation("superadmin");
   const [loading, set_loading] = useState(true);
   const [utenti, set_utenti] = useState<any[]>([]);
+  const [scheda, set_scheda] = useState<"staff" | "famiglia">("staff");
   const [filtro_ruolo, set_filtro_ruolo] = useState<string>("all");
   const [filtro_club, set_filtro_club] = useState<string>("all");
   const [search, set_search] = useState("");
@@ -42,16 +43,25 @@ const SuperAdminUtentiPage: React.FC = () => {
 
   useEffect(() => { load(); load_clubs(); }, []);
 
+  // I portali famiglia non spariscono: stanno in una scheda a parte.
+  const n_staff = utenti.filter((u) => u.tipo !== "famiglia").length;
+  const n_famiglia = utenti.filter((u) => u.tipo === "famiglia").length;
+  const in_famiglia = scheda === "famiglia";
+
   const filtered = utenti.filter((u) => {
-    if (filtro_ruolo !== "all" && u.ruolo !== filtro_ruolo) return false;
-    if (filtro_club !== "all" && u.club_id !== filtro_club) return false;
+    if ((u.tipo === "famiglia") !== in_famiglia) return false;
+    if (!in_famiglia) {
+      if (filtro_ruolo !== "all" && u.ruolo !== filtro_ruolo) return false;
+      if (filtro_club !== "all" && u.club_id !== filtro_club) return false;
+    }
     if (search) {
       const q = search.toLowerCase();
-      const blob = `${u.email ?? ""} ${u.nome ?? ""} ${u.cognome ?? ""}`.toLowerCase();
+      const blob = `${u.email ?? ""} ${u.nome ?? ""} ${u.cognome ?? ""} ${u.atleta_nome ?? ""}`.toLowerCase();
       if (!blob.includes(q)) return false;
     }
     return true;
   });
+
 
   const reset_password = async (u: any) => {
     if (!confirm(`Resettare la password di ${u.email}?`)) return;
