@@ -115,11 +115,11 @@ Deno.serve(async (req) => {
     }
 
     // 3) Destinatario: solo indirizzi già presenti sull'atleta o sulla fattura.
-    let atleta: { genitore1_email: string | null; genitore2_email: string | null } | null = null;
+    let atleta: { genitore1_email: string | null; genitore2_email: string | null; nome: string | null; cognome: string | null } | null = null;
     if (f.atleta_id) {
       const { data: a, error: a_err } = await supabase
         .from("atleti")
-        .select("genitore1_email, genitore2_email")
+        .select("genitore1_email, genitore2_email, nome, cognome")
         .eq("id", f.atleta_id)
         .maybeSingle();
       if (a_err) return json({ error: "lookup_failed" }, 500);
@@ -185,8 +185,17 @@ Deno.serve(async (req) => {
     }
 
     const clubNome = (f as any).clubs?.nome ?? "Il tuo club";
+    // Nome dell'atleta quando la fattura ne ha uno: serve per distinguere le
+    // fatture di fratelli/sorelle con lo stesso oggetto.
+    const nome_atleta = [atleta?.nome, atleta?.cognome].filter((s): s is string => typeof s === "string" && s.trim().length > 0).join(" ").trim();
+    const esc_html = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const oggetto = nome_atleta
+      ? `Fattura ${f.numero ?? ""} di ${nome_atleta} - ${clubNome}`
+      : `Fattura ${f.numero ?? ""} - ${clubNome}`;
     const html = `<div style="font-family:sans-serif;color:#0f172a">
       <h2>Fattura ${f.numero ?? ""}</h2>
+      ${nome_atleta ? `<p>Atleta: <strong>${esc_html(nome_atleta)}</strong></p>` : ""}
       <p>${link_pdf ? `Puoi scaricare la fattura ${f.numero ?? ""} di ${clubNome} dal pulsante qui sotto.` : `La fattura ${f.numero ?? ""} di ${clubNome} è disponibile nel portale.`}</p>
       <p><strong>Totale:</strong> CHF ${Number(f.importo ?? 0).toFixed(2)}</p>
       ${f.data_scadenza ? `<p><strong>Scadenza:</strong> ${f.data_scadenza}</p>` : ""}
@@ -204,7 +213,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         from: `${clubNome} <fatture@send.icearena.ch>`,
         to: [destinatario],
-        subject: `Fattura ${f.numero ?? ""} - ${clubNome}`,
+        subject: oggetto,
         html,
       }),
     });
