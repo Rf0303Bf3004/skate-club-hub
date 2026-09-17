@@ -52,5 +52,14 @@
     "reminder_days_label": "Days after the due date",
     "reminder_days_help": "For example 7, 21: the first reminder one week after the due date, the second three weeks after.",
     "reminder_days_invalid": "Enter the days separated by commas, for example 7, 21"
+  },
+  "invoices_page": {
+    "enti": {
+      "club_tab": "{{nome}}",
+      "club_fallback": "The club",
+      "drafts_tooltip_one": "{{count}} draft to issue",
+      "drafts_tooltip_other": "{{count}} drafts to issue",
+      "ente_non_attivo": "no longer active"
+    }
   }
 }

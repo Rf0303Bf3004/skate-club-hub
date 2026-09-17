@@ -52,5 +52,14 @@
     "reminder_days_label": "Tage nach Fälligkeit",
     "reminder_days_help": "Zum Beispiel 7, 21: die erste Erinnerung eine Woche nach Fälligkeit, die zweite drei Wochen danach.",
     "reminder_days_invalid": "Schreibe die Tage durch Komma getrennt, zum Beispiel 7, 21"
+  },
+  "invoices_page": {
+    "enti": {
+      "club_tab": "{{nome}}",
+      "club_fallback": "Der Club",
+      "drafts_tooltip_one": "{{count}} Entwurf auszustellen",
+      "drafts_tooltip_other": "{{count}} Entwürfe auszustellen",
+      "ente_non_attivo": "nicht mehr aktiv"
+    }
   }
 }

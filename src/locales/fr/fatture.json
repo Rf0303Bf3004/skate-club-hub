@@ -52,5 +52,14 @@
     "reminder_days_label": "Jours après l'échéance",
     "reminder_days_help": "Par exemple 7, 21 : le premier rappel une semaine après l'échéance, le second trois semaines après.",
     "reminder_days_invalid": "Écrivez les jours séparés par des virgules, par exemple 7, 21"
+  },
+  "invoices_page": {
+    "enti": {
+      "club_tab": "{{nome}}",
+      "club_fallback": "Le club",
+      "drafts_tooltip_one": "{{count}} brouillon à émettre",
+      "drafts_tooltip_other": "{{count}} brouillons à émettre",
+      "ente_non_attivo": "plus actif"
+    }
   }
 }

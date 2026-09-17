@@ -192,7 +192,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const render_nav_item = (path: string, Icon: any, label: string, key: string, disabled?: boolean) => {
     const is_active = location.pathname === path || (path !== "/" && location.pathname.startsWith(path));
     const show_badge = key === "comunicazioni" && non_lette_iscrizioni > 0;
-    const show_pending = key === "atleti" && richieste_pendenti > 0;
+    // Il bollino delle richieste sta sulla voce che le apre, non su "Atleti".
+    const show_pending = key === "richieste_iscrizione" && richieste_pendenti > 0;
     if (disabled) {
       return (
         <div key={key} title={tc("coming_soon")}
@@ -291,6 +292,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     >
                       <Icon className="w-4 h-4 shrink-0" />
                       <span>{tc(gruppo.label_key, { defaultValue: gruppo.label_fallback })}</span>
+                      {/* Gruppo chiuso: il bollino resta visibile sull'intestazione. */}
+                      {!aperto && richieste_pendenti > 0 && visibile_set.has("richieste_iscrizione")
+                        && voci_visibili.some((v) => v.codice === "richieste_iscrizione") && (
+                        <span title={tc("pending_requests_tooltip", { count: richieste_pendenti })}
+                          className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold tabular-nums">
+                          {richieste_pendenti}
+                        </span>
+                      )}
                       {aperto ? <ChevronDown className="w-4 h-4 ml-auto" /> : <ChevronRight className="w-4 h-4 ml-auto" />}
                     </button>
                     {aperto && (

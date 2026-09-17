@@ -6,8 +6,12 @@ import { useTranslation } from "react-i18next";
 import {
   use_fatture,
   use_atleti,
+  use_club,
   get_atleta_name_from_list,
 } from "@/hooks/use-supabase-data";
+import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
+import { useModalitaArea } from "@/hooks/useModalitaArea";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AnteprimaFatturePeriodoDialog from "@/components/fatture/AnteprimaFatturePeriodoDialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,19 +24,23 @@ import NotaPermesso from "@/components/common/NotaPermesso";
 
 
 
+
 // ─── Main Page ─────────────────────────────────────────────
 const InvoicesPage: React.FC = () => {
   const { t } = useTranslation("fatture");
   const { puo_gestire_fatture } = usePermessiAzione();
-  const { data: fatture = [], isLoading } = use_fatture();
+  const { data: fatture_tutte = [], isLoading } = use_fatture();
   const { data: atleti = [] } = use_atleti();
+  const { data: club } = use_club();
+  const { data: ragioni_sociali = [] } = use_ragioni_sociali();
+  const { modalita: modalita_fatturazione } = useModalitaArea("fatturazione");
   const [anteprima_open, set_anteprima_open] = useState(false);
   const [status_filter, set_status_filter] = useState("tutti");
   const [search_raw, set_search_raw] = useState("");
   const search = useDebouncedValue(search_raw, 200);
   const [periodo_filter, set_periodo_filter] = useState<"tutti" | "mese" | "trimestre" | "anno">("tutti");
   const [sort_by, set_sort_by] = useState<"data_desc" | "importo_desc" | "scadenza">("data_desc");
-  const [search_params] = useSearchParams();
+  const [search_params, set_search_params] = useSearchParams();
   const navigate = useNavigate();
 
   // Deep-link legacy: /fatture?id=<uuid> → nuovo editor completo
@@ -41,8 +49,61 @@ const InvoicesPage: React.FC = () => {
     if (id) navigate(`/segreteria/fatture/${id}`, { replace: true });
   }, [search_params, navigate]);
 
+  // ─── Schede per ente emittente ───────────────────────────
+  // Attive solo se il club lavora con più ragioni sociali e ne ha almeno una attiva.
+  const ragioni_attive = useMemo(
+    () => ragioni_sociali.filter((r) => r.attivo).sort((a, b) => (a.ordine ?? 0) - (b.ordine ?? 0)),
+    [ragioni_sociali],
+  );
+  const schede_attive = modalita_fatturazione === "multi_ragione_sociale" && ragioni_attive.length > 0;
+
+  const schede = useMemo(() => {
+    if (!schede_attive) return [] as { id: string; nome: string; non_attivo?: boolean }[];
+    const lista: { id: string; nome: string; non_attivo?: boolean }[] = [
+      { id: "club", nome: club?.nome || t("invoices_page.enti.club_fallback") },
+      ...ragioni_attive.map((r) => ({ id: r.id, nome: r.nome })),
+    ];
+    // Un ente disattivato con fatture storiche resta raggiungibile: la sua scheda viene aggiunta.
+    const noti = new Set(lista.map((s) => s.id));
+    for (const f of fatture_tutte as any[]) {
+      const rid = f?.ragione_sociale_id;
+      if (rid && !noti.has(rid)) {
+        noti.add(rid);
+        const rs = ragioni_sociali.find((r) => r.id === rid);
+        lista.push({ id: rid, nome: rs?.nome ?? rid.slice(0, 8), non_attivo: true });
+      }
+    }
+    return lista;
+  }, [schede_attive, ragioni_attive, ragioni_sociali, club?.nome, fatture_tutte, t]);
+
+  const ente_param = search_params.get("ente");
+  const ente_attivo = schede.some((s) => s.id === ente_param) ? (ente_param as string) : "club";
+
+  const fatture = useMemo(() => {
+    if (!schede_attive) return fatture_tutte as any[];
+    return (fatture_tutte as any[]).filter((f) =>
+      ente_attivo === "club" ? !f.ragione_sociale_id : f.ragione_sociale_id === ente_attivo,
+    );
+  }, [fatture_tutte, schede_attive, ente_attivo]);
+
+  const bozze_per_ente = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const f of fatture_tutte as any[]) {
+      if (f?.stato !== "bozza") continue;
+      const k = f.ragione_sociale_id ?? "club";
+      map.set(k, (map.get(k) ?? 0) + 1);
+    }
+    return map;
+  }, [fatture_tutte]);
+
+  const cambia_ente = (id: string) => {
+    const p = new URLSearchParams(search_params);
+    p.set("ente", id);
+    set_search_params(p, { replace: true });
+  };
 
   const today_iso = new Date().toISOString().split("T")[0];
+
 
   const get_atleta_name = (id: string) => {
     const a = atleti.find((x: any) => x.id === id);
@@ -132,6 +193,34 @@ const InvoicesPage: React.FC = () => {
             <NotaPermesso testo="Solo la segreteria e il presidente possono emettere fatture." />
           )}
         </div>
+
+        {schede_attive && (
+          <Tabs value={ente_attivo} onValueChange={cambia_ente}>
+            <TabsList className="flex-wrap h-auto">
+              {schede.map((s) => {
+                const bozze = bozze_per_ente.get(s.id) ?? 0;
+                return (
+                  <TabsTrigger key={s.id} value={s.id} className="gap-2">
+                    <span>{s.nome}</span>
+                    {s.non_attivo && (
+                      <span className="text-[10px] text-muted-foreground">({t("invoices_page.enti.ente_non_attivo")})</span>
+                    )}
+                    {bozze > 0 && (
+                      <span
+                        title={t("invoices_page.enti.drafts_tooltip", { count: bozze })}
+                        className="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-muted-foreground/20 text-[10px] font-bold tabular-nums"
+                      >
+                        {bozze}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+          </Tabs>
+        )}
+
+
 
         <SearchableListLayout
           search={search_raw}
