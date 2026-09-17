@@ -9166,6 +9166,17 @@ export type Database = {
         Args: { p_atleta: string; p_override?: string }
         Returns: string
       }
+      referto_iscrizioni: {
+        Args: { p_club_id?: string }
+        Returns: {
+          atleta: string
+          corso: string
+          esito: string
+          livello_atleta: string
+          livello_richiesto: string
+          motivo: string
+        }[]
+      }
       registra_atleta_ospite: {
         Args: {
           p_al?: string
@@ -9414,6 +9425,13 @@ export type Database = {
       user_is_presidenza: { Args: never; Returns: boolean }
       user_is_vicepresidente: { Args: never; Returns: boolean }
       user_ruolo: { Args: never; Returns: string }
+      valuta_iscrizione: {
+        Args: { p_atleta_id: string; p_corso_id: string }
+        Returns: {
+          conforme: boolean
+          motivo: string
+        }[]
+      }
     }
     Enums: {
       livello_istruttore_enum: "istruttore" | "monitrice" | "aiuto_monitrice"
