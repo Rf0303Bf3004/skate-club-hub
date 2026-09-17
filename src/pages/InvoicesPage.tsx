@@ -6,8 +6,12 @@ import { useTranslation } from "react-i18next";
 import {
   use_fatture,
   use_atleti,
+  use_club,
   get_atleta_name_from_list,
 } from "@/hooks/use-supabase-data";
+import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
+import { useModalitaArea } from "@/hooks/useModalitaArea";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AnteprimaFatturePeriodoDialog from "@/components/fatture/AnteprimaFatturePeriodoDialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,6 +21,7 @@ import { toast } from "@/hooks/use-toast";
 import { get_fattura_stato_ui, get_fattura_stato_label, get_fattura_stato_classes, fattura_chiusa } from "@/lib/fattura-status";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
+
 
 
 
