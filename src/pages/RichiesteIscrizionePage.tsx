@@ -1,18 +1,15 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { use_richieste_iscrizione, use_atleti, use_corsi } from "@/hooks/use-supabase-data";
-import { use_gestisci_richiesta } from "@/hooks/use-supabase-mutations";
-import { useAuth } from "@/lib/auth";
+import ConfermaRichiesteDialog from "@/components/richieste/ConfermaRichiesteDialog";
+import type { RichiestaDaGestire } from "@/hooks/use-richieste-iscrizione";
 import { usePermessiSezioniMatrix } from "@/hooks/usePermessi";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Clock, Search, MessageSquare, ClipboardList, ChevronLeft, ChevronRight, Archive } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
@@ -25,14 +22,13 @@ const PAGE_SIZES = [25, 50, 100];
 const RichiesteIscrizionePage: React.FC = () => {
   const { t } = useTranslation("atleti");
   const { puo_gestire_sportivo } = usePermessiAzione();
-  const { session } = useAuth();
   const { visibile_set, is_admin_like, is_loading: is_loading_permessi } = usePermessiSezioniMatrix();
   const allowed = is_admin_like || visibile_set.has("richieste_iscrizione");
   const { data: richieste = [], isLoading: isLoadingRichieste, isError } = use_richieste_iscrizione();
   const { data: atleti = [], isLoading: isLoadingAtleti } = use_atleti();
   const { data: corsi = [], isLoading: isLoadingCorsi } = use_corsi();
   const isLoading = isLoadingRichieste || isLoadingAtleti || isLoadingCorsi;
-  const gestisci = use_gestisci_richiesta();
+  
 
   const [filtro, set_filtro] = useState<Filtro>("in_attesa");
   const [query, set_query] = useState("");
@@ -41,8 +37,7 @@ const RichiesteIscrizionePage: React.FC = () => {
   const [page, set_page] = useState(1);
   const [page_size, set_page_size] = useState(25);
   const [selezione, set_selezione] = useState<string[]>([]);
-  const [modal, set_modal] = useState<{ richieste: any[]; azione: "approvata" | "rifiutata" } | null>(null);
-  const [note_risposta, set_note_risposta] = useState("");
+  const [modal, set_modal] = useState<{ richieste: RichiestaDaGestire[]; azione: "approvata" | "rifiutata" } | null>(null);
 
   const get_atleta = (id: string) => atleti.find((a: any) => a.id === id);
   const get_corso = (id: string) => corsi.find((c: any) => c.id === id);
@@ -123,41 +118,19 @@ const RichiesteIscrizionePage: React.FC = () => {
   };
 
   const open_modal = (lista: any[], azione: "approvata" | "rifiutata") => {
-    set_note_risposta("");
-    set_modal({ richieste: lista, azione });
-  };
-
-  const conferma = async () => {
-    if (!modal) return;
-    let ok = 0;
-    let ko = 0;
-    for (const r of modal.richieste) {
+    // I nomi si risolvono qui: la scrittura vera sta nell'hook condiviso.
+    const preparate: RichiestaDaGestire[] = lista.map((r: any) => {
       const atleta = get_atleta(r.atleta_id);
       const corso = get_corso(r.corso_id);
-      try {
-        await gestisci.mutateAsync({
-          richiesta_id: r.id,
-          azione: modal.azione,
-          atleta_id: r.atleta_id,
-          atleta_nome: atleta ? `${atleta.nome} ${atleta.cognome}` : t("richieste_iscrizione.default_atleta_label"),
-          corso_id: r.corso_id,
-          corso_nome: corso?.nome || t("richieste_iscrizione.default_corso_label"),
-          note_risposta,
-          gestita_da: session?.email || "",
-        });
-        ok++;
-      } catch {
-        ko++;
-      }
-    }
-    toast({
-      title: ko === 0
-        ? t(modal.azione === "approvata" ? "richieste_iscrizione.toast.approvate" : "richieste_iscrizione.toast.rifiutate", { count: ok })
-        : t("richieste_iscrizione.toast.completate_errori", { ok, ko }),
-      variant: ko > 0 ? "destructive" : undefined,
+      return {
+        id: r.id,
+        atleta_id: r.atleta_id,
+        atleta_nome: atleta ? `${atleta.nome} ${atleta.cognome}` : "",
+        corso_id: r.corso_id,
+        corso_nome: corso?.nome || "",
+      };
     });
-    set_selezione([]);
-    set_modal(null);
+    set_modal({ richieste: preparate, azione });
   };
 
   const stato_badge = (stato: string) => {
@@ -394,44 +367,16 @@ const RichiesteIscrizionePage: React.FC = () => {
         </>
       )}
 
-      {/* Confirmation modal */}
+      {/* Conferma condivisa con la home della segreteria */}
       {modal && (
-        <Dialog open onOpenChange={() => !gestisci.isPending && set_modal(null)}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>
-                {modal.azione === "approvata" ? t("richieste_iscrizione.modal.approva_title") : t("richieste_iscrizione.modal.rifiuta_title")}
-                {modal.richieste.length > 1 ? ` (${modal.richieste.length})` : ""}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                {modal.azione === "approvata"
-                  ? t(modal.richieste.length > 1 ? "richieste_iscrizione.modal.approva_desc_plural" : "richieste_iscrizione.modal.approva_desc_singular")
-                  : t(modal.richieste.length > 1 ? "richieste_iscrizione.modal.rifiuta_desc_plural" : "richieste_iscrizione.modal.rifiuta_desc_singular")}
-              </p>
-              <div>
-                <Label className="text-xs">{t("richieste_iscrizione.modal.note_label")}</Label>
-                <Input
-                  value={note_risposta}
-                  onChange={(e) => set_note_risposta(e.target.value)}
-                  placeholder={modal.azione === "rifiutata" ? t("richieste_iscrizione.modal.note_placeholder_rifiuto") : t("richieste_iscrizione.modal.note_placeholder_generico")}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => set_modal(null)} disabled={gestisci.isPending}>{t("richieste_iscrizione.modal.annulla")}</Button>
-              <Button
-                onClick={conferma}
-                disabled={gestisci.isPending}
-                className={modal.azione === "approvata" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
-                variant={modal.azione === "rifiutata" ? "destructive" : "default"}
-              >
-                {gestisci.isPending ? t("richieste_iscrizione.modal.elaborazione") : modal.azione === "approvata" ? t("richieste_iscrizione.modal.approva") : t("richieste_iscrizione.modal.rifiuta")}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <ConfermaRichiesteDialog
+          richieste={modal.richieste}
+          azione={modal.azione}
+          on_close={() => {
+            set_selezione([]);
+            set_modal(null);
+          }}
+        />
       )}
     </div>
   );

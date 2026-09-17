@@ -663,6 +663,19 @@
     "manca_indirizzo": "manca l'indirizzo",
     "manca_email_indirizzo": "mancano email e indirizzo",
     "anagrafiche_contesto": "Senza questi dati la fattura non parte.",
-    "vai_atleti": "Apri gli atleti"
+    "vai_atleti": "Apri gli atleti",
+    "club_fallback": "Il club",
+    "approva": "Approva",
+    "rifiuta": "Rifiuta",
+    "in_attesa_da_one": "in attesa da {{count}} giorno",
+    "in_attesa_da_other": "in attesa da {{count}} giorni",
+    "bozze_conteggio_one": "{{count}} fattura",
+    "bozze_conteggio_other": "{{count}} fatture",
+    "rivedi_invia": "Rivedi e invia",
+    "niente_da_fare": "Niente da fare oggi.",
+    "ok_scadute": "Nessuna fattura scaduta",
+    "ok_richieste": "Nessuna iscrizione in attesa",
+    "ok_bozze": "Nessuna fattura da inviare",
+    "ok_anagrafiche": "Anagrafiche complete"
   }
 }
