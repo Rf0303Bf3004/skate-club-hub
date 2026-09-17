@@ -365,6 +365,29 @@ export const RisorseSection: React.FC = () => {
                           Capienza {r.capienza_max ?? "—"}
                         </p>
 
+                        {r.attiva && (
+                          <>
+                            {stagione_errore || costi_query.isError ? (
+                              <p className="mt-2 text-xs text-destructive">
+                                {t("club.costi_risorsa.errore_lettura")}
+                              </p>
+                            ) : !stagione ? (
+                              <p className="mt-2 text-xs text-muted-foreground">
+                                {t("club.costi_risorsa.nessuna_stagione")}
+                              </p>
+                            ) : costi_query.isSuccess ? (
+                              <CampoCostoRisorsa
+                                risorsa_id={r.id}
+                                stagione_id={stagione.id}
+                                valore={costo_di(r.id)}
+                              />
+                            ) : (
+                              <p className="mt-2 text-xs text-muted-foreground">
+                                {t("club.costi_risorsa.caricamento")}
+                              </p>
+                            )}
+                          </>
+                        )}
                       </div>
                       <div className="flex items-center gap-1">
                         <Button
