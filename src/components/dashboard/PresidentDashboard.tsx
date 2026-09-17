@@ -53,6 +53,7 @@ type DashboardData = {
   storici: Riga[];
   bilancio: Riga[];
   ricavi: Riga[];
+  corsi: Riga[];
   capacita: Riga[];
   richieste_storiche: Riga[];
   ore_pista: Riga[];
@@ -239,6 +240,7 @@ function use_presidente_dashboard(club_id: string | undefined, stagione_id: stri
         storici_res,
         bilancio_res,
         ricavi_res,
+        corsi_res,
         capacita_res,
         richieste_res,
         ore_res,
@@ -268,9 +270,10 @@ function use_presidente_dashboard(club_id: string | undefined, stagione_id: stri
           .in("stagione_id", ids),
         supabase.from("bilancio_stagione").select("*").eq("club_id", club_id as string).in("stagione_id", ids),
         supabase.from("ricavi_per_fonte").select("*").eq("club_id", club_id as string).in("stagione_id", ids),
+        supabase.from("corsi").select("id, nome, stagione_id").eq("club_id", club_id as string).in("stagione_id", ids),
         supabase
           .from("capacita_corsi")
-          .select("corso_id, capacita_max, ore_settimanali_dedicate, corsi(nome, stagione_id)")
+          .select("corso_id, capacita_max, ore_settimanali_dedicate")
           .eq("club_id", club_id as string),
         supabase
           .from("richieste_iscrizione_storiche")
@@ -336,6 +339,7 @@ function use_presidente_dashboard(club_id: string | undefined, stagione_id: stri
         storici: righe(controlla("atleti_storici_stagioni", storici_res)),
         bilancio: righe(controlla("bilancio_stagione", bilancio_res)),
         ricavi: righe(controlla("ricavi_per_fonte", ricavi_res)),
+        corsi: righe(controlla("corsi", corsi_res)),
         capacita: righe(controlla("capacita_corsi", capacita_res)),
         richieste_storiche: righe(controlla("richieste_iscrizione_storiche", richieste_res)),
         ore_pista: righe(controlla("ore_pista_disponibili", ore_res)),
@@ -605,7 +609,7 @@ const AreaGhiaccio: React.FC<{ d: DashboardData; stagione_id: string; t: (key: s
   const tot_attesa = richieste.reduce((s, r) => s + numero(r.n_in_lista_attesa), 0);
   const corsi = new Map<string, { nome: string; capacita: number; iscritti: number; attesa: number }>();
   d.capacita.forEach((c) => {
-    const corso = c.corsi as Riga | undefined;
+    const corso = d.corsi.find((r) => testo(r.id) === testo(c.corso_id));
     if (testo(corso?.stagione_id) !== stagione_id) return;
     corsi.set(testo(c.corso_id), {
       nome: testo(corso?.nome) || t("president_home.ice.table.course"),
@@ -1020,7 +1024,7 @@ const AreaCatalogo: React.FC<{ d: DashboardData; club_nome: string; sponsor: Rig
   const identity = d.identity ?? {};
   const partecipanti = d.eventi.reduce((s, e) => s + numero(e.partecipanti_stimati), 0);
   const pacchetti = d.catalogo_pacchetti.filter((p) => p.attivo !== false).slice(0, 8);
-  const corsi = d.capacita.map((c) => c.corsi as Riga | undefined).filter((c): c is Riga => !!c).slice(0, 8);
+  const corsi = d.corsi.slice(0, 8);
   const sponsor_totale = sponsor.reduce((s, r) => s + numero(r.importo_annuo), 0);
 
   return (
