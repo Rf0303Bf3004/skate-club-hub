@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.iscrizioni_corsi_valida_livello() FROM PUBLIC, anon, authenticated;
