@@ -42,6 +42,16 @@
       "qr_alt": "QR-Code für die Anmeldung des Tablets am Eisrand",
       "qr_istruzione": "Scannen Sie den QR-Code mit der Tablet-Kamera und speichern Sie die Seite auf dem Startbildschirm: Danach meldet sich das Tablet von selbst an.",
       "qr_chiave": "Dieser QR-Code und dieser Link wirken wie ein Schlüssel: Wer sie hat, gelangt in die Eisfläche dieses Clubs. Wird der Code neu erzeugt, funktionieren alle bereits verteilten QR-Codes und Links nicht mehr."
+    },
+    "costi_risorsa": {
+      "label": "Stundenkosten CHF",
+      "placeholder": "z. B. 180",
+      "nota": "Leer lassen, wenn du es nicht weisst, 0 schreiben, wenn du es nicht bezahlst. Es dient zur Berechnung der Kursmarge und des Ertrags einer Eisstunde.",
+      "salvato": "Stundenkosten gespeichert",
+      "non_valido": "Schreibe eine Zahl oder lass das Feld leer.",
+      "errore_lettura": "Die Stundenkosten konnten nicht gelesen werden: bitte erneut versuchen.",
+      "nessuna_stagione": "Keine Saison konfiguriert: die Stundenkosten gehören zu einer Saison.",
+      "caricamento": "Stundenkosten werden geladen…"
     }
   },
   "seasons": {
