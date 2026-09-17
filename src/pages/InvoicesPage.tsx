@@ -25,6 +25,9 @@ import NotaPermesso from "@/components/common/NotaPermesso";
 
 
 
+// Valori di stato accettati nell'indirizzo: solo quelli veri del filtro.
+const STATI_URL = ["bozza", "inviata", "sollecitata", "pagata", "annullata", "stornata", "scaduta"];
+
 // ─── Main Page ─────────────────────────────────────────────
 const InvoicesPage: React.FC = () => {
   const { t } = useTranslation("fatture");
@@ -34,14 +37,27 @@ const InvoicesPage: React.FC = () => {
   const { data: club } = use_club();
   const { data: ragioni_sociali = [] } = use_ragioni_sociali();
   const { modalita: modalita_fatturazione } = useModalitaArea("fatturazione");
+  const [search_params, set_search_params] = useSearchParams();
+  const navigate = useNavigate();
   const [anteprima_open, set_anteprima_open] = useState(false);
-  const [status_filter, set_status_filter] = useState("tutti");
+  // Lo stato iniziale può arrivare dall'indirizzo (?stato=bozza), come ?ente=.
+  const [status_filter, set_status_filter] = useState(() => {
+    const s = search_params.get("stato");
+    return s && STATI_URL.includes(s) ? s : "tutti";
+  });
   const [search_raw, set_search_raw] = useState("");
   const search = useDebouncedValue(search_raw, 200);
   const [periodo_filter, set_periodo_filter] = useState<"tutti" | "mese" | "trimestre" | "anno">("tutti");
   const [sort_by, set_sort_by] = useState<"data_desc" | "importo_desc" | "scadenza">("data_desc");
-  const [search_params, set_search_params] = useSearchParams();
-  const navigate = useNavigate();
+
+  // Cambio stato: aggiorna il filtro e l'indirizzo, così il link resta condivisibile.
+  const cambia_stato = (v: string) => {
+    set_status_filter(v);
+    const p = new URLSearchParams(search_params);
+    if (v === "tutti") p.delete("stato");
+    else p.set("stato", v);
+    set_search_params(p, { replace: true });
+  };
 
   // Deep-link legacy: /fatture?id=<uuid> → nuovo editor completo
   useEffect(() => {
