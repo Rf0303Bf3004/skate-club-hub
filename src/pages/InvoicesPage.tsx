@@ -194,6 +194,34 @@ const InvoicesPage: React.FC = () => {
           )}
         </div>
 
+        {schede_attive && (
+          <Tabs value={ente_attivo} onValueChange={cambia_ente}>
+            <TabsList className="flex-wrap h-auto">
+              {schede.map((s) => {
+                const bozze = bozze_per_ente.get(s.id) ?? 0;
+                return (
+                  <TabsTrigger key={s.id} value={s.id} className="gap-2">
+                    <span>{s.nome}</span>
+                    {s.non_attivo && (
+                      <span className="text-[10px] text-muted-foreground">({t("invoices_page.enti.ente_non_attivo")})</span>
+                    )}
+                    {bozze > 0 && (
+                      <span
+                        title={t("invoices_page.enti.drafts_tooltip", { count: bozze })}
+                        className="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-muted-foreground/20 text-[10px] font-bold tabular-nums"
+                      >
+                        {bozze}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+          </Tabs>
+        )}
+
+
+
         <SearchableListLayout
           search={search_raw}
           on_search_change={set_search_raw}
