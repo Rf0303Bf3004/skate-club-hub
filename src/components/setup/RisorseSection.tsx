@@ -1,5 +1,9 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
+import { use_stagione_attiva } from "@/lib/stagione-attiva";
+import { use_costi_risorsa, use_salva_costo_risorsa } from "@/hooks/use-costi-risorsa";
+import { segnala_errore } from "@/lib/errori";
 import {
   use_risorse_strutture,
   use_upsert_risorsa,
@@ -216,13 +220,80 @@ const RisorsaDialog: React.FC<{
   );
 };
 
+/**
+ * Costo orario della risorsa per la stagione scelta.
+ * Vuoto = non inserito, 0 = il club non paga quelle ore: due cose diverse,
+ * il vuoto non diventa mai zero.
+ */
+const CampoCostoRisorsa: React.FC<{
+  risorsa_id: string;
+  stagione_id: string;
+  valore: number | null;
+}> = ({ risorsa_id, stagione_id, valore }) => {
+  const { t } = useTranslation("settings");
+  const salva = use_salva_costo_risorsa();
+  const iniziale = valore == null ? "" : String(valore);
+  const [testo, set_testo] = React.useState(iniziale);
+
+  React.useEffect(() => {
+    set_testo(valore == null ? "" : String(valore));
+  }, [valore, risorsa_id, stagione_id]);
+
+  const conferma = async () => {
+    const pulito = testo.trim().replace(",", ".");
+    if (pulito === iniziale.trim()) return;
+    if (pulito !== "" && !Number.isFinite(Number(pulito))) {
+      toast({ title: t("club.costi_risorsa.non_valido"), variant: "destructive" });
+      set_testo(iniziale);
+      return;
+    }
+    try {
+      await salva.mutateAsync({
+        risorsa_id,
+        stagione_id,
+        costo_orario_chf: pulito === "" ? null : Number(pulito),
+      });
+      toast({ title: t("club.costi_risorsa.salvato") });
+    } catch (e: any) {
+      await segnala_errore("RisorseSection", "costi_risorsa_stagione", e, { risorsa_id, stagione_id });
+      set_testo(iniziale);
+    }
+  };
+
+  return (
+    <div className="mt-2 max-w-xs">
+      <Label className="text-xs text-muted-foreground">{t("club.costi_risorsa.label")}</Label>
+      <Input
+        type="text"
+        inputMode="decimal"
+        value={testo}
+        placeholder={t("club.costi_risorsa.placeholder")}
+        onChange={(e) => set_testo(e.target.value)}
+        onBlur={conferma}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        }}
+        disabled={salva.isPending}
+      />
+      <p className="mt-1 text-xs text-muted-foreground">{t("club.costi_risorsa.nota")}</p>
+    </div>
+  );
+};
+
 export const RisorseSection: React.FC = () => {
+  const { t } = useTranslation("settings");
   const { session } = useAuth();
   const allowed = !!session && ["superadmin", "admin", "presidente"].includes(session.ruolo);
   const { data: risorse = [], isLoading } = use_risorse_strutture();
   const elimina = use_elimina_risorsa();
   const [dialog_open, set_dialog_open] = React.useState(false);
   const [edit_risorsa, set_edit_risorsa] = React.useState<RisorsaStruttura | null>(null);
+  const { data: stagione, isError: stagione_errore } = use_stagione_attiva();
+  const costi_query = use_costi_risorsa(stagione?.id);
+  const costo_di = (risorsa_id: string): number | null => {
+    const riga = (costi_query.data ?? []).find((c) => c.risorsa_id === risorsa_id);
+    return riga?.costo_orario_chf ?? null;
+  };
 
   if (!allowed) return null;
 

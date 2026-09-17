@@ -639,6 +639,10 @@ export function use_crea_lezione_privata() {
         costo_totale: data.costo_totale || 0,
         annullata: false,
         note: data.note || "",
+        // NULL = come prima: ente della scheda atleta e in mancanza il club.
+        ...(data.ragione_sociale_id !== undefined
+          ? { ragione_sociale_id: data.ragione_sociale_id || null }
+          : {}),
       };
       if (data.ricorrente) {
         const { data: stagione, error: se } = await supabase

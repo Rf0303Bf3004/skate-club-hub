@@ -21,6 +21,8 @@ import RichiesteLezioniPrivateTab, {
   use_richieste_lezioni_private,
 } from "@/components/lezioni/RichiesteLezioniPrivateTab";
 import { useSearchParams } from "react-router-dom";
+import CampoEnteLezione from "@/components/lezioni/CampoEnteLezione";
+import { use_ente_predefinito, use_enti_lezione, use_nome_ente } from "@/hooks/use-ente-lezione";
 
 // ─── Helpers ───────────────────────────────────────────────
 function fmt(d: Date): string {
@@ -336,6 +338,10 @@ const SlotModal: React.FC<{
               />
             </div>
           </div>
+          <CampoEnteLezione
+            value={form.ragione_sociale_id ?? null}
+            on_change={(v) => on_change("ragione_sociale_id", v)}
+          />
           <div
             onClick={() => on_change("ricorrente", !form.ricorrente)}
             className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all
@@ -522,6 +528,8 @@ const SlotDetailModal: React.FC<{
   puo_gestire: boolean;
 }> = ({ slot, atleti, on_close, on_annulla, on_modifica, on_aggiungi_atleta, loading, puo_gestire }) => {
   const { t } = useTranslation('corsi');
+  const nome_ente = use_nome_ente();
+  const ente_lezione = nome_ente(slot.lesson?.ragione_sociale_id);
   const atleti_ids: string[] = slot.lesson?.atleti_ids || [];
   const tipo = get_tipo_lezione(atleti_ids);
   const is_semiprivata = tipo === "semiprivata";
@@ -576,6 +584,12 @@ const SlotDetailModal: React.FC<{
             <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-xl">
               <span className="text-xs text-muted-foreground font-medium">{t("lezioni_private.slot_detail_modal.costo_totale")}</span>
               <span className="text-sm font-bold text-foreground">CHF {Number(slot.lesson.costo).toFixed(2)}</span>
+            </div>
+          )}
+          {ente_lezione && (
+            <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-xl">
+              <span className="text-xs text-muted-foreground font-medium">{t("lezioni_private.ente.label")}</span>
+              <span className="text-sm font-semibold text-foreground">{ente_lezione}</span>
             </div>
           )}
           {slot.lesson?.note && (
@@ -729,8 +743,12 @@ const LezioniPrivatePage: React.FC = () => {
   const { puo_configurare_club, puo_gestire_sportivo, ruolo_in } = usePermessiAzione();
   // Specchio della funzione del database: approva solo DT, presidenza o amministrazione.
   const puo_approvare_richieste = ruolo_in(["superadmin", "admin", "presidente", "dt"]);
+  // "Fatturata da": campo presente solo nei club multi ragione sociale.
+  const { visibile: ente_visibile } = use_enti_lezione();
+  const nome_ente = use_nome_ente();
 
   const [selected_istruttore, set_selected_istruttore] = useState<string>("");
+  const { data: ente_default } = use_ente_predefinito(selected_istruttore, ente_visibile);
   const [cal_year, set_cal_year] = useState(new Date().getFullYear());
   const [cal_month, set_cal_month] = useState(new Date().getMonth());
   const [selected_date, set_selected_date] = useState<string>(fmt(new Date()));
@@ -876,6 +894,8 @@ const LezioniPrivatePage: React.FC = () => {
       costo_totale: costo,
       note: "",
       has_ice,
+      // Proposta del database per quell'istruttore; NULL = il club.
+      ragione_sociale_id: ente_default ?? null,
     });
     set_form_open(true);
   };
@@ -904,6 +924,7 @@ const LezioniPrivatePage: React.FC = () => {
       ricorrente: false,
       costo_totale: lesson.costo || 0,
       note: lesson.note || "",
+      ragione_sociale_id: lesson.ragione_sociale_id ?? ente_default ?? null,
     });
     set_detail_slot(null);
     set_form_open(true);
@@ -951,6 +972,8 @@ const LezioniPrivatePage: React.FC = () => {
         costo_totale: form_data.costo_totale || 0,
         note: form_data.note || "",
         has_ice: form_data.has_ice !== false,
+        // Solo nei club multi ragione sociale: altrove resta la regola di prima.
+        ragione_sociale_id: ente_visibile ? (form_data.ragione_sociale_id ?? null) : undefined,
       });
       set_form_open(false);
       const creata: any = esito?.lezione;
@@ -1252,6 +1275,11 @@ const LezioniPrivatePage: React.FC = () => {
                                   ? get_atleti_names(slot.lesson.atleti_ids)
                                   : slot.lesson.note || t("lezioni_private.slot_status.occupato")}
                               </p>
+                            )}
+                            {slot.lesson && nome_ente(slot.lesson.ragione_sociale_id) && (
+                              <span className="mt-1 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                                {nome_ente(slot.lesson.ragione_sociale_id)}
+                              </span>
                             )}
                           </div>
                         </div>

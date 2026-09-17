@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { segnala_errore } from "@/lib/errori";
 
 /**
  * Approvazione di una richiesta di lezione privata.
@@ -23,6 +24,8 @@ export type ParametriApprovazione = {
   ripetizioni: number;
   costo_totale: number;
   note: string | null;
+  /** Ente che fattura le lezioni create. `undefined` = non gestito dal club. */
+  ragione_sociale_id?: string | null;
 };
 
 /** Tutte le letture che cambiano quando una richiesta viene approvata. */
@@ -54,10 +57,31 @@ export function use_approva_richiesta_privata(opts?: {
       });
       if (error) throw error;
       const esito = (data ?? {}) as Record<string, unknown>;
+      const problemi: string[] = Array.isArray(esito.problemi) ? (esito.problemi as string[]) : [];
+
+      // Le lezioni esistono già: un fallimento qui non si nasconde e non
+      // annulla l'approvazione, si riporta come riuscita a metà.
+      if (p.ragione_sociale_id !== undefined) {
+        const { error: err_ente } = await supabase
+          .from("lezioni_private")
+          .update({ ragione_sociale_id: p.ragione_sociale_id })
+          .eq("richiesta_id", p.richiesta_id);
+        if (err_ente) {
+          await segnala_errore(
+            "use_approva_richiesta_privata",
+            "lezioni_private.ragione_sociale_id",
+            err_ente,
+            { richiesta_id: p.richiesta_id },
+            "avviso",
+          );
+          problemi.push(err_ente.message);
+        }
+      }
+
       return {
         lezioni_create: Number(esito.lezioni_create ?? 0),
         prima_lezione: (esito.prima_lezione as string | null) ?? null,
-        problemi: Array.isArray(esito.problemi) ? (esito.problemi as string[]) : [],
+        problemi,
       };
     },
     onSuccess: (esito) => {

@@ -5,6 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2 } from "lucide-react";
 import DateInput from "@/components/forms/DateInput";
 import { use_approva_richiesta_privata, type EsitoApprovazione } from "@/hooks/use-approva-richiesta-privata";
+import CampoEnteLezione from "@/components/lezioni/CampoEnteLezione";
+import { use_ente_predefinito, use_enti_lezione } from "@/hooks/use-ente-lezione";
 
 export interface DatiRichiestaDaApprovare {
   id: string;
@@ -56,6 +58,16 @@ const ApprovaRichiestaDialog: React.FC<Props> = ({
   const [ripetizioni, set_ripetizioni] = useState<number>(4);
   const [ripetizioni_libere, set_ripetizioni_libere] = useState(false);
 
+  // "Fatturata da": solo nei club multi ragione sociale. La proposta arriva
+  // dal database e cambia quando cambia l'istruttore; resta modificabile.
+  const { visibile: ente_visibile } = use_enti_lezione();
+  const { data: ente_default } = use_ente_predefinito(istruttore_id, ente_visibile);
+  const [ente_scelto, set_ente_scelto] = useState<string | null>(null);
+  const [ente_toccato, set_ente_toccato] = useState(false);
+  React.useEffect(() => {
+    if (!ente_toccato) set_ente_scelto(ente_default ?? null);
+  }, [ente_default, ente_toccato]);
+
   const istruttore = istruttori.find((i) => i.id === istruttore_id);
   const costo_suggerito = Math.round((istruttore?.costo_minuto_lezione_privata || 0) * durata * 100) / 100;
   const [costo_str, set_costo_str] = useState<string>("");
@@ -100,6 +112,7 @@ const ApprovaRichiestaDialog: React.FC<Props> = ({
       ripetizioni: n_lezioni,
       costo_totale: costo,
       note: richiesta.note_richiesta,
+      ragione_sociale_id: ente_visibile ? ente_scelto : undefined,
     });
   };
 
@@ -161,6 +174,14 @@ const ApprovaRichiestaDialog: React.FC<Props> = ({
             />
           </div>
         </div>
+
+        <CampoEnteLezione
+          value={ente_scelto}
+          on_change={(v) => {
+            set_ente_toccato(true);
+            set_ente_scelto(v);
+          }}
+        />
 
         <div className="space-y-2">
           <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">

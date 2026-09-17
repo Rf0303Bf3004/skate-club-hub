@@ -270,6 +270,11 @@
     },
     "confirm": {
       "annulla_lezione": "Annullare questa lezione e liberare lo slot?"
+    },
+    "ente": {
+      "label": "Fatturata da",
+      "club": "Il club",
+      "errore_elenco": "Impossibile caricare gli enti: riprova."
     }
   },
   "corso_wizard": {
