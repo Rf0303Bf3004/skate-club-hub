@@ -77,6 +77,13 @@
       "generated_title_one": "✅ {{count}} fattura generata",
       "generated_title_other": "✅ {{count}} fatture generate",
       "generate_error_title": "Errore generazione"
+    },
+    "enti": {
+      "club_tab": "{{nome}}",
+      "club_fallback": "Il club",
+      "drafts_tooltip_one": "{{count}} bozza da emettere",
+      "drafts_tooltip_other": "{{count}} bozze da emettere",
+      "ente_non_attivo": "non più attivo"
     }
   },
   "billing_tab": {
