@@ -2406,6 +2406,54 @@ export type Database = {
         }
         Relationships: []
       }
+      costi_risorsa_stagione: {
+        Row: {
+          club_id: string
+          costo_orario_chf: number | null
+          created_at: string
+          id: string
+          note: string | null
+          risorsa_id: string
+          stagione_id: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          costo_orario_chf?: number | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          risorsa_id: string
+          stagione_id: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          costo_orario_chf?: number | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          risorsa_id?: string
+          stagione_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "costi_risorsa_stagione_risorsa_id_fkey"
+            columns: ["risorsa_id"]
+            isOneToOne: false
+            referencedRelation: "risorse_strutture"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "costi_risorsa_stagione_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dashboard_card_permessi: {
         Row: {
           club_id: string
@@ -8793,6 +8841,10 @@ export type Database = {
           ultima_volta: string
           urgenza: number
         }[]
+      }
+      costo_orario_risorsa: {
+        Args: { p_risorsa: string; p_stagione: string }
+        Returns: number
       }
       demo_indirizzo_atleta: {
         Args: {

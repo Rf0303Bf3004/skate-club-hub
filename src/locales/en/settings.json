@@ -42,6 +42,16 @@
       "qr_alt": "QR code to sign in the rinkside tablet",
       "qr_istruzione": "Scan the QR with the tablet camera, then save the page to the home screen: from then on the tablet signs in by itself.",
       "qr_chiave": "This QR code and this link work like a key: whoever has them gets into this club's rink. Regenerating the code stops every QR code and link already handed out."
+    },
+    "costi_risorsa": {
+      "label": "Hourly cost CHF",
+      "placeholder": "e.g. 180",
+      "nota": "Leave empty if you don't know it, write 0 if you don't pay for it. It is used to calculate course margins and the yield of an hour of ice.",
+      "salvato": "Hourly cost saved",
+      "non_valido": "Write a number, or leave it empty.",
+      "errore_lettura": "Could not read the hourly costs: please try again.",
+      "nessuna_stagione": "No season configured: the hourly cost belongs to a season.",
+      "caricamento": "Loading the hourly cost…"
     }
   },
   "seasons": {

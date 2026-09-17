@@ -42,6 +42,16 @@
       "qr_alt": "Code QR pour la connexion de la tablette de bord de piste",
       "qr_istruzione": "Scannez le QR avec l'appareil photo de la tablette, puis enregistrez la page sur l'écran d'accueil : la tablette se connectera ensuite toute seule.",
       "qr_chiave": "Ce code QR et ce lien valent une clé : celui qui les possède entre dans la piste de ce club. En régénérant le code, tous les QR et liens déjà distribués cessent de fonctionner."
+    },
+    "costi_risorsa": {
+      "label": "Coût horaire CHF",
+      "placeholder": "p. ex. 180",
+      "nota": "Laisse vide si tu ne le sais pas, écris 0 si tu ne le paies pas. Cela sert à calculer la marge des cours et le rendement d'une heure de glace.",
+      "salvato": "Coût horaire enregistré",
+      "non_valido": "Écris un nombre, ou laisse vide.",
+      "errore_lettura": "Impossible de lire les coûts horaires : réessaie.",
+      "nessuna_stagione": "Aucune saison configurée : le coût horaire est lié à une saison.",
+      "caricamento": "Chargement du coût horaire…"
     }
   },
   "seasons": {

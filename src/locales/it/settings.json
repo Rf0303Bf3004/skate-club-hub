@@ -164,6 +164,16 @@
       "qr_alt": "Codice QR per l'accesso del tablet di bordo pista",
       "qr_istruzione": "Inquadra il QR con la fotocamera del tablet, poi salva la pagina sulla schermata iniziale: da quel momento il tablet entra da solo.",
       "qr_chiave": "Questo QR e questo collegamento valgono come una chiave: chi li ha entra nella pista di questo club. Rigenerando il codice, tutti i QR e i collegamenti già distribuiti smettono di funzionare."
+    },
+    "costi_risorsa": {
+      "label": "Costo orario CHF",
+      "placeholder": "es. 180",
+      "nota": "Lascia vuoto se non lo sai, scrivi 0 se non lo paghi. Serve per calcolare il margine dei corsi e la resa di un'ora di ghiaccio.",
+      "salvato": "Costo orario salvato",
+      "non_valido": "Scrivi un numero, oppure lascia vuoto.",
+      "errore_lettura": "Impossibile leggere i costi orari: riprova.",
+      "nessuna_stagione": "Nessuna stagione configurata: il costo orario si lega a una stagione.",
+      "caricamento": "Caricamento del costo orario…"
     }
   },
   "seasons": {
