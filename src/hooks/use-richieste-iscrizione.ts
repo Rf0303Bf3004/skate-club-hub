@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { use_gestisci_richiesta } from "@/hooks/use-supabase-mutations";
 import { useAuth } from "@/lib/auth";
 import { toast } from "@/hooks/use-toast";
-import { segnala_errore } from "@/lib/errori";
+import { registra_silenzioso } from "@/lib/errori";
 
 /**
  * Unica versione della decisione su una richiesta di iscrizione.
@@ -51,7 +51,12 @@ export function use_gestione_richieste() {
         ok++;
       } catch (e) {
         ko++;
-        segnala_errore("use_gestione_richieste", "gestisci_richiesta", e);
+        // Solo registro, niente toast: il riepilogo finale resta l'unico avviso
+        // all'utente, come prima dell'introduzione del dialog condiviso.
+        registra_silenzioso("use_gestione_richieste", "gestisci_richiesta", e, {
+          richiesta_id: r.id,
+          azione,
+        });
       }
     }
 

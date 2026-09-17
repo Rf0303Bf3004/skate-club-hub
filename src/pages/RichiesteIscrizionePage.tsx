@@ -372,7 +372,9 @@ const RichiesteIscrizionePage: React.FC = () => {
         <ConfermaRichiesteDialog
           richieste={modal.richieste}
           azione={modal.azione}
-          on_close={() => {
+          on_close={() => set_modal(null)}
+          on_done={() => {
+            // La selezione si svuota solo dopo un'azione riuscita.
             set_selezione([]);
             set_modal(null);
           }}

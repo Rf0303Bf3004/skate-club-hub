@@ -149,7 +149,12 @@ const SegreteriaDashboard: React.FC = () => {
         throw new Error(error.message);
       }
       const richieste = (data ?? []) as RichiestaIscrizione[];
-      if (richieste.length === 0) return [] as (RichiestaIscrizione & { atleta: string; corso: string })[];
+      if (richieste.length === 0)
+        return [] as (RichiestaIscrizione & {
+          atleta: string;
+          atleta_nome_naturale: string;
+          corso: string;
+        })[];
 
       const atleta_ids = Array.from(new Set(richieste.map((r) => r.atleta_id)));
       const corso_ids = Array.from(new Set(richieste.map((r) => r.corso_id)));
@@ -172,10 +177,16 @@ const SegreteriaDashboard: React.FC = () => {
       }
 
       const nomi_atleti = new Map((atleti ?? []).map((a: Nominativo) => [a.id, nome_persona(a)]));
+      // Nome e cognome nell'ordine naturale: è quello che finisce nella
+      // comunicazione e nella notifica alla famiglia, identico alla pagina Richieste.
+      const nomi_atleti_naturali = new Map(
+        (atleti ?? []).map((a: Nominativo) => [a.id, `${a.nome ?? ""} ${a.cognome ?? ""}`.trim()]),
+      );
       const nomi_corsi = new Map((corsi ?? []).map((c: CorsoNome) => [c.id, c.nome ?? ""]));
       return richieste.map((r) => ({
         ...r,
         atleta: nomi_atleti.get(r.atleta_id) ?? "",
+        atleta_nome_naturale: nomi_atleti_naturali.get(r.atleta_id) ?? "",
         corso: nomi_corsi.get(r.corso_id) ?? "",
       }));
     },
@@ -351,7 +362,9 @@ const SegreteriaDashboard: React.FC = () => {
         {
           id: r.id,
           atleta_id: r.atleta_id,
-          atleta_nome: r.atleta,
+          // «Nome Cognome», come in RichiesteIscrizionePage: questo nome finisce
+          // nella comunicazione e nella notifica alla famiglia.
+          atleta_nome: r.atleta_nome_naturale || "",
           corso_id: r.corso_id,
           corso_nome: r.corso,
         },
@@ -541,6 +554,7 @@ const SegreteriaDashboard: React.FC = () => {
           richieste={modal.richieste}
           azione={modal.azione}
           on_close={() => set_modal(null)}
+          on_done={() => set_modal(null)}
         />
       )}
     </div>
