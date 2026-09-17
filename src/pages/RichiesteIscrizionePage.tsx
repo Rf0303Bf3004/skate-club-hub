@@ -30,7 +30,7 @@ const RichiesteIscrizionePage: React.FC = () => {
   const { data: atleti = [], isLoading: isLoadingAtleti } = use_atleti();
   const { data: corsi = [], isLoading: isLoadingCorsi } = use_corsi();
   const isLoading = isLoadingRichieste || isLoadingAtleti || isLoadingCorsi;
-  const gestisci = use_gestisci_richiesta();
+  
 
   const [filtro, set_filtro] = useState<Filtro>("in_attesa");
   const [query, set_query] = useState("");
@@ -39,8 +39,7 @@ const RichiesteIscrizionePage: React.FC = () => {
   const [page, set_page] = useState(1);
   const [page_size, set_page_size] = useState(25);
   const [selezione, set_selezione] = useState<string[]>([]);
-  const [modal, set_modal] = useState<{ richieste: any[]; azione: "approvata" | "rifiutata" } | null>(null);
-  const [note_risposta, set_note_risposta] = useState("");
+  const [modal, set_modal] = useState<{ richieste: RichiestaDaGestire[]; azione: "approvata" | "rifiutata" } | null>(null);
 
   const get_atleta = (id: string) => atleti.find((a: any) => a.id === id);
   const get_corso = (id: string) => corsi.find((c: any) => c.id === id);
@@ -121,41 +120,19 @@ const RichiesteIscrizionePage: React.FC = () => {
   };
 
   const open_modal = (lista: any[], azione: "approvata" | "rifiutata") => {
-    set_note_risposta("");
-    set_modal({ richieste: lista, azione });
-  };
-
-  const conferma = async () => {
-    if (!modal) return;
-    let ok = 0;
-    let ko = 0;
-    for (const r of modal.richieste) {
+    // I nomi si risolvono qui: la scrittura vera sta nell'hook condiviso.
+    const preparate: RichiestaDaGestire[] = lista.map((r: any) => {
       const atleta = get_atleta(r.atleta_id);
       const corso = get_corso(r.corso_id);
-      try {
-        await gestisci.mutateAsync({
-          richiesta_id: r.id,
-          azione: modal.azione,
-          atleta_id: r.atleta_id,
-          atleta_nome: atleta ? `${atleta.nome} ${atleta.cognome}` : t("richieste_iscrizione.default_atleta_label"),
-          corso_id: r.corso_id,
-          corso_nome: corso?.nome || t("richieste_iscrizione.default_corso_label"),
-          note_risposta,
-          gestita_da: session?.email || "",
-        });
-        ok++;
-      } catch {
-        ko++;
-      }
-    }
-    toast({
-      title: ko === 0
-        ? t(modal.azione === "approvata" ? "richieste_iscrizione.toast.approvate" : "richieste_iscrizione.toast.rifiutate", { count: ok })
-        : t("richieste_iscrizione.toast.completate_errori", { ok, ko }),
-      variant: ko > 0 ? "destructive" : undefined,
+      return {
+        id: r.id,
+        atleta_id: r.atleta_id,
+        atleta_nome: atleta ? `${atleta.nome} ${atleta.cognome}` : "",
+        corso_id: r.corso_id,
+        corso_nome: corso?.nome || "",
+      };
     });
-    set_selezione([]);
-    set_modal(null);
+    set_modal({ richieste: preparate, azione });
   };
 
   const stato_badge = (stato: string) => {
