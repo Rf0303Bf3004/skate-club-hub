@@ -532,5 +532,29 @@
     "qr_permesso_negato": "Camera permission denied: you can still type the code below.",
     "qr_fotocamera_assente": "No camera available: type the code below.",
     "qr_non_valido": "This QR code does not contain a rinkside code. Keep scanning."
+  },
+  "dt_home": {
+    "titolo": "Today's ice",
+    "senza_club_titolo": "Your account is not linked to a club",
+    "senza_club_testo": "That is why we cannot show today's ice. Choose or link a club to see the sessions.",
+    "buchi": "Today's gaps — sessions without an instructor",
+    "nessun_buco": "Every session today has an instructor assigned.",
+    "errore_sessioni": "We could not read today's sessions. Please try again shortly.",
+    "ghiaccio_oggi": "Today's ice",
+    "nessuna_sessione": "There is no session on the ice today.",
+    "sessione": "Session",
+    "atlete_one": "{{count}} skater",
+    "atlete_other": "{{count}} skaters",
+    "appello_fatto": "Attendance taken",
+    "appello_da_fare": "Attendance to take",
+    "senza_istruttore": "No instructor assigned",
+    "errore_appello": "We could not read the attendance status of every session.",
+    "vai_pista": "Open rinkside",
+    "richieste": "Private lesson requests to approve",
+    "nessuna_richiesta": "There are no pending requests.",
+    "errore_richieste": "We could not read the private lesson requests. Please try again shortly.",
+    "atleta": "Skater",
+    "senza_data": "No preferred date",
+    "vai_richieste": "Open the requests"
   }
 }

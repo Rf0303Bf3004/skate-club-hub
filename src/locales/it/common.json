@@ -610,5 +610,29 @@
     "qr_permesso_negato": "Permesso alla fotocamera negato: puoi comunque digitare il codice qui sotto.",
     "qr_fotocamera_assente": "Nessuna fotocamera disponibile: digita il codice qui sotto.",
     "qr_non_valido": "Questo QR non contiene un codice di bordo pista. Continua a inquadrare."
+  },
+  "dt_home": {
+    "titolo": "Il ghiaccio di oggi",
+    "senza_club_titolo": "Il tuo accesso non è collegato a un club",
+    "senza_club_testo": "Per questo non possiamo mostrarti il ghiaccio di oggi. Scegli o collega un club per vedere le sessioni.",
+    "buchi": "Buchi di oggi — sessioni senza istruttore",
+    "nessun_buco": "Ogni sessione di oggi ha un istruttore assegnato.",
+    "errore_sessioni": "Non è stato possibile leggere le sessioni di oggi. Riprova fra poco.",
+    "ghiaccio_oggi": "Il ghiaccio di oggi",
+    "nessuna_sessione": "Oggi non c'è nessuna sessione sul ghiaccio.",
+    "sessione": "Sessione",
+    "atlete_one": "{{count}} atleta",
+    "atlete_other": "{{count}} atlete",
+    "appello_fatto": "Appello fatto",
+    "appello_da_fare": "Appello da fare",
+    "senza_istruttore": "Nessun istruttore assegnato",
+    "errore_appello": "Non è stato possibile leggere lo stato dell'appello di tutte le sessioni.",
+    "vai_pista": "Apri il bordo pista",
+    "richieste": "Richieste di lezione privata da approvare",
+    "nessuna_richiesta": "Non ci sono richieste in attesa.",
+    "errore_richieste": "Non è stato possibile leggere le richieste di lezione privata. Riprova fra poco.",
+    "atleta": "Atleta",
+    "senza_data": "Senza data preferita",
+    "vai_richieste": "Apri le richieste"
   }
 }
