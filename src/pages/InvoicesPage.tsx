@@ -59,7 +59,7 @@ const InvoicesPage: React.FC = () => {
 
   const schede = useMemo(() => {
     if (!schede_attive) return [] as { id: string; nome: string; non_attivo?: boolean }[];
-    const lista = [
+    const lista: { id: string; nome: string; non_attivo?: boolean }[] = [
       { id: "club", nome: club?.nome || t("invoices_page.enti.club_fallback") },
       ...ragioni_attive.map((r) => ({ id: r.id, nome: r.nome })),
     ];
