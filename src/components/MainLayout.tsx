@@ -192,7 +192,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const render_nav_item = (path: string, Icon: any, label: string, key: string, disabled?: boolean) => {
     const is_active = location.pathname === path || (path !== "/" && location.pathname.startsWith(path));
     const show_badge = key === "comunicazioni" && non_lette_iscrizioni > 0;
-    const show_pending = key === "atleti" && richieste_pendenti > 0;
+    // Il bollino delle richieste sta sulla voce che le apre, non su "Atleti".
+    const show_pending = key === "richieste_iscrizione" && richieste_pendenti > 0;
     if (disabled) {
       return (
         <div key={key} title={tc("coming_soon")}
