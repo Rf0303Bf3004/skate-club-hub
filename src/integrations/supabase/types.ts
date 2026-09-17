@@ -4114,7 +4114,11 @@ export type Database = {
           created_at: string
           data_fine: string | null
           data_iscrizione: string | null
+          forzata: boolean
+          forzato_at: string | null
+          forzato_da: string | null
           id: string
+          motivo_forzatura: string | null
           note_salto_livello: string | null
           ragione_sociale_id: string | null
           ragione_sociale_listino_id: string | null
@@ -4127,7 +4131,11 @@ export type Database = {
           created_at?: string
           data_fine?: string | null
           data_iscrizione?: string | null
+          forzata?: boolean
+          forzato_at?: string | null
+          forzato_da?: string | null
           id?: string
+          motivo_forzatura?: string | null
           note_salto_livello?: string | null
           ragione_sociale_id?: string | null
           ragione_sociale_listino_id?: string | null
@@ -4140,7 +4148,11 @@ export type Database = {
           created_at?: string
           data_fine?: string | null
           data_iscrizione?: string | null
+          forzata?: boolean
+          forzato_at?: string | null
+          forzato_da?: string | null
           id?: string
+          motivo_forzatura?: string | null
           note_salto_livello?: string | null
           ragione_sociale_id?: string | null
           ragione_sociale_listino_id?: string | null
