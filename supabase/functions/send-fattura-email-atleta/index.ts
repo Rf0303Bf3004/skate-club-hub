@@ -213,7 +213,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         from: `${clubNome} <fatture@send.icearena.ch>`,
         to: [destinatario],
-        subject: `Fattura ${f.numero ?? ""} - ${clubNome}`,
+        subject: oggetto,
         html,
       }),
     });
