@@ -149,7 +149,12 @@ const SegreteriaDashboard: React.FC = () => {
         throw new Error(error.message);
       }
       const richieste = (data ?? []) as RichiestaIscrizione[];
-      if (richieste.length === 0) return [] as (RichiestaIscrizione & { atleta: string; corso: string })[];
+      if (richieste.length === 0)
+        return [] as (RichiestaIscrizione & {
+          atleta: string;
+          atleta_nome_naturale: string;
+          corso: string;
+        })[];
 
       const atleta_ids = Array.from(new Set(richieste.map((r) => r.atleta_id)));
       const corso_ids = Array.from(new Set(richieste.map((r) => r.corso_id)));
