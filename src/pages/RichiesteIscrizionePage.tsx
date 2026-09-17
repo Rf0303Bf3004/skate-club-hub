@@ -3,7 +3,6 @@ import { Navigate } from "react-router-dom";
 import { use_richieste_iscrizione, use_atleti, use_corsi } from "@/hooks/use-supabase-data";
 import ConfermaRichiesteDialog from "@/components/richieste/ConfermaRichiesteDialog";
 import type { RichiestaDaGestire } from "@/hooks/use-richieste-iscrizione";
-import { useAuth } from "@/lib/auth";
 import { usePermessiSezioniMatrix } from "@/hooks/usePermessi";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +22,6 @@ const PAGE_SIZES = [25, 50, 100];
 const RichiesteIscrizionePage: React.FC = () => {
   const { t } = useTranslation("atleti");
   const { puo_gestire_sportivo } = usePermessiAzione();
-  const { session } = useAuth();
   const { visibile_set, is_admin_like, is_loading: is_loading_permessi } = usePermessiSezioniMatrix();
   const allowed = is_admin_like || visibile_set.has("richieste_iscrizione");
   const { data: richieste = [], isLoading: isLoadingRichieste, isError } = use_richieste_iscrizione();
