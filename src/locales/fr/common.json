@@ -585,6 +585,19 @@
     "manca_indirizzo": "adresse manquante",
     "manca_email_indirizzo": "e-mail et adresse manquants",
     "anagrafiche_contesto": "Sans ces données, la facture ne part pas.",
-    "vai_atleti": "Ouvrir les patineuses"
+    "vai_atleti": "Ouvrir les patineuses",
+    "club_fallback": "Le club",
+    "approva": "Approuver",
+    "rifiuta": "Refuser",
+    "in_attesa_da_one": "en attente depuis {{count}} jour",
+    "in_attesa_da_other": "en attente depuis {{count}} jours",
+    "bozze_conteggio_one": "{{count}} facture",
+    "bozze_conteggio_other": "{{count}} factures",
+    "rivedi_invia": "Revoir et envoyer",
+    "niente_da_fare": "Rien à faire aujourd'hui.",
+    "ok_scadute": "Aucune facture échue",
+    "ok_richieste": "Aucune inscription en attente",
+    "ok_bozze": "Aucune facture à envoyer",
+    "ok_anagrafiche": "Fiches complètes"
   }
 }

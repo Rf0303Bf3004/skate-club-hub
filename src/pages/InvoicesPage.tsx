@@ -267,7 +267,7 @@ const InvoicesPage: React.FC = () => {
               filtri.push({
                 key: "stato", label: t("invoices_page.filters.status_label"), value: status_filter,
                 options: stato_options,
-                onChange: set_status_filter,
+                onChange: cambia_stato,
               });
             }
             filtri.push({

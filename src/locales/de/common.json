@@ -585,6 +585,19 @@
     "manca_indirizzo": "Adresse fehlt",
     "manca_email_indirizzo": "E-Mail und Adresse fehlen",
     "anagrafiche_contesto": "Ohne diese Daten geht die Rechnung nicht raus.",
-    "vai_atleti": "Läuferinnen öffnen"
+    "vai_atleti": "Läuferinnen öffnen",
+    "club_fallback": "Der Club",
+    "approva": "Annehmen",
+    "rifiuta": "Ablehnen",
+    "in_attesa_da_one": "wartet seit {{count}} Tag",
+    "in_attesa_da_other": "wartet seit {{count}} Tagen",
+    "bozze_conteggio_one": "{{count}} Rechnung",
+    "bozze_conteggio_other": "{{count}} Rechnungen",
+    "rivedi_invia": "Prüfen und senden",
+    "niente_da_fare": "Heute gibt es nichts zu tun.",
+    "ok_scadute": "Keine überfälligen Rechnungen",
+    "ok_richieste": "Keine offenen Anmeldungen",
+    "ok_bozze": "Keine Rechnungen zu senden",
+    "ok_anagrafiche": "Stammdaten vollständig"
   }
 }

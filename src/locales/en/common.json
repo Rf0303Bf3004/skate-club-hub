@@ -585,6 +585,19 @@
     "manca_indirizzo": "missing address",
     "manca_email_indirizzo": "missing email and address",
     "anagrafiche_contesto": "Without these details the invoice cannot be sent.",
-    "vai_atleti": "Open the athletes"
+    "vai_atleti": "Open the athletes",
+    "club_fallback": "The club",
+    "approva": "Approve",
+    "rifiuta": "Decline",
+    "in_attesa_da_one": "waiting for {{count}} day",
+    "in_attesa_da_other": "waiting for {{count}} days",
+    "bozze_conteggio_one": "{{count}} invoice",
+    "bozze_conteggio_other": "{{count}} invoices",
+    "rivedi_invia": "Review and send",
+    "niente_da_fare": "Nothing to do today.",
+    "ok_scadute": "No overdue invoices",
+    "ok_richieste": "No pending registrations",
+    "ok_bozze": "No invoices to send",
+    "ok_anagrafiche": "Athlete records complete"
   }
 }
