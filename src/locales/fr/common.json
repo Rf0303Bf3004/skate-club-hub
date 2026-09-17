@@ -532,5 +532,29 @@
     "qr_permesso_negato": "Autorisation de la caméra refusée : vous pouvez saisir le code ci-dessous.",
     "qr_fotocamera_assente": "Aucune caméra disponible : saisissez le code ci-dessous.",
     "qr_non_valido": "Ce QR ne contient pas de code bord de piste. Continuez à scanner."
+  },
+  "dt_home": {
+    "titolo": "La glace d'aujourd'hui",
+    "senza_club_titolo": "Votre accès n'est pas lié à un club",
+    "senza_club_testo": "C'est pourquoi nous ne pouvons pas afficher la glace d'aujourd'hui. Choisissez ou liez un club pour voir les séances.",
+    "buchi": "Trous d'aujourd'hui — séances sans entraîneur",
+    "nessun_buco": "Chaque séance d'aujourd'hui a un entraîneur assigné.",
+    "errore_sessioni": "Impossible de lire les séances d'aujourd'hui. Réessayez dans un instant.",
+    "ghiaccio_oggi": "La glace d'aujourd'hui",
+    "nessuna_sessione": "Aucune séance sur la glace aujourd'hui.",
+    "sessione": "Séance",
+    "atlete_one": "{{count}} patineuse",
+    "atlete_other": "{{count}} patineuses",
+    "appello_fatto": "Appel fait",
+    "appello_da_fare": "Appel à faire",
+    "senza_istruttore": "Aucun entraîneur assigné",
+    "errore_appello": "Impossible de lire l'état de l'appel de toutes les séances.",
+    "vai_pista": "Ouvrir le bord de piste",
+    "richieste": "Demandes de cours privé à approuver",
+    "nessuna_richiesta": "Aucune demande en attente.",
+    "errore_richieste": "Impossible de lire les demandes de cours privé. Réessayez dans un instant.",
+    "atleta": "Patineuse",
+    "senza_data": "Sans date souhaitée",
+    "vai_richieste": "Ouvrir les demandes"
   }
 }

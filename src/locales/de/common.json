@@ -532,5 +532,29 @@
     "qr_permesso_negato": "Kamerazugriff verweigert: Sie können den Code unten eingeben.",
     "qr_fotocamera_assente": "Keine Kamera verfügbar: Geben Sie den Code unten ein.",
     "qr_non_valido": "Dieser QR-Code enthält keinen Eisflächen-Code. Weiter scannen."
+  },
+  "dt_home": {
+    "titolo": "Das Eis von heute",
+    "senza_club_titolo": "Dein Zugang ist mit keinem Club verknüpft",
+    "senza_club_testo": "Deshalb können wir das Eis von heute nicht anzeigen. Wähle oder verknüpfe einen Club, um die Einheiten zu sehen.",
+    "buchi": "Lücken von heute — Einheiten ohne Trainer",
+    "nessun_buco": "Jede Einheit von heute hat einen Trainer.",
+    "errore_sessioni": "Die Einheiten von heute konnten nicht gelesen werden. Bitte versuche es gleich noch einmal.",
+    "ghiaccio_oggi": "Das Eis von heute",
+    "nessuna_sessione": "Heute gibt es keine Einheit auf dem Eis.",
+    "sessione": "Einheit",
+    "atlete_one": "{{count}} Läuferin",
+    "atlete_other": "{{count}} Läuferinnen",
+    "appello_fatto": "Anwesenheit erfasst",
+    "appello_da_fare": "Anwesenheit offen",
+    "senza_istruttore": "Kein Trainer zugewiesen",
+    "errore_appello": "Der Anwesenheitsstand konnte nicht für alle Einheiten gelesen werden.",
+    "vai_pista": "Eisrand öffnen",
+    "richieste": "Anfragen für Privatstunden",
+    "nessuna_richiesta": "Es gibt keine offenen Anfragen.",
+    "errore_richieste": "Die Anfragen für Privatstunden konnten nicht gelesen werden. Bitte versuche es gleich noch einmal.",
+    "atleta": "Läuferin",
+    "senza_data": "Ohne Wunschdatum",
+    "vai_richieste": "Anfragen öffnen"
   }
 }
