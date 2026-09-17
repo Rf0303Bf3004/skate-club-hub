@@ -8784,6 +8784,15 @@ export type Database = {
           urgenza: number
         }[]
       }
+      demo_indirizzo_atleta: {
+        Args: {
+          p_cognome: string
+          p_dominio: string
+          p_locale: string
+          p_nome: string
+        }
+        Returns: string
+      }
       demo_puo_reindirizzare_email: { Args: never; Returns: boolean }
       demo_reindirizza_email: {
         Args: { p_club: string; p_indirizzo: string }

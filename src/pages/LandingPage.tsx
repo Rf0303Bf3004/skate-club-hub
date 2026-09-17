@@ -59,12 +59,20 @@ const LandingPage: React.FC = () => {
               La navigazione interna di react-router non ricaricherebbe la
               pagina, la rotta /pista-login non verrebbe trovata e si avrebbe
               una schermata bianca senza errore. */}
-          <a
-            href="/pista-login"
-            className="inline-block text-sm text-white/60 hover:text-white/90 underline-offset-4 hover:underline"
-          >
-            Tablet di bordo pista →
-          </a>
+          <div className="flex flex-col items-center gap-2">
+            <a
+              href="/staff"
+              className="inline-block text-sm text-white/70 hover:text-white underline-offset-4 hover:underline"
+            >
+              Accesso staff →
+            </a>
+            <a
+              href="/pista-login"
+              className="inline-block text-sm text-white/60 hover:text-white/90 underline-offset-4 hover:underline"
+            >
+              Tablet di bordo pista →
+            </a>
+          </div>
         </div>
       </div>
     </main>
