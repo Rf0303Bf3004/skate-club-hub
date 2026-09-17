@@ -41,5 +41,222 @@
     "empty": "No pending requests",
     "nessuna_data": "No preferred date",
     "apri": "Open the requests"
+  },
+  "president_home": {
+    "kicker": "President dashboard",
+    "loading": "Loading club analysis...",
+    "retry": "Try again",
+    "club_fallback": "Club",
+    "role_fallback": "President",
+    "analysis_of": "Analysis of {{club}}",
+    "hero": "Season {{stagione}}: this page shows only data recorded for {{club}}.",
+    "report_link": "Open report",
+    "report_content_link": "Report contents",
+    "open_area": "Open area →",
+    "open_link": "Open →",
+    "close": "Close",
+    "compare_last_year_short": "Compare last year",
+    "disclaimer": "The values shown come from recorded data. A dash means missing data, not zero.",
+    "no_club": {
+      "title": "Access not linked to a club",
+      "text": "I cannot read club data until this access is linked to a club."
+    },
+    "no_season": {
+      "title": "No season configured",
+      "text": "At least one season is required to analyze the club.",
+      "link": "Open seasons"
+    },
+    "error": {
+      "title": "Data unavailable",
+      "text": "The read failed: {{motivo}}",
+      "stagioni_operation": "President seasons read",
+      "dashboard_operation": "President dashboard read"
+    },
+    "missing": {
+      "title": "Missing data",
+      "short": "Data not recorded"
+    },
+    "empty": {
+      "title": "No data",
+      "short": "No data recorded"
+    },
+    "state": {
+      "positivo": "recorded",
+      "neutro": "stable",
+      "attenzione": "to watch",
+      "mancante": "missing data"
+    },
+    "greet": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "stats": {
+      "total_athletes": "Active athletes",
+      "revenue": "Season revenue",
+      "cash_balance": "Cash balance",
+      "waiting_list": "Waiting list"
+    },
+    "secretary": {
+      "title": "In the office",
+      "registrations": "Registrations to approve",
+      "draft_invoices": "Invoices to send",
+      "private_lessons": "Private lessons to approve"
+    },
+    "areas": {
+      "demand": {
+        "title": "Demand & Ice",
+        "sub": "Available hours, rink use and waiting list."
+      },
+      "athletes": {
+        "title": "Athletes",
+        "sub": "Active athletes, levels and real history."
+      },
+      "revenue": {
+        "title": "Revenue & Packages",
+        "sub": "Recorded income and used packages."
+      },
+      "costs": {
+        "title": "Costs & Instructors",
+        "sub": "Hours and costs calculated only from recorded rates and hours."
+      },
+      "private": {
+        "title": "Private Lessons",
+        "sub": "Recorded lessons, hours, revenue and top usage."
+      },
+      "sportivo": {
+        "title": "Sport",
+        "sub": "Season competitions, entries and recorded podiums."
+      },
+      "catalogo": {
+        "title": "Catalog & Promotion",
+        "sub": "Club identity, sponsors, events and offer."
+      }
+    },
+    "cards": {
+      "waiting_athletes": "athletes on waiting list",
+      "requested": "Requested",
+      "active_athletes": "active athletes",
+      "total_season_revenue": "recorded revenue",
+      "instructors": "{{count}} instructors with rate",
+      "private_hours": "{{count}} recorded hours",
+      "podiums_in_competitions": "{{podi}} podiums in {{gare}} competitions",
+      "sponsor_value": "{{importo}} yearly recorded"
+    },
+    "fonte": {
+      "altro": "Other",
+      "eventi": "Events",
+      "lezioni_private": "Private lessons",
+      "pacchetti_opzionali": "Optional packages",
+      "quote_corsi": "Course fees",
+      "sponsor": "Sponsors"
+    },
+    "dow": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    },
+    "ice": {
+      "available": "Available",
+      "used": "Used",
+      "requested_all": "Requested if everyone were accepted",
+      "hourly_cost": "Rink hourly cost",
+      "requests_received": "Requests received",
+      "accepted": "Accepted enrolments",
+      "in_waiting_list": "Waiting list",
+      "missing_hours": "Season ice hours are not configured.",
+      "no_courses": "No course capacity recorded for this season.",
+      "table": {
+        "course": "Course",
+        "capacity": "Capacity",
+        "enrolled": "Enrolled",
+        "waiting": "Waiting",
+        "saturation": "Saturation"
+      }
+    },
+    "athletes": {
+      "active_athletes": "Active athletes",
+      "dropouts": "Dropouts",
+      "avg_age": "Average age",
+      "years_short": "{{value}} years",
+      "levels_count": "Covered levels",
+      "levels_pyramid": "Level pyramid",
+      "trend_title": "Athletes by season",
+      "missing_previous_levels": "Previous season level history is not recorded: the level comparison stays hidden.",
+      "missing_trend": "At least two seasons with recorded history are required to show the trend."
+    },
+    "revenue": {
+      "season_revenue": "Season revenue",
+      "sources": "Sources",
+      "packages_used": "Used packages",
+      "composition": "Revenue composition",
+      "missing": "There are no revenue rows recorded for this season.",
+      "no_sources": "No source with a recorded amount.",
+      "packages_title": "Used optional packages",
+      "no_packages": "No optional package used in the season."
+    },
+    "costs": {
+      "instructors": "Instructors",
+      "hours_worked": "Worked hours",
+      "variable_cost": "Recorded-hour cost",
+      "hours_by_type": "Hours by type",
+      "fixed_monthly": "Monthly fixed",
+      "no_costs": "No instructor rate recorded for this season.",
+      "legend": {
+        "courses": "Courses",
+        "private": "Private",
+        "events": "Events",
+        "admin": "Admin"
+      }
+    },
+    "private": {
+      "lessons_sold": "Lessons",
+      "hours_sold_label": "Hours",
+      "turnover": "Revenue",
+      "top_instructors": "Top instructors",
+      "top_clients": "Top athletes",
+      "days_title": "Days with lessons",
+      "no_lessons": "No private lesson history recorded for this season.",
+      "no_top": "No data recorded.",
+      "no_days": "No date recorded."
+    },
+    "sport": {
+      "competitions": "Competitions",
+      "entries": "Competition entries",
+      "podiums": "Podiums",
+      "podium_rate": "Podium rate",
+      "top_athlete": "Most awarded athlete",
+      "podiums_count": "{{count}} podiums",
+      "no_competitions": "No competition recorded for this season.",
+      "missing_previous": "There are no previous-season competitions to compare.",
+      "previous_podiums": "Previous season podiums"
+    },
+    "catalog": {
+      "since": "Since {{anno}}",
+      "active_sponsors": "Active sponsors",
+      "sponsor_value": "Sponsor value",
+      "open_events": "Open events",
+      "participants": "Participants",
+      "searching": "Sponsors sought",
+      "offer": "Offer",
+      "course": "Course",
+      "package": "Package",
+      "sponsors": "Sponsors",
+      "events": "Events",
+      "event_value": "{{count}} participants",
+      "no_offer": "No offer recorded.",
+      "no_sponsors": "No active sponsor recorded.",
+      "no_events": "No public event recorded for the season."
+    },
+    "showcase": {
+      "title": "Competitive athletes",
+      "empty": "No active competitive athlete recorded.",
+      "competitor": "Competitor",
+      "podiums": "{{count}} podiums"
+    }
   }
 }

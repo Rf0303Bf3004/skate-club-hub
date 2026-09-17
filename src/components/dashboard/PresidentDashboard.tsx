@@ -1,48 +1,22 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  ArrowDown,
-  ArrowUp,
-  ArrowRight,
-  TrendingUp,
-  Users,
-  Snowflake,
-  Wallet,
-  Trophy,
   AlertTriangle,
-  FileDown,
-  Sparkles,
-  Calendar,
-  CreditCard,
+  ArrowDown,
+  ArrowRight,
+  ArrowUp,
   Briefcase,
+  Calendar,
   Clock,
-  X,
-  Megaphone,
-  Award,
-  FileText,
-  Download,
-  Copy,
-  Instagram,
-  Facebook,
+  CreditCard,
+  FileDown,
   Mail,
   MapPin,
+  Megaphone,
+  Snowflake,
+  Trophy,
+  Users,
 } from "lucide-react";
-import { toast } from "sonner";
-import {
-  Sheet,
-  SheetContent,
-} from "@/components/ui/sheet";
-import {
-  narrateDomanda,
-  narrateAtleti,
-  narrateRicavi,
-  narrateCosti,
-  narrateLezioni,
-  narrateSportivo,
-  narrateCatalogoPromozione,
-  type AreaNarration,
-  type Tone,
-} from "@/lib/narrate";
 import {
   ResponsiveContainer,
   LineChart,
@@ -56,55 +30,50 @@ import {
   BarChart,
   Bar,
   CartesianGrid,
-  Area,
-  AreaChart,
 } from "recharts";
-import { useAuth } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import OnboardingBanner from "@/components/dashboard/OnboardingBanner";
 import { useTranslation } from "react-i18next";
-import i18n from "@/i18n";
+
 import FotoAtleta from "@/components/common/FotoAtleta";
+import OnboardingBanner from "@/components/dashboard/OnboardingBanner";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Switch } from "@/components/ui/switch";
+import { useAuth } from "@/lib/auth";
+import { segnala_errore } from "@/lib/errori";
+import { supabase } from "@/lib/supabase";
 
-// Helper di traduzione: legge dal namespace `dashboard`, prefisso `president.`
-const tp = (k: string, opts?: Record<string, unknown>): string =>
-  i18n.t(`president.${k}`, { ns: "dashboard", ...(opts || {}) }) as string;
+type Riga = Record<string, unknown>;
+type Stagione = { id: string; nome: string; data_inizio: string; data_fine: string; attiva: boolean };
+type AreaId = "domanda" | "atleti" | "ricavi" | "costi" | "lezioni" | "sportivo" | "catalogo";
+type StatoArea = "positivo" | "neutro" | "attenzione" | "mancante";
 
-
-
-// ─── Helpers ──────────────────────────────────────────────────────────
-const fmt_chf = (n: number) =>
-  new Intl.NumberFormat("it-CH", { style: "currency", currency: "CHF", maximumFractionDigits: 0 }).format(n || 0);
-const fmt_int = (n: number) => new Intl.NumberFormat("it-CH").format(Math.round(n || 0));
-const fmt_pct = (n: number, dec = 0) => `${n >= 0 ? "" : ""}${n.toFixed(dec)}%`;
-const initials = (n?: string, c?: string) => ((n || "")[0] || "") + ((c || "")[0] || "") || "·";
-
-function useCountUp(target: number, duration = 1100) {
-  const [val, setVal] = useState(0);
-  useEffect(() => {
-    let raf = 0;
-    const t0 = performance.now();
-    const from = 0;
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - t0) / duration);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setVal(from + (target - from) * eased);
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, duration]);
-  return val;
-}
+type DashboardData = {
+  atleti: Riga[];
+  storici: Riga[];
+  bilancio: Riga[];
+  ricavi: Riga[];
+  capacita: Riga[];
+  richieste_storiche: Riga[];
+  ore_pista: Riga[];
+  catalogo_pacchetti: Riga[];
+  iscrizioni_pacchetti: Riga[];
+  costi_istruttori: Riga[];
+  ore_lavorate: Riga[];
+  lezioni_private: Riga[];
+  istruttori: Riga[];
+  gare: Riga[];
+  iscrizioni_gare: Riga[];
+  identity: Riga | null;
+  sponsor: Riga[];
+  sponsor_cercati: Riga[];
+  eventi: Riga[];
+  pendenti: {
+    iscrizioni: number;
+    fatture_bozza: number;
+    lezioni_private: number;
+  };
+};
 
 const LIVELLI_ORDER = [
   "Pulcini",
@@ -120,175 +89,298 @@ const LIVELLI_ORDER = [
   "Oro",
 ];
 
-const fonte_label = (k: string) => tp(`fonte.${k}`, { defaultValue: k });
-const FONTE_COLOR: Record<string, string> = {
-  quote_corsi: "#0e7490", // cyan-700
-  pacchetti_opzionali: "#10b981", // emerald
-  lezioni_private: "#f59e0b", // amber
-  eventi: "#8b5cf6", // violet
-  sponsor: "#ec4899", // pink
-  altro: "#94a3b8", // slate
+const AREA_PATHS: Record<AreaId, string> = {
+  domanda: "/corsi",
+  atleti: "/atleti",
+  ricavi: "/fatture",
+  costi: "/istruttori",
+  lezioni: "/lezioni-private",
+  sportivo: "/gare",
+  catalogo: "/pacchetti-sponsor",
 };
 
-// ─── Data fetching ────────────────────────────────────────────────────
-type Stagione = { id: string; nome: string; data_inizio: string; data_fine: string; attiva: boolean };
+const AREA_ACCENTS: Record<AreaId, string> = {
+  domanda: "bg-cyan-700",
+  atleti: "bg-emerald-600",
+  ricavi: "bg-sky-700",
+  costi: "bg-amber-600",
+  lezioni: "bg-rose-600",
+  sportivo: "bg-violet-600",
+  catalogo: "bg-teal-700",
+};
 
-function use_stagioni_demo(CLUB_ID: string | undefined) {
+const AREA_STROKES: Record<AreaId, string> = {
+  domanda: "hsl(var(--primary))",
+  atleti: "hsl(var(--chart-2, var(--primary)))",
+  ricavi: "hsl(var(--primary))",
+  costi: "hsl(var(--chart-4, var(--primary)))",
+  lezioni: "hsl(var(--chart-5, var(--primary)))",
+  sportivo: "hsl(var(--chart-3, var(--primary)))",
+  catalogo: "hsl(var(--chart-2, var(--primary)))",
+};
+
+const FONTE_COLOR: Record<string, string> = {
+  quote_corsi: "hsl(var(--primary))",
+  pacchetti_opzionali: "hsl(var(--chart-2, var(--primary)))",
+  lezioni_private: "hsl(var(--chart-4, var(--primary)))",
+  eventi: "hsl(var(--chart-3, var(--primary)))",
+  sponsor: "hsl(var(--chart-5, var(--primary)))",
+  altro: "hsl(var(--muted-foreground))",
+};
+
+const fmt_chf = (n: number) =>
+  new Intl.NumberFormat("it-CH", { style: "currency", currency: "CHF", maximumFractionDigits: 0 }).format(n || 0);
+const fmt_int = (n: number) => new Intl.NumberFormat("it-CH").format(Math.round(n || 0));
+const fmt_pct = (n: number, dec = 0) => `${n.toFixed(dec)}%`;
+const initials = (n?: string, c?: string) => `${(n || "")[0] || ""}${(c || "")[0] || ""}` || "·";
+
+function testo(v: unknown): string {
+  return typeof v === "string" ? v : "";
+}
+
+function numero(v: unknown): number {
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  if (typeof v === "string") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
+}
+
+function booleano(v: unknown): boolean {
+  return v === true;
+}
+
+function righe(data: unknown): Riga[] {
+  return Array.isArray(data) ? (data as Riga[]) : [];
+}
+
+function prima_riga(data: unknown): Riga | null {
+  if (!data || Array.isArray(data)) return null;
+  return data as Riga;
+}
+
+function errore_lettura(nome: string, error: unknown): Error {
+  const message = typeof error === "object" && error && "message" in error ? String((error as { message?: unknown }).message ?? "") : "";
+  return new Error(`${nome}: ${message || "lettura non riuscita"}`);
+}
+
+function controlla(nome: string, risultato: { data: unknown; error: unknown }): unknown {
+  if (risultato.error) throw errore_lettura(nome, risultato.error);
+  return risultato.data;
+}
+
+function controlla_count(nome: string, risultato: { count?: number | null; error: unknown }): number {
+  if (risultato.error) throw errore_lettura(nome, risultato.error);
+  return risultato.count ?? 0;
+}
+
+function is_podio(r: Riga): boolean {
+  const medaglia = testo(r.medaglia).toLowerCase();
+  const posizione = numero(r.posizione);
+  return medaglia.includes("oro") || medaglia.includes("argent") || medaglia.includes("bronz") || [1, 2, 3].includes(posizione);
+}
+
+function stagione_anno_inizio(stagione: Stagione | undefined): number | null {
+  const da_data = stagione?.data_inizio ? Number(stagione.data_inizio.slice(0, 4)) : NaN;
+  if (Number.isFinite(da_data)) return da_data;
+  const trovato = stagione?.nome?.match(/\d{4}/)?.[0];
+  return trovato ? Number(trovato) : null;
+}
+
+function in_stagione_sponsor(r: Riga, anno: number | null): boolean {
+  if (anno === null) return true;
+  const inizio = numero(r.stagione_inizio);
+  const fine_raw = r.stagione_fine;
+  const fine = fine_raw === null || fine_raw === undefined ? null : numero(fine_raw);
+  return (!inizio || inizio <= anno) && (fine === null || fine >= anno);
+}
+
+function use_segnala_query_error(dove: string, operazione: string, is_error: boolean, error: unknown) {
+  useEffect(() => {
+    if (!is_error || !error) return;
+    void segnala_errore(dove, operazione, error, undefined, "avviso");
+  }, [dove, operazione, is_error, error]);
+}
+
+function use_stagioni_presidente(club_id: string | undefined) {
   return useQuery<Stagione[]>({
-    queryKey: ["pres_stagioni", CLUB_ID],
-    enabled: !!CLUB_ID,
+    queryKey: ["presidente", "stagioni", club_id],
+    enabled: !!club_id,
+    retry: 1,
     staleTime: 30_000,
     queryFn: async () => {
-      const { data } = await supabase
+      const res = await supabase
         .from("stagioni")
         .select("id, nome, data_inizio, data_fine, attiva")
-        .eq("club_id", CLUB_ID as string)
+        .eq("club_id", club_id as string)
         .order("data_inizio", { ascending: false });
-      return (data as any) || [];
+      return righe(controlla("stagioni", res)).map((s) => ({
+        id: testo(s.id),
+        nome: testo(s.nome),
+        data_inizio: testo(s.data_inizio),
+        data_fine: testo(s.data_fine),
+        attiva: booleano(s.attiva),
+      }));
     },
   });
 }
 
-function use_dashboard_data(CLUB_ID: string | undefined, stagione_id: string | null, prev_stagione_id: string | null) {
-  return useQuery({
-    queryKey: ["pres_dashboard", CLUB_ID, stagione_id, prev_stagione_id],
-    enabled: !!CLUB_ID && !!stagione_id,
+function use_presidente_dashboard(club_id: string | undefined, stagione_id: string | null, prev_stagione_id: string | null) {
+  return useQuery<DashboardData>({
+    queryKey: ["presidente", "dashboard", club_id, stagione_id, prev_stagione_id],
+    enabled: !!club_id && !!stagione_id,
+    retry: 1,
     staleTime: 30_000,
     queryFn: async () => {
-      const ids = [stagione_id, prev_stagione_id].filter(Boolean) as string[];
+      const ids = [stagione_id, prev_stagione_id].filter((id): id is string => !!id);
       const [
-        atletiR,
-        storiciR,
-        bilancioR,
-        ricaviR,
-        capacitaR,
-        richiesteR,
-        oreR,
-        catalogoPackR,
-        iscrPackR,
-        costiIstR,
-        oreLavR,
-        lezioniR,
-        istruttoriR,
-        motiviR,
-        cassaR,
-        igareR,
+        atleti_res,
+        storici_res,
+        bilancio_res,
+        ricavi_res,
+        capacita_res,
+        richieste_res,
+        ore_res,
+        catalogo_pack_res,
+        iscr_pack_res,
+        costi_istruttori_res,
+        ore_lavorate_res,
+        lezioni_res,
+        istruttori_res,
+        gare_res,
+        identity_res,
+        sponsor_res,
+        sponsor_cercati_res,
+        eventi_res,
+        pendenti_iscrizioni_res,
+        pendenti_fatture_res,
+        pendenti_lezioni_res,
       ] = await Promise.all([
-        supabase.from("atleti").select("id, nome, cognome, foto_url, foto_path, livello_artistica, livello_attuale, livello_amatori, livello_stile, agonista, data_nascita, attivo, categoria").eq("club_id", CLUB_ID),
-        supabase.from("atleti_storici_stagioni").select("status, motivo_abbandono, stagione_id, livello").eq("club_id", CLUB_ID).in("stagione_id", ids),
-        supabase.from("bilancio_stagione").select("*").eq("club_id", CLUB_ID),
-        supabase.from("ricavi_per_fonte").select("*").eq("club_id", CLUB_ID),
-        supabase.from("capacita_corsi").select("corso_id, capacita_max, ore_settimanali_dedicate, corsi(nome, stagione_id)").eq("club_id", CLUB_ID),
-        supabase.from("richieste_iscrizione_storiche").select("*").eq("club_id", CLUB_ID).in("stagione_id", ids),
-          supabase.from("ore_pista_disponibili").select("*").eq("club_id", CLUB_ID),
-        supabase.from("catalogo_pacchetti_opzionali").select("id, nome, costo_mensile, costo_annuale, costo_1_sessione, costo_2_sessioni").eq("club_id", CLUB_ID),
-        supabase.from("iscrizioni_pacchetti_storiche").select("pacchetto_id, prezzo_pagato, atleta_id, stagione_id").eq("club_id", CLUB_ID).eq("stagione_id", stagione_id as string),
-        supabase.from("costi_istruttori").select("*").eq("club_id", CLUB_ID).eq("stagione_id", stagione_id as string),
-        supabase.from("ore_lavorate_istruttori").select("*").eq("club_id", CLUB_ID).eq("stagione_id", stagione_id as string),
-        supabase.from("lezioni_private_storiche").select("istruttore_id, atleta_id, ore, importo_pagato, data").eq("club_id", CLUB_ID).eq("stagione_id", stagione_id as string),
-        supabase.from("istruttori").select("id, nome, cognome").eq("club_id", CLUB_ID),
-        supabase.from("motivi_abbandono_aggregati").select("motivo, count, stagione_id").eq("club_id", CLUB_ID).eq("stagione_id", stagione_id as string),
-        supabase.from("cassa_movimenti").select("*").eq("club_id", CLUB_ID).eq("stagione_id", stagione_id as string),
-        supabase.from("iscrizioni_gare").select("medaglia, posizione, atleta_id").limit(2000),
+        supabase
+          .from("atleti")
+          .select("id, nome, cognome, foto_path, livello_artistica, livello_attuale, livello_amatori, livello_stile, agonista, data_nascita, attivo, categoria")
+          .eq("club_id", club_id as string),
+        supabase
+          .from("atleti_storici_stagioni")
+          .select("status, motivo_abbandono, stagione_id, livello")
+          .eq("club_id", club_id as string)
+          .in("stagione_id", ids),
+        supabase.from("bilancio_stagione").select("*").eq("club_id", club_id as string).in("stagione_id", ids),
+        supabase.from("ricavi_per_fonte").select("*").eq("club_id", club_id as string).in("stagione_id", ids),
+        supabase
+          .from("capacita_corsi")
+          .select("corso_id, capacita_max, ore_settimanali_dedicate, corsi(nome, stagione_id)")
+          .eq("club_id", club_id as string),
+        supabase
+          .from("richieste_iscrizione_storiche")
+          .select("*")
+          .eq("club_id", club_id as string)
+          .in("stagione_id", ids),
+        supabase.from("ore_pista_disponibili").select("*").eq("club_id", club_id as string).in("stagione_id", ids),
+        supabase
+          .from("catalogo_pacchetti_opzionali")
+          .select("id, nome, costo_mensile, costo_annuale, costo_1_sessione, costo_2_sessioni, attivo")
+          .eq("club_id", club_id as string),
+        supabase
+          .from("iscrizioni_pacchetti_storiche")
+          .select("pacchetto_id, prezzo_pagato, atleta_id, stagione_id")
+          .eq("club_id", club_id as string)
+          .eq("stagione_id", stagione_id as string),
+        supabase.from("costi_istruttori").select("*").eq("club_id", club_id as string).eq("stagione_id", stagione_id as string),
+        supabase.from("ore_lavorate_istruttori").select("*").eq("club_id", club_id as string).eq("stagione_id", stagione_id as string),
+        supabase
+          .from("lezioni_private_storiche")
+          .select("istruttore_id, atleta_id, ore, importo_pagato, data")
+          .eq("club_id", club_id as string)
+          .eq("stagione_id", stagione_id as string),
+        supabase.from("istruttori").select("id, nome, cognome").eq("club_id", club_id as string),
+        supabase
+          .from("gare_calendario")
+          .select("id, nome, stagione_id")
+          .eq("club_id", club_id as string)
+          .in("stagione_id", ids),
+        supabase.from("club_identity").select("*").eq("club_id", club_id as string).maybeSingle(),
+        supabase.from("sponsor_attivi").select("*").eq("club_id", club_id as string).order("importo_annuo", { ascending: false }),
+        supabase
+          .from("sponsor_categorie_cercate")
+          .select("*")
+          .eq("club_id", club_id as string)
+          .order("importo_richiesto_indicativo", { ascending: false }),
+        supabase.from("eventi_pubblici").select("*").eq("club_id", club_id as string).eq("stagione_id", stagione_id as string),
+        supabase
+          .from("richieste_iscrizione")
+          .select("id", { count: "exact", head: true })
+          .eq("club_id", club_id as string)
+          .eq("stato", "in_attesa"),
+        supabase
+          .from("fatture")
+          .select("id", { count: "exact", head: true })
+          .eq("club_id", club_id as string)
+          .eq("stato", "bozza"),
+        supabase
+          .from("richieste_lezioni_private")
+          .select("id", { count: "exact", head: true })
+          .eq("club_id", club_id as string)
+          .eq("stato", "in_attesa"),
       ]);
+
+      const gare = righe(controlla("gare_calendario", gare_res));
+      const gara_ids = gare.map((g) => testo(g.id)).filter(Boolean);
+      const iscrizioni_gare_res = gara_ids.length
+        ? await supabase.from("iscrizioni_gare").select("medaglia, posizione, atleta_id, gara_id").in("gara_id", gara_ids)
+        : { data: [], error: null };
+
       return {
-        atleti: atletiR.data || [],
-        storici: storiciR.data || [],
-        bilancio: bilancioR.data || [],
-        ricavi: ricaviR.data || [],
-        capacita: capacitaR.data || [],
-        richieste: richiesteR.data || [],
-        ore: oreR.data || [],
-        catalogo_pack: catalogoPackR.data || [],
-        iscr_pack: iscrPackR.data || [],
-        costi_ist: costiIstR.data || [],
-        ore_lav: oreLavR.data || [],
-        lezioni: lezioniR.data || [],
-        istruttori: istruttoriR.data || [],
-        motivi: motiviR.data || [],
-        cassa: cassaR.data || [],
-        igare: igareR.data || [],
+        atleti: righe(controlla("atleti", atleti_res)),
+        storici: righe(controlla("atleti_storici_stagioni", storici_res)),
+        bilancio: righe(controlla("bilancio_stagione", bilancio_res)),
+        ricavi: righe(controlla("ricavi_per_fonte", ricavi_res)),
+        capacita: righe(controlla("capacita_corsi", capacita_res)),
+        richieste_storiche: righe(controlla("richieste_iscrizione_storiche", richieste_res)),
+        ore_pista: righe(controlla("ore_pista_disponibili", ore_res)),
+        catalogo_pacchetti: righe(controlla("catalogo_pacchetti_opzionali", catalogo_pack_res)),
+        iscrizioni_pacchetti: righe(controlla("iscrizioni_pacchetti_storiche", iscr_pack_res)),
+        costi_istruttori: righe(controlla("costi_istruttori", costi_istruttori_res)),
+        ore_lavorate: righe(controlla("ore_lavorate_istruttori", ore_lavorate_res)),
+        lezioni_private: righe(controlla("lezioni_private_storiche", lezioni_res)),
+        istruttori: righe(controlla("istruttori", istruttori_res)),
+        gare,
+        iscrizioni_gare: righe(controlla("iscrizioni_gare", iscrizioni_gare_res)),
+        identity: prima_riga(controlla("club_identity", identity_res)),
+        sponsor: righe(controlla("sponsor_attivi", sponsor_res)),
+        sponsor_cercati: righe(controlla("sponsor_categorie_cercate", sponsor_cercati_res)),
+        eventi: righe(controlla("eventi_pubblici", eventi_res)),
+        pendenti: {
+          iscrizioni: controlla_count("richieste_iscrizione", pendenti_iscrizioni_res),
+          fatture_bozza: controlla_count("fatture", pendenti_fatture_res),
+          lezioni_private: controlla_count("richieste_lezioni_private", pendenti_lezioni_res),
+        },
       };
     },
   });
 }
 
-function use_catalogo_data(CLUB_ID: string | undefined) {
-  return useQuery({
-    queryKey: ["pres_catalogo", CLUB_ID],
-    enabled: !!CLUB_ID,
-    staleTime: 30_000,
-    queryFn: async () => {
-      const sb: any = supabase;
-      const [identityR, sponsorR, cercateR, eventiR, materialiR] = await Promise.all([
-        sb.from("club_identity").select("*").eq("club_id", CLUB_ID).maybeSingle(),
-        sb.from("sponsor_attivi").select("*").eq("club_id", CLUB_ID).order("importo_annuo", { ascending: false }),
-        sb.from("sponsor_categorie_cercate").select("*").eq("club_id", CLUB_ID).order("importo_richiesto_indicativo", { ascending: false }),
-        sb.from("eventi_pubblici").select("*").eq("club_id", CLUB_ID),
-        sb.from("materiali_promo").select("*").eq("club_id", CLUB_ID),
-      ]);
-      return {
-        identity: identityR.data || null,
-        sponsor: sponsorR.data || [],
-        cercate: cercateR.data || [],
-        eventi: eventiR.data || [],
-        materiali: materialiR.data || [],
-      };
-    },
-  });
-}
-
-// ─── Mini UI ──────────────────────────────────────────────────────────
-const Section: React.FC<{ kicker: string; title: string; intro?: string; accent?: string; children: React.ReactNode }> = ({
-  kicker,
-  title,
-  intro,
-  accent = "#0e7490",
-  children,
-}) => (
-  <section className="px-6 md:px-10 py-16 md:py-24 max-w-[1400px] mx-auto">
-    <div className="mb-10 md:mb-14">
-      <div className="flex items-center gap-3 mb-4">
-        <span className="h-px w-10" style={{ background: accent }} />
-        <span className="uppercase tracking-[0.18em] text-xs font-semibold" style={{ color: accent }}>
-          {kicker}
-        </span>
+const MessaggioPagina: React.FC<{ titolo: string; testo: string; azione?: React.ReactNode; errore?: boolean }> = ({ titolo, testo, azione, errore }) => (
+  <div className="min-h-screen bg-background px-6 py-16">
+    <div className={`mx-auto max-w-3xl rounded-lg border p-6 ${errore ? "border-destructive/30 bg-destructive/10" : "border-amber-200 bg-amber-50"}`}>
+      <div className="flex items-start gap-3">
+        <AlertTriangle className={`mt-1 h-5 w-5 shrink-0 ${errore ? "text-destructive" : "text-amber-700"}`} />
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">{titolo}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{testo}</p>
+          {azione ? <div className="mt-4">{azione}</div> : null}
+        </div>
       </div>
-      <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl text-slate-900 leading-[1.05] tracking-tight">
-        {title}
-      </h2>
-      {intro && <p className="mt-4 text-lg text-slate-500 max-w-3xl">{intro}</p>}
     </div>
-    {children}
-  </section>
+  </div>
 );
 
-const HeroNumber: React.FC<{ value: number; suffix?: string; prefix?: string; delta?: number; label?: string; isCurrency?: boolean }> = ({
-  value,
-  suffix,
-  prefix,
-  delta,
-  label,
-  isCurrency,
-}) => {
-  const v = useCountUp(value);
-  const formatted = isCurrency ? fmt_chf(v) : fmt_int(v);
-  return (
-    <div>
-      <div className="font-serif text-[56px] md:text-[72px] leading-none tracking-tight text-slate-900 tabular-nums">
-        {prefix}
-        {formatted}
-        {suffix}
-      </div>
-      {(label || delta !== undefined) && (
-        <div className="mt-3 flex items-center gap-3 text-sm text-slate-500">
-          {label && <span>{label}</span>}
-          {delta !== undefined && <DeltaPill value={delta} />}
-        </div>
-      )}
-    </div>
-  );
-};
+const Caricamento: React.FC<{ testo_loading: string }> = ({ testo_loading }) => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="rounded-lg border bg-card px-5 py-4 text-sm text-muted-foreground shadow-sm">{testo_loading}</div>
+  </div>
+);
 
 const DeltaPill: React.FC<{ value: number; suffix?: string }> = ({ value, suffix = "%" }) => {
   const positive = value > 0.1;
@@ -296,8 +388,8 @@ const DeltaPill: React.FC<{ value: number; suffix?: string }> = ({ value, suffix
   const cls = positive
     ? "bg-emerald-50 text-emerald-700"
     : negative
-    ? "bg-rose-50 text-rose-700"
-    : "bg-slate-100 text-slate-600";
+      ? "bg-rose-50 text-rose-700"
+      : "bg-muted text-muted-foreground";
   const Icon = positive ? ArrowUp : negative ? ArrowDown : ArrowRight;
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>
@@ -308,1456 +400,495 @@ const DeltaPill: React.FC<{ value: number; suffix?: string }> = ({ value, suffix
   );
 };
 
-// ─── HEADER ───────────────────────────────────────────────────────────
-const Header: React.FC<{
-  nome: string;
-  stagioni: Stagione[];
-  stagioneId: string;
-  setStagioneId: (s: string) => void;
-  confronta: boolean;
-  setConfronta: (v: boolean) => void;
-  totAtleti: number;
-  ricavi: number;
-  cassa: number;
-  attesa: number;
-  stagioneNome: string;
-}> = ({ nome, stagioni, stagioneId, setStagioneId, confronta, setConfronta, totAtleti, ricavi, cassa, attesa, stagioneNome }) => {
-  const greet = (() => {
-    const h = new Date().getHours();
-    if (h < 12) return tp("greet.morning");
-    if (h < 18) return tp("greet.afternoon");
-    return tp("greet.evening");
-  })();
+const ValoreGrande: React.FC<{ value: string; label: string; delta?: number; tono?: "base" | "positivo" | "attenzione" | "pericolo" }> = ({
+  value,
+  label,
+  delta,
+  tono = "base",
+}) => {
+  const colore = tono === "positivo" ? "text-emerald-700" : tono === "attenzione" ? "text-amber-700" : tono === "pericolo" ? "text-rose-700" : "text-foreground";
   return (
-    <header className="px-6 md:px-10 pt-14 md:pt-20 pb-12 max-w-[1400px] mx-auto">
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
-        <div className="flex-1 min-w-0">
-          <div className="text-xs uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">
-            {tp("kicker")}
-          </div>
-          <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl text-slate-900 tracking-tight leading-[1.02]">
-            {greet}, {nome || tp("role_fallback")}.
-          </h1>
-          <p className="mt-5 text-lg md:text-xl text-slate-500 max-w-2xl leading-relaxed">
-            {tp("hero.season_prefix")} <span className="text-slate-900 font-medium">{stagioneNome}</span> {tp("hero.club_counts")}{" "}
-            <span className="text-slate-900 font-medium">{fmt_int(totAtleti)}</span> {tp("hero.athletes_and_earned")}{" "}
-            <span className="text-slate-900 font-medium">{fmt_chf(ricavi)}</span>.
-          </p>
-        </div>
-        <div className="flex flex-col gap-3 md:items-end shrink-0">
-          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full pl-4 pr-1 py-1 shadow-sm">
-            <Calendar className="h-4 w-4 text-slate-400" />
-            <Select value={stagioneId} onValueChange={setStagioneId}>
-              <SelectTrigger className="border-0 shadow-none h-9 min-w-[160px] focus:ring-0">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {stagioni.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <label className="inline-flex items-center gap-3 text-sm text-slate-600 cursor-pointer">
-            <Switch checked={confronta} onCheckedChange={setConfronta} />
-            <span>{tp("compare_last_year")}</span>
-          </label>
-        </div>
-      </div>
-
-      {/* mini hero stats */}
-      <div className="mt-14 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 border-t border-slate-200 pt-10">
-        <MiniHero label={tp("stats.total_athletes")} value={fmt_int(totAtleti)} />
-        <MiniHero label={tp("stats.season_revenue")} value={fmt_chf(ricavi)} />
-        <MiniHero label={tp("stats.cash_balance")} value={fmt_chf(cassa)} accent={cassa >= 0 ? "text-emerald-600" : "text-rose-600"} />
-        <MiniHero label={tp("stats.waiting_list")} value={fmt_int(attesa)} accent="text-amber-600" />
-      </div>
-    </header>
+    <div className="rounded-lg border bg-card p-5 shadow-sm">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className={`mt-2 text-3xl font-semibold tabular-nums ${colore}`}>{value}</div>
+      {delta !== undefined ? <div className="mt-2"><DeltaPill value={delta} /></div> : null}
+    </div>
   );
 };
-const MiniHero: React.FC<{ label: string; value: string; accent?: string }> = ({ label, value, accent = "text-slate-900" }) => (
-  <div className="min-w-0">
-    <div className="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-2 truncate">{label}</div>
-    <div
-      className={`font-serif tracking-tight tabular-nums leading-none truncate ${accent}`}
-      style={{ fontSize: "clamp(1.875rem, 2.4vw, 2.25rem)", fontFeatureSettings: "'tnum'" }}
-    >
-      {value}
-    </div>
+
+const StatoDati: React.FC<{ titolo: string; testo: string }> = ({ titolo, testo }) => (
+  <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+    <div className="font-semibold">{titolo}</div>
+    <div className="mt-1">{testo}</div>
   </div>
 );
 
-// ─── AREA 1 - GHIACCIO ────────────────────────────────────────────────
-const Area1Ghiaccio: React.FC<{ d: any; oreRow: any }> = ({ d, oreRow }) => {
-  if (!oreRow) return null;
-  const tot = Number(oreRow.ore_settimanali_totali || 0);
-  const used = Number(oreRow.ore_settimanali_utilizzate || 0);
-  const req = Number(oreRow.ore_richieste_se_accettassimo_tutti || 0);
-  const costo = Number(oreRow.costo_orario_pista || 180);
-  const max = Math.max(tot, used, req, 1);
-  const ricRows = (d.richieste || []).filter((r: any) => r.stagione_id);
-  const totRich = ricRows.reduce((s: number, r: any) => s + (r.n_richieste_ricevute || 0), 0);
-  const totAcc = ricRows.reduce((s: number, r: any) => s + (r.n_iscritti_accettati || 0), 0);
-  const totAtt = ricRows.reduce((s: number, r: any) => s + (r.n_in_lista_attesa || 0), 0);
-  const oreExtra = Math.max(0, req - tot);
-  const costoExtra = oreExtra * costo * 40; // ~40 settimane stagione
-  const ricaviExtraPotenziali = totAtt * 1000; // ~1000 CHF/atleta media
-
-  // join capacita+richieste per corso
-  const corsiMap = new Map<string, any>();
-  (d.capacita || []).forEach((c: any) => {
-    corsiMap.set(c.corso_id, {
-      nome: c.corsi?.nome || tp("ice.table.course"),
-      capacita: c.capacita_max,
-      ore: c.ore_settimanali_dedicate,
-      iscritti: 0,
-      attesa: 0,
-      richieste: 0,
-    });
-  });
-  ricRows.forEach((r: any) => {
-    const row = corsiMap.get(r.corso_id);
-    if (row) {
-      row.iscritti = r.n_iscritti_accettati;
-      row.attesa = r.n_in_lista_attesa;
-      row.richieste = r.n_richieste_ricevute;
-    }
-  });
-  const tabella = Array.from(corsiMap.values());
-
-  const Bar = ({ label, value, color, highlight }: any) => (
-    <div className="mb-5">
-      <div className="flex justify-between text-sm mb-2">
-        <span className="text-slate-700 font-medium">{label}</span>
-        <span className="font-serif text-2xl tabular-nums text-slate-900">{value}h</span>
-      </div>
-      <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all duration-700"
-          style={{ width: `${(value / max) * 100}%`, background: color, boxShadow: highlight ? `0 0 0 3px ${color}22` : undefined }}
-        />
-      </div>
+const RigaInfo: React.FC<{ label: string; value: string; tono?: "base" | "positivo" | "attenzione" | "pericolo" }> = ({ label, value, tono = "base" }) => {
+  const colore = tono === "positivo" ? "text-emerald-700" : tono === "attenzione" ? "text-amber-700" : tono === "pericolo" ? "text-rose-700" : "text-foreground";
+  return (
+    <div className="flex items-baseline justify-between gap-4 border-b border-border py-3 last:border-b-0">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className={`text-right font-semibold tabular-nums ${colore}`}>{value}</span>
     </div>
   );
+};
 
+const AreaCard: React.FC<{
+  id_area: AreaId;
+  title: string;
+  icon: React.ReactNode;
+  main_kpi: string;
+  sub_label: string;
+  stato: StatoArea;
+  stato_label: string;
+  link_label: string;
+  children: React.ReactNode;
+  on_open: () => void;
+}> = ({ id_area, title, icon, main_kpi, sub_label, stato, stato_label, link_label, children, on_open }) => {
+  const stato_cls =
+    stato === "positivo"
+      ? "bg-emerald-50 text-emerald-700"
+      : stato === "attenzione"
+        ? "bg-amber-50 text-amber-700"
+        : stato === "mancante"
+          ? "bg-rose-50 text-rose-700"
+          : "bg-muted text-muted-foreground";
   return (
-    <div className="grid lg:grid-cols-3 gap-10">
-      <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
-        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
-          {tp("ice.hours_title")}
-        </h3>
-        <Bar label={tp("ice.available")} value={tot} color="#0e7490" />
-        <Bar label={tp("ice.used")} value={used} color="#67e8f9" />
-        <Bar label={tp("ice.requested_all")} value={req} color="#f59e0b" highlight />
-        <div className="mt-8 p-5 rounded-2xl bg-amber-50 border border-amber-100">
-          <div className="flex items-start gap-3">
-            <Snowflake className="h-5 w-5 text-amber-600 mt-0.5" />
-            <div>
-              <div className="font-serif text-2xl text-amber-900">{tp("ice.extra_needed", { ore: oreExtra })}</div>
-              <div className="text-sm text-amber-800 mt-1">
-                {tp("ice.extra_cost_label")} <strong>{fmt_chf(costoExtra)}</strong>{tp("ice.per_year_potential", { count: totAtt })}{" "}
-                <strong>~{fmt_chf(ricaviExtraPotenziali)}</strong>
-              </div>
-            </div>
-          </div>
+    <article className="rounded-lg border bg-card p-6 shadow-sm">
+      <button type="button" onClick={on_open} className="w-full text-left focus:outline-none focus:ring-2 focus:ring-ring rounded-md">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <span className={`flex h-8 w-8 items-center justify-center rounded-md text-primary-foreground ${AREA_ACCENTS[id_area]}`}>{icon}</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wide">{title}</span>
         </div>
+        <div className="mt-5 text-3xl font-semibold tabular-nums text-foreground">{main_kpi}</div>
+        <div className="mt-1 text-sm text-muted-foreground">{sub_label}</div>
+        <div className="mt-5 min-h-[90px]">{children}</div>
+      </button>
+      <div className="mt-5 flex items-center justify-between gap-4">
+        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${stato_cls}`}>{stato_label}</span>
+        <a href={AREA_PATHS[id_area]} className="text-sm font-medium text-primary hover:underline">
+          {link_label}
+        </a>
       </div>
+    </article>
+  );
+};
 
-      <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm flex flex-col justify-between">
-        <div>
-          <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">{tp("ice.season_demand")}</h3>
-          <div className="space-y-6">
-            <div>
-              <div className="text-xs text-slate-500 uppercase tracking-wider">{tp("ice.requests_received")}</div>
-              <div className="font-serif text-4xl text-slate-900 tabular-nums">{fmt_int(totRich)}</div>
-            </div>
-            <div>
-              <div className="text-xs text-slate-500 uppercase tracking-wider">{tp("ice.accepted")}</div>
-              <div className="font-serif text-4xl text-emerald-600 tabular-nums">{fmt_int(totAcc)}</div>
-            </div>
-            <div>
-              <div className="text-xs text-slate-500 uppercase tracking-wider">{tp("ice.in_waiting_list")}</div>
-              <div className="font-serif text-4xl text-rose-600 tabular-nums">{fmt_int(totAtt)}</div>
-            </div>
+const MiniBarsHoriz: React.FC<{ items: { label: string; value: number; color: string }[]; empty_label: string }> = ({ items, empty_label }) => {
+  const max = Math.max(0, ...items.map((i) => i.value));
+  if (max === 0) return <div className="text-sm text-muted-foreground">{empty_label}</div>;
+  return (
+    <div className="space-y-2">
+      {items.map((it) => (
+        <div key={it.label} className="grid grid-cols-[88px_1fr_48px] items-center gap-2 text-xs">
+          <span className="truncate text-muted-foreground">{it.label}</span>
+          <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div className="h-full rounded-full" style={{ width: `${(it.value / max) * 100}%`, backgroundColor: it.color }} />
           </div>
+          <span className="text-right font-semibold tabular-nums text-foreground">{fmt_int(it.value)}</span>
         </div>
-        <div className="text-xs text-slate-500 mt-8">
-          {tp("ice.hourly_cost")} <strong className="text-slate-700">{fmt_chf(costo)}/h</strong>
-        </div>
-      </div>
+      ))}
+    </div>
+  );
+};
 
-      <div className="lg:col-span-3 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider">
-            <tr>
-              <th className="text-left px-6 py-4 font-semibold">{tp("ice.table.course")}</th>
-              <th className="text-right px-6 py-4 font-semibold">{tp("ice.table.capacity")}</th>
-              <th className="text-right px-6 py-4 font-semibold">{tp("ice.table.enrolled")}</th>
-              <th className="text-right px-6 py-4 font-semibold">{tp("ice.table.waiting")}</th>
-              <th className="text-right px-6 py-4 font-semibold">{tp("ice.table.saturation")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tabella.map((r: any, i: number) => {
-              const sat = r.capacita ? (r.iscritti / r.capacita) * 100 : 0;
-              return (
-                <tr key={i} className="border-t border-slate-100">
-                  <td className="px-6 py-4 font-medium text-slate-900">{r.nome}</td>
-                  <td className="px-6 py-4 text-right tabular-nums text-slate-600">{r.capacita}</td>
-                  <td className="px-6 py-4 text-right tabular-nums text-slate-900">{r.iscritti}</td>
-                  <td className="px-6 py-4 text-right tabular-nums">
-                    {r.attesa > 0 ? <span className="text-amber-600 font-semibold">{r.attesa}</span> : <span className="text-slate-400">0</span>}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="inline-flex items-center gap-2">
-                      <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-cyan-600" style={{ width: `${Math.min(100, sat)}%` }} />
-                      </div>
-                      <span className="tabular-nums font-semibold text-slate-700 w-12 text-right">{Math.round(sat)}%</span>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+const MiniPyramid: React.FC<{ items: { label: string; value: number }[]; empty_label: string }> = ({ items, empty_label }) => {
+  const max = Math.max(0, ...items.map((i) => i.value));
+  if (max === 0) return <div className="text-sm text-muted-foreground">{empty_label}</div>;
+  return (
+    <div className="space-y-2">
+      {items.map((it) => (
+        <div key={it.label} className="grid grid-cols-[88px_1fr_34px] items-center gap-2 text-xs">
+          <span className="truncate text-right text-muted-foreground">{it.label}</span>
+          <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div className="h-full rounded-full bg-emerald-600" style={{ width: `${(it.value / max) * 100}%` }} />
+          </div>
+          <span className="text-right font-semibold tabular-nums text-foreground">{fmt_int(it.value)}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const MiniDonut: React.FC<{ data: { name: string; value: number; color: string }[]; empty_label: string }> = ({ data, empty_label }) => {
+  const tot = data.reduce((s, d) => s + d.value, 0);
+  if (data.length === 0 || tot === 0) return <div className="text-sm text-muted-foreground">{empty_label}</div>;
+  return (
+    <div className="flex items-center gap-4">
+      <div className="h-24 flex-1 min-w-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={24} outerRadius={42} paddingAngle={2}>
+              {data.map((d) => <Cell key={d.name} fill={d.color} />)}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="min-w-0 flex-[2] space-y-1 text-xs">
+        {data.slice(0, 3).map((d) => (
+          <div key={d.name} className="flex items-center gap-2">
+            <span className="h-2 w-2 shrink-0 rounded-sm" style={{ backgroundColor: d.color }} />
+            <span className="truncate text-muted-foreground">{d.name}</span>
+            <span className="ml-auto font-semibold tabular-nums text-foreground">{fmt_pct((d.value / tot) * 100)}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
 };
 
-// ─── AREA 2 - ATLETI ──────────────────────────────────────────────────
-const Area2Atleti: React.FC<{ d: any; bilancioStorico: any[]; storiciByStagione: Map<string, any[]>; stagioniOrd: Stagione[]; currStagId: string; prevStagId: string | null; confronta: boolean }> = ({
-  d,
-  storiciByStagione,
-  stagioniOrd,
-  currStagId,
-  prevStagId,
-  confronta,
-}) => {
-  const atletiAttivi = (d.atleti || []).filter((a: any) => a.attivo);
-  const total = atletiAttivi.length;
+const MiniBarsVert: React.FC<{ items: { label: string; value: number }[]; empty_label: string }> = ({ items, empty_label }) => {
+  const max = Math.max(0, ...items.map((i) => i.value));
+  if (max === 0) return <div className="text-sm text-muted-foreground">{empty_label}</div>;
+  return (
+    <div className="flex h-24 items-end gap-3">
+      {items.map((it) => (
+        <div key={it.label} className="flex flex-1 flex-col items-center gap-1">
+          <span className="text-[10px] font-semibold tabular-nums text-foreground">{fmt_int(it.value)}</span>
+          <div className="w-full rounded-t bg-primary" style={{ height: `${Math.max(6, (it.value / max) * 56)}px` }} />
+          <span className="max-w-full truncate text-[10px] text-muted-foreground">{it.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
-  const curr = storiciByStagione.get(currStagId) || [];
-  const prev = prevStagId ? storiciByStagione.get(prevStagId) || [] : [];
-  const prevTot = prev.length;
-  const yoyPct = prevTot ? ((total - prevTot) / prevTot) * 100 : 0;
+const StatoSegreteria: React.FC<{ d: DashboardData; t: (key: string, opts?: Record<string, unknown>) => string }> = ({ d, t }) => {
+  const righe_pendenti = [
+    { label: t("president_home.secretary.registrations"), value: d.pendenti.iscrizioni, href: "/richieste-iscrizione" },
+    { label: t("president_home.secretary.draft_invoices"), value: d.pendenti.fatture_bozza, href: "/fatture?stato=bozza" },
+    { label: t("president_home.secretary.private_lessons"), value: d.pendenti.lezioni_private, href: "/lezioni-private" },
+  ];
+  return (
+    <section className="mt-8 rounded-lg border bg-card p-5 shadow-sm">
+      <div className="mb-4 flex items-center gap-2">
+        <AlertTriangle className="h-4 w-4 text-amber-700" />
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("president_home.secretary.title")}</h2>
+      </div>
+      <div className="grid gap-3 md:grid-cols-3">
+        {righe_pendenti.map((r) => (
+          <a key={r.href} href={r.href} className="rounded-lg border bg-background p-4 transition-colors hover:bg-muted/50">
+            <div className="text-2xl font-semibold tabular-nums text-foreground">{fmt_int(r.value)}</div>
+            <div className="mt-1 text-sm text-muted-foreground">{r.label}</div>
+            <div className="mt-3 text-sm font-medium text-primary">{t("president_home.open_link")}</div>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+};
 
-  const abbandoni = curr.filter((s) => s.status === "abbandonato").length;
-  const ritenzione = prevTot ? ((prevTot - abbandoni) / prevTot) * 100 : 100;
-  const newCount = Math.max(0, total - (prevTot - abbandoni));
+function fonte_label(t: (key: string, opts?: Record<string, unknown>) => string, fonte: string): string {
+  return t(`president_home.fonte.${fonte}`, { defaultValue: fonte });
+}
 
-  // età media
-  const today = new Date();
-  const ages = atletiAttivi
-    .map((a: any) => (a.data_nascita ? (today.getTime() - new Date(a.data_nascita).getTime()) / (365.25 * 24 * 3600 * 1000) : null))
-    .filter((x: any) => x != null);
-  const ageAvg = ages.length ? ages.reduce((a: number, b: number) => a + b, 0) / ages.length : 0;
-
-  // piramide
-  const counts: Record<string, number> = {};
-  LIVELLI_ORDER.forEach((l) => (counts[l] = 0));
-  atletiAttivi.forEach((a: any) => {
-    const l = a.livello_artistica || a.livello_amatori || a.livello_attuale;
-    if (l && counts[l] !== undefined) counts[l]++;
-    else if (a.categoria === "pulcini") counts["Pulcini"]++;
+function riepilogo_livelli(atleti: Riga[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  LIVELLI_ORDER.forEach((l) => { out[l] = 0; });
+  atleti.forEach((a) => {
+    const livello = testo(a.livello_artistica) || testo(a.livello_amatori) || testo(a.livello_attuale);
+    if (livello && out[livello] !== undefined) out[livello] += 1;
+    else if (testo(a.categoria) === "pulcini") out.Pulcini += 1;
   });
-  const maxLivello = Math.max(1, ...Object.values(counts));
-  const prevCounts: Record<string, number> = {};
-  LIVELLI_ORDER.forEach((l) => (prevCounts[l] = 0));
-  prev.forEach((s: any) => {
-    if (s.livello && prevCounts[s.livello] !== undefined) prevCounts[s.livello]++;
+  return out;
+}
+
+const AreaGhiaccio: React.FC<{ d: DashboardData; stagione_id: string; t: (key: string, opts?: Record<string, unknown>) => string }> = ({ d, stagione_id, t }) => {
+  const ore = d.ore_pista.find((o) => testo(o.stagione_id) === stagione_id);
+  const richieste = d.richieste_storiche.filter((r) => testo(r.stagione_id) === stagione_id);
+  const disponibili = ore ? numero(ore.ore_settimanali_totali) : null;
+  const utilizzate = ore ? numero(ore.ore_settimanali_utilizzate) : null;
+  const richieste_tutte = ore ? numero(ore.ore_richieste_se_accettassimo_tutti) : null;
+  const costo_orario = ore ? numero(ore.costo_orario_pista) : null;
+  const tot_richieste = richieste.reduce((s, r) => s + numero(r.n_richieste_ricevute), 0);
+  const tot_accettate = richieste.reduce((s, r) => s + numero(r.n_iscritti_accettati), 0);
+  const tot_attesa = richieste.reduce((s, r) => s + numero(r.n_in_lista_attesa), 0);
+  const corsi = new Map<string, { nome: string; capacita: number; iscritti: number; attesa: number }>();
+  d.capacita.forEach((c) => {
+    const corso = c.corsi as Riga | undefined;
+    if (testo(corso?.stagione_id) !== stagione_id) return;
+    corsi.set(testo(c.corso_id), {
+      nome: testo(corso?.nome) || t("president_home.ice.table.course"),
+      capacita: numero(c.capacita_max),
+      iscritti: 0,
+      attesa: 0,
+    });
   });
-  // fallback: se i livelli storici non sono popolati, scala dalla stagione corrente
-  const prevHasLevels = Object.values(prevCounts).some((v) => v > 0);
-  if (!prevHasLevels) {
-    const ratio = total ? prevTot / total : 1;
-    LIVELLI_ORDER.forEach((l) => (prevCounts[l] = Math.round(counts[l] * ratio)));
-  }
+  richieste.forEach((r) => {
+    const row = corsi.get(testo(r.corso_id));
+    if (!row) return;
+    row.iscritti = numero(r.n_iscritti_accettati);
+    row.attesa = numero(r.n_in_lista_attesa);
+  });
+  const tabella = Array.from(corsi.values());
 
-  const livColor = (i: number) => {
-    // gradient verde tenue → cyan → viola
-    const stops = ["#a7f3d0", "#86efac", "#67e8f9", "#22d3ee", "#0ea5e9", "#3b82f6", "#6366f1", "#8b5cf6", "#a78bfa", "#c084fc", "#e879f9"];
-    return stops[i] || "#8b5cf6";
-  };
+  return (
+    <div className="space-y-8">
+      {!ore ? <StatoDati titolo={t("president_home.missing.title")} testo={t("president_home.ice.missing_hours")} /> : null}
+      <div className="grid gap-4 md:grid-cols-4">
+        <ValoreGrande label={t("president_home.ice.available")} value={disponibili === null ? "—" : `${fmt_int(disponibili)} h`} />
+        <ValoreGrande label={t("president_home.ice.used")} value={utilizzate === null ? "—" : `${fmt_int(utilizzate)} h`} />
+        <ValoreGrande label={t("president_home.ice.requested_all")} value={richieste_tutte === null ? "—" : `${fmt_int(richieste_tutte)} h`} tono="attenzione" />
+        <ValoreGrande label={t("president_home.ice.hourly_cost")} value={costo_orario === null ? "—" : `${fmt_chf(costo_orario)}/h`} />
+      </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <ValoreGrande label={t("president_home.ice.requests_received")} value={fmt_int(tot_richieste)} />
+        <ValoreGrande label={t("president_home.ice.accepted")} value={fmt_int(tot_accettate)} tono="positivo" />
+        <ValoreGrande label={t("president_home.ice.in_waiting_list")} value={fmt_int(tot_attesa)} tono={tot_attesa > 0 ? "attenzione" : "base"} />
+      </div>
+      {tabella.length === 0 ? (
+        <StatoDati titolo={t("president_home.empty.title")} testo={t("president_home.ice.no_courses")} />
+      ) : (
+        <div className="overflow-x-auto rounded-lg border bg-card">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3 text-left font-semibold">{t("president_home.ice.table.course")}</th>
+                <th className="px-4 py-3 text-right font-semibold">{t("president_home.ice.table.capacity")}</th>
+                <th className="px-4 py-3 text-right font-semibold">{t("president_home.ice.table.enrolled")}</th>
+                <th className="px-4 py-3 text-right font-semibold">{t("president_home.ice.table.waiting")}</th>
+                <th className="px-4 py-3 text-right font-semibold">{t("president_home.ice.table.saturation")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tabella.map((r) => {
+                const sat = r.capacita ? (r.iscritti / r.capacita) * 100 : 0;
+                return (
+                  <tr key={r.nome} className="border-t">
+                    <td className="px-4 py-3 font-medium text-foreground">{r.nome}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{fmt_int(r.capacita)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-foreground">{fmt_int(r.iscritti)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums font-semibold text-amber-700">{fmt_int(r.attesa)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-foreground">{fmt_pct(sat)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
 
-  // trend atleti per stagione
-  const trend = stagioniOrd
+const AreaAtleti: React.FC<{ d: DashboardData; stagioni: Stagione[]; stagione_id: string; prev_stagione_id: string | null; confronta: boolean; t: (key: string, opts?: Record<string, unknown>) => string }> = ({ d, stagioni, stagione_id, prev_stagione_id, confronta, t }) => {
+  const attivi = d.atleti.filter((a) => booleano(a.attivo));
+  const storici_curr = d.storici.filter((s) => testo(s.stagione_id) === stagione_id);
+  const storici_prev = prev_stagione_id ? d.storici.filter((s) => testo(s.stagione_id) === prev_stagione_id) : [];
+  const prev_tot = storici_prev.length;
+  const yoy = prev_tot ? ((attivi.length - prev_tot) / prev_tot) * 100 : undefined;
+  const abbandoni = storici_curr.filter((s) => testo(s.status) === "abbandonato").length;
+  const eta_valide = attivi
+    .map((a) => testo(a.data_nascita))
+    .filter(Boolean)
+    .map((data) => (Date.now() - new Date(`${data}T00:00:00`).getTime()) / (365.25 * 24 * 3600 * 1000))
+    .filter((eta) => Number.isFinite(eta));
+  const eta_media = eta_valide.length ? eta_valide.reduce((s, eta) => s + eta, 0) / eta_valide.length : null;
+  const livelli = riepilogo_livelli(attivi);
+  const livelli_prev = riepilogo_livelli(storici_prev.map((s) => ({ livello_attuale: s.livello })));
+  const prev_has_levels = Object.values(livelli_prev).some((v) => v > 0);
+  const max_livelli = Math.max(1, ...Object.values(livelli), ...Object.values(livelli_prev));
+  const trend = stagioni
     .slice()
     .reverse()
     .map((s) => {
-      const list = storiciByStagione.get(s.id);
-      const c = (list && list.length) || (s.id === currStagId ? total : 0);
-      return { name: s.nome, atleti: c };
-    });
-
-  // diagnostica
-  const upper = (counts["Bronzo"] || 0) + (counts["Interargento"] || 0) + (counts["Argento"] || 0) + (counts["Interoro"] || 0) + (counts["Oro"] || 0);
-  const lower = (counts["Pulcini"] || 0) + (counts["Stellina 1"] || 0) + (counts["Stellina 2"] || 0);
-  const diagn = lower >= upper * 1.2 ? tp("athletes.pyramid_healthy") : upper > lower ? tp("athletes.pyramid_top_heavy") : tp("athletes.pyramid_balanced");
+      const storico = d.storici.filter((r) => testo(r.stagione_id) === s.id);
+      if (s.id === stagione_id) return { nome: s.nome, atleti: attivi.length };
+      if (storico.length > 0) return { nome: s.nome, atleti: storico.length };
+      return null;
+    })
+    .filter((r): r is { nome: string; atleti: number } => r !== null);
 
   return (
-    <>
-      <div className="grid md:grid-cols-3 gap-10 items-end mb-12">
-        <div className="md:col-span-1">
-          <HeroNumber value={total} label={tp("athletes.active_athletes")} delta={confronta ? yoyPct : undefined} />
-        </div>
-        <div className="md:col-span-2 grid grid-cols-2 lg:grid-cols-4 gap-6">
-          <MiniStat label={tp("athletes.new_members")} value={fmt_int(newCount)} />
-          <MiniStat label={tp("athletes.dropouts")} value={fmt_int(abbandoni)} accent="text-rose-600" />
-          <MiniStat label={tp("athletes.retention")} value={`${ritenzione.toFixed(0)}%`} accent="text-emerald-600" />
-          <MiniStat label={tp("athletes.avg_age")} value={ageAvg ? tp("athletes.years_short", { value: ageAvg.toFixed(1) }) : "—"} />
-        </div>
+    <div className="space-y-8">
+      <div className="grid gap-4 md:grid-cols-4">
+        <ValoreGrande label={t("president_home.athletes.active_athletes")} value={fmt_int(attivi.length)} delta={confronta ? yoy : undefined} />
+        <ValoreGrande label={t("president_home.athletes.dropouts")} value={fmt_int(abbandoni)} tono={abbandoni > 0 ? "attenzione" : "base"} />
+        <ValoreGrande label={t("president_home.athletes.avg_age")} value={eta_media === null ? "—" : t("president_home.athletes.years_short", { value: eta_media.toFixed(1) })} />
+        <ValoreGrande label={t("president_home.athletes.levels_count")} value={fmt_int(Object.values(livelli).filter((v) => v > 0).length)} />
       </div>
-
-      <div className="bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
-        <div className="flex items-baseline justify-between mb-8">
-          <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold">{tp("athletes.levels_pyramid")}</h3>
-          <span className="inline-flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 rounded-full px-3 py-1">
-            <Sparkles className="h-3.5 w-3.5" /> {diagn}
-          </span>
-        </div>
+      {confronta && prev_stagione_id && !prev_has_levels ? <StatoDati titolo={t("president_home.missing.title")} testo={t("president_home.athletes.missing_previous_levels")} /> : null}
+      <div className="rounded-lg border bg-card p-5">
+        <h3 className="mb-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("president_home.athletes.levels_pyramid")}</h3>
         <div className="space-y-3">
-          {LIVELLI_ORDER.map((l, i) => {
-            const c = counts[l] || 0;
-            const pc = prevCounts[l] || 0;
-            const wCurr = (c / maxLivello) * 100;
-            const wPrev = (pc / maxLivello) * 100;
-            const pct = total ? (c / total) * 100 : 0;
+          {LIVELLI_ORDER.map((livello) => {
+            const c = livelli[livello] || 0;
+            const pc = livelli_prev[livello] || 0;
             return (
-              <div key={l} className="flex items-center gap-4">
-                <div className="w-28 text-sm text-slate-600 text-right">{l}</div>
-                <div className="flex-1 relative h-7 bg-slate-50 rounded-md overflow-hidden">
-                  {confronta && (
-                    <div className="absolute inset-y-0 left-0 bg-slate-200/70" style={{ width: `${wPrev}%` }} />
-                  )}
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-md transition-all duration-700"
-                    style={{ width: `${wCurr}%`, background: livColor(i) }}
-                  />
+              <div key={livello} className="grid grid-cols-[110px_1fr_42px] items-center gap-3 text-sm">
+                <span className="truncate text-right text-muted-foreground">{livello}</span>
+                <div className="relative h-6 overflow-hidden rounded-md bg-muted">
+                  {confronta && prev_has_levels ? <div className="absolute inset-y-0 left-0 bg-muted-foreground/30" style={{ width: `${(pc / max_livelli) * 100}%` }} /> : null}
+                  <div className="absolute inset-y-0 left-0 rounded-md bg-emerald-600" style={{ width: `${(c / max_livelli) * 100}%` }} />
                 </div>
-                <div className="w-20 text-sm tabular-nums text-slate-900 font-semibold">{c}</div>
-                <div className="w-12 text-xs text-slate-400 tabular-nums">{pct.toFixed(0)}%</div>
+                <span className="text-right font-semibold tabular-nums text-foreground">{fmt_int(c)}</span>
               </div>
             );
           })}
         </div>
       </div>
-
-      <div className="mt-10 bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
-        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-8">
-          {tp("athletes.trend_title")}
-        </h3>
-        <div className="h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={trend} margin={{ top: 30, right: 30, left: 10, bottom: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} width={40} />
-              <RTooltip />
-              <Line
-                type="monotone"
-                dataKey="atleti"
-                stroke="#0e7490"
-                strokeWidth={3}
-                dot={{ r: 6, fill: "#0e7490" }}
-                label={{ position: "top", fill: "#0f172a", fontSize: 13, fontWeight: 600 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+      {trend.length < 2 ? (
+        <StatoDati titolo={t("president_home.missing.title")} testo={t("president_home.athletes.missing_trend")} />
+      ) : (
+        <div className="rounded-lg border bg-card p-5">
+          <h3 className="mb-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("president_home.athletes.trend_title")}</h3>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={trend} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="nome" tick={{ fontSize: 12 }} />
+                <YAxis width={40} tick={{ fontSize: 12 }} />
+                <RTooltip />
+                <Line type="monotone" dataKey="atleti" stroke={AREA_STROKES.atleti} strokeWidth={3} dot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-      </div>
-    </>
+      )}
+    </div>
   );
 };
-const MiniStat: React.FC<{ label: string; value: string; accent?: string }> = ({ label, value, accent = "text-slate-900" }) => (
-  <div className="bg-white border border-slate-200 rounded-2xl px-5 py-5">
-    <div className="text-xs text-slate-500 uppercase tracking-wider">{label}</div>
-    <div className={`font-serif text-3xl tabular-nums mt-1 ${accent}`}>{value}</div>
-  </div>
-);
 
-// ─── AREA 3 - RICAVI ──────────────────────────────────────────────────
-const Area3Ricavi: React.FC<{ d: any; ricaviCurr: any[]; ricaviPrev: any[]; confronta: boolean; totAtleti: number }> = ({
-  d,
-  ricaviCurr,
-  ricaviPrev,
-  confronta,
-  totAtleti,
-}) => {
-  const tot = ricaviCurr.reduce((s, r) => s + Number(r.importo || 0), 0);
-  const totPrev = ricaviPrev.reduce((s, r) => s + Number(r.importo || 0), 0);
-  const yoy = totPrev ? ((tot - totPrev) / totPrev) * 100 : 0;
-  const pieData = ricaviCurr
-    .map((r) => ({ name: fonte_label(r.fonte), key: r.fonte, value: Number(r.importo) }))
+const AreaRicavi: React.FC<{ d: DashboardData; stagione_id: string; prev_stagione_id: string | null; confronta: boolean; t: (key: string, opts?: Record<string, unknown>) => string }> = ({ d, stagione_id, prev_stagione_id, confronta, t }) => {
+  const curr = d.ricavi.filter((r) => testo(r.stagione_id) === stagione_id);
+  const prev = prev_stagione_id ? d.ricavi.filter((r) => testo(r.stagione_id) === prev_stagione_id) : [];
+  const totale = curr.reduce((s, r) => s + numero(r.importo), 0);
+  const totale_prev = prev.reduce((s, r) => s + numero(r.importo), 0);
+  const yoy = totale_prev ? ((totale - totale_prev) / totale_prev) * 100 : undefined;
+  const data = curr
+    .map((r) => ({ name: fonte_label(t, testo(r.fonte)), key: testo(r.fonte), value: numero(r.importo), color: FONTE_COLOR[testo(r.fonte)] || FONTE_COLOR.altro }))
+    .filter((r) => r.value > 0)
     .sort((a, b) => b.value - a.value);
-
-  // pacchetti
-  const pkMap = new Map<string, any>();
-  (d.catalogo_pack || []).forEach((p: any) => {
-    pkMap.set(p.id, { ...p, iscritti: 0, ricavo: 0, prezzo: p.costo_mensile || p.costo_annuale || p.costo_2_sessioni || p.costo_1_sessione || 0 });
+  const pacchetti = new Map<string, { nome: string; iscritti: number; ricavo: number; prezzo: number }>();
+  d.catalogo_pacchetti.forEach((p) => {
+    if (p.attivo === false) return;
+    pacchetti.set(testo(p.id), {
+      nome: testo(p.nome),
+      iscritti: 0,
+      ricavo: 0,
+      prezzo: numero(p.costo_mensile) || numero(p.costo_annuale) || numero(p.costo_2_sessioni) || numero(p.costo_1_sessione),
+    });
   });
-  (d.iscr_pack || []).forEach((i: any) => {
-    const r = pkMap.get(i.pacchetto_id);
-    if (r) {
-      r.iscritti++;
-      r.ricavo += Number(i.prezzo_pagato);
-    }
+  d.iscrizioni_pacchetti.forEach((i) => {
+    const row = pacchetti.get(testo(i.pacchetto_id));
+    if (!row) return;
+    row.iscritti += 1;
+    row.ricavo += numero(i.prezzo_pagato);
   });
-  const pkRows = Array.from(pkMap.values()).filter((p: any) => p.iscritti > 0).sort((a, b) => b.ricavo - a.ricavo);
-  const maxPk = Math.max(1, ...pkRows.map((p) => p.ricavo));
-  const ricavoMedio = totAtleti ? tot / totAtleti : 0;
+  const pacchetti_usati = Array.from(pacchetti.values()).filter((p) => p.iscritti > 0).sort((a, b) => b.ricavo - a.ricavo);
 
   return (
-    <>
-      <div className="mb-12">
-        <HeroNumber value={tot} isCurrency label={tp("revenue.season_revenue")} delta={confronta ? yoy : undefined} />
+    <div className="space-y-8">
+      {curr.length === 0 ? <StatoDati titolo={t("president_home.missing.title")} testo={t("president_home.revenue.missing")} /> : null}
+      <div className="grid gap-4 md:grid-cols-3">
+        <ValoreGrande label={t("president_home.revenue.season_revenue")} value={curr.length === 0 ? "—" : fmt_chf(totale)} delta={confronta ? yoy : undefined} />
+        <ValoreGrande label={t("president_home.revenue.sources")} value={fmt_int(curr.length)} />
+        <ValoreGrande label={t("president_home.revenue.packages_used")} value={fmt_int(pacchetti_usati.length)} />
       </div>
-
-      <div className="grid lg:grid-cols-3 gap-10">
-        <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
-          <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
-            {tp("revenue.composition")}
-          </h3>
-          <div className="grid md:grid-cols-2 gap-6 items-center">
-            <div className="h-72">
-              <ResponsiveContainer>
+      <div className="rounded-lg border bg-card p-5">
+        <h3 className="mb-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("president_home.revenue.composition")}</h3>
+        {data.length === 0 ? (
+          <div className="text-sm text-muted-foreground">{t("president_home.revenue.no_sources")}</div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-[260px_1fr]">
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={110} paddingAngle={2}>
-                    {pieData.map((e: any) => (
-                      <Cell key={e.key} fill={FONTE_COLOR[e.key] || "#94a3b8"} />
-                    ))}
+                  <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={58} outerRadius={100} paddingAngle={2}>
+                    {data.map((r) => <Cell key={r.key} fill={r.color} />)}
                   </Pie>
-                  <RTooltip formatter={(v: any) => fmt_chf(Number(v))} />
+                  <RTooltip formatter={(v) => fmt_chf(Number(v))} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
             <div className="space-y-3">
-              {pieData.map((e: any) => {
-                const pct = tot ? (e.value / tot) * 100 : 0;
-                return (
-                  <div key={e.key} className="flex items-center gap-3">
-                    <span className="h-3 w-3 rounded-sm shrink-0" style={{ background: FONTE_COLOR[e.key] }} />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-slate-700">{e.name}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-serif text-lg tabular-nums text-slate-900">{fmt_chf(e.value)}</div>
-                      <div className="text-xs text-slate-400">{pct.toFixed(0)}%</div>
-                    </div>
-                  </div>
-                );
-              })}
+              {data.map((r) => (
+                <div key={r.key} className="flex items-center gap-3 rounded-lg border bg-background p-3">
+                  <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: r.color }} />
+                  <span className="flex-1 text-sm font-medium text-foreground">{r.name}</span>
+                  <span className="text-sm font-semibold tabular-nums text-foreground">{fmt_chf(r.value)}</span>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-cyan-50 to-emerald-50 rounded-3xl border border-cyan-100 p-8 flex flex-col justify-between">
-          <div>
-            <div className="text-xs uppercase tracking-widest text-cyan-700 font-semibold mb-3">{tp("revenue.avg_revenue")}</div>
-            <div className="font-serif text-5xl text-slate-900 tabular-nums">{fmt_chf(ricavoMedio)}</div>
-            <div className="text-sm text-slate-600 mt-2">{tp("revenue.per_active_athlete")}</div>
-          </div>
-          <p className="text-sm text-slate-600 mt-6 leading-relaxed">
-            {tp("revenue.note_prefix")} <strong>{tp("fonte.pacchetti_opzionali")}</strong> {tp("revenue.note_and")}{" "}
-            <strong>{tp("fonte.lezioni_private")}</strong> {tp("revenue.note_suffix")}{" "}
-            {fmt_chf(
-              (ricaviCurr.find((r: any) => r.fonte === "pacchetti_opzionali")?.importo || 0) +
-                (ricaviCurr.find((r: any) => r.fonte === "lezioni_private")?.importo || 0)
-            )}
-            .
-          </p>
+        )}
+      </div>
+      <div className="rounded-lg border bg-card p-5">
+        <h3 className="mb-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("president_home.revenue.packages_title")}</h3>
+        {pacchetti_usati.length === 0 ? <div className="text-sm text-muted-foreground">{t("president_home.revenue.no_packages")}</div> : null}
+        <div className="space-y-2">
+          {pacchetti_usati.map((p) => <RigaInfo key={p.nome} label={`${p.nome} · ${fmt_int(p.iscritti)}`} value={fmt_chf(p.ricavo)} />)}
         </div>
       </div>
-
-      <div className="mt-10 bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
-        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
-          {tp("revenue.packages_title")}
-        </h3>
-        <div className="space-y-4">
-          {pkRows.map((p: any) => {
-            const pct = totAtleti ? (p.iscritti / totAtleti) * 100 : 0;
-            return (
-              <div key={p.id}>
-                <div className="flex items-baseline justify-between mb-1.5">
-                  <div>
-                    <span className="font-medium text-slate-900">{p.nome}</span>
-                    <span className="ml-3 text-sm text-slate-500">
-                      {fmt_chf(Number(p.prezzo))} · {tp("revenue.athletes_pct", { count: p.iscritti, pct: pct.toFixed(0) })}
-                    </span>
-                  </div>
-                  <div className="font-serif text-xl tabular-nums text-slate-900">{fmt_chf(p.ricavo)}</div>
-                </div>
-                <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-emerald-400 to-cyan-500 transition-all duration-700"
-                    style={{ width: `${(p.ricavo / maxPk) * 100}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </>
+    </div>
   );
 };
 
-// ─── AREA 4 - ISTRUTTORI ──────────────────────────────────────────────
-const Area4Istruttori: React.FC<{ d: any; ricaviCurr: any[] }> = ({ d, ricaviCurr }) => {
-  // Aggregate ore per istruttore
-  const oreByIst = new Map<string, any>();
-  (d.ore_lav || []).forEach((o: any) => {
-    if (!oreByIst.has(o.istruttore_id))
-      oreByIst.set(o.istruttore_id, { corsi: 0, lez: 0, eventi: 0, amm: 0, monthly: [] });
-    const r = oreByIst.get(o.istruttore_id);
-    r.corsi += Number(o.ore_corsi || 0);
-    r.lez += Number(o.ore_lezioni_private || 0);
-    r.eventi += Number(o.ore_eventi || 0);
-    r.amm += Number(o.ore_amministrative || 0);
-    r.monthly.push(o);
+const AreaIstruttori: React.FC<{ d: DashboardData; t: (key: string, opts?: Record<string, unknown>) => string }> = ({ d, t }) => {
+  const ore_by = new Map<string, { corsi: number; lezioni: number; eventi: number; amministrative: number }>();
+  d.ore_lavorate.forEach((o) => {
+    const id = testo(o.istruttore_id);
+    if (!id) return;
+    const row = ore_by.get(id) ?? { corsi: 0, lezioni: 0, eventi: 0, amministrative: 0 };
+    row.corsi += numero(o.ore_corsi);
+    row.lezioni += numero(o.ore_lezioni_private);
+    row.eventi += numero(o.ore_eventi);
+    row.amministrative += numero(o.ore_amministrative);
+    ore_by.set(id, row);
   });
-  const ricLezPerIst = new Map<string, number>();
-  (d.lezioni || []).forEach((l: any) => {
-    ricLezPerIst.set(l.istruttore_id, (ricLezPerIst.get(l.istruttore_id) || 0) + Number(l.importo_pagato || 0));
+  const cards = d.costi_istruttori.map((c) => {
+    const istruttore = d.istruttori.find((i) => testo(i.id) === testo(c.istruttore_id));
+    const ore = ore_by.get(testo(c.istruttore_id)) ?? { corsi: 0, lezioni: 0, eventi: 0, amministrative: 0 };
+    const ore_totali = ore.corsi + ore.lezioni + ore.eventi + ore.amministrative;
+    const tariffa = numero(c.tariffa_oraria);
+    return { istruttore, ore, ore_totali, tariffa, costo_variabile: ore_totali * tariffa, costo_fisso_mensile: numero(c.costo_fisso_mensile) };
   });
-  const ricaviCorsiTot = Number(ricaviCurr.find((r: any) => r.fonte === "quote_corsi")?.importo || 0);
-  const totOreCorsi = Array.from(oreByIst.values()).reduce((s, x) => s + x.corsi, 0);
-
-  const cards = (d.costi_ist || []).map((ci: any) => {
-    const ist = (d.istruttori || []).find((i: any) => i.id === ci.istruttore_id);
-    const ore = oreByIst.get(ci.istruttore_id) || { corsi: 0, lez: 0, eventi: 0, amm: 0 };
-    const oreTot = ore.corsi + ore.lez + ore.eventi + ore.amm;
-    const tariffa = Number(ci.tariffa_oraria || 0);
-    const costoTot = oreTot * tariffa + Number(ci.costo_fisso_mensile || 0) * 11;
-    const ricLez = ricLezPerIst.get(ci.istruttore_id) || 0;
-    const ricCorsi = totOreCorsi ? (ricaviCorsiTot * ore.corsi) / totOreCorsi : 0;
-    const ricaviTot = ricLez + ricCorsi;
-    const margine = ricaviTot ? ((ricaviTot - costoTot) / ricaviTot) * 100 : 0;
-    return { ist, tariffa, oreTot, costoTot, ricaviTot, margine };
-  });
-  const costoTotale = cards.reduce((s: number, c: any) => s + c.costoTot, 0);
-
-  // stacked monthly
-  const monthMap = new Map<string, any>();
-  (d.ore_lav || []).forEach((o: any) => {
-    if (!monthMap.has(o.periodo)) monthMap.set(o.periodo, { name: o.periodo, corsi: 0, lez: 0, eventi: 0, amm: 0 });
-    const m = monthMap.get(o.periodo);
-    m.corsi += Number(o.ore_corsi || 0);
-    m.lez += Number(o.ore_lezioni_private || 0);
-    m.eventi += Number(o.ore_eventi || 0);
-    m.amm += Number(o.ore_amministrative || 0);
-  });
-  const stackedData = Array.from(monthMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  const ore_totali = cards.reduce((s, c) => s + c.ore_totali, 0);
+  const costo_variabile = cards.reduce((s, c) => s + c.costo_variabile, 0);
+  const stacked = [
+    { nome: t("president_home.costs.legend.courses"), ore: cards.reduce((s, c) => s + c.ore.corsi, 0) },
+    { nome: t("president_home.costs.legend.private"), ore: cards.reduce((s, c) => s + c.ore.lezioni, 0) },
+    { nome: t("president_home.costs.legend.events"), ore: cards.reduce((s, c) => s + c.ore.eventi, 0) },
+    { nome: t("president_home.costs.legend.admin"), ore: cards.reduce((s, c) => s + c.ore.amministrative, 0) },
+  ];
 
   return (
-    <>
-      <div className="mb-12">
-        <HeroNumber value={costoTotale} isCurrency label={tp("costs.season_instructor_cost")} />
+    <div className="space-y-8">
+      {cards.length === 0 ? <StatoDati titolo={t("president_home.empty.title")} testo={t("president_home.costs.no_costs")} /> : null}
+      <div className="grid gap-4 md:grid-cols-3">
+        <ValoreGrande label={t("president_home.costs.instructors")} value={fmt_int(cards.length)} />
+        <ValoreGrande label={t("president_home.costs.hours_worked")} value={`${fmt_int(ore_totali)} h`} />
+        <ValoreGrande label={t("president_home.costs.variable_cost")} value={cards.length === 0 ? "—" : fmt_chf(costo_variabile)} />
       </div>
-
-      <div className="grid md:grid-cols-3 gap-6">
-        {cards.map((c: any) => (
-          <div key={c.ist?.id} className="bg-white rounded-3xl border border-slate-200 p-7 shadow-sm">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="h-14 w-14 rounded-full bg-gradient-to-br from-cyan-100 to-emerald-100 flex items-center justify-center font-serif text-xl text-cyan-800">
-                {initials(c.ist?.nome, c.ist?.cognome)}
-              </div>
-              <div>
-                <div className="font-serif text-xl text-slate-900">
-                  {c.ist?.nome} {c.ist?.cognome}
-                </div>
-                <div className="text-sm text-slate-500">CHF {c.tariffa}/h</div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <Row label={tp("costs.hours_worked")} value={`${c.oreTot.toFixed(0)} h`} />
-              <Row label={tp("costs.season_cost")} value={fmt_chf(c.costoTot)} />
-              <Row label={tp("costs.revenue_generated")} value={fmt_chf(c.ricaviTot)} accent="text-emerald-700" />
-              <div className="pt-3 border-t border-slate-100">
-                <Row label={tp("costs.margin")} value={`${c.margine.toFixed(0)}%`} accent={c.margine > 0 ? "text-emerald-700" : "text-rose-700"} bold />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-10 bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
-        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
-          {tp("costs.monthly_hours_title")}
-        </h3>
-        <div className="h-72">
-          <ResponsiveContainer>
-            <BarChart data={stackedData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
+      <div className="rounded-lg border bg-card p-5">
+        <h3 className="mb-5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("president_home.costs.hours_by_type")}</h3>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={stacked}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="nome" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} />
               <RTooltip />
-              <Bar dataKey="corsi" stackId="a" fill="#0e7490" name={tp("costs.legend.courses")} />
-              <Bar dataKey="lez" stackId="a" fill="#f59e0b" name={tp("costs.legend.private")} />
-              <Bar dataKey="eventi" stackId="a" fill="#8b5cf6" name={tp("costs.legend.events")} />
-              <Bar dataKey="amm" stackId="a" fill="#94a3b8" name={tp("costs.legend.admin")} radius={[6, 6, 0, 0]} />
+              <Bar dataKey="ore" fill={AREA_STROKES.costi} radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
-    </>
-  );
-};
-const Row: React.FC<{ label: string; value: string; accent?: string; bold?: boolean }> = ({ label, value, accent = "text-slate-900", bold }) => (
-  <div className="flex items-baseline justify-between">
-    <span className="text-sm text-slate-500">{label}</span>
-    <span className={`tabular-nums ${bold ? "font-serif text-2xl" : "font-semibold"} ${accent}`}>{value}</span>
-  </div>
-);
-
-// ─── AREA 5 - LEZIONI PRIVATE ─────────────────────────────────────────
-const Area5Lezioni: React.FC<{ d: any }> = ({ d }) => {
-  const lez = d.lezioni || [];
-  const tot = lez.length;
-  const fatt = lez.reduce((s: number, l: any) => s + Number(l.importo_pagato || 0), 0);
-
-  // top istruttori
-  const istMap = new Map<string, any>();
-  lez.forEach((l: any) => {
-    if (!istMap.has(l.istruttore_id)) istMap.set(l.istruttore_id, { ore: 0, ricavo: 0 });
-    const r = istMap.get(l.istruttore_id);
-    r.ore += Number(l.ore || 0);
-    r.ricavo += Number(l.importo_pagato || 0);
-  });
-  const topIst = Array.from(istMap.entries())
-    .map(([id, v]) => {
-      const ist = (d.istruttori || []).find((i: any) => i.id === id);
-      return { ...v, nome: ist?.nome, cognome: ist?.cognome };
-    })
-    .sort((a, b) => b.ricavo - a.ricavo)
-    .slice(0, 3);
-
-  // top atleti
-  const atMap = new Map<string, any>();
-  lez.forEach((l: any) => {
-    if (!atMap.has(l.atleta_id)) atMap.set(l.atleta_id, { ore: 0, speso: 0 });
-    const r = atMap.get(l.atleta_id);
-    r.ore += Number(l.ore || 0);
-    r.speso += Number(l.importo_pagato || 0);
-  });
-  const topAt = Array.from(atMap.entries())
-    .map(([id, v]) => {
-      const a = (d.atleti || []).find((x: any) => x.id === id);
-      return { ...v, nome: a?.nome, cognome: a?.cognome, foto_path: a?.foto_path };
-    })
-    .sort((a, b) => b.speso - a.speso)
-    .slice(0, 5);
-
-  // heatmap dow x hour bucket - data is just a date so we'll use day-of-week distribution synthetic from data field
-  // We don't have hour, so we'll create a daypart heatmap by DOW only with simulated time bands for visual richness
-  const dowCounts = [0, 0, 0, 0, 0, 0, 0];
-  lez.forEach((l: any) => {
-    if (l.data) {
-      const d2 = new Date(l.data + "T00:00:00");
-      dowCounts[d2.getDay()]++;
-    }
-  });
-  // fasce orarie sintetiche (deterministic) basate su distribuzione tipica
-  const fasce = ["16-17", "17-18", "18-19", "19-20", "20-21"];
-  const dowLabels = [tp("dow.sun"), tp("dow.mon"), tp("dow.tue"), tp("dow.wed"), tp("dow.thu"), tp("dow.fri"), tp("dow.sat")];
-  const bandWeights = [0.15, 0.22, 0.28, 0.2, 0.15];
-  const heat = dowLabels.map((dl, di) => fasce.map((_, fi) => Math.round(dowCounts[di] * bandWeights[fi])));
-  const maxHeat = Math.max(1, ...heat.flat());
-
-  return (
-    <>
-      <div className="mb-12 grid md:grid-cols-2 gap-10">
-        <HeroNumber value={tot} label={tp("private.lessons_sold")} />
-        <HeroNumber value={fatt} isCurrency label={tp("private.turnover")} />
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-8">
-        <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
-          <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">{tp("private.top_instructors")}</h3>
-          <div className="space-y-5">
-            {topIst.map((i: any, idx: number) => (
-              <div key={idx} className="flex items-center gap-4">
-                <div className="w-7 text-center font-serif text-2xl text-slate-300">{idx + 1}</div>
-                <div className="h-11 w-11 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center font-semibold text-orange-700">
-                  {initials(i.nome, i.cognome)}
-                </div>
-                <div className="flex-1">
-                  <div className="font-medium text-slate-900">
-                    {i.nome} {i.cognome}
-                  </div>
-                  <div className="text-xs text-slate-500">{tp("private.hours_sold", { count: i.ore.toFixed(0) })}</div>
-                </div>
-                <div className="font-serif text-xl tabular-nums text-slate-900">{fmt_chf(i.ricavo)}</div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {cards.map((c) => (
+          <div key={testo(c.istruttore?.id) || `${testo(c.istruttore?.nome)}-${testo(c.istruttore?.cognome)}`} className="rounded-lg border bg-card p-5">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground">
+                {initials(testo(c.istruttore?.nome), testo(c.istruttore?.cognome))}
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
-          <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">{tp("private.top_clients")}</h3>
-          <div className="space-y-4">
-            {topAt.map((a: any, idx: number) => (
-              <div key={idx} className="flex items-center gap-4">
-                <div className="w-6 text-center text-sm text-slate-400 tabular-nums">{idx + 1}</div>
-                <FotoAtleta
-                  foto_path={a.foto_path}
-                  nome={a.nome}
-                  cognome={a.cognome}
-                  className="h-10 w-10 rounded-full"
-                  fallback={
-                    <div className="h-10 w-10 rounded-full bg-cyan-100 flex items-center justify-center text-sm font-semibold text-cyan-700">
-                      {initials(a.nome, a.cognome)}
-                    </div>
-                  }
-                />
-                <div className="flex-1">
-                  <div className="font-medium text-slate-900">
-                    {a.nome} {a.cognome}
-                  </div>
-                  <div className="text-xs text-slate-500">{tp("private.hours", { count: a.ore.toFixed(0) })}</div>
-                </div>
-                <div className="font-serif text-lg tabular-nums text-slate-900">{fmt_chf(a.speso)}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-10 bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
-        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
-          {tp("private.heatmap_title")}
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr>
-                <th className="w-16"></th>
-                {fasce.map((f) => (
-                  <th key={f} className="text-xs font-medium text-slate-500 px-2 pb-2">
-                    {f}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {dowLabels.map((dl, di) => (
-                <tr key={dl}>
-                  <td className="text-xs text-slate-500 pr-3 text-right">{dl}</td>
-                  {fasce.map((_, fi) => {
-                    const v = heat[di][fi];
-                    const intensity = v / maxHeat;
-                    return (
-                      <td key={fi} className="p-1">
-                        <div
-                          className="h-12 rounded-lg flex items-center justify-center text-xs font-semibold transition-all"
-                          style={{
-                            background: `rgba(14, 116, 144, ${0.05 + intensity * 0.85})`,
-                            color: intensity > 0.5 ? "#fff" : "#0e7490",
-                          }}
-                        >
-                          {v || ""}
-                        </div>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </>
-  );
-};
-
-// ─── AREA 6 - PERFORMANCE ─────────────────────────────────────────────
-const Area6Performance: React.FC<{ d: any }> = ({ d }) => {
-  const igare = d.igare || [];
-  const podi = igare.filter((i: any) => ["oro", "argento", "bronzo"].includes((i.medaglia || "").toLowerCase())).length;
-  const gareCount = igare.length;
-  const succRate = gareCount ? (podi / gareCount) * 100 : 0;
-
-  const trend = [
-    { name: "2022/23", podi: Math.max(0, podi - 9) },
-    { name: "2023/24", podi: Math.max(0, podi - 6) },
-    { name: "2024/25", podi: Math.max(0, podi - 3) },
-    { name: "2025/26", podi },
-  ];
-
-  return (
-    <>
-      <div className="grid md:grid-cols-3 gap-10 mb-12">
-        <HeroNumber value={gareCount} label={tp("sport.competition_entries")} />
-        <HeroNumber value={succRate} suffix="%" label={tp("sport.podium_rate")} />
-        <HeroNumber value={podi} label={tp("sport.podiums_won")} />
-      </div>
-
-      <div className="bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
-        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
-          {tp("sport.podium_trend")}
-        </h3>
-        <div className="h-56">
-          <ResponsiveContainer>
-            <AreaChart data={trend}>
-              <defs>
-                <linearGradient id="podiGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} width={30} />
-              <RTooltip />
-              <Area type="monotone" dataKey="podi" stroke="#8b5cf6" strokeWidth={3} fill="url(#podiGrad)" dot={{ r: 5, fill: "#8b5cf6" }} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </>
-  );
-};
-
-// ─── ATLETI SHOWCASE (usata in tab Sintesi) ────────────────────────────
-const AtletiShowcase: React.FC<{ d: any }> = ({ d }) => {
-  const igare = d.igare || [];
-  const podiByAt = new Map<string, number>();
-  igare.forEach((i: any) => {
-    if (["oro", "argento", "bronzo"].includes((i.medaglia || "").toLowerCase()))
-      podiByAt.set(i.atleta_id, (podiByAt.get(i.atleta_id) || 0) + 1);
-  });
-  const livRank = (l?: string) => {
-    const idx = LIVELLI_ORDER.indexOf(l || "");
-    return idx >= 0 ? idx : -1;
-  };
-  const showcase = (d.atleti || [])
-    .filter((a: any) => a.attivo && a.agonista)
-    .sort((a: any, b: any) => {
-      const pa = podiByAt.get(a.id) || 0;
-      const pb = podiByAt.get(b.id) || 0;
-      if (pb !== pa) return pb - pa;
-      return livRank(b.livello_artistica || b.livello_attuale) - livRank(a.livello_artistica || a.livello_attuale);
-    })
-    .slice(0, 8);
-
-  return (
-    <div className="bg-gradient-to-br from-slate-50 to-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
-      <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-8">
-        {tp("showcase.title")}
-      </h3>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        {showcase.map((a: any) => {
-          const pod = podiByAt.get(a.id) || 0;
-          return (
-            <div key={a.id} className="text-center">
-              <FotoAtleta
-                foto_path={a.foto_path}
-                nome={a.nome}
-                cognome={a.cognome}
-                className="h-28 w-28 rounded-full mx-auto shadow-md ring-4 ring-white"
-                fallback={
-                  <div className="h-28 w-28 rounded-full bg-gradient-to-br from-cyan-200 to-violet-200 flex items-center justify-center font-serif text-3xl text-slate-700 mx-auto shadow-md ring-4 ring-white">
-                    {initials(a.nome, a.cognome)}
-                  </div>
-                }
-              />
-              <div className="mt-4 font-serif text-lg text-slate-900">
-                {a.nome} {a.cognome}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">{a.livello_artistica || a.livello_attuale || tp("showcase.competitor")}</div>
-              {pod > 0 && (
-                <div className="mt-2 inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
-                  <Trophy className="h-3 w-3" /> {tp("showcase.podiums", { count: pod })}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-// ─── AREA 7 - SALUTE FINANZIARIA ──────────────────────────────────────
-const Area7Finanze: React.FC<{ d: any; bilancio: any[]; stagioniOrd: Stagione[]; currStagId: string }> = ({ d, bilancio, stagioniOrd, currStagId }) => {
-  const bilCurr = bilancio.find((b) => b.stagione_id === currStagId);
-  const cassa = Number(bilCurr?.cassa_finale || 0);
-  const saldo = Number(bilCurr?.saldo || 0);
-
-  // entrate/uscite dai movimenti (categoria-level): da incassare come stima
-  const entrateProgrammate = (d.cassa || []).filter((m: any) => m.tipo === "entrata").reduce((s: number, m: any) => s + Number(m.importo), 0);
-  const entrateBilancio = Number(bilCurr?.totale_entrate || 0);
-  const daIncassare = Math.max(0, entrateBilancio - entrateProgrammate);
-  const usciteFutureMese = (Number(bilCurr?.totale_uscite || 0) / 11) * 1; // ~ mensile
-  
-  const trend = stagioniOrd
-    .slice()
-    .reverse()
-    .map((s) => {
-      const b = bilancio.find((x) => x.stagione_id === s.id);
-      return { name: s.nome, cassa: Number(b?.cassa_finale || 0), saldo: Number(b?.saldo || 0) };
-    });
-
-  return (
-    <>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10 mb-12">
-        <BigMoney icon={<Wallet className="h-5 w-5" />} label={tp("finance.cash_today")} value={cassa} accent={cassa >= 0 ? "text-emerald-600" : "text-rose-600"} />
-        <BigMoney icon={<ArrowDown className="h-5 w-5" />} label={tp("finance.to_collect")} value={daIncassare} accent="text-amber-600" />
-        <BigMoney icon={<ArrowUp className="h-5 w-5" />} label={tp("finance.to_pay_30d")} value={usciteFutureMese} accent="text-slate-700" />
-        <BigMoney icon={<TrendingUp className="h-5 w-5" />} label={tp("finance.season_balance")} value={saldo} accent={saldo >= 0 ? "text-emerald-600" : "text-rose-600"} prefix={saldo > 0 ? "+" : ""} />
-      </div>
-
-      <div className="bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
-        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
-          {tp("finance.cash_trend")}
-        </h3>
-        <div className="h-80">
-          <ResponsiveContainer>
-            <AreaChart data={trend}>
-              <defs>
-                <linearGradient id="cassaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.5} />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 13 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v / 1000}k`} />
-              <RTooltip formatter={(v: any) => fmt_chf(Number(v))} />
-              <Area type="monotone" dataKey="cassa" stroke="#10b981" strokeWidth={3} fill="url(#cassaGrad)" dot={{ r: 7, fill: "#10b981", strokeWidth: 3, stroke: "#fff" }} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-        <p className="mt-6 text-slate-600 italic font-serif text-lg">
-          {tp("finance.cash_note")}
-        </p>
-      </div>
-    </>
-  );
-};
-const BigMoney: React.FC<{ icon: React.ReactNode; label: string; value: number; accent: string; prefix?: string }> = ({
-  icon,
-  label,
-  value,
-  accent,
-  prefix = "",
-}) => {
-  const v = useCountUp(Math.abs(value));
-  return (
-    <div>
-      <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-slate-400 font-semibold mb-3">
-        {icon}
-        {label}
-      </div>
-      <div className={`font-serif text-3xl md:text-5xl tabular-nums tracking-tight ${accent}`}>
-        {prefix}
-        {fmt_chf(value < 0 ? -v : v)}
-      </div>
-    </div>
-  );
-};
-
-// ─── AREA 7 - CATALOGO & PROMOZIONE ──────────────────────────────────
-const LIVELLO_SPONSOR_STYLE: Record<string, { bg: string; text: string; label: string }> = {
-  gold: { bg: "bg-amber-100", text: "text-amber-800", label: "Gold" },
-  silver: { bg: "bg-slate-200", text: "text-slate-700", label: "Silver" },
-  bronze: { bg: "bg-orange-100", text: "text-orange-800", label: "Bronze" },
-};
-
-const PRIORITA_STYLE: Record<string, string> = {
-  alta: "bg-rose-100 text-rose-700",
-  media: "bg-amber-100 text-amber-700",
-  bassa: "bg-slate-100 text-slate-600",
-};
-
-const MiniCirclesPromo: React.FC<{ sponsorIniziali: string[]; cercateCount: number }> = ({ sponsorIniziali, cercateCount }) => {
-  const colors = ["#0e7490", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6"];
-  return (
-    <div className="flex items-center gap-2 flex-wrap">
-      {sponsorIniziali.slice(0, 5).map((ini, i) => (
-        <div
-          key={`s-${i}`}
-          className="h-9 w-9 rounded-full flex items-center justify-center text-white text-[11px] font-semibold shadow-sm"
-          style={{ background: colors[i % colors.length] }}
-        >
-          {ini}
-        </div>
-      ))}
-      <div className="mx-1 text-slate-300 text-lg">+</div>
-      {Array.from({ length: cercateCount }).map((_, i) => (
-        <div
-          key={`c-${i}`}
-          className="h-9 w-9 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-base"
-        >
-          ?
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const Area7Catalogo: React.FC<{
-  d: any;
-  cat: any;
-  totAtleti: number;
-  giovani: number;
-  podi: number;
-  agonisti: number;
-  testSuperamentoPct: number;
-  trendPodi: number[];
-  oreAttivita: number;
-}> = ({ d, cat, totAtleti, giovani, podi, agonisti, testSuperamentoPct, trendPodi, oreAttivita }) => {
-  const identity = cat.identity || {};
-  const sponsor: any[] = cat.sponsor || [];
-  const cercate: any[] = cat.cercate || [];
-  const eventi: any[] = cat.eventi || [];
-  const materiali: any[] = cat.materiali || [];
-
-  const annoAttuale = new Date().getFullYear();
-  const anni = identity.anno_fondazione ? annoAttuale - identity.anno_fondazione : 0;
-  const partecipantiTot = eventi.reduce((s, e) => s + Number(e.partecipanti_stimati || 0), 0);
-
-  // top atleti showcase (riuso logica AtletiShowcase ridotta a 6)
-  const igare = d.igare || [];
-  const podiByAt = new Map<string, number>();
-  igare.forEach((i: any) => {
-    if (["oro", "argento", "bronzo"].includes((i.medaglia || "").toLowerCase()))
-      podiByAt.set(i.atleta_id, (podiByAt.get(i.atleta_id) || 0) + 1);
-  });
-  const topAtleti = (d.atleti || [])
-    .filter((a: any) => a.attivo && a.agonista)
-    .sort((a: any, b: any) => (podiByAt.get(b.id) || 0) - (podiByAt.get(a.id) || 0))
-    .slice(0, 6);
-
-  // corsi base & agonistici dal db
-  const corsiAll: any[] = (d.capacita || []).map((c: any) => c.corsi).filter(Boolean);
-  const pacchetti: any[] = (d.catalogo_pack || []).slice(0, 5);
-
-  // tariffe lezioni private (3 fasce dai costi_istruttori)
-  const tariffe = (d.costi_ist || [])
-    .slice(0, 3)
-    .map((c: any) => Number(c.tariffa_oraria || 0))
-    .filter((x: number) => x > 0);
-
-  return (
-    <div className="space-y-14">
-      {/* SEZIONE 1 - IDENTITÀ */}
-      <section>
-        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">{tp("catalog.s1_kicker")}</div>
-        <h3 className="font-serif text-3xl text-slate-900 mb-1">Stella del Ghiaccio ASD</h3>
-        <div className="text-sm text-slate-500 mb-5 flex flex-wrap items-center gap-3">
-          <span>{tp("catalog.since", { anno: identity.anno_fondazione || "—" })}</span>
-          <span>·</span>
-          <span>{identity.federazione || "—"}</span>
-          <span>·</span>
-          <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{identity.citta || "—"}</span>
-        </div>
-        <p className="italic font-serif text-lg text-slate-700 border-l-2 border-cyan-300 pl-4 max-w-3xl mb-6">
-          {identity.mission || ""}
-        </p>
-        <div className="grid grid-cols-3 gap-4 max-w-xl">
-          <div className="bg-slate-50 rounded-xl p-4">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">{tp("catalog.athletes")}</div>
-            <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(totAtleti)}</div>
-          </div>
-          <div className="bg-slate-50 rounded-xl p-4">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">{tp("catalog.years")}</div>
-            <div className="font-serif text-2xl text-slate-900 tabular-nums">{anni}</div>
-          </div>
-          <div className="bg-slate-50 rounded-xl p-4">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">{tp("catalog.youth_under14")}</div>
-            <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(giovani)}</div>
-          </div>
-        </div>
-        {(identity.email_contatto || identity.social_instagram || identity.social_facebook) && (
-          <div className="mt-5 flex flex-wrap gap-4 text-xs text-slate-500">
-            {identity.email_contatto && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" />{identity.email_contatto}</span>}
-            {identity.social_instagram && <span className="inline-flex items-center gap-1"><Instagram className="h-3 w-3" />{identity.social_instagram}</span>}
-            {identity.social_facebook && <span className="inline-flex items-center gap-1"><Facebook className="h-3 w-3" />{identity.social_facebook}</span>}
-          </div>
-        )}
-      </section>
-
-      {/* SEZIONE 2 - OFFERTA / CATALOGO */}
-      <section>
-        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">{tp("catalog.s2_kicker")}</div>
-        <h3 className="font-serif text-3xl text-slate-900 mb-6">{tp("catalog.s2_title")}</h3>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">{tp("catalog.base_courses")}</div>
-            <div className="space-y-2">
-              {corsiAll.slice(0, 6).map((c: any, i: number) => (
-                <div key={i} className="flex justify-between text-sm">
-                  <span className="text-slate-700">{c.nome}</span>
-                </div>
-              ))}
-              {corsiAll.length === 0 && <div className="text-sm text-slate-400">{tp("catalog.base_courses_fallback")}</div>}
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-6">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">{tp("catalog.competitive_path")}</div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gradient-to-br from-violet-50 to-white border border-violet-100 rounded-xl p-4">
-                <div className="font-serif text-lg text-slate-900">{tp("catalog.artistic")}</div>
-                <div className="text-xs text-slate-500 mt-1">{tp("catalog.bronze_to_gold")}</div>
-              </div>
-              <div className="bg-gradient-to-br from-cyan-50 to-white border border-cyan-100 rounded-xl p-4">
-                <div className="font-serif text-lg text-slate-900">{tp("catalog.style")}</div>
-                <div className="text-xs text-slate-500 mt-1">{tp("catalog.bronze_to_gold")}</div>
+              <div>
+                <div className="font-semibold text-foreground">{testo(c.istruttore?.nome)} {testo(c.istruttore?.cognome)}</div>
+                <div className="text-sm text-muted-foreground">{fmt_chf(c.tariffa)}/h</div>
               </div>
             </div>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 md:col-span-2">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">{tp("fonte.pacchetti_opzionali")}</div>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              {pacchetti.map((p: any) => (
-                <div key={p.id} className="border border-slate-100 rounded-xl p-3">
-                  <div className="text-sm font-medium text-slate-900 truncate">{p.nome}</div>
-                  <div className="text-xs text-slate-500 mt-1 tabular-nums">
-                    {p.costo_mensile ? `${fmt_chf(Number(p.costo_mensile))}${tp("catalog.per_month")}` : p.costo_annuale ? `${fmt_chf(Number(p.costo_annuale))}${tp("catalog.per_year")}` : p.costo_1_sessione ? `${fmt_chf(Number(p.costo_1_sessione))}${tp("catalog.per_session")}` : "—"}
-                  </div>
-                </div>
-              ))}
-              {pacchetti.length === 0 && <div className="text-sm text-slate-400">{tp("catalog.no_packages")}</div>}
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 md:col-span-2">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">{tp("catalog.private_rates")}</div>
-            <div className="flex gap-6">
-              {tariffe.length > 0 ? tariffe.map((t: number, i: number) => (
-                <div key={i}>
-                  <div className="text-xs text-slate-500">{tp("catalog.band", { n: i + 1 })}</div>
-                  <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_chf(t)}</div>
-                </div>
-              )) : <div className="text-sm text-slate-400">{tp("catalog.on_request")}</div>}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SEZIONE 3 - RISULTATI */}
-      <section>
-        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">{tp("catalog.s3_kicker")}</div>
-        <h3 className="font-serif text-3xl text-slate-900 mb-6">{tp("catalog.s3_title")}</h3>
-        <div className="grid grid-cols-3 gap-4 mb-6 max-w-xl">
-          <div className="bg-slate-50 rounded-xl p-4">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">{tp("catalog.podiums")}</div>
-            <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(podi)}</div>
-          </div>
-          <div className="bg-slate-50 rounded-xl p-4">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">{tp("catalog.competitors")}</div>
-            <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(agonisti)}</div>
-          </div>
-          <div className="bg-slate-50 rounded-xl p-4">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">{tp("catalog.test_pass_rate")}</div>
-            <div className="font-serif text-2xl text-slate-900 tabular-nums">{Math.round(testSuperamentoPct)}%</div>
-          </div>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 mb-6">
-          <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">{tp("catalog.podium_trend_4")}</div>
-          <MiniSparkline data={trendPodi.length ? trendPodi : [0]} color="#8b5cf6" />
-        </div>
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-          {topAtleti.map((a: any) => (
-            <div key={a.id} className="text-center">
-              <FotoAtleta
-                foto_path={a.foto_path}
-                nome={a.nome}
-                cognome={a.cognome}
-                className="h-16 w-16 rounded-full mx-auto shadow-sm ring-2 ring-white"
-                fallback={
-                  <div className="h-16 w-16 rounded-full bg-gradient-to-br from-cyan-200 to-violet-200 flex items-center justify-center font-serif text-base text-slate-700 mx-auto shadow-sm ring-2 ring-white">
-                    {initials(a.nome, a.cognome)}
-                  </div>
-                }
-              />
-              <div className="mt-2 text-xs text-slate-700 truncate">{a.nome}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* SEZIONE 4 - IMPATTO SOCIALE */}
-      <section>
-        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">{tp("catalog.s4_kicker")}</div>
-        <h3 className="font-serif text-3xl text-slate-900 mb-6">{tp("catalog.s4_title")}</h3>
-        <div className="grid grid-cols-3 gap-4 mb-6 max-w-xl">
-          <div className="bg-emerald-50 rounded-xl p-4">
-            <div className="text-[10px] uppercase tracking-widest text-emerald-700 font-semibold">{tp("catalog.children_involved")}</div>
-            <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(partecipantiTot)}</div>
-          </div>
-          <div className="bg-emerald-50 rounded-xl p-4">
-            <div className="text-[10px] uppercase tracking-widest text-emerald-700 font-semibold">{tp("catalog.activity_hours")}</div>
-            <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(oreAttivita)}</div>
-          </div>
-          <div className="bg-emerald-50 rounded-xl p-4">
-            <div className="text-[10px] uppercase tracking-widest text-emerald-700 font-semibold">{tp("catalog.open_events")}</div>
-            <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(eventi.length)}</div>
-          </div>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-[11px] uppercase tracking-widest text-slate-500">
-              <tr>
-                <th className="text-left px-4 py-3 font-semibold">{tp("catalog.event")}</th>
-                <th className="text-left px-4 py-3 font-semibold">{tp("catalog.when")}</th>
-                <th className="text-right px-4 py-3 font-semibold">{tp("catalog.participants")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {eventi.map((e: any) => (
-                <tr key={e.id} className="border-t border-slate-100">
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-slate-900">{e.nome_evento}</div>
-                    <div className="text-xs text-slate-500">{e.descrizione}</div>
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">{e.data_evento}</td>
-                  <td className="px-4 py-3 text-right tabular-nums font-semibold">{fmt_int(e.partecipanti_stimati)}</td>
-                </tr>
-              ))}
-              {eventi.length === 0 && (
-                <tr><td colSpan={3} className="px-4 py-6 text-center text-slate-400">{tp("catalog.no_events")}</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* SEZIONE 5 - PARTNER & SPONSOR */}
-      <section>
-        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">{tp("catalog.s5_kicker")}</div>
-        <h3 className="font-serif text-3xl text-slate-900 mb-6">{tp("catalog.s5_title")}</h3>
-        <div className="grid md:grid-cols-2 gap-8">
-          <div>
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">{tp("catalog.current_partners")}</div>
-            <div className="space-y-3">
-              {sponsor.map((s: any) => {
-                const st = LIVELLO_SPONSOR_STYLE[s.livello] || LIVELLO_SPONSOR_STYLE.bronze;
-                return (
-                  <div key={s.id} className="flex items-start gap-3 bg-white border border-slate-200 rounded-xl p-4">
-                    <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center font-serif text-slate-500 shrink-0">
-                      {s.nome_sponsor?.[0] || "?"}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-slate-900">{s.nome_sponsor}</span>
-                        <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-semibold ${st.bg} ${st.text}`}>{st.label}</span>
-                      </div>
-                      <div className="text-xs text-slate-500">{s.categoria} · <span className="tabular-nums">{fmt_chf(Number(s.importo_annuo))}/anno</span></div>
-                      <div className="text-xs text-slate-600 mt-1 italic">{s.descrizione_breve}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">{tp("catalog.looking_for")}</div>
-            <div className="space-y-3">
-              {cercate.map((c: any) => (
-                <div key={c.id} className="bg-gradient-to-br from-cyan-50 to-white border border-cyan-100 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Award className="h-4 w-4 text-cyan-700" />
-                    <span className="font-medium text-slate-900 capitalize">{c.categoria}</span>
-                    <span className={`ml-auto text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-semibold ${PRIORITA_STYLE[c.priorita] || PRIORITA_STYLE.media}`}>
-                      {c.priorita}
-                    </span>
-                  </div>
-                  <div className="text-xs text-slate-600 italic mb-2">{c.descrizione_offerta}</div>
-                  <div className="text-sm tabular-nums font-semibold text-cyan-700">{fmt_chf(Number(c.importo_richiesto_indicativo))}/anno</div>
-                </div>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => toast.success(tp("catalog.toast_request_sent"), { description: tp("catalog.toast_request_sent_desc") })}
-              className="mt-4 w-full bg-cyan-700 hover:bg-cyan-800 text-white rounded-full px-5 py-2.5 text-sm font-medium transition-colors"
-            >
-              {tp("catalog.become_partner")}
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* SEZIONE 6 - MATERIALI */}
-      <section>
-        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">{tp("catalog.s6_kicker")}</div>
-        <h3 className="font-serif text-3xl text-slate-900 mb-6">{tp("catalog.s6_title")}</h3>
-        <div className="grid md:grid-cols-3 gap-4">
-          {materiali.map((m: any) => (
-            <div key={m.id} className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col">
-              <div className="h-10 w-10 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center mb-3">
-                <FileText className="h-5 w-5" />
-              </div>
-              <div className="font-medium text-slate-900">{m.titolo}</div>
-              <div className="text-xs text-slate-500 mt-1 mb-4 flex-1">{m.descrizione}</div>
-              <button
-                type="button"
-                onClick={() => toast.info(tp("catalog.toast_download"), { description: m.titolo })}
-                className="inline-flex items-center justify-center gap-1.5 text-sm font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-full px-3 py-1.5"
-              >
-                <Download className="h-3.5 w-3.5" /> {tp("catalog.download")}
-              </button>
-            </div>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            const url = `${window.location.origin}/club/stella-del-ghiaccio`;
-            if (navigator.clipboard) navigator.clipboard.writeText(url).catch(() => {});
-            toast.success(tp("catalog.toast_link_copied"), { description: url });
-          }}
-          className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-cyan-700 hover:text-cyan-800"
-        >
-          <Copy className="h-3.5 w-3.5" /> {tp("catalog.copy_public_link")}
-        </button>
-      </section>
-    </div>
-  );
-};
-
-// ─── MAIN ─────────────────────────────────────────────────────────────
-// ─── CARD AREA + DRAWER ──────────────────────────────────────────────
-type AreaId = "domanda" | "atleti" | "ricavi" | "costi" | "lezioni" | "sportivo" | "catalogo";
-
-const TONE_BADGE: Record<Tone, string> = {
-  positive: "bg-emerald-50 text-emerald-700",
-  neutral: "bg-slate-100 text-slate-600",
-  concerning: "bg-rose-50 text-rose-700",
-};
-
-const AreaCard: React.FC<{
-  areaId: AreaId;
-  title: string;
-  icon: React.ReactNode;
-  mainKpi: string;
-  subLabel: string;
-  delta?: number;
-  narration: AreaNarration;
-  miniChart: React.ReactNode;
-  onOpen: () => void;
-  accent: string;
-}> = ({ title, icon, mainKpi, subLabel, delta, narration, miniChart, onOpen, accent }) => {
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="text-left bg-white rounded-2xl border border-slate-200 shadow-sm p-7 md:p-8 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-400 flex flex-col"
-      style={{ minHeight: 320 }}
-    >
-      <div className="flex items-center gap-2 text-slate-500 mb-5">
-        <span style={{ color: accent }}>{icon}</span>
-        <span className="text-[11px] uppercase tracking-[0.18em] font-semibold">{title}</span>
-      </div>
-
-      <div className="flex items-end gap-3 mb-1">
-        <div
-          className="font-serif text-slate-900 leading-none tracking-tight tabular-nums"
-          style={{ fontSize: "clamp(2rem, 2.6vw, 2.75rem)", fontFeatureSettings: "'tnum'" }}
-        >
-          {mainKpi}
-        </div>
-        {delta !== undefined && <DeltaPill value={delta} />}
-      </div>
-      <div className="text-sm text-slate-500 mb-6">{subLabel}</div>
-
-      <div className="mb-5 min-h-[80px] flex items-end">{miniChart}</div>
-
-      <p className="italic text-sm text-slate-600 leading-relaxed mb-5 line-clamp-3">
-        {narration.short}
-      </p>
-
-      <div className="mt-auto flex items-center justify-between">
-        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${TONE_BADGE[narration.tone]}`}>
-          {narration.tone === "positive" ? tp("tone.positive") : narration.tone === "concerning" ? tp("tone.concerning") : tp("tone.neutral")}
-        </span>
-        <span className="text-sm font-medium" style={{ color: accent }}>
-          {tp("card.more")}
-        </span>
-      </div>
-    </button>
-  );
-};
-
-const MiniBarsHoriz: React.FC<{ items: { label: string; value: number; color: string }[] }> = ({ items }) => {
-  const max = Math.max(1, ...items.map((i) => i.value));
-  return (
-    <div className="w-full space-y-1.5">
-      {items.map((it) => (
-        <div key={it.label} className="flex items-center gap-2 text-[11px]">
-          <span className="w-20 text-slate-500 truncate">{it.label}</span>
-          <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full rounded-full" style={{ width: `${(it.value / max) * 100}%`, background: it.color }} />
-          </div>
-          <span className="w-8 text-right tabular-nums text-slate-700 font-semibold">{it.value}h</span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const MiniPyramid: React.FC<{ items: { label: string; value: number }[] }> = ({ items }) => {
-  const max = Math.max(1, ...items.map((i) => i.value));
-  const colors = ["#0ea5e9", "#22d3ee", "#67e8f9", "#a7f3d0"];
-  return (
-    <div className="w-full space-y-1.5">
-      {items.map((it, i) => (
-        <div key={it.label} className="flex items-center gap-2 text-[11px]">
-          <span className="w-20 text-slate-500 truncate text-right">{it.label}</span>
-          <div className="flex-1 h-2.5 bg-slate-50 rounded-sm overflow-hidden">
-            <div className="h-full rounded-sm" style={{ width: `${(it.value / max) * 100}%`, background: colors[i] || "#a7f3d0" }} />
-          </div>
-          <span className="w-6 text-right tabular-nums text-slate-700 font-semibold">{it.value}</span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const MiniDonut: React.FC<{ data: { name: string; value: number; color: string }[] }> = ({ data }) => {
-  const tot = data.reduce((s, d) => s + d.value, 0) || 1;
-  let acc = 0;
-  const radius = 32;
-  const circ = 2 * Math.PI * radius;
-  return (
-    <div className="flex items-center gap-3 w-full">
-      <svg width="84" height="84" viewBox="0 0 84 84">
-        <circle cx="42" cy="42" r={radius} fill="none" stroke="#f1f5f9" strokeWidth="14" />
-        {data.map((d, i) => {
-          const len = (d.value / tot) * circ;
-          const offset = circ - acc;
-          acc += len;
-          return (
-            <circle
-              key={i}
-              cx="42"
-              cy="42"
-              r={radius}
-              fill="none"
-              stroke={d.color}
-              strokeWidth="14"
-              strokeDasharray={`${len} ${circ}`}
-              strokeDashoffset={offset}
-              transform="rotate(-90 42 42)"
-            />
-          );
-        })}
-      </svg>
-      <div className="flex-1 space-y-1 text-[11px] min-w-0">
-        {data.slice(0, 3).map((d) => (
-          <div key={d.name} className="flex items-center gap-1.5 truncate">
-            <span className="h-2 w-2 rounded-sm shrink-0" style={{ background: d.color }} />
-            <span className="text-slate-600 truncate">{d.name}</span>
-            <span className="ml-auto tabular-nums text-slate-700 font-semibold">{Math.round((d.value / tot) * 100)}%</span>
+            <RigaInfo label={t("president_home.costs.hours_worked")} value={`${fmt_int(c.ore_totali)} h`} />
+            <RigaInfo label={t("president_home.costs.variable_cost")} value={fmt_chf(c.costo_variabile)} />
+            <RigaInfo label={t("president_home.costs.fixed_monthly")} value={c.costo_fisso_mensile ? fmt_chf(c.costo_fisso_mensile) : "—"} />
           </div>
         ))}
       </div>
@@ -1765,710 +896,540 @@ const MiniDonut: React.FC<{ data: { name: string; value: number; color: string }
   );
 };
 
-const MiniBarsVert: React.FC<{ items: { label: string; value: number }[]; suffix?: string }> = ({ items, suffix = "" }) => {
-  const max = Math.max(1, ...items.map((i) => i.value));
+const AreaLezioni: React.FC<{ d: DashboardData; t: (key: string, opts?: Record<string, unknown>) => string }> = ({ d, t }) => {
+  const lezioni = d.lezioni_private;
+  const ore_totali = lezioni.reduce((s, l) => s + numero(l.ore), 0);
+  const fatturato = lezioni.reduce((s, l) => s + numero(l.importo_pagato), 0);
+  const per_istruttore = new Map<string, { ore: number; ricavo: number }>();
+  const per_atleta = new Map<string, { ore: number; speso: number }>();
+  const per_giorno = new Map<string, number>();
+  lezioni.forEach((l) => {
+    const istruttore_id = testo(l.istruttore_id);
+    const atleta_id = testo(l.atleta_id);
+    const data = testo(l.data);
+    if (istruttore_id) {
+      const row = per_istruttore.get(istruttore_id) ?? { ore: 0, ricavo: 0 };
+      row.ore += numero(l.ore);
+      row.ricavo += numero(l.importo_pagato);
+      per_istruttore.set(istruttore_id, row);
+    }
+    if (atleta_id) {
+      const row = per_atleta.get(atleta_id) ?? { ore: 0, speso: 0 };
+      row.ore += numero(l.ore);
+      row.speso += numero(l.importo_pagato);
+      per_atleta.set(atleta_id, row);
+    }
+    if (data) {
+      const giorno = new Date(`${data}T00:00:00`).getDay();
+      const label = [t("president_home.dow.sun"), t("president_home.dow.mon"), t("president_home.dow.tue"), t("president_home.dow.wed"), t("president_home.dow.thu"), t("president_home.dow.fri"), t("president_home.dow.sat")][giorno];
+      per_giorno.set(label, (per_giorno.get(label) ?? 0) + 1);
+    }
+  });
+  const top_istruttori = Array.from(per_istruttore.entries())
+    .map(([id, v]) => ({ ...v, istruttore: d.istruttori.find((i) => testo(i.id) === id) }))
+    .sort((a, b) => b.ricavo - a.ricavo)
+    .slice(0, 5);
+  const top_atleti = Array.from(per_atleta.entries())
+    .map(([id, v]) => ({ ...v, atleta: d.atleti.find((a) => testo(a.id) === id) }))
+    .sort((a, b) => b.ore - a.ore)
+    .slice(0, 5);
+  const giorni = Array.from(per_giorno.entries()).map(([label, value]) => ({ label, value }));
+
   return (
-    <div className="flex items-end gap-3 w-full h-[80px]">
-      {items.map((it) => (
-        <div key={it.label} className="flex-1 flex flex-col items-center gap-1.5">
-          <span className="text-[10px] tabular-nums text-slate-700 font-semibold">{it.value}{suffix}</span>
-          <div
-            className="w-full rounded-t bg-gradient-to-t from-cyan-700 to-cyan-400"
-            style={{ height: `${(it.value / max) * 56}px`, minHeight: 4 }}
-          />
-          <span className="text-[10px] text-slate-500 truncate">{it.label}</span>
+    <div className="space-y-8">
+      {lezioni.length === 0 ? <StatoDati titolo={t("president_home.empty.title")} testo={t("president_home.private.no_lessons")} /> : null}
+      <div className="grid gap-4 md:grid-cols-3">
+        <ValoreGrande label={t("president_home.private.lessons_sold")} value={fmt_int(lezioni.length)} />
+        <ValoreGrande label={t("president_home.private.hours_sold_label")} value={`${fmt_int(ore_totali)} h`} />
+        <ValoreGrande label={t("president_home.private.turnover")} value={lezioni.length === 0 ? "—" : fmt_chf(fatturato)} />
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-lg border bg-card p-5">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("president_home.private.top_instructors")}</h3>
+          {top_istruttori.length === 0 ? <div className="text-sm text-muted-foreground">{t("president_home.private.no_top")}</div> : null}
+          {top_istruttori.map((r) => <RigaInfo key={testo(r.istruttore?.id)} label={`${testo(r.istruttore?.nome)} ${testo(r.istruttore?.cognome)}`} value={`${fmt_int(r.ore)} h · ${fmt_chf(r.ricavo)}`} />)}
         </div>
-      ))}
+        <div className="rounded-lg border bg-card p-5">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("president_home.private.top_clients")}</h3>
+          {top_atleti.length === 0 ? <div className="text-sm text-muted-foreground">{t("president_home.private.no_top")}</div> : null}
+          {top_atleti.map((r) => <RigaInfo key={testo(r.atleta?.id)} label={`${testo(r.atleta?.nome)} ${testo(r.atleta?.cognome)}`} value={`${fmt_int(r.ore)} h · ${fmt_chf(r.speso)}`} />)}
+        </div>
+      </div>
+      <div className="rounded-lg border bg-card p-5">
+        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("president_home.private.days_title")}</h3>
+        <MiniBarsHoriz items={giorni.map((g) => ({ ...g, color: AREA_STROKES.lezioni }))} empty_label={t("president_home.private.no_days")} />
+      </div>
     </div>
   );
 };
 
-const MiniHeatmap: React.FC<{ values: number[] }> = ({ values }) => {
-  const labels = ["16-17", "17-18", "18-19", "19-20", "20-21"];
-  const max = Math.max(1, ...values);
+const AreaSport: React.FC<{ d: DashboardData; stagione_id: string; prev_stagione_id: string | null; t: (key: string, opts?: Record<string, unknown>) => string }> = ({ d, stagione_id, prev_stagione_id, t }) => {
+  const gare_curr = d.gare.filter((g) => testo(g.stagione_id) === stagione_id);
+  const gare_prev = prev_stagione_id ? d.gare.filter((g) => testo(g.stagione_id) === prev_stagione_id) : [];
+  const gare_ids_curr = new Set(gare_curr.map((g) => testo(g.id)));
+  const gare_ids_prev = new Set(gare_prev.map((g) => testo(g.id)));
+  const iscr_curr = d.iscrizioni_gare.filter((i) => gare_ids_curr.has(testo(i.gara_id)));
+  const iscr_prev = d.iscrizioni_gare.filter((i) => gare_ids_prev.has(testo(i.gara_id)));
+  const podi = iscr_curr.filter(is_podio).length;
+  const podi_prev = iscr_prev.filter(is_podio).length;
+  const top_atleta = Array.from(iscr_curr.filter(is_podio).reduce((map, i) => {
+    const id = testo(i.atleta_id);
+    map.set(id, (map.get(id) ?? 0) + 1);
+    return map;
+  }, new Map<string, number>()).entries()).sort((a, b) => b[1] - a[1])[0];
+  const atleta = top_atleta ? d.atleti.find((a) => testo(a.id) === top_atleta[0]) : null;
+
   return (
-    <div className="grid grid-cols-5 gap-1.5 w-full">
-      {values.map((v, i) => (
-        <div key={i} className="flex flex-col items-center gap-1">
-          <div
-            className="w-full h-9 rounded flex items-center justify-center text-[10px] font-semibold"
-            style={{
-              background: `rgba(236, 72, 153, ${0.08 + (v / max) * 0.85})`,
-              color: v / max > 0.5 ? "#fff" : "#9d174d",
-            }}
-          >
-            {v}
+    <div className="space-y-8">
+      {gare_curr.length === 0 ? <StatoDati titolo={t("president_home.empty.title")} testo={t("president_home.sport.no_competitions")} /> : null}
+      <div className="grid gap-4 md:grid-cols-4">
+        <ValoreGrande label={t("president_home.sport.competitions")} value={fmt_int(gare_curr.length)} />
+        <ValoreGrande label={t("president_home.sport.entries")} value={fmt_int(iscr_curr.length)} />
+        <ValoreGrande label={t("president_home.sport.podiums")} value={fmt_int(podi)} />
+        <ValoreGrande label={t("president_home.sport.podium_rate")} value={iscr_curr.length ? fmt_pct((podi / iscr_curr.length) * 100) : "—"} />
+      </div>
+      {atleta ? (
+        <div className="rounded-lg border bg-card p-5">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("president_home.sport.top_athlete")}</h3>
+          <div className="flex items-center gap-4">
+            <FotoAtleta
+              foto_path={testo(atleta.foto_path)}
+              nome={testo(atleta.nome)}
+              cognome={testo(atleta.cognome)}
+              className="h-14 w-14 rounded-full"
+              fallback={<div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground">{initials(testo(atleta.nome), testo(atleta.cognome))}</div>}
+            />
+            <div>
+              <div className="font-semibold text-foreground">{testo(atleta.nome)} {testo(atleta.cognome)}</div>
+              <div className="text-sm text-muted-foreground">{t("president_home.sport.podiums_count", { count: top_atleta[1] })}</div>
+            </div>
           </div>
-          <span className="text-[9px] text-slate-500">{labels[i]}</span>
         </div>
-      ))}
+      ) : null}
+      {gare_prev.length === 0 ? <StatoDati titolo={t("president_home.missing.title")} testo={t("president_home.sport.missing_previous")} /> : null}
+      {gare_prev.length > 0 ? (
+        <div className="rounded-lg border bg-card p-5">
+          <RigaInfo label={t("president_home.sport.previous_podiums")} value={fmt_int(podi_prev)} />
+        </div>
+      ) : null}
     </div>
   );
 };
 
-const MiniSparkline: React.FC<{ data: number[]; color?: string }> = ({ data, color = "#8b5cf6" }) => {
-  if (data.length < 2) return <div className="h-[60px]" />;
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const range = max - min || 1;
-  const w = 200;
-  const h = 60;
-  const step = w / (data.length - 1);
-  const points = data.map((v, i) => `${i * step},${h - ((v - min) / range) * (h - 8) - 4}`).join(" ");
+const AreaCatalogo: React.FC<{ d: DashboardData; club_nome: string; sponsor: Riga[]; t: (key: string, opts?: Record<string, unknown>) => string }> = ({ d, club_nome, sponsor, t }) => {
+  const identity = d.identity ?? {};
+  const partecipanti = d.eventi.reduce((s, e) => s + numero(e.partecipanti_stimati), 0);
+  const pacchetti = d.catalogo_pacchetti.filter((p) => p.attivo !== false).slice(0, 8);
+  const corsi = d.capacita.map((c) => c.corsi as Riga | undefined).filter((c): c is Riga => !!c).slice(0, 8);
+  const sponsor_totale = sponsor.reduce((s, r) => s + numero(r.importo_annuo), 0);
+
   return (
-    <svg width="100%" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full">
-      <polyline fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" points={points} />
-      {data.map((v, i) => (
-        <circle key={i} cx={i * step} cy={h - ((v - min) / range) * (h - 8) - 4} r={i === data.length - 1 ? 4 : 2.5} fill={color} />
-      ))}
-    </svg>
+    <div className="space-y-8">
+      <div className="rounded-lg border bg-card p-5">
+        <h3 className="text-2xl font-semibold text-foreground">{club_nome}</h3>
+        <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
+          <span>{t("president_home.catalog.since", { anno: testo(identity.anno_fondazione) || "—" })}</span>
+          <span>{testo(identity.federazione) || "—"}</span>
+          <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{testo(identity.citta) || "—"}</span>
+          {testo(identity.email_contatto) ? <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" />{testo(identity.email_contatto)}</span> : null}
+        </div>
+        {testo(identity.mission) ? <p className="mt-4 border-l-2 border-primary pl-4 text-sm italic text-muted-foreground">{testo(identity.mission)}</p> : null}
+      </div>
+      <div className="grid gap-4 md:grid-cols-4">
+        <ValoreGrande label={t("president_home.catalog.active_sponsors")} value={fmt_int(sponsor.length)} />
+        <ValoreGrande label={t("president_home.catalog.sponsor_value")} value={fmt_chf(sponsor_totale)} />
+        <ValoreGrande label={t("president_home.catalog.open_events")} value={fmt_int(d.eventi.length)} />
+        <ValoreGrande label={t("president_home.catalog.participants")} value={fmt_int(partecipanti)} />
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-lg border bg-card p-5">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("president_home.catalog.offer")}</h3>
+          {corsi.length === 0 && pacchetti.length === 0 ? <div className="text-sm text-muted-foreground">{t("president_home.catalog.no_offer")}</div> : null}
+          {corsi.map((c) => <RigaInfo key={testo(c.nome)} label={testo(c.nome)} value={t("president_home.catalog.course")} />)}
+          {pacchetti.map((p) => <RigaInfo key={testo(p.id)} label={testo(p.nome)} value={t("president_home.catalog.package")} />)}
+        </div>
+        <div className="rounded-lg border bg-card p-5">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("president_home.catalog.sponsors")}</h3>
+          {sponsor.length === 0 ? <div className="text-sm text-muted-foreground">{t("president_home.catalog.no_sponsors")}</div> : null}
+          {sponsor.map((s) => <RigaInfo key={testo(s.id)} label={testo(s.nome_sponsor)} value={fmt_chf(numero(s.importo_annuo))} />)}
+        </div>
+      </div>
+      <div className="rounded-lg border bg-card p-5">
+        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("president_home.catalog.events")}</h3>
+        {d.eventi.length === 0 ? <div className="text-sm text-muted-foreground">{t("president_home.catalog.no_events")}</div> : null}
+        {d.eventi.map((e) => <RigaInfo key={testo(e.id)} label={testo(e.nome_evento)} value={t("president_home.catalog.event_value", { count: numero(e.partecipanti_stimati) })} />)}
+      </div>
+    </div>
   );
 };
 
-// ─── MAIN ─────────────────────────────────────────────────────────────
+const AtletiShowcase: React.FC<{ d: DashboardData; t: (key: string, opts?: Record<string, unknown>) => string }> = ({ d, t }) => {
+  const podi_by_atleta = new Map<string, number>();
+  d.iscrizioni_gare.filter(is_podio).forEach((i) => {
+    const atleta_id = testo(i.atleta_id);
+    podi_by_atleta.set(atleta_id, (podi_by_atleta.get(atleta_id) ?? 0) + 1);
+  });
+  const showcase = d.atleti
+    .filter((a) => booleano(a.attivo) && booleano(a.agonista))
+    .sort((a, b) => (podi_by_atleta.get(testo(b.id)) ?? 0) - (podi_by_atleta.get(testo(a.id)) ?? 0))
+    .slice(0, 8);
+
+  return (
+    <section className="mt-12">
+      <h2 className="mb-5 text-2xl font-semibold text-foreground">{t("president_home.showcase.title")}</h2>
+      {showcase.length === 0 ? (
+        <StatoDati titolo={t("president_home.empty.title")} testo={t("president_home.showcase.empty")} />
+      ) : (
+        <div className="grid grid-cols-2 gap-4 rounded-lg border bg-card p-5 md:grid-cols-4">
+          {showcase.map((a) => {
+            const podi = podi_by_atleta.get(testo(a.id)) ?? 0;
+            return (
+              <div key={testo(a.id)} className="text-center">
+                <FotoAtleta
+                  foto_path={testo(a.foto_path)}
+                  nome={testo(a.nome)}
+                  cognome={testo(a.cognome)}
+                  className="mx-auto h-20 w-20 rounded-full"
+                  fallback={<div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground">{initials(testo(a.nome), testo(a.cognome))}</div>}
+                />
+                <div className="mt-3 font-medium text-foreground">{testo(a.nome)} {testo(a.cognome)}</div>
+                <div className="text-xs text-muted-foreground">{testo(a.livello_artistica) || testo(a.livello_attuale) || t("president_home.showcase.competitor")}</div>
+                {podi > 0 ? <div className="mt-1 text-xs font-semibold text-amber-700">{t("president_home.showcase.podiums", { count: podi })}</div> : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+};
+
 const PresidentDashboard: React.FC = () => {
-  useTranslation("dashboard"); // sottoscrive il cambio lingua per l'intero albero
+  const { t } = useTranslation("dashboard");
   const { session } = useAuth();
   const club_id = session?.club_id;
-  const { data: stagioni = [] } = use_stagioni_demo(club_id);
-  const stagioniOrd = useMemo(() => stagioni.slice().sort((a, b) => b.data_inizio.localeCompare(a.data_inizio)), [stagioni]);
-  const [stagioneId, setStagioneId] = useState<string>("");
-  const [confronta, setConfronta] = useState(true);
-  const [openArea, setOpenArea] = useState<AreaId | null>(null);
+  const [stagione_id, set_stagione_id] = useState("");
+  const [confronta, set_confronta] = useState(true);
+  const [open_area, set_open_area] = useState<AreaId | null>(null);
+
+  const stagioni_query = use_stagioni_presidente(club_id);
+  const stagioni = stagioni_query.data ?? [];
+  const stagioni_ord = useMemo(() => stagioni.slice().sort((a, b) => b.data_inizio.localeCompare(a.data_inizio)), [stagioni]);
 
   useEffect(() => {
-    if (!stagioneId && stagioniOrd.length) {
-      const att = stagioniOrd.find((s) => s.attiva) || stagioniOrd[0];
-      setStagioneId(att.id);
+    if (stagioni_ord.length === 0) {
+      if (stagione_id) set_stagione_id("");
+      return;
     }
-  }, [stagioniOrd, stagioneId]);
+    if (stagione_id && stagioni_ord.some((s) => s.id === stagione_id)) return;
+    set_stagione_id((stagioni_ord.find((s) => s.attiva) ?? stagioni_ord[0]).id);
+  }, [stagioni_ord, stagione_id]);
 
-  const idx = stagioniOrd.findIndex((s) => s.id === stagioneId);
-  const prevStagId = idx >= 0 && idx + 1 < stagioniOrd.length ? stagioniOrd[idx + 1].id : null;
+  const stagione = stagioni_ord.find((s) => s.id === stagione_id);
+  const idx = stagioni_ord.findIndex((s) => s.id === stagione_id);
+  const prev_stagione_id = idx >= 0 && idx + 1 < stagioni_ord.length ? stagioni_ord[idx + 1].id : null;
+  const dashboard_query = use_presidente_dashboard(club_id, stagione_id || null, prev_stagione_id);
 
-  const { data: d, isLoading } = use_dashboard_data(club_id, stagioneId, prevStagId);
-  const { data: cat } = use_catalogo_data(club_id);
-  const stagioneNome = stagioniOrd.find((s) => s.id === stagioneId)?.nome || "—";
+  use_segnala_query_error("PresidentDashboard", t("president_home.error.stagioni_operation"), stagioni_query.isError, stagioni_query.error);
+  use_segnala_query_error("PresidentDashboard", t("president_home.error.dashboard_operation"), dashboard_query.isError, dashboard_query.error);
 
-  if (isLoading || !d || !stagioneId) {
+  if (!club_id) {
+    return <MessaggioPagina titolo={t("president_home.no_club.title")} testo={t("president_home.no_club.text")} />;
+  }
+
+  if (stagioni_query.isPending) {
+    return <Caricamento testo_loading={t("president_home.loading")} />;
+  }
+
+  if (stagioni_query.isError) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 flex items-center justify-center">
-        <div className="text-slate-400">{tp("loading")}</div>
-      </div>
+      <MessaggioPagina
+        errore
+        titolo={t("president_home.error.title")}
+        testo={t("president_home.error.text", { motivo: stagioni_query.error?.message ?? "" })}
+        azione={<Button type="button" onClick={() => void stagioni_query.refetch()}>{t("president_home.retry")}</Button>}
+      />
     );
   }
 
-  // ─── Aggregati base ─────────────────────────────────────────────────
-  const atletiAttivi = (d.atleti || []).filter((a: any) => a.attivo);
-  const totAtleti = atletiAttivi.length;
-  const ricaviCurr = (d.ricavi || []).filter((r: any) => r.stagione_id === stagioneId);
-  const ricaviPrev = prevStagId ? (d.ricavi || []).filter((r: any) => r.stagione_id === prevStagId) : [];
-  const totRicavi = ricaviCurr.reduce((s, r: any) => s + Number(r.importo || 0), 0);
-  const totRicaviPrev = ricaviPrev.reduce((s, r: any) => s + Number(r.importo || 0), 0);
-  const ricaviYoY = totRicaviPrev ? ((totRicavi - totRicaviPrev) / totRicaviPrev) * 100 : 0;
-  const bilCurr = (d.bilancio || []).find((b: any) => b.stagione_id === stagioneId);
-  const cassa = Number(bilCurr?.cassa_finale || 0);
-  const oreRow = (d.ore || []).find((o: any) => o.stagione_id === stagioneId);
-  const totAttesa = (d.richieste || [])
-    .filter((r: any) => r.stagione_id === stagioneId)
-    .reduce((s: number, r: any) => s + (r.n_in_lista_attesa || 0), 0);
+  if (stagioni_ord.length === 0) {
+    return (
+      <MessaggioPagina
+        titolo={t("president_home.no_season.title")}
+        testo={t("president_home.no_season.text")}
+        azione={<Button asChild><a href="/stagioni">{t("president_home.no_season.link")}</a></Button>}
+      />
+    );
+  }
 
-  const storiciByStagione = new Map<string, any[]>();
-  (d.storici || []).forEach((s: any) => {
-    if (!storiciByStagione.has(s.stagione_id)) storiciByStagione.set(s.stagione_id, []);
-    storiciByStagione.get(s.stagione_id)!.push(s);
-  });
+  if (dashboard_query.isPending || !dashboard_query.data || !stagione) {
+    return <Caricamento testo_loading={t("president_home.loading")} />;
+  }
 
-  const prevStorici = prevStagId ? storiciByStagione.get(prevStagId) || [] : [];
-  const prevTotAtleti = prevStorici.length;
-  const atletiYoY = prevTotAtleti ? ((totAtleti - prevTotAtleti) / prevTotAtleti) * 100 : 0;
+  if (dashboard_query.isError) {
+    return (
+      <MessaggioPagina
+        errore
+        titolo={t("president_home.error.title")}
+        testo={t("president_home.error.text", { motivo: dashboard_query.error?.message ?? "" })}
+        azione={<Button type="button" onClick={() => void dashboard_query.refetch()}>{t("president_home.retry")}</Button>}
+      />
+    );
+  }
 
-  // livelli curr / prev
-  const livCurr: Record<string, number> = {};
-  LIVELLI_ORDER.forEach((l) => (livCurr[l] = 0));
-  atletiAttivi.forEach((a: any) => {
-    const l = a.livello_artistica || a.livello_amatori || a.livello_attuale;
-    if (l && livCurr[l] !== undefined) livCurr[l]++;
-    else if (a.categoria === "pulcini") livCurr["Pulcini"]++;
-  });
-  const livPrev: Record<string, number> = {};
-  LIVELLI_ORDER.forEach((l) => (livPrev[l] = 0));
-  prevStorici.forEach((s: any) => {
-    if (s.livello && livPrev[s.livello] !== undefined) livPrev[s.livello]++;
-  });
+  const d = dashboard_query.data;
+  const club_nome = session?.club_nome || t("president_home.club_fallback");
+  const atleti_attivi = d.atleti.filter((a) => booleano(a.attivo));
+  const livelli = riepilogo_livelli(atleti_attivi);
+  const top_livelli = Object.entries(livelli).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([label, value]) => ({ label, value }));
+  const ricavi_curr = d.ricavi.filter((r) => testo(r.stagione_id) === stagione_id);
+  const ricavi_prev = prev_stagione_id ? d.ricavi.filter((r) => testo(r.stagione_id) === prev_stagione_id) : [];
+  const totale_ricavi = ricavi_curr.reduce((s, r) => s + numero(r.importo), 0);
+  const totale_ricavi_prev = ricavi_prev.reduce((s, r) => s + numero(r.importo), 0);
+  const ricavi_yoy = totale_ricavi_prev ? ((totale_ricavi - totale_ricavi_prev) / totale_ricavi_prev) * 100 : undefined;
+  const storici_prev = prev_stagione_id ? d.storici.filter((s) => testo(s.stagione_id) === prev_stagione_id) : [];
+  const atleti_yoy = storici_prev.length ? ((atleti_attivi.length - storici_prev.length) / storici_prev.length) * 100 : undefined;
+  const bilancio = d.bilancio.find((b) => testo(b.stagione_id) === stagione_id);
+  const cassa = bilancio ? numero(bilancio.cassa_finale) : null;
+  const ore_row = d.ore_pista.find((o) => testo(o.stagione_id) === stagione_id);
+  const ore_disponibili = ore_row ? numero(ore_row.ore_settimanali_totali) : null;
+  const ore_usate = ore_row ? numero(ore_row.ore_settimanali_utilizzate) : null;
+  const ore_richieste = ore_row ? numero(ore_row.ore_richieste_se_accettassimo_tutti) : null;
+  const richieste_stagione = d.richieste_storiche.filter((r) => testo(r.stagione_id) === stagione_id);
+  const lista_attesa = richieste_stagione.reduce((s, r) => s + numero(r.n_in_lista_attesa), 0);
+  const totale_richieste = richieste_stagione.reduce((s, r) => s + numero(r.n_richieste_ricevute), 0);
+  const totale_accettate = richieste_stagione.reduce((s, r) => s + numero(r.n_iscritti_accettati), 0);
+  const ore_lavorate_totali = d.ore_lavorate.reduce((s, o) => s + numero(o.ore_corsi) + numero(o.ore_lezioni_private) + numero(o.ore_eventi) + numero(o.ore_amministrative), 0);
+  const costo_variabile_istruttori = d.costi_istruttori.reduce((tot, c) => {
+    const ore = d.ore_lavorate
+      .filter((o) => testo(o.istruttore_id) === testo(c.istruttore_id))
+      .reduce((s, o) => s + numero(o.ore_corsi) + numero(o.ore_lezioni_private) + numero(o.ore_eventi) + numero(o.ore_amministrative), 0);
+    return tot + ore * numero(c.tariffa_oraria);
+  }, 0);
+  const lezioni_ore = d.lezioni_private.reduce((s, l) => s + numero(l.ore), 0);
+  const lezioni_fatturato = d.lezioni_private.reduce((s, l) => s + numero(l.importo_pagato), 0);
+  const gare_curr = d.gare.filter((g) => testo(g.stagione_id) === stagione_id);
+  const gare_ids = new Set(gare_curr.map((g) => testo(g.id)));
+  const iscrizioni_gare_curr = d.iscrizioni_gare.filter((i) => gare_ids.has(testo(i.gara_id)));
+  const podi = iscrizioni_gare_curr.filter(is_podio).length;
+  const anno_stagione = stagione_anno_inizio(stagione);
+  const sponsor_attivi = d.sponsor.filter((s) => in_stagione_sponsor(s, anno_stagione));
+  const sponsor_totale = sponsor_attivi.reduce((s, r) => s + numero(r.importo_annuo), 0);
+  const donut_data = ricavi_curr
+    .map((r) => ({ name: fonte_label(t, testo(r.fonte)), value: numero(r.importo), color: FONTE_COLOR[testo(r.fonte)] || FONTE_COLOR.altro }))
+    .filter((r) => r.value > 0)
+    .sort((a, b) => b.value - a.value);
 
-  // età media
-  const today = new Date();
-  const ages = atletiAttivi
-    .map((a: any) => (a.data_nascita ? (today.getTime() - new Date(a.data_nascita).getTime()) / (365.25 * 24 * 3600 * 1000) : null))
-    .filter((x: any) => x != null);
-  const ageAvg = ages.length ? ages.reduce((a: number, b: number) => a + b, 0) / ages.length : 0;
-
-  // istruttori
-  const oreByIst = new Map<string, any>();
-  (d.ore_lav || []).forEach((o: any) => {
-    if (!oreByIst.has(o.istruttore_id))
-      oreByIst.set(o.istruttore_id, { corsi: 0, lez: 0, eventi: 0, amm: 0 });
-    const r = oreByIst.get(o.istruttore_id);
-    r.corsi += Number(o.ore_corsi || 0);
-    r.lez += Number(o.ore_lezioni_private || 0);
-    r.eventi += Number(o.ore_eventi || 0);
-    r.amm += Number(o.ore_amministrative || 0);
-  });
-  const ricLezPerIst = new Map<string, number>();
-  (d.lezioni || []).forEach((l: any) => {
-    ricLezPerIst.set(l.istruttore_id, (ricLezPerIst.get(l.istruttore_id) || 0) + Number(l.importo_pagato || 0));
-  });
-  const ricaviCorsiTot = Number(ricaviCurr.find((r: any) => r.fonte === "quote_corsi")?.importo || 0);
-  const totOreCorsi = Array.from(oreByIst.values()).reduce((s, x) => s + x.corsi, 0);
-
-  const istCards = (d.costi_ist || []).map((ci: any) => {
-    const ist = (d.istruttori || []).find((i: any) => i.id === ci.istruttore_id);
-    const ore = oreByIst.get(ci.istruttore_id) || { corsi: 0, lez: 0, eventi: 0, amm: 0 };
-    const oreTot = ore.corsi + ore.lez + ore.eventi + ore.amm;
-    const tariffa = Number(ci.tariffa_oraria || 0);
-    const costoTot = oreTot * tariffa + Number(ci.costo_fisso_mensile || 0) * 11;
-    const ricLez = ricLezPerIst.get(ci.istruttore_id) || 0;
-    const ricCorsi = totOreCorsi ? (ricaviCorsiTot * ore.corsi) / totOreCorsi : 0;
-    const ricaviTot = ricLez + ricCorsi;
-    const margine = ricaviTot ? ((ricaviTot - costoTot) / ricaviTot) * 100 : 0;
-    return { ist, tariffa, oreTot, costoTot, ricaviTot, margine, ricLez };
-  });
-  const costoIstTot = istCards.reduce((s: number, c: any) => s + c.costoTot, 0);
-  const topIst = istCards.slice().sort((a: any, b: any) => b.ricLez - a.ricLez)[0];
-
-  // lezioni private
-  const lez = d.lezioni || [];
-  const oreLezTot = lez.reduce((s: number, l: any) => s + Number(l.ore || 0), 0);
-  const fattLez = lez.reduce((s: number, l: any) => s + Number(l.importo_pagato || 0), 0);
-  const fattLezPrev = Number(ricaviPrev.find((r: any) => r.fonte === "lezioni_private")?.importo || 0);
-  const atMap = new Map<string, any>();
-  lez.forEach((l: any) => {
-    if (!atMap.has(l.atleta_id)) atMap.set(l.atleta_id, { ore: 0, speso: 0 });
-    const r = atMap.get(l.atleta_id);
-    r.ore += Number(l.ore || 0);
-    r.speso += Number(l.importo_pagato || 0);
-  });
-  const topAtArr = Array.from(atMap.entries())
-    .map(([id, v]) => {
-      const a = (d.atleti || []).find((x: any) => x.id === id);
-      return { ...v, nome: a?.nome, cognome: a?.cognome };
-    })
-    .sort((a, b) => b.ore - a.ore);
-  const topClienteLez = topAtArr[0];
-
-  // heatmap fasce orarie (deterministica)
-  const dowCounts = [0, 0, 0, 0, 0, 0, 0];
-  lez.forEach((l: any) => {
-    if (l.data) dowCounts[new Date(l.data + "T00:00:00").getDay()]++;
-  });
-  const fasceLabels = ["16-17", "17-18", "18-19", "19-20", "20-21"];
-  const bandWeights = [0.15, 0.22, 0.28, 0.2, 0.15];
-  const totDow = dowCounts.reduce((s, x) => s + x, 0);
-  const fasceTotali = bandWeights.map((w) => Math.round(totDow * w));
-  const fasceTopIdx = fasceTotali.indexOf(Math.max(...fasceTotali));
-  const fasciaTop = fasceLabels[fasceTopIdx] || "18-19";
-
-  // sportivo
-  const igare = d.igare || [];
-  const podi = igare.filter((i: any) => ["oro", "argento", "bronzo"].includes((i.medaglia || "").toLowerCase())).length;
-  const podiByAt = new Map<string, number>();
-  igare.forEach((i: any) => {
-    if (["oro", "argento", "bronzo"].includes((i.medaglia || "").toLowerCase()))
-      podiByAt.set(i.atleta_id, (podiByAt.get(i.atleta_id) || 0) + 1);
-  });
-  const topAtSp = Array.from(podiByAt.entries()).sort((a, b) => b[1] - a[1])[0];
-  const topAtletaSp = topAtSp ? (d.atleti || []).find((x: any) => x.id === topAtSp[0]) : null;
-  const podiPrev = Math.max(0, podi - 3);
-  const trendPodi = [Math.max(0, podi - 9), Math.max(0, podi - 6), Math.max(0, podi - 3), podi];
-
-  // ricavi per fonte
-  const perFonte: Record<string, number> = {};
-  ricaviCurr.forEach((r: any) => (perFonte[r.fonte] = Number(r.importo || 0)));
-  const perFontePrev: Record<string, number> = {};
-  ricaviPrev.forEach((r: any) => (perFontePrev[r.fonte] = Number(r.importo || 0)));
-  const donutData = ricaviCurr
-    .map((r: any) => ({ name: fonte_label(r.fonte), value: Number(r.importo), color: FONTE_COLOR[r.fonte] || "#94a3b8" }))
-    .sort((a: any, b: any) => b.value - a.value);
-
-  // ore pista
-  const oreDisp = Number(oreRow?.ore_settimanali_totali || 0);
-  const oreUsed = Number(oreRow?.ore_settimanali_utilizzate || 0);
-  const oreReq = Number(oreRow?.ore_richieste_se_accettassimo_tutti || 0);
-
-  // ─── Narrazioni ─────────────────────────────────────────────────────
-  const nDomanda = narrateDomanda({
-    ore_disponibili: oreDisp,
-    ore_utilizzate: oreUsed,
-    ore_richieste: oreReq,
-    lista_attesa: totAttesa,
-    ricavo_potenziale_per_atleta: 1000,
-  });
-  const nAtleti = narrateAtleti({
-    total: totAtleti,
-    prevTotal: prevTotAtleti,
-    livelli_curr: livCurr,
-    livelli_prev: livPrev,
-    eta_media: ageAvg,
-  });
-  const nRicavi = narrateRicavi({
-    totale: totRicavi,
-    totale_prev: totRicaviPrev,
-    per_fonte: perFonte,
-    per_fonte_prev: perFontePrev,
-  });
-  const nCosti = narrateCosti({
-    n_istruttori: istCards.length,
-    costo_totale: costoIstTot,
-    top_istruttore_nome: topIst?.ist ? `${topIst.ist.nome}` : "",
-    top_istruttore_ore: topIst?.oreTot || 0,
-    top_istruttore_margine: topIst?.margine || 0,
-  });
-  const nLezioni = narrateLezioni({
-    ore_vendute: oreLezTot,
-    fatturato: fattLez,
-    fatturato_prev: fattLezPrev,
-    fascia_top: fasciaTop,
-    top_cliente_nome: topClienteLez ? `${topClienteLez.nome} ${topClienteLez.cognome}` : "",
-    top_cliente_ore: topClienteLez?.ore || 0,
-  });
-  const nSportivo = narrateSportivo({
-    podi,
-    gare: igare.length,
-    podi_prev: podiPrev,
-    top_atleta_nome: topAtletaSp ? `${topAtletaSp.nome} ${topAtletaSp.cognome}` : "",
-    top_atleta_podi: topAtSp ? topAtSp[1] : 0,
-  });
-
-  // ─── Catalogo & Promozione ─────────────────────────────────────────
-  const catData = cat || { identity: null, sponsor: [], cercate: [], eventi: [], materiali: [] };
-  const sponsorCount = catData.sponsor.length;
-  const totaleAnnuoSponsor = catData.sponsor.reduce((s: number, x: any) => s + Number(x.importo_annuo || 0), 0);
-  const categorieCercateCount = catData.cercate.length;
-  const topCercata = catData.cercate[0] || null;
-  const eventiCount = catData.eventi.length;
-  const partecipantiTotali = catData.eventi.reduce((s: number, e: any) => s + Number(e.partecipanti_stimati || 0), 0);
-
-  const giovani = atletiAttivi.filter((a: any) => {
-    if (!a.data_nascita) return false;
-    const eta = (Date.now() - new Date(a.data_nascita).getTime()) / (1000 * 60 * 60 * 24 * 365.25);
-    return eta < 14;
-  }).length;
-  const agonisti = atletiAttivi.filter((a: any) => a.agonista).length;
-  const testSuperamentoPct = 78;
-  const oreAttivita = Math.round(oreUsed * 32);
-
-  const nCatalogo = narrateCatalogoPromozione({
-    sponsorCount,
-    totaleAnnuo: totaleAnnuoSponsor,
-    categorieCercateCount,
-    topCategoria: topCercata?.categoria || "",
-    topImporto: Number(topCercata?.importo_richiesto_indicativo || 0),
-    eventiCount,
-    partecipantiTotali,
-  });
-
-  const sponsorIniziali = catData.sponsor.map((s: any) => (s.nome_sponsor?.[0] || "?").toUpperCase());
-
-  const greet = (() => {
-    const h = new Date().getHours();
-    if (h < 12) return tp("greet.morning");
-    if (h < 18) return tp("greet.afternoon");
-    return tp("greet.evening");
-  })();
-  const nome = session?.nome || tp("role_fallback");
-
-  // top livelli per mini-piramide (4 livelli più popolosi)
-  const topLivelli = Object.entries(livCurr)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4)
-    .map(([label, value]) => ({ label, value }));
-
-  const AREAS: {
+  const aree: {
     id: AreaId;
     title: string;
-    accent: string;
     icon: React.ReactNode;
-    drawerTitle: string;
-    drawerSub: string;
-    narration: AreaNarration;
-    drawerContent: React.ReactNode;
+    main_kpi: string;
+    sub_label: string;
+    stato: StatoArea;
+    drawer_content: React.ReactNode;
+    mini: React.ReactNode;
   }[] = [
     {
       id: "domanda",
-      title: tp("areas.demand.title"),
-      accent: "#0e7490",
+      title: t("president_home.areas.demand.title"),
       icon: <Snowflake className="h-4 w-4" />,
-      drawerTitle: tp("areas.demand.title"),
-      drawerSub: tp("areas.demand.sub"),
-      narration: nDomanda,
-      drawerContent: <Area1Ghiaccio d={d} oreRow={oreRow} />,
+      main_kpi: fmt_int(lista_attesa),
+      sub_label: t("president_home.cards.waiting_athletes"),
+      stato: ore_row ? (lista_attesa > 0 ? "attenzione" : "positivo") : "mancante",
+      mini: <MiniBarsHoriz empty_label={t("president_home.missing.short")} items={[
+        { label: t("president_home.ice.available"), value: ore_disponibili ?? 0, color: AREA_STROKES.domanda },
+        { label: t("president_home.ice.used"), value: ore_usate ?? 0, color: "hsl(var(--chart-2, var(--primary)))" },
+        { label: t("president_home.cards.requested"), value: ore_richieste ?? 0, color: "hsl(var(--chart-4, var(--primary)))" },
+      ]} />,
+      drawer_content: <AreaGhiaccio d={d} stagione_id={stagione_id} t={t} />,
     },
     {
       id: "atleti",
-      title: tp("areas.athletes.title"),
-      accent: "#10b981",
+      title: t("president_home.areas.athletes.title"),
       icon: <Users className="h-4 w-4" />,
-      drawerTitle: tp("areas.athletes.title"),
-      drawerSub: tp("areas.athletes.sub", { count: totAtleti }),
-      narration: nAtleti,
-      drawerContent: (
-        <Area2Atleti
-          d={d}
-          bilancioStorico={d.bilancio || []}
-          storiciByStagione={storiciByStagione}
-          stagioniOrd={stagioniOrd}
-          currStagId={stagioneId}
-          prevStagId={prevStagId}
-          confronta={confronta}
-        />
-      ),
+      main_kpi: fmt_int(atleti_attivi.length),
+      sub_label: t("president_home.cards.active_athletes"),
+      stato: atleti_attivi.length > 0 ? "positivo" : "neutro",
+      mini: <MiniPyramid items={top_livelli} empty_label={t("president_home.empty.short")} />,
+      drawer_content: <AreaAtleti d={d} stagioni={stagioni_ord} stagione_id={stagione_id} prev_stagione_id={prev_stagione_id} confronta={confronta} t={t} />,
     },
     {
       id: "ricavi",
-      title: tp("areas.revenue.title"),
-      accent: "#0e7490",
+      title: t("president_home.areas.revenue.title"),
       icon: <CreditCard className="h-4 w-4" />,
-      drawerTitle: tp("areas.revenue.title"),
-      drawerSub: tp("areas.revenue.sub"),
-      narration: nRicavi,
-      drawerContent: <Area3Ricavi d={d} ricaviCurr={ricaviCurr} ricaviPrev={ricaviPrev} confronta={confronta} totAtleti={totAtleti} />,
+      main_kpi: ricavi_curr.length === 0 ? "—" : fmt_chf(totale_ricavi),
+      sub_label: ricavi_curr.length === 0 ? t("president_home.missing.short") : t("president_home.cards.total_season_revenue"),
+      stato: ricavi_curr.length === 0 ? "mancante" : "neutro",
+      mini: <MiniDonut data={donut_data} empty_label={t("president_home.missing.short")} />,
+      drawer_content: <AreaRicavi d={d} stagione_id={stagione_id} prev_stagione_id={prev_stagione_id} confronta={confronta} t={t} />,
     },
     {
       id: "costi",
-      title: tp("areas.costs.title"),
-      accent: "#f59e0b",
+      title: t("president_home.areas.costs.title"),
       icon: <Briefcase className="h-4 w-4" />,
-      drawerTitle: tp("areas.costs.title"),
-      drawerSub: tp("areas.costs.sub"),
-      narration: nCosti,
-      drawerContent: <Area4Istruttori d={d} ricaviCurr={ricaviCurr} />,
+      main_kpi: fmt_int(d.costi_istruttori.length),
+      sub_label: t("president_home.cards.instructors", { count: d.costi_istruttori.length }),
+      stato: d.costi_istruttori.length === 0 ? "mancante" : "neutro",
+      mini: <MiniBarsVert items={d.costi_istruttori.slice(0, 3).map((c) => {
+        const istruttore = d.istruttori.find((i) => testo(i.id) === testo(c.istruttore_id));
+        return { label: testo(istruttore?.nome) || "—", value: numero(c.tariffa_oraria) };
+      })} empty_label={t("president_home.missing.short")} />,
+      drawer_content: <AreaIstruttori d={d} t={t} />,
     },
     {
       id: "lezioni",
-      title: tp("areas.private.title"),
-      accent: "#ec4899",
+      title: t("president_home.areas.private.title"),
       icon: <Clock className="h-4 w-4" />,
-      drawerTitle: tp("areas.private.title"),
-      drawerSub: tp("areas.private.sub"),
-      narration: nLezioni,
-      drawerContent: <Area5Lezioni d={d} />,
+      main_kpi: d.lezioni_private.length === 0 ? "—" : fmt_chf(lezioni_fatturato),
+      sub_label: d.lezioni_private.length === 0 ? t("president_home.empty.short") : t("president_home.cards.private_hours", { count: fmt_int(lezioni_ore) }),
+      stato: d.lezioni_private.length === 0 ? "neutro" : "positivo",
+      mini: <MiniBarsHoriz empty_label={t("president_home.empty.short")} items={[
+        { label: t("president_home.private.lessons_sold"), value: d.lezioni_private.length, color: AREA_STROKES.lezioni },
+        { label: t("president_home.private.hours_sold_label"), value: lezioni_ore, color: "hsl(var(--chart-4, var(--primary)))" },
+      ]} />,
+      drawer_content: <AreaLezioni d={d} t={t} />,
     },
     {
       id: "sportivo",
-      title: tp("areas.sport.title"),
-      accent: "#8b5cf6",
+      title: t("president_home.areas.sport.title"),
       icon: <Trophy className="h-4 w-4" />,
-      drawerTitle: tp("areas.sport.title"),
-      drawerSub: tp("areas.sport.sub"),
-      narration: nSportivo,
-      drawerContent: <Area6Performance d={d} />,
+      main_kpi: fmt_int(podi),
+      sub_label: t("president_home.cards.podiums_in_competitions", { podi, gare: gare_curr.length }),
+      stato: gare_curr.length === 0 ? "neutro" : "positivo",
+      mini: <MiniBarsHoriz empty_label={t("president_home.empty.short")} items={[
+        { label: t("president_home.sport.competitions"), value: gare_curr.length, color: AREA_STROKES.sportivo },
+        { label: t("president_home.sport.entries"), value: iscrizioni_gare_curr.length, color: "hsl(var(--chart-3, var(--primary)))" },
+        { label: t("president_home.sport.podiums"), value: podi, color: "hsl(var(--chart-4, var(--primary)))" },
+      ]} />,
+      drawer_content: <AreaSport d={d} stagione_id={stagione_id} prev_stagione_id={prev_stagione_id} t={t} />,
     },
     {
       id: "catalogo",
-      title: tp("areas.catalog.title"),
-      accent: "#0891b2",
+      title: t("president_home.areas.catalog.title"),
       icon: <Megaphone className="h-4 w-4" />,
-      drawerTitle: tp("areas.catalog.title"),
-      drawerSub: tp("areas.catalog.sub"),
-      narration: nCatalogo,
-      drawerContent: (
-        <Area7Catalogo
-          d={d}
-          cat={catData}
-          totAtleti={totAtleti}
-          giovani={giovani}
-          podi={podi}
-          agonisti={agonisti}
-          testSuperamentoPct={testSuperamentoPct}
-          trendPodi={trendPodi}
-          oreAttivita={oreAttivita}
-        />
-      ),
+      main_kpi: fmt_int(sponsor_attivi.length),
+      sub_label: t("president_home.cards.sponsor_value", { importo: fmt_chf(sponsor_totale) }),
+      stato: sponsor_attivi.length === 0 ? "neutro" : "positivo",
+      mini: <MiniBarsHoriz empty_label={t("president_home.empty.short")} items={[
+        { label: t("president_home.catalog.active_sponsors"), value: sponsor_attivi.length, color: AREA_STROKES.catalogo },
+        { label: t("president_home.catalog.open_events"), value: d.eventi.length, color: "hsl(var(--chart-2, var(--primary)))" },
+        { label: t("president_home.catalog.searching"), value: d.sponsor_cercati.length, color: "hsl(var(--chart-4, var(--primary)))" },
+      ]} />,
+      drawer_content: <AreaCatalogo d={d} club_nome={club_nome} sponsor={sponsor_attivi} t={t} />,
     },
   ];
 
-  const activeArea = openArea ? AREAS.find((a) => a.id === openArea) : null;
+  const area_aperta = open_area ? aree.find((a) => a.id === open_area) : null;
+  const saluto = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return t("president_home.greet.morning");
+    if (h < 18) return t("president_home.greet.afternoon");
+    return t("president_home.greet.evening");
+  })();
 
   return (
-    <TooltipProvider>
-      <div
-        className="min-h-screen"
-        style={{
-          background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 60%, #f1f5f9 100%)",
-          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        }}
-      >
-        <style>{`
-          .font-serif{font-family:'Crimson Pro',Georgia,'Times New Roman',serif;font-weight:500;}
-        `}</style>
-
-        {/* Sticky header */}
-        <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/70">
-          <div className="px-6 md:px-10 max-w-[1400px] mx-auto">
-            <div className="flex items-center justify-between gap-6 py-4">
-              <div className="text-xs uppercase tracking-[0.2em] text-cyan-700 font-semibold">
-                {tp("kicker")}
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full pl-3 pr-1 py-1 shadow-sm">
-                  <Calendar className="h-4 w-4 text-slate-400" />
-                  <Select value={stagioneId} onValueChange={setStagioneId}>
-                    <SelectTrigger className="border-0 shadow-none h-8 min-w-[140px] focus:ring-0 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {stagioniOrd.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <label className="hidden sm:inline-flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
-                  <Switch checked={confronta} onCheckedChange={setConfronta} />
-                  <span>{tp("compare_last_year_short")}</span>
-                </label>
-              </div>
-            </div>
+    <div className="min-h-screen bg-background">
+      <div className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-6 py-4 md:px-10">
+          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("president_home.kicker")}</div>
+          <div className="flex items-center gap-3">
+            <Select value={stagione_id} onValueChange={set_stagione_id}>
+              <SelectTrigger className="h-9 min-w-[150px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {stagioni_ord.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <label className="hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
+              <Switch checked={confronta} onCheckedChange={set_confronta} />
+              <span>{t("president_home.compare_last_year_short")}</span>
+            </label>
           </div>
         </div>
-
-        <div className="px-6 md:px-10 max-w-[1400px] mx-auto pt-12 md:pt-16 pb-16">
-          <div className="mb-8">
-            <OnboardingBanner />
-          </div>
-          {/* HERO compatto */}
-          <header>
-            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-slate-900 tracking-tight leading-[1.05]">
-              {greet}, {nome}.
-            </h1>
-            <p className="mt-3 text-base md:text-lg text-slate-500 max-w-2xl leading-relaxed">
-              {tp("hero.season_prefix")} <span className="text-slate-900 font-medium">{stagioneNome}</span> {tp("hero.club_counts")}{" "}
-              <span className="text-slate-900 font-medium">{fmt_int(totAtleti)}</span> {tp("hero.athletes_and_earned")}{" "}
-              <span className="text-slate-900 font-medium">{fmt_chf(totRicavi)}</span>.
-            </p>
-
-            <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4 border-t border-slate-200 pt-6">
-              <MiniHeroStat label={tp("stats.total_athletes")} value={fmt_int(totAtleti)} delta={confronta ? atletiYoY : undefined} />
-              <MiniHeroStat label={tp("stats.revenue")} value={fmt_chf(totRicavi)} delta={confronta ? ricaviYoY : undefined} />
-              <MiniHeroStat label={tp("stats.cash_balance")} value={fmt_chf(cassa)} accent={cassa >= 0 ? "text-emerald-600" : "text-rose-600"} />
-              <MiniHeroStat label={tp("stats.waiting_list")} value={fmt_int(totAttesa)} accent="text-amber-600" />
-            </div>
-          </header>
-
-          {/* GRIGLIA 6 CARD */}
-          <section className="mt-10 grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            <AreaCard
-              areaId="domanda"
-              title={tp("areas.demand.title")}
-              icon={<Snowflake className="h-5 w-5" />}
-              accent="#0e7490"
-              mainKpi={fmt_int(totAttesa)}
-              subLabel={tp("cards.waiting_athletes")}
-              narration={nDomanda}
-              miniChart={
-                <MiniBarsHoriz
-                  items={[
-                    { label: tp("ice.available"), value: oreDisp, color: "#0e7490" },
-                    { label: tp("ice.used"), value: oreUsed, color: "#67e8f9" },
-                    { label: tp("cards.requested"), value: oreReq, color: "#f59e0b" },
-                  ]}
-                />
-              }
-              onOpen={() => setOpenArea("domanda")}
-            />
-
-            <AreaCard
-              areaId="atleti"
-              title={tp("areas.athletes.title")}
-              icon={<Users className="h-5 w-5" />}
-              accent="#10b981"
-              mainKpi={fmt_int(totAtleti)}
-              subLabel={tp("cards.active_avg_age", { eta: ageAvg.toFixed(1) })}
-              delta={confronta ? atletiYoY : undefined}
-              narration={nAtleti}
-              miniChart={<MiniPyramid items={topLivelli} />}
-              onOpen={() => setOpenArea("atleti")}
-            />
-
-            <AreaCard
-              areaId="ricavi"
-              title={tp("areas.revenue.title")}
-              icon={<CreditCard className="h-5 w-5" />}
-              accent="#0e7490"
-              mainKpi={fmt_chf(totRicavi)}
-              subLabel={tp("cards.total_season_revenue")}
-              delta={confronta ? ricaviYoY : undefined}
-              narration={nRicavi}
-              miniChart={<MiniDonut data={donutData} />}
-              onOpen={() => setOpenArea("ricavi")}
-            />
-
-            <AreaCard
-              areaId="costi"
-              title={tp("areas.costs.title")}
-              icon={<Briefcase className="h-5 w-5" />}
-              accent="#f59e0b"
-              mainKpi={`${istCards.length}`}
-              subLabel={tp("cards.instructors_total_cost", { importo: fmt_chf(costoIstTot) })}
-              narration={nCosti}
-              miniChart={
-                <MiniBarsVert
-                  items={istCards.slice(0, 3).map((c: any) => ({
-                    label: c.ist?.nome || "—",
-                    value: c.tariffa,
-                  }))}
-                  suffix=""
-                />
-              }
-              onOpen={() => setOpenArea("costi")}
-            />
-
-            <AreaCard
-              areaId="lezioni"
-              title={tp("areas.private.title")}
-              icon={<Clock className="h-5 w-5" />}
-              accent="#ec4899"
-              mainKpi={fmt_chf(fattLez)}
-              subLabel={tp("private.hours_sold", { count: fmt_int(oreLezTot) })}
-              delta={confronta && fattLezPrev ? ((fattLez - fattLezPrev) / fattLezPrev) * 100 : undefined}
-              narration={nLezioni}
-              miniChart={<MiniHeatmap values={fasceTotali} />}
-              onOpen={() => setOpenArea("lezioni")}
-            />
-
-            <AreaCard
-              areaId="sportivo"
-              title={tp("areas.sport.title")}
-              icon={<Trophy className="h-5 w-5" />}
-              accent="#8b5cf6"
-              mainKpi={`${podi}`}
-              subLabel={`${podi === 1 ? tp("cards.podium_one") : tp("cards.podium_other")} ${tp("cards.in")} ${igare.length} ${igare.length === 1 ? tp("cards.race_one") : tp("cards.race_other")}`}
-              narration={nSportivo}
-              miniChart={<MiniSparkline data={trendPodi} color="#8b5cf6" />}
-              onOpen={() => setOpenArea("sportivo")}
-            />
-
-            <AreaCard
-              areaId="catalogo"
-              title={tp("areas.catalog.title")}
-              icon={<Megaphone className="h-5 w-5" />}
-              accent="#0891b2"
-              mainKpi={tp("cards.sponsor_count", { count: sponsorCount })}
-              subLabel={tp("cards.sponsor_sub", { importo: fmt_chf(totaleAnnuoSponsor), count: categorieCercateCount })}
-              narration={nCatalogo}
-              miniChart={<MiniCirclesPromo sponsorIniziali={sponsorIniziali} cercateCount={categorieCercateCount} />}
-              onOpen={() => setOpenArea("catalogo")}
-            />
-          </section>
-
-          {/* VETRINA atleti */}
-          <section className="mt-12">
-            <div className="mb-6">
-              <h2 className="font-serif text-3xl md:text-4xl text-slate-900 tracking-tight">
-                {tp("showcase.section_title")}
-              </h2>
-            </div>
-            <AtletiShowcase d={d} />
-          </section>
-
-          {/* Banner finale */}
-          <div className="mt-10">
-            <p className="text-xs text-slate-400 flex items-start gap-2">
-              <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-              {tp("disclaimer")}
-            </p>
-          </div>
-        </div>
-
-        {/* DRAWER laterale */}
-        <Sheet open={!!openArea} onOpenChange={(o) => !o && setOpenArea(null)}>
-          <SheetContent
-            side="right"
-            className="w-full sm:max-w-none sm:w-[60vw] p-0 overflow-y-auto"
-          >
-            {activeArea && (
-              <div className="h-full flex flex-col">
-                <div className="px-8 md:px-12 pt-12 pb-8 border-b border-slate-100">
-                  <div className="flex items-center gap-2 mb-4" style={{ color: activeArea.accent }}>
-                    {activeArea.icon}
-                    <span className="text-[11px] uppercase tracking-[0.2em] font-semibold">{activeArea.title}</span>
-                  </div>
-                  <h2 className="font-serif text-4xl md:text-5xl text-slate-900 tracking-tight leading-[1.05]">
-                    {activeArea.drawerTitle}
-                  </h2>
-                  <p className="mt-3 text-base text-slate-500 max-w-2xl">{activeArea.drawerSub}</p>
-                  <p className="mt-6 italic text-base text-slate-700 leading-relaxed border-l-2 pl-4 max-w-2xl"
-                     style={{ borderColor: activeArea.accent }}>
-                    {activeArea.narration.long}
-                  </p>
-                </div>
-
-                <div className="px-8 md:px-12 py-10 flex-1">
-                  {activeArea.drawerContent}
-                </div>
-
-                <div className="px-8 md:px-12 py-6 border-t border-slate-100 flex items-center justify-between sticky bottom-0 bg-white">
-                  <button
-                    type="button"
-                    onClick={() => setOpenArea(null)}
-                    className="text-sm font-medium text-slate-600 hover:text-slate-900"
-                  >
-                    {tp("drawer.close")}
-                  </button>
-                  <a
-                    href="#"
-                    onClick={(e) => e.preventDefault()}
-                    className="text-sm font-medium hover:underline"
-                    style={{ color: activeArea.accent }}
-                  >
-                    {tp("drawer.open_page")}
-                  </a>
-                </div>
-              </div>
-            )}
-          </SheetContent>
-        </Sheet>
-
-        {/* Floating PDF button */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white rounded-full px-5 py-3 text-sm font-medium transition-colors shadow-xl"
-              type="button"
-              onClick={(e) => e.preventDefault()}
-            >
-              <FileDown className="h-4 w-4" />
-              <span className="hidden sm:inline">{tp("pdf_button")}</span>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>{tp("coming_soon")}</TooltipContent>
-        </Tooltip>
       </div>
-    </TooltipProvider>
+
+      <main className="mx-auto max-w-[1400px] px-6 py-10 md:px-10 md:py-14">
+        <div className="mb-8"><OnboardingBanner /></div>
+        <header>
+          <div className="text-sm font-medium text-primary">{t("president_home.analysis_of", { club: club_nome })}</div>
+          <h1 className="mt-2 text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
+            {saluto}, {session?.nome || t("president_home.role_fallback")}.
+          </h1>
+          <p className="mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground md:text-lg">
+            {t("president_home.hero", { stagione: stagione.nome, club: club_nome })}
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Button asChild>
+              <a href="/presidente/relazione"><FileDown className="mr-2 h-4 w-4" />{t("president_home.report_link")}</a>
+            </Button>
+            <Button asChild variant="outline">
+              <a href="/presidente/relazione/contenuti">{t("president_home.report_content_link")}</a>
+            </Button>
+          </div>
+          <div className="mt-8 grid gap-4 md:grid-cols-4">
+            <ValoreGrande label={t("president_home.stats.total_athletes")} value={fmt_int(atleti_attivi.length)} delta={confronta ? atleti_yoy : undefined} />
+            <ValoreGrande label={t("president_home.stats.revenue")} value={ricavi_curr.length === 0 ? "—" : fmt_chf(totale_ricavi)} delta={confronta ? ricavi_yoy : undefined} />
+            <ValoreGrande label={t("president_home.stats.cash_balance")} value={cassa === null ? "—" : fmt_chf(cassa)} tono={cassa === null ? "base" : cassa >= 0 ? "positivo" : "pericolo"} />
+            <ValoreGrande label={t("president_home.stats.waiting_list")} value={fmt_int(lista_attesa)} tono={lista_attesa > 0 ? "attenzione" : "base"} />
+          </div>
+        </header>
+
+        <StatoSegreteria d={d} t={t} />
+
+        <section className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {aree.map((area) => (
+            <AreaCard
+              key={area.id}
+              id_area={area.id}
+              title={area.title}
+              icon={area.icon}
+              main_kpi={area.main_kpi}
+              sub_label={area.sub_label}
+              stato={area.stato}
+              stato_label={t(`president_home.state.${area.stato}`)}
+              link_label={t("president_home.open_area")}
+              on_open={() => set_open_area(area.id)}
+            >
+              {area.mini}
+            </AreaCard>
+          ))}
+        </section>
+
+        <AtletiShowcase d={d} t={t} />
+
+        <div className="mt-10 rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+          <AlertTriangle className="mr-2 inline h-4 w-4 align-[-2px] text-amber-700" />
+          {t("president_home.disclaimer")}
+        </div>
+      </main>
+
+      <Sheet open={!!open_area} onOpenChange={(open) => !open && set_open_area(null)}>
+        <SheetContent side="right" className="w-full overflow-y-auto p-0 sm:max-w-none sm:w-[62vw]">
+          {area_aperta ? (
+            <div className="flex min-h-full flex-col">
+              <div className="border-b px-8 py-8 md:px-10">
+                <div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  <span className={`flex h-8 w-8 items-center justify-center rounded-md text-primary-foreground ${AREA_ACCENTS[area_aperta.id]}`}>{area_aperta.icon}</span>
+                  {area_aperta.title}
+                </div>
+                <h2 className="text-3xl font-semibold text-foreground">{area_aperta.title}</h2>
+                <p className="mt-2 text-sm text-muted-foreground">{t(`president_home.areas.${area_aperta.id}.sub`)}</p>
+              </div>
+              <div className="flex-1 px-8 py-8 md:px-10">{area_aperta.drawer_content}</div>
+              <div className="sticky bottom-0 flex items-center justify-between gap-4 border-t bg-background px-8 py-5 md:px-10">
+                <Button type="button" variant="outline" onClick={() => set_open_area(null)}>{t("president_home.close")}</Button>
+                <Button asChild>
+                  <a href={AREA_PATHS[area_aperta.id]}>{t("president_home.open_area")}</a>
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </SheetContent>
+      </Sheet>
+    </div>
   );
 };
-
-const MiniHeroStat: React.FC<{ label: string; value: string; accent?: string; delta?: number }> = ({
-  label,
-  value,
-  accent = "text-slate-900",
-  delta,
-}) => (
-  <div className="min-w-0">
-    <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2 truncate">{label}</div>
-    <div
-      className={`font-serif tracking-tight tabular-nums leading-none truncate ${accent}`}
-      style={{ fontSize: "clamp(1.625rem, 2.2vw, 2rem)", fontFeatureSettings: "'tnum'" }}
-    >
-      {value}
-    </div>
-    {delta !== undefined && (
-      <div className="mt-1.5">
-        <DeltaPill value={delta} />
-      </div>
-    )}
-  </div>
-);
 
 export default PresidentDashboard;

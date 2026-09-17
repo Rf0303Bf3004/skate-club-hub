@@ -41,5 +41,222 @@
     "empty": "Keine offenen Anfragen",
     "nessuna_data": "Kein Wunschdatum",
     "apri": "Anfragen öffnen"
+  },
+  "president_home": {
+    "kicker": "Präsidenten-Dashboard",
+    "loading": "Clubanalyse wird geladen...",
+    "retry": "Erneut versuchen",
+    "club_fallback": "Club",
+    "role_fallback": "Präsident",
+    "analysis_of": "Analyse von {{club}}",
+    "hero": "Saison {{stagione}}: Diese Seite zeigt nur für {{club}} erfasste Daten.",
+    "report_link": "Bericht öffnen",
+    "report_content_link": "Berichtsinhalte",
+    "open_area": "Bereich öffnen →",
+    "open_link": "Öffnen →",
+    "close": "Schliessen",
+    "compare_last_year_short": "Vorjahr vergleichen",
+    "disclaimer": "Die angezeigten Werte stammen aus erfassten Daten. Ein Strich bedeutet fehlende Daten, nicht null.",
+    "no_club": {
+      "title": "Zugang keinem Club zugeordnet",
+      "text": "Ich kann Clubdaten erst lesen, wenn dieser Zugang einem Club zugeordnet ist."
+    },
+    "no_season": {
+      "title": "Keine Saison konfiguriert",
+      "text": "Für die Clubanalyse ist mindestens eine Saison nötig.",
+      "link": "Saisons öffnen"
+    },
+    "error": {
+      "title": "Daten nicht verfügbar",
+      "text": "Das Lesen ist fehlgeschlagen: {{motivo}}",
+      "stagioni_operation": "Präsident-Saisons lesen",
+      "dashboard_operation": "Präsident-Dashboard lesen"
+    },
+    "missing": {
+      "title": "Fehlende Daten",
+      "short": "Nicht erfasst"
+    },
+    "empty": {
+      "title": "Keine Daten",
+      "short": "Keine Daten erfasst"
+    },
+    "state": {
+      "positivo": "erfasst",
+      "neutro": "stabil",
+      "attenzione": "beobachten",
+      "mancante": "fehlende Daten"
+    },
+    "greet": {
+      "morning": "Guten Morgen",
+      "afternoon": "Guten Tag",
+      "evening": "Guten Abend"
+    },
+    "stats": {
+      "total_athletes": "Aktive Athleten",
+      "revenue": "Saisonumsatz",
+      "cash_balance": "Kassenstand",
+      "waiting_list": "Warteliste"
+    },
+    "secretary": {
+      "title": "Im Sekretariat",
+      "registrations": "Anmeldungen zu genehmigen",
+      "draft_invoices": "Rechnungen zu senden",
+      "private_lessons": "Privatstunden zu genehmigen"
+    },
+    "areas": {
+      "demand": {
+        "title": "Nachfrage & Eis",
+        "sub": "Verfügbare Stunden, Eisnutzung und Warteliste."
+      },
+      "athletes": {
+        "title": "Athleten",
+        "sub": "Aktive Athleten, Stufen und echte Historie."
+      },
+      "revenue": {
+        "title": "Umsatz & Pakete",
+        "sub": "Erfasste Einnahmen und genutzte Pakete."
+      },
+      "costs": {
+        "title": "Kosten & Trainer",
+        "sub": "Stunden und Kosten nur aus erfassten Tarifen und Stunden."
+      },
+      "private": {
+        "title": "Privatstunden",
+        "sub": "Erfasste Stunden, Umsatz und wichtigste Nutzung."
+      },
+      "sportivo": {
+        "title": "Sport",
+        "sub": "Saisonwettkämpfe, Anmeldungen und erfasste Podestplätze."
+      },
+      "catalogo": {
+        "title": "Katalog & Promotion",
+        "sub": "Clubidentität, Sponsoren, Events und Angebot."
+      }
+    },
+    "cards": {
+      "waiting_athletes": "Athleten auf Warteliste",
+      "requested": "Angefragt",
+      "active_athletes": "aktive Athleten",
+      "total_season_revenue": "erfasster Umsatz",
+      "instructors": "{{count}} Trainer mit Tarif",
+      "private_hours": "{{count}} erfasste Stunden",
+      "podiums_in_competitions": "{{podi}} Podestplätze in {{gare}} Wettkämpfen",
+      "sponsor_value": "{{importo}} jährlich erfasst"
+    },
+    "fonte": {
+      "altro": "Anderes",
+      "eventi": "Events",
+      "lezioni_private": "Privatstunden",
+      "pacchetti_opzionali": "Optionale Pakete",
+      "quote_corsi": "Kursbeiträge",
+      "sponsor": "Sponsoren"
+    },
+    "dow": {
+      "sun": "So",
+      "mon": "Mo",
+      "tue": "Di",
+      "wed": "Mi",
+      "thu": "Do",
+      "fri": "Fr",
+      "sat": "Sa"
+    },
+    "ice": {
+      "available": "Verfügbar",
+      "used": "Genutzt",
+      "requested_all": "Benötigt, wenn alle akzeptiert würden",
+      "hourly_cost": "Eisstunden-Kosten",
+      "requests_received": "Anfragen erhalten",
+      "accepted": "Akzeptierte Anmeldungen",
+      "in_waiting_list": "Warteliste",
+      "missing_hours": "Die Eisstunden der Saison sind nicht konfiguriert.",
+      "no_courses": "Für diese Saison ist keine Kurskapazität erfasst.",
+      "table": {
+        "course": "Kurs",
+        "capacity": "Kapazität",
+        "enrolled": "Eingeschrieben",
+        "waiting": "Wartend",
+        "saturation": "Auslastung"
+      }
+    },
+    "athletes": {
+      "active_athletes": "Aktive Athleten",
+      "dropouts": "Austritte",
+      "avg_age": "Durchschnittsalter",
+      "years_short": "{{value}} Jahre",
+      "levels_count": "Abgedeckte Stufen",
+      "levels_pyramid": "Stufenpyramide",
+      "trend_title": "Athleten pro Saison",
+      "missing_previous_levels": "Die Stufenhistorie der Vorsaison ist nicht erfasst: Der Vergleich bleibt ausgeblendet.",
+      "missing_trend": "Für den Trend sind mindestens zwei Saisons mit erfasster Historie nötig."
+    },
+    "revenue": {
+      "season_revenue": "Saisonumsatz",
+      "sources": "Quellen",
+      "packages_used": "Genutzte Pakete",
+      "composition": "Umsatzzusammensetzung",
+      "missing": "Für diese Saison sind keine Umsatzzeilen erfasst.",
+      "no_sources": "Keine Quelle mit erfasstem Betrag.",
+      "packages_title": "Genutzte optionale Pakete",
+      "no_packages": "In der Saison wurde kein optionales Paket genutzt."
+    },
+    "costs": {
+      "instructors": "Trainer",
+      "hours_worked": "Geleistete Stunden",
+      "variable_cost": "Kosten erfasster Stunden",
+      "hours_by_type": "Stunden nach Typ",
+      "fixed_monthly": "Monatlicher Fixbetrag",
+      "no_costs": "Für diese Saison ist kein Trainertarif erfasst.",
+      "legend": {
+        "courses": "Kurse",
+        "private": "Privat",
+        "events": "Events",
+        "admin": "Admin"
+      }
+    },
+    "private": {
+      "lessons_sold": "Stunden",
+      "hours_sold_label": "Stunden",
+      "turnover": "Umsatz",
+      "top_instructors": "Top-Trainer",
+      "top_clients": "Top-Athleten",
+      "days_title": "Tage mit Stunden",
+      "no_lessons": "Für diese Saison ist keine Privatstunden-Historie erfasst.",
+      "no_top": "Keine Daten erfasst.",
+      "no_days": "Kein Datum erfasst."
+    },
+    "sport": {
+      "competitions": "Wettkämpfe",
+      "entries": "Wettkampfmeldungen",
+      "podiums": "Podestplätze",
+      "podium_rate": "Podestquote",
+      "top_athlete": "Meistprämierter Athlet",
+      "podiums_count": "{{count}} Podestplätze",
+      "no_competitions": "Für diese Saison ist kein Wettkampf erfasst.",
+      "missing_previous": "Es gibt keine Wettkämpfe der Vorsaison zum Vergleich.",
+      "previous_podiums": "Podestplätze Vorsaison"
+    },
+    "catalog": {
+      "since": "Seit {{anno}}",
+      "active_sponsors": "Aktive Sponsoren",
+      "sponsor_value": "Sponsorenwert",
+      "open_events": "Offene Events",
+      "participants": "Teilnehmende",
+      "searching": "Gesuchte Sponsoren",
+      "offer": "Angebot",
+      "course": "Kurs",
+      "package": "Paket",
+      "sponsors": "Sponsoren",
+      "events": "Events",
+      "event_value": "{{count}} Teilnehmende",
+      "no_offer": "Kein Angebot erfasst.",
+      "no_sponsors": "Kein aktiver Sponsor erfasst.",
+      "no_events": "Für die Saison ist kein öffentlicher Event erfasst."
+    },
+    "showcase": {
+      "title": "Wettkampfathleten",
+      "empty": "Kein aktiver Wettkampfathlet erfasst.",
+      "competitor": "Wettkampf",
+      "podiums": "{{count}} Podestplätze"
+    }
   }
 }
