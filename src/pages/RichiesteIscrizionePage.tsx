@@ -369,44 +369,16 @@ const RichiesteIscrizionePage: React.FC = () => {
         </>
       )}
 
-      {/* Confirmation modal */}
+      {/* Conferma condivisa con la home della segreteria */}
       {modal && (
-        <Dialog open onOpenChange={() => !gestisci.isPending && set_modal(null)}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>
-                {modal.azione === "approvata" ? t("richieste_iscrizione.modal.approva_title") : t("richieste_iscrizione.modal.rifiuta_title")}
-                {modal.richieste.length > 1 ? ` (${modal.richieste.length})` : ""}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                {modal.azione === "approvata"
-                  ? t(modal.richieste.length > 1 ? "richieste_iscrizione.modal.approva_desc_plural" : "richieste_iscrizione.modal.approva_desc_singular")
-                  : t(modal.richieste.length > 1 ? "richieste_iscrizione.modal.rifiuta_desc_plural" : "richieste_iscrizione.modal.rifiuta_desc_singular")}
-              </p>
-              <div>
-                <Label className="text-xs">{t("richieste_iscrizione.modal.note_label")}</Label>
-                <Input
-                  value={note_risposta}
-                  onChange={(e) => set_note_risposta(e.target.value)}
-                  placeholder={modal.azione === "rifiutata" ? t("richieste_iscrizione.modal.note_placeholder_rifiuto") : t("richieste_iscrizione.modal.note_placeholder_generico")}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => set_modal(null)} disabled={gestisci.isPending}>{t("richieste_iscrizione.modal.annulla")}</Button>
-              <Button
-                onClick={conferma}
-                disabled={gestisci.isPending}
-                className={modal.azione === "approvata" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
-                variant={modal.azione === "rifiutata" ? "destructive" : "default"}
-              >
-                {gestisci.isPending ? t("richieste_iscrizione.modal.elaborazione") : modal.azione === "approvata" ? t("richieste_iscrizione.modal.approva") : t("richieste_iscrizione.modal.rifiuta")}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <ConfermaRichiesteDialog
+          richieste={modal.richieste}
+          azione={modal.azione}
+          on_close={() => {
+            set_selezione([]);
+            set_modal(null);
+          }}
+        />
       )}
     </div>
   );
