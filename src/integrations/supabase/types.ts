@@ -4863,6 +4863,7 @@ export type Database = {
           note: string | null
           ora_fine: string | null
           ora_inizio: string | null
+          ragione_sociale_id: string | null
           richiede_approvazione: boolean
           richiesta_id: string | null
           ricorrente: boolean
@@ -4881,6 +4882,7 @@ export type Database = {
           note?: string | null
           ora_fine?: string | null
           ora_inizio?: string | null
+          ragione_sociale_id?: string | null
           richiede_approvazione?: boolean
           richiesta_id?: string | null
           ricorrente?: boolean
@@ -4899,6 +4901,7 @@ export type Database = {
           note?: string | null
           ora_fine?: string | null
           ora_inizio?: string | null
+          ragione_sociale_id?: string | null
           richiede_approvazione?: boolean
           richiesta_id?: string | null
           ricorrente?: boolean
@@ -4937,6 +4940,13 @@ export type Database = {
             columns: ["istruttore_id"]
             isOneToOne: false
             referencedRelation: "istruttori"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lezioni_private_ragione_sociale_id_fkey"
+            columns: ["ragione_sociale_id"]
+            isOneToOne: false
+            referencedRelation: "ragioni_sociali"
             referencedColumns: ["id"]
           },
           {
@@ -8863,6 +8873,10 @@ export type Database = {
           paese_iso: string
           soggetto_iva: boolean
         }[]
+      }
+      ente_lezione_predefinito: {
+        Args: { p_istruttore: string }
+        Returns: string
       }
       esito_iscrizioni_gara: {
         Args: { p_esito: string; p_iscrizioni: string[]; p_motivo?: string }
