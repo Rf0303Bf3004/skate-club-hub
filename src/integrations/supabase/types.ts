@@ -2468,6 +2468,68 @@ export type Database = {
           },
         ]
       }
+      demo_email_originali: {
+        Row: {
+          atleta_id: string
+          genitore1_email: string | null
+          genitore2_email: string | null
+          salvato_at: string
+        }
+        Insert: {
+          atleta_id: string
+          genitore1_email?: string | null
+          genitore2_email?: string | null
+          salvato_at?: string
+        }
+        Update: {
+          atleta_id?: string
+          genitore1_email?: string | null
+          genitore2_email?: string | null
+          salvato_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_email_originali_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: true
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demo_email_originali_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: true
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demo_email_originali_fatture: {
+        Row: {
+          fattura_id: string
+          intestatario_email: string | null
+          salvato_at: string
+        }
+        Insert: {
+          fattura_id: string
+          intestatario_email?: string | null
+          salvato_at?: string
+        }
+        Update: {
+          fattura_id?: string
+          intestatario_email?: string | null
+          salvato_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_email_originali_fatture_fattura_id_fkey"
+            columns: ["fattura_id"]
+            isOneToOne: true
+            referencedRelation: "fatture"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       device_tokens: {
         Row: {
           atleta_id: string | null
@@ -8720,6 +8782,21 @@ export type Database = {
           titolo: string
           ultima_volta: string
           urgenza: number
+        }[]
+      }
+      demo_puo_reindirizzare_email: { Args: never; Returns: boolean }
+      demo_reindirizza_email: {
+        Args: { p_club: string; p_indirizzo: string }
+        Returns: {
+          atleti_aggiornati: number
+          fatture_aggiornate: number
+        }[]
+      }
+      demo_ripristina_email: {
+        Args: { p_club: string }
+        Returns: {
+          atleti_ripristinati: number
+          fatture_ripristinate: number
         }[]
       }
       diagnosi_avvio_club: {

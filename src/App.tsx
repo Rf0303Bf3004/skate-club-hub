@@ -16,6 +16,7 @@ import DashboardPage from "@/pages/DashboardPage";
 import PresidentDashboard from "@/components/dashboard/PresidentDashboard";
 import IstruttoreDashboard from "@/components/dashboard/IstruttoreDashboard";
 import DTDashboard from "@/components/dashboard/DTDashboard";
+import SegreteriaDashboard from "@/components/dashboard/SegreteriaDashboard";
 import DiagnosticaPage from "@/pages/DiagnosticaPage";
 import AthletesPage from "@/pages/AthletesPage";
 import InstructorsPage from "@/pages/InstructorsPage";
@@ -295,6 +296,10 @@ const SmartHome = () => {
   // Direttore tecnico: home unica sul ghiaccio di oggi.
   if (session?.ruolo === "dt") {
     return <DTDashboard />;
+  }
+  // Segreteria: home unica su iscrizioni, fatture e anagrafiche da completare.
+  if (session?.ruolo === "segreteria") {
+    return <SegreteriaDashboard />;
   }
   return <DashboardPage />;
 };
