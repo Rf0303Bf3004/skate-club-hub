@@ -172,10 +172,16 @@ const SegreteriaDashboard: React.FC = () => {
       }
 
       const nomi_atleti = new Map((atleti ?? []).map((a: Nominativo) => [a.id, nome_persona(a)]));
+      // Nome e cognome nell'ordine naturale: è quello che finisce nella
+      // comunicazione e nella notifica alla famiglia, identico alla pagina Richieste.
+      const nomi_atleti_naturali = new Map(
+        (atleti ?? []).map((a: Nominativo) => [a.id, `${a.nome ?? ""} ${a.cognome ?? ""}`.trim()]),
+      );
       const nomi_corsi = new Map((corsi ?? []).map((c: CorsoNome) => [c.id, c.nome ?? ""]));
       return richieste.map((r) => ({
         ...r,
         atleta: nomi_atleti.get(r.atleta_id) ?? "",
+        atleta_nome_naturale: nomi_atleti_naturali.get(r.atleta_id) ?? "",
         corso: nomi_corsi.get(r.corso_id) ?? "",
       }));
     },
