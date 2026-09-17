@@ -13,17 +13,20 @@ import { use_gestione_richieste, type RichiestaDaGestire } from "@/hooks/use-ric
 interface Props {
   richieste: RichiestaDaGestire[];
   azione: "approvata" | "rifiutata";
+  /** Chiusura senza azione: Annulla, Esc o clic fuori. Non tocca la selezione. */
   on_close: () => void;
+  /** Chiamato solo dopo un'azione riuscita: qui si svuota la selezione. */
+  on_done: () => void;
 }
 
-const ConfermaRichiesteDialog: React.FC<Props> = ({ richieste, azione, on_close }) => {
+const ConfermaRichiesteDialog: React.FC<Props> = ({ richieste, azione, on_close, on_done }) => {
   const { t } = useTranslation("atleti");
   const { esegui, is_pending } = use_gestione_richieste();
   const [note_risposta, set_note_risposta] = useState("");
 
   const conferma = async () => {
     await esegui(richieste, azione, note_risposta);
-    on_close();
+    on_done();
   };
 
   return (
@@ -57,7 +60,7 @@ const ConfermaRichiesteDialog: React.FC<Props> = ({ richieste, azione, on_close 
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={on_close} disabled={is_pending}>
+          <Button variant="outline" onClick={on_close} disabled={is_pending} type="button">
             {t("richieste_iscrizione.modal.annulla")}
           </Button>
           <Button
