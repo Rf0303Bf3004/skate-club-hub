@@ -292,6 +292,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     >
                       <Icon className="w-4 h-4 shrink-0" />
                       <span>{tc(gruppo.label_key, { defaultValue: gruppo.label_fallback })}</span>
+                      {/* Gruppo chiuso: il bollino resta visibile sull'intestazione. */}
+                      {!aperto && richieste_pendenti > 0 && visibile_set.has("richieste_iscrizione")
+                        && voci_visibili.some((v) => v.codice === "richieste_iscrizione") && (
+                        <span title={tc("pending_requests_tooltip", { count: richieste_pendenti })}
+                          className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold tabular-nums">
+                          {richieste_pendenti}
+                        </span>
+                      )}
                       {aperto ? <ChevronDown className="w-4 h-4 ml-auto" /> : <ChevronRight className="w-4 h-4 ml-auto" />}
                     </button>
                     {aperto && (
