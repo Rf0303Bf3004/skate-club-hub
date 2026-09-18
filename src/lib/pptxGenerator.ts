@@ -167,17 +167,37 @@ function larghezze_colonne(
 ): number[] {
   const ncol = colonne.length;
   if (ncol <= 1) return [CONTENUTO_W];
-  const MIN = 1.0;
-  const pesi = colonne.map((c, i) => {
-    const lunghezze = [String(c ?? "").length, ...righe.map((r) => String(r.celle[i] ?? "").length)];
-    return Math.min(42, Math.max(8, Math.max(...lunghezze)));
+  const CARATTERE = (CORPO_PT * 0.58) / 96;   // larghezza di un carattere, in pollici
+  const contenuto = colonne.map((c, i) =>
+    [String(c ?? ""), ...righe.map((r) => String(r.celle[i] ?? ""))]);
+
+  // Ogni colonna deve almeno contenere la sua parola più lunga: una parola
+  // non va mai spezzata a metà per far stare la tabella.
+  const minimi = contenuto.map((celle) => {
+    const parola = Math.max(
+      3, ...celle.flatMap((t) => t.split(/\s+/).map((p) => p.length)),
+    );
+    return Math.min(CONTENUTO_W * 0.45, Math.max(0.6, parola * CARATTERE + 0.24));
   });
-  if (prima_stretta) pesi[0] = 5;
+  const pesi = contenuto.map((celle, i) =>
+    prima_stretta && i === 0 ? 5 : Math.min(42, Math.max(8, ...celle.map((t) => t.length))));
+
   const somma = pesi.reduce((s, p) => s + p, 0);
-  const grezze = pesi.map((p) => Math.max(MIN, (CONTENUTO_W * p) / somma));
-  const totale = grezze.reduce((s, w) => s + w, 0);
-  return grezze.map((w) => (w * CONTENUTO_W) / totale);
+  let larghezze = pesi.map((p) => (CONTENUTO_W * p) / somma);
+  // Le colonne sotto il minimo vengono alzate; lo spazio si toglie alle altre.
+  for (let giro = 0; giro < ncol; giro++) {
+    const sotto = larghezze.map((w, i) => w < minimi[i]);
+    if (!sotto.some(Boolean)) break;
+    const fisso = minimi.reduce((s, m, i) => s + (sotto[i] ? m : 0), 0);
+    const resto = Math.max(0.5, CONTENUTO_W - fisso);
+    const peso_resto = pesi.reduce((s, p, i) => s + (sotto[i] ? 0 : p), 0) || 1;
+    larghezze = larghezze.map((w, i) =>
+      sotto[i] ? minimi[i] : (resto * pesi[i]) / peso_resto);
+  }
+  const totale = larghezze.reduce((s, w) => s + w, 0);
+  return larghezze.map((w) => (w * CONTENUTO_W) / totale);
 }
+
 
 
 function titolo_continua(titolo: string, indice: number): string {
