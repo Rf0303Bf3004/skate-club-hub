@@ -4159,6 +4159,62 @@ export type Database = {
         }
         Relationships: []
       }
+      impostazioni_contabilita: {
+        Row: {
+          club_id: string
+          codice_iva: string | null
+          conti_per_voce: Json
+          conto_banca: string | null
+          conto_debitori: string | null
+          conto_iva: string | null
+          conto_ricavi_default: string | null
+          conto_sconti: string | null
+          created_at: string
+          formato: string
+          id: string
+          ragione_sociale_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          codice_iva?: string | null
+          conti_per_voce?: Json
+          conto_banca?: string | null
+          conto_debitori?: string | null
+          conto_iva?: string | null
+          conto_ricavi_default?: string | null
+          conto_sconti?: string | null
+          created_at?: string
+          formato?: string
+          id?: string
+          ragione_sociale_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          codice_iva?: string | null
+          conti_per_voce?: Json
+          conto_banca?: string | null
+          conto_debitori?: string | null
+          conto_iva?: string | null
+          conto_ricavi_default?: string | null
+          conto_sconti?: string | null
+          created_at?: string
+          formato?: string
+          id?: string
+          ragione_sociale_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "impostazioni_contabilita_ragione_sociale_id_fkey"
+            columns: ["ragione_sociale_id"]
+            isOneToOne: false
+            referencedRelation: "ragioni_sociali"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       impostazioni_planning: {
         Row: {
           club_id: string
@@ -8941,6 +8997,36 @@ export type Database = {
       esporta_club_entita: {
         Args: { p_club: string; p_entita: string }
         Returns: Json
+      }
+      esporta_contabilita: {
+        Args: {
+          p_al: string
+          p_club: string
+          p_dal: string
+          p_includi_incassi?: boolean
+          p_iva_nella_riga?: boolean
+          p_ragione_sociale?: string
+        }
+        Returns: {
+          aliquota_iva: number
+          cliente_nome: string
+          codice_iva: string
+          conto_avere: string
+          conto_dare: string
+          data: string
+          data_documento: string
+          data_scadenza: string
+          descrizione: string
+          ente: string
+          id_esterno: string
+          importo: number
+          importo_iva: number
+          importo_netto: number
+          numero: string
+          riferimento: string
+          tipo_riga: string
+          valuta: string
+        }[]
       }
       finestre_libere_istruttori: {
         Args: {
