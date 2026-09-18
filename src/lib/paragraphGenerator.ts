@@ -123,24 +123,13 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
   // stagione. Se lo storico non c'è, il numero non si scrive.
   const in_corso = stagione_in_corso(stagione);
   try {
-    if (in_corso) {
-      const { data, error } = await supabase
-        .from("atleti").select("id,agonista").eq("club_id", club_id).eq("attivo", true);
-      if (error) throw error;
-      const atleti = (data ?? []) as any[];
-      if (atleti.length > 0) {
-        d.atlete = atleti.length;
-        d.atlete_alla_data = true;
-        const ag = atleti.filter((a) => a.agonista).length;
-        if (ag > 0) d.agoniste = ag;
-      }
-    } else {
-      const { data, error } = await supabase
-        .from("atleti_storici_stagioni").select("atleta_id,status")
-        .eq("club_id", club_id).eq("stagione_id", stagione.id).eq("status", "attivo");
-      if (error) throw error;
-      const n = (data ?? []).length;
-      if (n > 0) { d.atlete = n; d.atlete_alla_data = false; }
+    // Un solo punto di lettura: src/lib/relazione/atleti-stagione.ts.
+    const atleti = await fetchAtletiDellaStagione(club_id, stagione, "id,agonista");
+    if (atleti && atleti.length > 0) {
+      d.atlete = atleti.length;
+      d.atlete_alla_data = in_corso;
+      const ag = atleti.filter((a) => a.agonista).length;
+      if (in_corso && ag > 0) d.agoniste = ag;
     }
   } catch { d.letture_fallite = (d.letture_fallite ?? 0) + 1; }
 
