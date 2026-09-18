@@ -183,7 +183,7 @@ export function useComposizioneRelazione(
     mutationFn: async ({ voce, attivo }: { voce: VocePannello; attivo: boolean }) => {
       await salva([{ sezione_tipo: tipo_pref(voce), sezione_id: chiave_pref(voce), attivo, ordine: voce.ordine }]);
     },
-    onError: (e) => segnala_errore(e, { contesto: "relazione_composizione_toggle" }),
+    onError: (e) => segnala_errore("Relazione", "Salvataggio della composizione", e),
     onSuccess: () => { qc.invalidateQueries({ queryKey: chiave }); },
   });
 
@@ -198,7 +198,7 @@ export function useComposizioneRelazione(
         { sezione_tipo: tipo_pref(altro), sezione_id: chiave_pref(altro), attivo: altro.attivo, ordine: voce.ordine },
       ]);
     },
-    onError: (e) => segnala_errore(e, { contesto: "relazione_composizione_ordine" }),
+    onError: (e) => segnala_errore("Relazione", "Spostamento del modulo", e),
     onSuccess: () => { qc.invalidateQueries({ queryKey: chiave }); },
   });
 
@@ -221,7 +221,7 @@ export function useComposizioneRelazione(
         });
       await salva(righe);
     },
-    onError: (e) => segnala_errore(e, { contesto: "relazione_composizione_preset" }),
+    onError: (e) => segnala_errore("Relazione", "Applicazione della composizione pronta", e),
     onSuccess: () => { qc.invalidateQueries({ queryKey: chiave }); },
   });
 
