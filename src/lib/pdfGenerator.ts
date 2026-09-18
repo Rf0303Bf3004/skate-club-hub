@@ -1,42 +1,16 @@
-import { PDFDocument, StandardFonts, rgb, PDFFont, PDFPage, PDFImage, degrees } from "pdf-lib";
-import { fetchParagrafiForPdf, type Tono } from "@/lib/paragraphGenerator";
+// Generatore del PDF della Relazione del Presidente.
+// Documento a moduli: copertina, messaggio del presidente, indice, capitoli
+// (testo + moduli dati veri), testi liberi, allegati, chiusura.
+// Nessun dato di esempio: i moduli senza dati non arrivano fin qui.
+
+import { PDFDocument, StandardFonts, rgb, PDFFont, PDFPage, PDFImage } from "pdf-lib";
+import { supabase } from "@/lib/supabase";
+import { fetchParagrafiForPdf, AREA_LABELS, type Tono } from "@/lib/paragraphGenerator";
 import { fetchKpiData, type KpiData, type KpiCell } from "@/lib/kpiData";
-import {
-  fetchChartData,
-  generatePiramideAtletiSVG,
-  generateDonutRicaviSVG,
-  generateSparklinePodiSVG,
-  generateHeatmapFasceSVG,
-  generateBarTariffeSVG,
-  svgToPngBytes,
-  type ChartData,
-} from "@/lib/pdfCharts";
+import type { AreaId, ModuloRisultato, Stagione } from "@/lib/relazione/moduli";
+import { renderGraficoSVG, svgToPngBytes } from "@/lib/relazione/grafici";
 
-// ============================================================
-// Tipi
-// ============================================================
-
-export interface GenerateRelazioneParams {
-  club: { nome?: string; citta?: string } | null;
-  presidente: string;
-  stagione_nome: string;
-  club_id?: string;
-  stagione_id?: string;
-  tono?: Tono;
-  // Items già ordinati e filtrati (solo attivi)
-  items: Array<{
-    id: string;
-    kind: "sistema" | "area" | "blocco" | "allegato";
-    sezione_id?: string;
-    titolo: string;
-    payload?: any;
-  }>;
-}
-
-// ============================================================
-// Costanti grafiche
-// ============================================================
-
+// ── Geometria ───────────────────────────────────────────────────
 const PAGE_W = 595.28;
 const PAGE_H = 841.89;
 const M_TOP = 60;
@@ -45,987 +19,479 @@ const M_LEFT = 70;
 const M_RIGHT = 70;
 const CONTENT_W = PAGE_W - M_LEFT - M_RIGHT;
 
-const CREAM = rgb(0xfe / 255, 0xfc / 255, 0xf7 / 255);
-const INK = rgb(0.1, 0.1, 0.1);
-const MUTED = rgb(0x47 / 255, 0x55 / 255, 0x69 / 255);
-const MUTED_SOFT = rgb(0x6b / 255, 0x72 / 255, 0x80 / 255);
-const TEAL = rgb(0x14 / 255, 0xb8 / 255, 0xa6 / 255);
-const LIGHT_BORDER = rgb(0.9, 0.88, 0.85);
-const HAIR = rgb(0xe5 / 255, 0xe7 / 255, 0xeb / 255);
-const WHITE = rgb(1, 1, 1);
+const CREMA = rgb(0xfe / 255, 0xfc / 255, 0xf7 / 255);
+const INCHIOSTRO = rgb(0.1, 0.1, 0.1);
+const TENUE = rgb(0x47 / 255, 0x55 / 255, 0x69 / 255);
+const FILO = rgb(0xe5 / 255, 0xe7 / 255, 0xeb / 255);
+const BIANCO = rgb(1, 1, 1);
 
-const CAT_COLORS: Record<string, [number, number, number]> = {
-  apertura: [0x3b, 0x82, 0xf6],
-  staff: [0xf5, 0x9e, 0x0b],
-  eventi_futuri: [0x10, 0xb9, 0x81],
-  trattative: [0x8b, 0x5c, 0xf6],
-  progetti: [0x14, 0xb8, 0xa6],
-  conclusioni: [0x63, 0x66, 0xf1],
-  altro: [0x6b, 0x72, 0x80],
-  bilancio: [0x10, 0xb9, 0x81],
-  federazione: [0x3b, 0x82, 0xf6],
-  certificazione: [0xf5, 0x9e, 0x0b],
-  contratto_sponsor: [0x8b, 0x5c, 0xf6],
-  verbale: [0xe1, 0x1d, 0x48],
-};
-
-const AREA_INFO: Record<string, { numero: number; titolo: string; insight: string }> = {
-  sintesi: {
-    numero: 1, titolo: "Sintesi della stagione",
-    insight: "La stagione mostra crescita della domanda e tenuta economica; le aree critiche sono presidiate.",
-  },
-  domanda: {
-    numero: 2, titolo: "Domanda & Ghiaccio",
-    insight: "La domanda supera la capacita': una fascia oraria aggiuntiva consentirebbe di assorbire la lista d'attesa.",
-  },
-  atleti: {
-    numero: 3, titolo: "Atleti",
-    insight: "Pulcini in calo, Interbronzo in crescita: i ragazzi avanzano verso l'agonismo.",
-  },
-  economia: {
-    numero: 4, titolo: "Economia",
-    insight: "Margine positivo, generato in particolare da corsi base e pacchetti opzionali.",
-  },
-  lezioni: {
-    numero: 5, titolo: "Lezioni private",
-    insight: "Le lezioni private trainano i ricavi e fidelizzano gli agonisti.",
-  },
-  sportivo: {
-    numero: 6, titolo: "Risultati sportivi",
-    insight: "Stagione di crescita: la maturazione del gruppo agonistico si riflette in gara.",
-  },
-  catalogo: {
-    numero: 7, titolo: "Catalogo & Promozione",
-    insight: "I partner sostengono il club; cerchiamo nuove collaborazioni per coprire le ore aggiuntive.",
-  },
-};
-
-// Didascalia grafico per area (Sezione C - cornice)
-const CHART_CAPTIONS: Record<string, string> = {
-  atleti: "FIG. 1 - PIRAMIDE LIVELLI ATLETI",
-  economia: "FIG. 2 - COMPOSIZIONE RICAVI",
-  sportivo: "FIG. 3 - PODI STAGIONE",
-  lezioni: "FIG. 4 - DISTRIBUZIONE FASCE ORARIE",
-};
-
-// ============================================================
-// Helpers
-// ============================================================
+function hexToRgb(hex?: string | null) {
+  const h = String(hex ?? "").trim();
+  if (!/^#[0-9a-fA-F]{6}$/.test(h)) return rgb(0x14 / 255, 0xb8 / 255, 0xa6 / 255);
+  return rgb(parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255);
+}
 
 interface Fonts {
-  serif: PDFFont;
-  serifBold: PDFFont;
-  serifItalic: PDFFont;
-  sans: PDFFont;
-  sansBold: PDFFont;
+  serif: PDFFont; serifBold: PDFFont; serifItalic: PDFFont; sans: PDFFont; sansBold: PDFFont;
 }
 
 function sanitize(s: string): string {
-  // pdf-lib StandardFonts (WinAnsi) non supporta tutti i caratteri unicode
-  return (s ?? "").replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"').replace(/\u2013|\u2014/g, "-").replace(/\u2026/g, "...").replace(/[^\x00-\xff]/g, "?");
+  return (s ?? "")
+    .replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"')
+    .replace(/\u2013|\u2014/g, "-").replace(/\u2026/g, "...")
+    .replace(/[^\x00-\xff]/g, "?");
 }
 
 function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
-  const words = sanitize(text).split(/\s+/);
-  const lines: string[] = [];
+  const parole = sanitize(text).split(/\s+/).filter(Boolean);
+  const righe: string[] = [];
   let cur = "";
-  for (const w of words) {
-    const test = cur ? cur + " " + w : w;
-    if (font.widthOfTextAtSize(test, size) > maxWidth && cur) {
-      lines.push(cur);
-      cur = w;
-    } else {
-      cur = test;
+  for (const p of parole) {
+    const prova = cur ? cur + " " + p : p;
+    if (font.widthOfTextAtSize(prova, size) > maxWidth && cur) { righe.push(cur); cur = p; }
+    else cur = prova;
+  }
+  if (cur) righe.push(cur);
+  return righe;
+}
+
+// ── Parametri ───────────────────────────────────────────────────
+
+export type TipoVoce = "sistema" | "messaggio" | "sezione" | "modulo" | "blocco" | "allegato";
+
+export interface VoceComposizione {
+  id: string;            // "sis:copertina" | "messaggio" | "sez:atleti" | "mod:xxx" | "blo:<id>" | "all:<id>"
+  tipo: TipoVoce;
+  riferimento: string;   // copertina/indice/chiusura, area, id modulo, id riga
+  titolo: string;
+  payload?: any;
+}
+
+export interface GenerateRelazioneParams {
+  club: any;
+  presidente: string;
+  stagione: Stagione;
+  club_id: string;
+  tono: Tono;
+  messaggio?: string | null;
+  voci: VoceComposizione[];              // già attive e ordinate
+  moduli: Record<string, ModuloRisultato>;
+}
+
+// ── Disegno di base ─────────────────────────────────────────────
+
+class Foglio {
+  pdf: PDFDocument;
+  fonts: Fonts;
+  colore: ReturnType<typeof hexToRgb>;
+  page!: PDFPage;
+  y = 0;
+
+  constructor(pdf: PDFDocument, fonts: Fonts, colore: ReturnType<typeof hexToRgb>) {
+    this.pdf = pdf; this.fonts = fonts; this.colore = colore;
+  }
+
+  nuova(): PDFPage {
+    this.page = this.pdf.addPage([PAGE_W, PAGE_H]);
+    this.page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: CREMA });
+    this.y = PAGE_H - M_TOP;
+    return this.page;
+  }
+
+  spazio(necessario: number) {
+    if (this.y - necessario < M_BOTTOM + 20) this.nuova();
+  }
+
+  titoloCapitolo(numero: number, titolo: string) {
+    this.spazio(90);
+    const kicker = sanitize(`CAPITOLO ${numero}`);
+    this.page.drawText(kicker, { x: M_LEFT, y: this.y, size: 8, font: this.fonts.sansBold, color: this.colore });
+    this.y -= 8;
+    this.page.drawLine({
+      start: { x: M_LEFT, y: this.y }, end: { x: M_LEFT + 100, y: this.y },
+      thickness: 0.7, color: this.colore,
+    });
+    this.y -= 30;
+    for (const ln of wrapText(titolo, this.fonts.serifBold, 26, CONTENT_W).slice(0, 2)) {
+      this.page.drawText(ln, { x: M_LEFT, y: this.y, size: 26, font: this.fonts.serifBold, color: INCHIOSTRO });
+      this.y -= 30;
     }
-  }
-  if (cur) lines.push(cur);
-  return lines;
-}
-
-function drawPageFrame(page: PDFPage, pageNum: number, fonts: Fonts) {
-  page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: CREAM });
-  const txt = `- ${pageNum} -`;
-  const w = fonts.sans.widthOfTextAtSize(txt, 9);
-  page.drawText(txt, { x: (PAGE_W - w) / 2, y: 30, size: 9, font: fonts.sans, color: MUTED });
-}
-
-function drawCategoryBadge(page: PDFPage, x: number, y: number, label: string, category: string, fonts: Fonts) {
-  const c = CAT_COLORS[category] || CAT_COLORS.altro;
-  const color = rgb(c[0] / 255, c[1] / 255, c[2] / 255);
-  const text = sanitize(label.toUpperCase());
-  const size = 8;
-  const w = fonts.sansBold.widthOfTextAtSize(text, size);
-  page.drawRectangle({ x, y, width: w + 14, height: 16, color });
-  page.drawText(text, { x: x + 7, y: y + 4, size, font: fonts.sansBold, color: WHITE });
-}
-
-// ============================================================
-// Pagine
-// ============================================================
-
-// Copertina editoriale (Sezione A): banda teal 60% top + sezione crema 40% bottom
-function drawCopertina(page: PDFPage, fonts: Fonts, club: any, presidente: string, stagione: string, _pageNum: number, dateStr: string) {
-  // Sfondo crema integrale
-  page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: CREAM });
-  // Banda teal alta 60%
-  const bandH = PAGE_H * 0.6;
-  page.drawRectangle({ x: 0, y: PAGE_H - bandH, width: PAGE_W, height: bandH, color: TEAL });
-
-  // Etichetta in alto a sinistra
-  const kicker = sanitize(`RELAZIONE DI FINE STAGIONE - ${stagione}`).toUpperCase();
-  page.drawText(kicker, { x: M_LEFT, y: PAGE_H - 80, size: 9, font: fonts.sansBold, color: WHITE });
-  page.drawLine({ start: { x: M_LEFT, y: PAGE_H - 90 }, end: { x: M_LEFT + 60, y: PAGE_H - 90 }, thickness: 0.6, color: WHITE });
-
-  // Nome club centrato nella banda, 48pt serif bianco, su 2 righe se serve
-  const nome = sanitize(club?.nome ?? "Club");
-  const nameLines = wrapText(nome, fonts.serifBold, 48, PAGE_W - 100);
-  const centerY = PAGE_H - bandH / 2 + ((nameLines.length - 1) * 26);
-  let ny = centerY;
-  for (const ln of nameLines.slice(0, 2)) {
-    const w = fonts.serifBold.widthOfTextAtSize(ln, 48);
-    page.drawText(ln, { x: (PAGE_W - w) / 2, y: ny, size: 48, font: fonts.serifBold, color: WHITE });
-    ny -= 52;
-  }
-  const citta = sanitize((club?.citta ?? "").toUpperCase());
-  if (citta) {
-    const cw = fonts.sansBold.widthOfTextAtSize(citta, 10);
-    page.drawText(citta, { x: (PAGE_W - cw) / 2, y: ny - 16, size: 10, font: fonts.sansBold, color: WHITE });
+    this.y -= 8;
   }
 
-  // Sezione inferiore crema
-  const bottomTop = PAGE_H - bandH - 40;
-  page.drawText("PRESENTATA DA", { x: M_LEFT, y: bottomTop, size: 9, font: fonts.sansBold, color: MUTED });
-  const pn = sanitize(presidente || "Il Presidente");
-  page.drawText(pn, { x: M_LEFT, y: bottomTop - 32, size: 22, font: fonts.serifBold, color: INK });
-  page.drawLine({ start: { x: M_LEFT, y: bottomTop - 48 }, end: { x: M_LEFT + 60, y: bottomTop - 48 }, thickness: 0.8, color: TEAL });
-  page.drawText(`Generato il ${dateStr}`, { x: M_LEFT, y: 60, size: 10, font: fonts.sans, color: MUTED });
-}
-
-interface AreaCharts {
-  primary?: PDFImage;   // mostrata sotto P2 in pagina 1
-  primaryW?: number;
-  primaryH?: number;
-  secondary?: PDFImage; // mostrata in cima a pagina 2 (solo lezioni)
-  secondaryW?: number;
-  secondaryH?: number;
-}
-
-// Header pagina area (Sezione C): kicker uppercase + linea teal 100pt + titolo 32pt left
-function drawAreaHeader(page: PDFPage, fonts: Fonts, info: { numero: number; titolo: string }, startY: number): number {
-  let y = startY;
-  const kicker = `CAPITOLO ${info.numero} - ${sanitize(info.titolo.toUpperCase())}`;
-  page.drawText(kicker, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
-  y -= 8;
-  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 100, y }, thickness: 0.7, color: TEAL });
-  y -= 28;
-  const titleLines = wrapText(info.titolo, fonts.serifBold, 32, CONTENT_W);
-  for (const ln of titleLines.slice(0, 2)) {
-    page.drawText(ln, { x: M_LEFT, y, size: 32, font: fonts.serifBold, color: INK });
-    y -= 36;
-  }
-  y -= 10;
-  return y;
-}
-
-function drawParagraph(page: PDFPage, fonts: Fonts, text: string, y: number, opts: {
-  font: PDFFont; size: number; color: any; lineH: number; indent?: number; align?: "left" | "right"; maxW?: number;
-}): number {
-  const indent = opts.indent ?? 0;
-  const align = opts.align ?? "left";
-  const w = (opts.maxW ?? CONTENT_W) - indent;
-  const lines = wrapText(text, opts.font, opts.size, w);
-  for (const ln of lines) {
-    if (y < M_BOTTOM + 20) break;
-    let x = M_LEFT + indent;
-    if (align === "right") {
-      const lw = opts.font.widthOfTextAtSize(ln, opts.size);
-      x = M_LEFT + CONTENT_W - lw;
+  paragrafo(testo: string, opz?: { corsivo?: boolean; size?: number }) {
+    if (!testo?.trim()) return;
+    const size = opz?.size ?? 11;
+    const font = opz?.corsivo ? this.fonts.serifItalic : this.fonts.serif;
+    for (const ln of wrapText(testo, font, size, CONTENT_W)) {
+      this.spazio(16);
+      this.page.drawText(ln, { x: M_LEFT, y: this.y, size, font, color: INCHIOSTRO });
+      this.y -= 16;
     }
-    page.drawText(ln, { x, y, size: opts.size, font: opts.font, color: opts.color });
-    y -= opts.lineH;
+    this.y -= 8;
   }
-  return y;
-}
 
-// KPI mosaico 3 colonne (Sezione C): 3 celle 90pt cream + bordo hair, num serif 36 teal, label sans 8 tracking
-function drawKpiMosaic(page: PDFPage, fonts: Fonts, kpis: KpiCell[] | undefined, y: number): number {
-  if (!kpis || kpis.length === 0) return y;
-  const cells = kpis.slice(0, 3);
-  const totalW = Math.min(480, CONTENT_W);
-  const x0 = M_LEFT + (CONTENT_W - totalW) / 2;
-  const cellW = totalW / cells.length;
-  const cellH = 90;
-  const yTop = y - cellH;
-
-  // sfondo unico + bordo esterno
-  page.drawRectangle({ x: x0, y: yTop, width: totalW, height: cellH, color: CREAM, borderColor: HAIR, borderWidth: 0.5 });
-
-  for (let i = 0; i < cells.length; i++) {
-    const cx = x0 + i * cellW + cellW / 2;
-    const k = cells[i];
-    // separatori verticali
-    if (i > 0) {
-      page.drawLine({
-        start: { x: x0 + i * cellW, y: yTop + 12 },
-        end: { x: x0 + i * cellW, y: yTop + cellH - 12 },
-        thickness: 0.4, color: HAIR,
-      });
+  nota(testo: string) {
+    if (!testo?.trim()) return;
+    for (const ln of wrapText(testo, this.fonts.serifItalic, 9.5, CONTENT_W)) {
+      this.spazio(13);
+      this.page.drawText(ln, { x: M_LEFT, y: this.y, size: 9.5, font: this.fonts.serifItalic, color: TENUE });
+      this.y -= 13;
     }
-    // numero serif bold 28 teal centrato (36 era troppo per stringhe lunghe tipo CHF)
-    let nSize = 28;
-    let txt = sanitize(k.value);
-    let nw = fonts.serifBold.widthOfTextAtSize(txt, nSize);
-    while (nw > cellW - 16 && nSize > 14) {
-      nSize -= 1;
-      nw = fonts.serifBold.widthOfTextAtSize(txt, nSize);
-    }
-    page.drawText(txt, { x: cx - nw / 2, y: yTop + 46, size: nSize, font: fonts.serifBold, color: TEAL });
-    // label sans uppercase 8 tracking
-    const lbl = sanitize(k.label.toUpperCase());
-    const lw = fonts.sansBold.widthOfTextAtSize(lbl, 8) + (lbl.length - 1) * 1.5;
-    page.drawText(lbl, { x: cx - lw / 2, y: yTop + 22, size: 8, font: fonts.sansBold, color: MUTED });
-  }
-  return yTop - 18;
-}
-
-function drawChart(page: PDFPage, fonts: Fonts, img: PDFImage, w: number, h: number, y: number, caption?: string): number {
-  // Cornice teal 0.5 attorno + didascalia sans uppercase sopra
-  const pad = 12;
-  const frameW = w + pad * 2;
-  const frameH = h + pad * 2;
-  const fx = M_LEFT + (CONTENT_W - frameW) / 2;
-  let topY = y;
-  if (caption) {
-    const cap = sanitize(caption);
-    const capw = fonts.sansBold.widthOfTextAtSize(cap, 8) + (cap.length - 1) * 1.5;
-    page.drawText(cap, { x: M_LEFT + (CONTENT_W - capw) / 2, y: topY, size: 8, font: fonts.sansBold, color: MUTED });
-    topY -= 14;
-  }
-  page.drawRectangle({
-    x: fx, y: topY - frameH, width: frameW, height: frameH,
-    borderColor: TEAL, borderWidth: 0.5,
-  });
-  page.drawImage(img, { x: fx + pad, y: topY - frameH + pad, width: w, height: h });
-  return topY - frameH - 14;
-}
-
-// ============================================================
-// Layout dinamico aree (Prompt C - magazine intelligente)
-// ============================================================
-
-function estimateLines(text: string, font: PDFFont, size: number, maxW: number): number {
-  if (!text) return 0;
-  return wrapText(text, font, size, maxW).length;
-}
-
-interface AreaLayout {
-  totalPages: 1 | 2;
-  chartScaledW?: number;
-  chartScaledH?: number;
-  decoration?: { kind: "A" | "C"; quote?: string };
-}
-
-// Solo decorazioni A (citazione) e C (linea con rombo). I callout "B" (mini-KPI fluttuante)
-// sono stati rimossi (Prompt D): i numeri sono gia' nei KPI hero e nei paragrafi.
-function pickDecoration(p3: string): AreaLayout["decoration"] {
-  if (p3) {
-    const sentences = p3.split(/(?<=[.!?])\s+/);
-    const short = sentences.find((s) => s.length >= 20 && s.length <= 80);
-    if (short) return { kind: "A", quote: short.trim() };
-  }
-  return { kind: "C" };
-}
-
-const HEADER_CONSUMED = 70;
-const KPI_BLOCK_H = 50;
-const PARA_SPACING = 6;
-const CHART_SPACING = 14;
-const AREA_AVAIL = PAGE_H - M_TOP - M_BOTTOM - 20; // ~702pt
-
-function planAreaLayout(sezione_id: string, paras: Record<number, string> | undefined, charts: AreaCharts, fonts: Fonts): AreaLayout {
-  const info = AREA_INFO[sezione_id];
-  if (!info) return { totalPages: 1 };
-  const p1 = paras?.[1] ?? info.insight;
-  const p2 = paras?.[2] ?? "";
-  const p3 = paras?.[3] ?? "";
-  const p4 = paras?.[4] ?? "";
-
-  const h_p1 = estimateLines(p1, fonts.serifItalic, 11, CONTENT_W) * 15 + (p1 ? PARA_SPACING : 0);
-  const h_p2 = estimateLines(p2, fonts.serif, 11, CONTENT_W) * 14 + (p2 ? PARA_SPACING : 0);
-  const h_p3 = estimateLines(p3, fonts.serif, 11, CONTENT_W - 20) * 14 + (p3 ? PARA_SPACING : 0);
-  const h_p4 = estimateLines(p4, fonts.serifItalic, 10, CONTENT_W) * 13 + (p4 ? PARA_SPACING : 0);
-  const h_chart_orig = charts.primary && charts.primaryH ? charts.primaryH + CHART_SPACING : 0;
-  const hasSecondary = !!(charts.secondary && charts.secondaryH);
-
-  // Se c'e' grafico secondario serve sempre la seconda pagina (lezioni)
-  if (hasSecondary) {
-    const p2used = HEADER_CONSUMED + (charts.secondaryH ?? 0) + CHART_SPACING + h_p3 + h_p4;
-    const empty = AREA_AVAIL - p2used;
-    const decoration = empty > 150 ? pickDecoration(p3) : undefined;
-    return { totalPages: 2, chartScaledW: charts.primaryW, chartScaledH: charts.primaryH, decoration };
+    this.y -= 6;
   }
 
-  const usedAll = HEADER_CONSUMED + h_p1 + KPI_BLOCK_H + h_p2 + h_chart_orig + h_p3 + h_p4;
-
-  if (usedAll <= AREA_AVAIL * 0.95) {
-    // Entra tutto in 1 pagina; ridimensiona il grafico per riempire armoniosamente
-    let cW = charts.primaryW;
-    let cH = charts.primaryH;
-    if (h_chart_orig > 0 && cW && cH) {
-      const aspect = cW / cH;
-      const otherH = HEADER_CONSUMED + h_p1 + KPI_BLOCK_H + h_p2 + h_p3 + h_p4;
-      const availChart = AREA_AVAIL - otherH - CHART_SPACING - 30; // margine respiro
-      if (availChart < 200) {
-        cH = 200; cW = 200 * aspect;
-      } else if (availChart > 350) {
-        cH = 350; cW = 350 * aspect;
-      } else {
-        cH = availChart; cW = cH * aspect;
+  kpi(celle: KpiCell[] | undefined) {
+    if (!celle || celle.length === 0) return;
+    const alte = 70;
+    this.spazio(alte + 16);
+    const larghezza = Math.min(460, CONTENT_W);
+    const x0 = M_LEFT + (CONTENT_W - larghezza) / 2;
+    const cellaW = larghezza / celle.length;
+    const top = this.y - alte;
+    this.page.drawRectangle({
+      x: x0, y: top, width: larghezza, height: alte,
+      color: CREMA, borderColor: FILO, borderWidth: 0.5,
+    });
+    celle.forEach((c, i) => {
+      const cx = x0 + i * cellaW + cellaW / 2;
+      if (i > 0) {
+        this.page.drawLine({
+          start: { x: x0 + i * cellaW, y: top + 10 }, end: { x: x0 + i * cellaW, y: top + alte - 10 },
+          thickness: 0.4, color: FILO,
+        });
       }
-      // se cW eccede CONTENT_W, riscala
-      if (cW > CONTENT_W) {
-        cW = CONTENT_W;
-        cH = cW / aspect;
-      }
-    }
-    const finalChartH = cH ? cH + CHART_SPACING : 0;
-    const finalUsed = HEADER_CONSUMED + h_p1 + KPI_BLOCK_H + h_p2 + finalChartH + h_p3 + h_p4;
-    const empty = AREA_AVAIL - finalUsed;
-    const decoration = empty > 150 ? pickDecoration(p3) : undefined;
-    return { totalPages: 1, chartScaledW: cW, chartScaledH: cH, decoration };
+      let size = 22;
+      const txt = sanitize(c.value);
+      let w = this.fonts.serifBold.widthOfTextAtSize(txt, size);
+      while (w > cellaW - 14 && size > 10) { size -= 1; w = this.fonts.serifBold.widthOfTextAtSize(txt, size); }
+      this.page.drawText(txt, { x: cx - w / 2, y: top + 34, size, font: this.fonts.serifBold, color: this.colore });
+      const lbl = sanitize(c.label.toUpperCase());
+      const lw = this.fonts.sansBold.widthOfTextAtSize(lbl, 7.5);
+      this.page.drawText(lbl, { x: cx - lw / 2, y: top + 16, size: 7.5, font: this.fonts.sansBold, color: TENUE });
+    });
+    this.y = top - 16;
   }
 
-  // 2 pagine: P1+KPI+P2+chart sulla prima, P3+P4 sulla seconda
-  const p2used = HEADER_CONSUMED + h_p3 + h_p4;
-  const empty = AREA_AVAIL - p2used;
-  const decoration = empty > 150 ? pickDecoration(p3) : undefined;
-  return { totalPages: 2, chartScaledW: charts.primaryW, chartScaledH: charts.primaryH, decoration };
-}
-
-function drawDecoration(page: PDFPage, fonts: Fonts, deco: NonNullable<AreaLayout["decoration"]>, yTop: number, yBottomLimit: number) {
-  const cx = PAGE_W / 2;
-  const yCenter = Math.max(yBottomLimit + 60, (yTop + yBottomLimit) / 2);
-  if (deco.kind === "A" && deco.quote) {
-    const q = `"${sanitize(deco.quote)}"`;
-    const lines = wrapText(q, fonts.serifItalic, 16, CONTENT_W - 80);
-    let y = yCenter + (lines.length - 1) * 11;
-    for (const ln of lines) {
-      const w = fonts.serifItalic.widthOfTextAtSize(ln, 16);
-      page.drawText(ln, { x: cx - w / 2, y, size: 16, font: fonts.serifItalic, color: rgb(0.3, 0.3, 0.32) });
-      y -= 22;
-    }
-  } else {
-    // Linea decorativa con piccolo rombo centrale teal
-    page.drawLine({ start: { x: cx - 50, y: yCenter }, end: { x: cx - 6, y: yCenter }, thickness: 0.6, color: TEAL });
-    page.drawLine({ start: { x: cx + 6, y: yCenter }, end: { x: cx + 50, y: yCenter }, thickness: 0.6, color: TEAL });
-    page.drawLine({ start: { x: cx, y: yCenter + 3 }, end: { x: cx + 3, y: yCenter }, thickness: 0.8, color: TEAL });
-    page.drawLine({ start: { x: cx + 3, y: yCenter }, end: { x: cx, y: yCenter - 3 }, thickness: 0.8, color: TEAL });
-    page.drawLine({ start: { x: cx, y: yCenter - 3 }, end: { x: cx - 3, y: yCenter }, thickness: 0.8, color: TEAL });
-    page.drawLine({ start: { x: cx - 3, y: yCenter }, end: { x: cx, y: yCenter + 3 }, thickness: 0.8, color: TEAL });
+  immagine(img: PDFImage, w: number, h: number) {
+    const scala = Math.min(1, CONTENT_W / w);
+    const fw = w * scala, fh = h * scala;
+    this.spazio(fh + 20);
+    const x = M_LEFT + (CONTENT_W - fw) / 2;
+    this.page.drawRectangle({
+      x: x - 6, y: this.y - fh - 6, width: fw + 12, height: fh + 12,
+      borderColor: this.colore, borderWidth: 0.5,
+    });
+    this.page.drawImage(img, { x, y: this.y - fh, width: fw, height: fh });
+    this.y -= fh + 22;
   }
 }
 
-// Singola pagina area
-function drawAreaSingle(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts, layout: AreaLayout, kpiData: KpiData) {
-  drawPageFrame(page, pageNum, fonts);
-  const info = AREA_INFO[sezione_id];
-  if (!info) return;
-  let y = PAGE_H - M_TOP - 10;
-  y = drawAreaHeader(page, fonts, info, y);
+// ── Generatore ──────────────────────────────────────────────────
 
-  const p1 = paras?.[1] ?? info.insight;
-  y = drawParagraph(page, fonts, p1, y, { font: fonts.serifItalic, size: 12, color: rgb(0.3, 0.3, 0.32), lineH: 17, maxW: CONTENT_W - 20 });
-  y -= 10;
+let generazione_in_corso = false;
 
-  y = drawKpiMosaic(page, fonts, kpiData[sezione_id], y);
-
-  const p2 = paras?.[2];
-  if (p2) {
-    y = drawParagraph(page, fonts, p2, y, { font: fonts.serif, size: 11, color: INK, lineH: 16 });
-    y -= 6;
-  }
-
-  if (charts.primary && layout.chartScaledW && layout.chartScaledH) {
-    y = drawChart(page, fonts, charts.primary, layout.chartScaledW, layout.chartScaledH, y, CHART_CAPTIONS[sezione_id]);
-  }
-
-  const p3 = paras?.[3];
-  if (p3) {
-    y = drawParagraph(page, fonts, p3, y, { font: fonts.serif, size: 11, color: rgb(0.18, 0.18, 0.2), lineH: 16, indent: 20 });
-    y -= 6;
-  }
-  const p4 = paras?.[4];
-  if (p4) {
-    y = drawParagraph(page, fonts, p4, y, { font: fonts.serifItalic, size: 10, color: MUTED, lineH: 14, align: "right" });
-  }
-
-  if (layout.decoration) {
-    drawDecoration(page, fonts, layout.decoration, y, M_BOTTOM + 30);
-  }
-}
-
-function drawAreaMain(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts, layout: AreaLayout, kpiData: KpiData) {
-  drawPageFrame(page, pageNum, fonts);
-  const info = AREA_INFO[sezione_id];
-  if (!info) return;
-  let y = PAGE_H - M_TOP - 10;
-  y = drawAreaHeader(page, fonts, info, y);
-
-  const p1 = paras?.[1] ?? info.insight;
-  y = drawParagraph(page, fonts, p1, y, { font: fonts.serifItalic, size: 12, color: rgb(0.3, 0.3, 0.32), lineH: 17, maxW: CONTENT_W - 20 });
-  y -= 10;
-
-  y = drawKpiMosaic(page, fonts, kpiData[sezione_id], y);
-
-  const p2 = paras?.[2];
-  if (p2) {
-    y = drawParagraph(page, fonts, p2, y, { font: fonts.serif, size: 11, color: INK, lineH: 16 });
-    y -= 6;
-  }
-
-  if (charts.primary && layout.chartScaledW && layout.chartScaledH) {
-    if (y - layout.chartScaledH - 38 >= M_BOTTOM + 20) {
-      drawChart(page, fonts, charts.primary, layout.chartScaledW, layout.chartScaledH, y, CHART_CAPTIONS[sezione_id]);
-    }
-  }
-}
-
-function drawAreaContinuation(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts, layout: AreaLayout) {
-  drawPageFrame(page, pageNum, fonts);
-  const info = AREA_INFO[sezione_id];
-  if (!info) return;
-
-  let y = PAGE_H - M_TOP - 10;
-  const header = `CAPITOLO ${info.numero} - ${sanitize(info.titolo.toUpperCase())} (SEGUE)`;
-  page.drawText(header, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
-  y -= 8;
-  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 100, y }, thickness: 0.7, color: TEAL });
-  y -= 28;
-
-  if (charts.secondary && charts.secondaryW && charts.secondaryH) {
-    y = drawChart(page, fonts, charts.secondary, charts.secondaryW, charts.secondaryH, y, CHART_CAPTIONS[sezione_id]);
-  }
-
-  const p3 = paras?.[3];
-  if (p3) {
-    y = drawParagraph(page, fonts, p3, y, { font: fonts.serif, size: 11, color: rgb(0.18, 0.18, 0.2), lineH: 16, indent: 20 });
-    y -= 6;
-  }
-  const p4 = paras?.[4];
-  if (p4) {
-    y = drawParagraph(page, fonts, p4, y, { font: fonts.serifItalic, size: 10, color: MUTED, lineH: 14, align: "right" });
-  }
-
-  if (layout.decoration) {
-    drawDecoration(page, fonts, layout.decoration, y, M_BOTTOM + 30);
-  }
-}
-
-// Sezione D: pagine blocchi testo con drop cap + pull-quote opzionale
-function drawBloccoPage(page: PDFPage, fonts: Fonts, blocco: any, pageNum: number) {
-  drawPageFrame(page, pageNum, fonts);
-  const info = AREA_INFO_BLOCCO(blocco);
-  let y = PAGE_H - M_TOP - 10;
-
-  // Header pagina (kicker + linea teal)
-  page.drawText(info.kicker, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
-  y -= 8;
-  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 100, y }, thickness: 0.7, color: TEAL });
-  y -= 28;
-
-  // Titolo 32pt serif
-  const titleLines = wrapText(blocco?.titolo ?? "Blocco", fonts.serifBold, 32, CONTENT_W);
-  for (const ln of titleLines.slice(0, 2)) {
-    page.drawText(ln, { x: M_LEFT, y, size: 32, font: fonts.serifBold, color: INK });
-    y -= 36;
-  }
-  y -= 16;
-
-  // Corpo testo
-  const rawContent = (blocco?.contenuto ?? "").replace(/\*\*/g, "").replace(/\*/g, "");
-  const fullText = rawContent.replace(/\n+/g, " ").trim();
-  const wordCount = fullText.split(/\s+/).length;
-
-  // Pull-quote: se > 80 parole, la frase piu' corta tra le ultime 3
-  let pullQuote = "";
-  let bodyText = fullText;
-  if (wordCount > 80) {
-    const sentences = fullText.split(/(?<=[.!?])\s+/).filter((s) => s.length > 15);
-    if (sentences.length >= 3) {
-      const last3 = sentences.slice(-3);
-      pullQuote = last3.reduce((a, b) => (a.length <= b.length ? a : b));
-      if (pullQuote.length > 140) pullQuote = "";
-    }
-  }
-
-  const bodySize = 12;
-  const bodyLH = 18;
-  // maxWidth ridotta se c'e' pull-quote a destra (sotto le prime ~6 righe)
-  const QUOTE_W = 200;
-  const QUOTE_TOP_LINES = 6;
-  const fullBodyW = CONTENT_W;
-  const narrowBodyW = CONTENT_W - QUOTE_W - 24;
-
-  // Drop cap: prima lettera grande
-  const firstChar = sanitize(bodyText.charAt(0) || "•");
-  const dropSize = 56;
-  const dropAscent = fonts.serifBold.heightAtSize(dropSize);
-  const dropW = fonts.serifBold.widthOfTextAtSize(firstChar, dropSize);
-  const dropX = M_LEFT;
-  const dropY = y - dropAscent * 0.78;
-  page.drawText(firstChar, { x: dropX, y: dropY, size: dropSize, font: fonts.serifBold, color: TEAL });
-
-  // Avvolge il testo: prime 3 righe rientrate di dropW+8
-  const restText = sanitize(bodyText.slice(1).trimStart());
-  const indentWrapW = fullBodyW - dropW - 8;
-  // First-pass: split text in lines using indent for first 3, then full width
-  const wrappedFirst = wrapText(restText, fonts.serif, bodySize, indentWrapW);
-  const dropLines = wrappedFirst.slice(0, 3);
-  const remainder = wrappedFirst.slice(3).join(" ");
-  const wrappedRest = remainder ? wrapText(remainder, fonts.serif, bodySize, fullBodyW) : [];
-
-  let textY = y;
-  for (const ln of dropLines) {
-    page.drawText(ln, { x: M_LEFT + dropW + 8, y: textY, size: bodySize, font: fonts.serif, color: INK });
-    textY -= bodyLH;
-  }
-  // Linee successive: se c'e' pull-quote, riduce la larghezza dopo le prime QUOTE_TOP_LINES totali
-  let written = dropLines.length;
-  let remainingLines = wrappedRest;
-
-  // Se c'e' pull-quote, ri-wrappo la parte centrale a narrowBodyW
-  if (pullQuote && remainingLines.length > 0) {
-    const fullRest = remainingLines.join(" ");
-    const narrowLines = wrapText(fullRest, fonts.serif, bodySize, narrowBodyW);
-    remainingLines = narrowLines;
-  }
-
-  const startQuoteY = textY;
-  for (const ln of remainingLines) {
-    if (textY < M_BOTTOM + 40) break;
-    page.drawText(ln, { x: M_LEFT, y: textY, size: bodySize, font: fonts.serif, color: INK });
-    textY -= bodyLH;
-    written++;
-  }
-
-  // Pull-quote a destra con bordo sinistro teal
-  if (pullQuote) {
-    const qx = M_LEFT + CONTENT_W - QUOTE_W;
-    const qLines = wrapText(`<<${pullQuote}>>`, fonts.serifItalic, 18, QUOTE_W - 16);
-    const qH = qLines.length * 24;
-    const qTop = startQuoteY + 6;
-    page.drawLine({ start: { x: qx, y: qTop - qH - 8 }, end: { x: qx, y: qTop + 4 }, thickness: 2, color: TEAL });
-    let qy = qTop - 16;
-    for (const ln of qLines) {
-      page.drawText(ln, { x: qx + 12, y: qy, size: 18, font: fonts.serifItalic, color: TEAL });
-      qy -= 24;
-    }
-  }
-
-  // Decorazione finale se > 150pt vuoti
-  if (textY > M_BOTTOM + 180) {
-    const yCenter = (textY + M_BOTTOM + 30) / 2;
-    const cx = PAGE_W / 2;
-    page.drawLine({ start: { x: cx - 50, y: yCenter }, end: { x: cx - 6, y: yCenter }, thickness: 0.6, color: TEAL });
-    page.drawLine({ start: { x: cx + 6, y: yCenter }, end: { x: cx + 50, y: yCenter }, thickness: 0.6, color: TEAL });
-    page.drawRectangle({ x: cx - 2.5, y: yCenter - 2.5, width: 5, height: 5, color: TEAL, rotate: degrees(45) });
-  }
-}
-
-function AREA_INFO_BLOCCO(blocco: any): { kicker: string } {
-  const cat = (blocco?.categoria ?? "altro").replace(/_/g, " ").toUpperCase();
-  return { kicker: sanitize(`SEZIONE - ${cat}`) };
-}
-
-// Sezione E: allegati con cornice teal e icona PDF disegnata
-function drawAllegatoPlaceholder(page: PDFPage, fonts: Fonts, allegato: any, pageNum: number) {
-  drawPageFrame(page, pageNum, fonts);
-  const cx = PAGE_W / 2;
-
-  // Cornice esterna teal con margini 50pt
-  const fx = 50;
-  const fy = 50;
-  const fw = PAGE_W - 100;
-  const fh = PAGE_H - 100;
-  page.drawRectangle({ x: fx, y: fy, width: fw, height: fh, borderColor: TEAL, borderWidth: 0.5 });
-
-  // Centro verticale del contenuto
-  const cy = PAGE_H / 2;
-
-  // Etichetta sopra
-  const tag = "DOCUMENTO ALLEGATO";
-  const tagW = fonts.sansBold.widthOfTextAtSize(tag, 8);
-  page.drawText(tag, { x: cx - tagW / 2, y: cy + 130, size: 8, font: fonts.sansBold, color: TEAL });
-
-  // Icona PDF disegnata (rettangolo + piega d'angolo)
-  const iw = 60, ih = 78;
-  const ix = cx - iw / 2;
-  const iy = cy + 30;
-  page.drawRectangle({ x: ix, y: iy, width: iw, height: ih, borderColor: MUTED, borderWidth: 1 });
-  // Piega d'angolo (triangolo in alto a destra)
-  page.drawLine({ start: { x: ix + iw - 14, y: iy + ih }, end: { x: ix + iw, y: iy + ih - 14 }, thickness: 1, color: MUTED });
-  page.drawLine({ start: { x: ix + iw - 14, y: iy + ih }, end: { x: ix + iw - 14, y: iy + ih - 14 }, thickness: 1, color: MUTED });
-  page.drawLine({ start: { x: ix + iw - 14, y: iy + ih - 14 }, end: { x: ix + iw, y: iy + ih - 14 }, thickness: 1, color: MUTED });
-  // Etichetta "PDF" al centro
-  const ptxt = "PDF";
-  const pw = fonts.sansBold.widthOfTextAtSize(ptxt, 14);
-  page.drawText(ptxt, { x: cx - pw / 2, y: iy + ih / 2 - 6, size: 14, font: fonts.sansBold, color: MUTED });
-
-  // Titolo allegato
-  const tit = sanitize(allegato?.titolo ?? "Allegato");
-  const tlines = wrapText(tit, fonts.serifBold, 24, fw - 60);
-  let ty = cy - 10;
-  for (const ln of tlines.slice(0, 2)) {
-    const lw = fonts.serifBold.widthOfTextAtSize(ln, 24);
-    page.drawText(ln, { x: cx - lw / 2, y: ty, size: 24, font: fonts.serifBold, color: INK });
-    ty -= 28;
-  }
-
-  // Descrizione sans 11
-  if (allegato?.descrizione) {
-    const dlines = wrapText(allegato.descrizione, fonts.sans, 11, fw - 80);
-    let dy = ty - 12;
-    for (const ln of dlines.slice(0, 4)) {
-      const lw = fonts.sans.widthOfTextAtSize(ln, 11);
-      page.drawText(ln, { x: cx - lw / 2, y: dy, size: 11, font: fonts.sans, color: MUTED });
-      dy -= 14;
-    }
-  }
-
-  // Nota in fondo cornice
-  const note = "Il documento completo segue nelle pagine successive.";
-  const nw = fonts.serifItalic.widthOfTextAtSize(note, 10);
-  page.drawText(note, { x: cx - nw / 2, y: fy + 30, size: 10, font: fonts.serifItalic, color: MUTED });
-}
-
-// Sezione B: indice riprogettato con header + leader dots + nota finale
-function drawIndice(page: PDFPage, fonts: Fonts, entries: { titolo: string; pagina: number }[], pageNum: number) {
-  drawPageFrame(page, pageNum, fonts);
-  let y = PAGE_H - M_TOP - 10;
-  page.drawText("INDICE", { x: M_LEFT, y, size: 9, font: fonts.sansBold, color: TEAL });
-  y -= 8;
-  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + CONTENT_W, y }, thickness: 0.4, color: TEAL });
-  y -= 36;
-
-  const titleSize = 14;
-  const numSize = 14;
-  const numColW = 28;
-  for (const e of entries) {
-    if (y < M_BOTTOM + 60) break;
-    const tit = sanitize(e.titolo);
-    const num = String(e.pagina);
-
-    // Numero capitolo a sinistra (estratto se inizia con "N. ...")
-    let chapter = "";
-    let titleClean = tit;
-    const m = tit.match(/^(\d+)\.\s*(.+)$/);
-    if (m) { chapter = m[1]; titleClean = m[2]; }
-
-    if (chapter) {
-      page.drawText(chapter, { x: M_LEFT, y, size: titleSize, font: fonts.serifBold, color: TEAL });
-    }
-    const titleX = M_LEFT + 28;
-    const titW = fonts.serif.widthOfTextAtSize(titleClean, titleSize);
-    page.drawText(titleClean, { x: titleX, y, size: titleSize, font: fonts.serif, color: INK });
-
-    const numW = fonts.serif.widthOfTextAtSize(num, numSize);
-    const numX = M_LEFT + CONTENT_W - numW;
-    page.drawText(num, { x: numX, y, size: numSize, font: fonts.serif, color: INK });
-
-    // Leader dots
-    const dotsStart = titleX + titW + 8;
-    const dotsEnd = numX - 8;
-    let dx = dotsStart;
-    while (dx < dotsEnd) {
-      page.drawText(".", { x: dx, y, size: titleSize, font: fonts.sans, color: rgb(0.78, 0.76, 0.73) });
-      dx += 4;
-    }
-
-    y -= 22;
-  }
-
-  // Nota finale corsivo
-  const today = new Date();
-  const ds = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`;
-  const note = sanitize(`Documento generato il ${ds}`);
-  page.drawText(note, { x: M_LEFT, y: M_BOTTOM + 20, size: 9, font: fonts.serifItalic, color: MUTED });
-}
-
-// Sezione F: chiusura con monogramma + banda teal in fondo
-function drawChiusura(page: PDFPage, fonts: Fonts, club: any, stagione: string, _pageNum: number, dateStr: string) {
-  // Sfondo crema, niente numero pagina visibile (banda copre il footer)
-  page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: CREAM });
-  const cx = PAGE_W / 2;
-
-  // Banda teal 30% in fondo
-  const bandH = PAGE_H * 0.3;
-  page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: bandH, color: TEAL });
-
-  // Monogramma cerchio outline teal diametro 80pt
-  const monoY = bandH + 220;
-  page.drawCircle({ x: cx, y: monoY, size: 40, borderColor: TEAL, borderWidth: 1 });
-  const nome = sanitize(club?.nome ?? "Club");
-  const inits = nome.split(/\s+/).map((w: string) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "C";
-  const iw = fonts.serifBold.widthOfTextAtSize(inits, 36);
-  page.drawText(inits, { x: cx - iw / 2, y: monoY - 12, size: 36, font: fonts.serifBold, color: TEAL });
-
-  // Nome club + sottotitolo
-  const nw = fonts.serifBold.widthOfTextAtSize(nome, 18);
-  page.drawText(nome, { x: cx - nw / 2, y: monoY - 80, size: 18, font: fonts.serifBold, color: INK });
-
-  const sub = sanitize(`RELAZIONE DEL PRESIDENTE - STAGIONE ${stagione}`).toUpperCase();
-  const sw = fonts.sansBold.widthOfTextAtSize(sub, 9);
-  page.drawText(sub, { x: cx - sw / 2, y: monoY - 100, size: 9, font: fonts.sansBold, color: MUTED });
-
-  // Nella banda teal: data generazione bianca
-  const dt = sanitize(`DOCUMENTO GENERATO IL ${dateStr}`).toUpperCase();
-  const dw = fonts.sansBold.widthOfTextAtSize(dt, 9);
-  page.drawText(dt, { x: cx - dw / 2, y: bandH / 2 - 4, size: 9, font: fonts.sansBold, color: WHITE });
-}
-
-// ============================================================
-// Generatore principale
-// ============================================================
-
-let generation_in_progress = false;
-
-export async function generateRelazionePDF(params: GenerateRelazioneParams): Promise<{ blob: Blob; pages: number }> {
-  if (generation_in_progress) {
-    throw new Error("Generazione gia in corso. Attendi il completamento.");
-  }
-
-  generation_in_progress = true;
+export async function generateRelazionePDF(
+  params: GenerateRelazioneParams,
+): Promise<{ blob: Blob; pages: number; avvisi: string[] }> {
+  if (generazione_in_corso) throw new Error("Generazione già in corso. Attendi il completamento.");
+  generazione_in_corso = true;
+  const avvisi: string[] = [];
   try {
-  const { club, presidente, stagione_nome, items, club_id, stagione_id, tono } = params;
+    const { club, presidente, stagione, club_id, tono, messaggio, voci, moduli } = params;
+    const colore = hexToRgb(club?.colore_primario);
 
-  // Fetch paragrafi narrativi per il tono selezionato (se disponibili)
-  let paragrafiMap: Record<string, Record<number, string>> = {};
-  if (club_id && stagione_id) {
+    let paragrafi: Record<string, Record<number, string>> = {};
     try {
-      paragrafiMap = await fetchParagrafiForPdf(club_id, stagione_id, (tono ?? "soci") as Tono);
-    } catch (e) {
-      console.warn("[PDF] Impossibile caricare paragrafi narrativi:", e);
+      paragrafi = await fetchParagrafiForPdf(club_id, stagione.id, tono);
+    } catch (e: any) {
+      avvisi.push("I testi narrativi non sono stati letti: " + (e?.message ?? e));
     }
-  }
 
-  // Fetch KPI hero veri (Prompt D - stessa fonte dei paragrafi)
-  let kpiData: KpiData = {};
-  if (club_id && stagione_id) {
+    let kpi: KpiData = {};
     try {
-      kpiData = await fetchKpiData(club_id, stagione_id);
-    } catch (e) {
-      console.warn("[PDF] Errore fetch KPI:", e);
+      kpi = await fetchKpiData(club_id, stagione);
+    } catch (e: any) {
+      avvisi.push("I numeri di sintesi non sono stati letti: " + (e?.message ?? e));
     }
-  }
 
-  let chartData: ChartData | null = null;
-  if (club_id && stagione_id) {
-    try {
-      chartData = await fetchChartData(club_id, stagione_id);
-    } catch (e) {
-      console.warn("[PDF] Errore fetch dati grafici:", e);
-    }
-  }
+    const pdf = await PDFDocument.create();
+    pdf.setTitle(`Relazione - ${sanitize(club?.nome ?? "")} - ${sanitize(stagione.nome)}`);
+    pdf.setAuthor(sanitize(presidente));
+    pdf.setCreator("Ice Arena Manager");
 
-  const pdf = await PDFDocument.create();
-  pdf.setTitle(`Relazione - ${sanitize(club?.nome ?? "")} - ${sanitize(stagione_nome)}`);
-  pdf.setAuthor(sanitize(presidente));
-  pdf.setCreator("Ice Arena Manager");
-  pdf.setProducer("Ice Arena Manager - pdf-lib");
+    const fonts: Fonts = {
+      serif: await pdf.embedFont(StandardFonts.TimesRoman),
+      serifBold: await pdf.embedFont(StandardFonts.TimesRomanBold),
+      serifItalic: await pdf.embedFont(StandardFonts.TimesRomanItalic),
+      sans: await pdf.embedFont(StandardFonts.Helvetica),
+      sansBold: await pdf.embedFont(StandardFonts.HelveticaBold),
+    };
 
-  const fonts: Fonts = {
-    serif: await pdf.embedFont(StandardFonts.TimesRoman),
-    serifBold: await pdf.embedFont(StandardFonts.TimesRomanBold),
-    serifItalic: await pdf.embedFont(StandardFonts.TimesRomanItalic),
-    sans: await pdf.embedFont(StandardFonts.Helvetica),
-    sansBold: await pdf.embedFont(StandardFonts.HelveticaBold),
-  };
+    const oggi = new Date();
+    const dataStr = `${String(oggi.getDate()).padStart(2, "0")}.${String(oggi.getMonth() + 1).padStart(2, "0")}.${oggi.getFullYear()}`;
 
-  const today = new Date();
-  const dateStr = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`;
-
-  // Embed grafici come PNG (una volta sola). Resizing 2x per qualita' retina.
-  const areaCharts: Record<string, AreaCharts> = {};
-  if (chartData) {
-    async function embedSvg(svg: string, w: number, h: number): Promise<{ img: PDFImage; w: number; h: number } | null> {
+    // Logo del club (bucket pubblico loghi-club)
+    let logo: PDFImage | null = null;
+    if (club?.logo_url) {
       try {
+        const resp = await fetch(club.logo_url);
+        if (resp.ok) {
+          const bytes = new Uint8Array(await resp.arrayBuffer());
+          logo = club.logo_url.toLowerCase().endsWith(".png")
+            ? await pdf.embedPng(bytes)
+            : await pdf.embedJpg(bytes).catch(async () => await pdf.embedPng(bytes));
+        }
+      } catch {
+        avvisi.push("Il logo del club non è stato caricato nel documento.");
+      }
+    }
+
+    // Immagini dei moduli attivi
+    const immagini = new Map<string, { img: PDFImage; w: number; h: number }>();
+    const voci_moduli = voci.filter((v) => v.tipo === "modulo");
+    for (const v of voci_moduli) {
+      const m = moduli[v.riferimento];
+      if (!m || m.stato !== "ok" || !m.grafico) continue;
+      try {
+        const { svg, w, h } = renderGraficoSVG(m.grafico, club?.colore_primario ?? "#14b8a6");
         const bytes = await svgToPngBytes(svg, w, h, 2);
         const img = await pdf.embedPng(bytes);
-        return { img, w, h };
-      } catch (e) {
-        console.warn("[PDF] embed grafico fallito:", e);
-        return null;
+        immagini.set(v.riferimento, { img, w, h });
+      } catch (e: any) {
+        avvisi.push(`Il grafico "${m.titolo}" non è stato disegnato: ${e?.message ?? e}`);
       }
     }
-    const [pir, donut, spark, heat, bar] = await Promise.all([
-      embedSvg(generatePiramideAtletiSVG(chartData.piramide), 400, 300),
-      embedSvg(generateDonutRicaviSVG(chartData.donut), 400, 300),
-      embedSvg(generateSparklinePodiSVG(chartData.sparkline), 400, 150),
-      embedSvg(generateHeatmapFasceSVG(chartData.heatmap), 400, 200),
-      embedSvg(generateBarTariffeSVG(chartData.bartariffe), 400, 250),
-    ]);
-    if (pir)   areaCharts["atleti"]   = { primary: pir.img,   primaryW: pir.w,   primaryH: pir.h };
-    if (donut) areaCharts["economia"] = { primary: donut.img, primaryW: donut.w, primaryH: donut.h };
-    if (spark) areaCharts["sportivo"] = { primary: spark.img, primaryW: spark.w, primaryH: spark.h };
-    if (heat || bar) {
-      areaCharts["lezioni"] = {
-        primary: heat?.img, primaryW: heat?.w, primaryH: heat?.h,
-        secondary: bar?.img, secondaryW: bar?.w, secondaryH: bar?.h,
-      };
+
+    const foglio = new Foglio(pdf, fonts, colore);
+    const voci_indice: { titolo: string; pagina: number }[] = [];
+    const vuole_indice = voci.some((v) => v.tipo === "sistema" && v.riferimento === "indice");
+    const paginaCorrente = () => pdf.getPageCount();
+
+    // ── Copertina ──
+    if (voci.some((v) => v.tipo === "sistema" && v.riferimento === "copertina")) {
+      const page = foglio.nuova();
+      const banda = PAGE_H * 0.6;
+      page.drawRectangle({ x: 0, y: PAGE_H - banda, width: PAGE_W, height: banda, color: colore });
+      if (logo) {
+        const lw = 90;
+        const lh = (logo.height / logo.width) * lw;
+        page.drawImage(logo, { x: (PAGE_W - lw) / 2, y: PAGE_H - 70 - lh, width: lw, height: lh });
+      }
+      const kicker = sanitize(`RELAZIONE DI FINE STAGIONE - ${stagione.nome}`).toUpperCase();
+      page.drawText(kicker, { x: M_LEFT, y: PAGE_H - 40, size: 9, font: fonts.sansBold, color: BIANCO });
+      const nome = sanitize(club?.nome ?? "Club");
+      let ny = PAGE_H - banda / 2 + 20;
+      for (const ln of wrapText(nome, fonts.serifBold, 42, PAGE_W - 120).slice(0, 2)) {
+        const w = fonts.serifBold.widthOfTextAtSize(ln, 42);
+        page.drawText(ln, { x: (PAGE_W - w) / 2, y: ny, size: 42, font: fonts.serifBold, color: BIANCO });
+        ny -= 48;
+      }
+      const citta = sanitize(String(club?.citta ?? "").toUpperCase());
+      if (citta) {
+        const cw = fonts.sansBold.widthOfTextAtSize(citta, 10);
+        page.drawText(citta, { x: (PAGE_W - cw) / 2, y: ny - 10, size: 10, font: fonts.sansBold, color: BIANCO });
+      }
+      const basso = PAGE_H - banda - 60;
+      page.drawText("PRESENTATA DA", { x: M_LEFT, y: basso, size: 9, font: fonts.sansBold, color: TENUE });
+      page.drawText(sanitize(presidente || "Il Presidente"), {
+        x: M_LEFT, y: basso - 30, size: 20, font: fonts.serifBold, color: INCHIOSTRO,
+      });
+      page.drawText(`Documento generato il ${dataStr}`, {
+        x: M_LEFT, y: 60, size: 10, font: fonts.sans, color: TENUE,
+      });
     }
-  }
 
+    const segnaIndice = (titolo: string) => voci_indice.push({ titolo, pagina: paginaCorrente() });
 
-  // Pre-calcola la mappa pagine: ogni item -> pagina iniziale.
-  // Per gli allegati con file_url HTTP(S) reale tentiamo il merge (puo' avere piu' pagine).
-  // Per stimare il numero pagine dell'indice, primo passaggio: assumiamo 1 pagina per item, eccezione: merge allegati.
-  // Strategia: rendiamo prima TUTTE le pagine non-indice, costruiamo la mappa, poi prependiamo l'indice come prime pagine (gestendo la copertina come prima).
+    // ── Messaggio del presidente (prima pagina dopo la copertina) ──
+    if (messaggio && messaggio.trim() && voci.some((v) => v.tipo === "messaggio")) {
+      foglio.nuova();
+      segnaIndice("Il messaggio del presidente");
+      foglio.page.drawText("IL MESSAGGIO DEL PRESIDENTE", {
+        x: M_LEFT, y: foglio.y, size: 8, font: fonts.sansBold, color: colore,
+      });
+      foglio.y -= 8;
+      foglio.page.drawLine({
+        start: { x: M_LEFT, y: foglio.y }, end: { x: M_LEFT + 100, y: foglio.y },
+        thickness: 0.7, color: colore,
+      });
+      foglio.y -= 34;
+      for (const blocco of messaggio.split(/\n{2,}/)) {
+        foglio.paragrafo(blocco.replace(/\n/g, " "), { size: 12 });
+      }
+      foglio.y -= 10;
+      const firma = sanitize(presidente || "");
+      if (firma) {
+        foglio.spazio(30);
+        const w = fonts.serifItalic.widthOfTextAtSize(firma, 12);
+        foglio.page.drawText(firma, {
+          x: M_LEFT + CONTENT_W - w, y: foglio.y, size: 12, font: fonts.serifItalic, color: TENUE,
+        });
+      }
+    }
 
-  // Tipi di item ricevuti: hanno sezione_id (sistema/area) o payload (blocco/allegato)
-  // Costruiamo un array di "blocchi pagina" con il count effettivo, poi assembliamo.
+    // ── Capitoli, testi liberi, allegati ──
+    let numero_capitolo = 0;
+    const allegati_non_uniti: { titolo: string; motivo: string }[] = [];
 
-  type Block =
-    | { type: "copertina" }
-    | { type: "indice"; placeholderPages: number }
-    | { type: "area"; sezione_id: string; title: string; pages: number }
-    | { type: "blocco"; payload: any; title: string }
-    | { type: "allegato_real"; bytes: ArrayBuffer; pages: number; title: string }
-    | { type: "allegato_placeholder"; payload: any; title: string }
-    | { type: "chiusura" };
+    const voci_per_area = new Map<AreaId, VoceComposizione[]>();
+    for (const v of voci_moduli) {
+      const m = moduli[v.riferimento];
+      if (!m) continue;
+      const lista = voci_per_area.get(m.area) ?? [];
+      lista.push(v);
+      voci_per_area.set(m.area, lista);
+    }
 
-  const blocks: Block[] = [];
-  const areaLayouts: Record<string, AreaLayout> = {};
-  let hasIndice = false;
+    for (const voce of voci) {
+      if (voce.tipo === "sistema" || voce.tipo === "messaggio" || voce.tipo === "modulo") continue;
 
-  for (const it of items) {
-    if (it.kind === "sistema") {
-      if (it.sezione_id === "copertina") blocks.push({ type: "copertina" });
-      else if (it.sezione_id === "indice") {
-        hasIndice = true;
-        blocks.push({ type: "indice", placeholderPages: 1 });
-      } else if (it.sezione_id === "chiusura") blocks.push({ type: "chiusura" });
-    } else if (it.kind === "area") {
-      const sid = it.sezione_id!;
-      const layout = planAreaLayout(sid, paragrafiMap[sid], areaCharts[sid] ?? {}, fonts);
-      areaLayouts[sid] = layout;
-      blocks.push({ type: "area", sezione_id: sid, title: it.titolo, pages: layout.totalPages });
-    } else if (it.kind === "blocco") {
-      blocks.push({ type: "blocco", payload: it.payload, title: it.titolo });
-    } else if (it.kind === "allegato") {
-      const url: string | undefined = it.payload?.file_url;
-      let merged = false;
-      if (url && /^https?:\/\//i.test(url)) {
-        try {
-          const resp = await fetch(url);
-          if (resp.ok) {
-            const buf = await resp.arrayBuffer();
-            // Verifica numero pagine
-            const tmp = await PDFDocument.load(buf, { ignoreEncryption: true });
-            blocks.push({ type: "allegato_real", bytes: buf, pages: tmp.getPageCount(), title: it.titolo });
-            merged = true;
+      if (voce.tipo === "sezione") {
+        const area = voce.riferimento as AreaId;
+        const testi = paragrafi[area] ?? {};
+        const moduli_area = (voci_per_area.get(area) ?? []).filter((v) => moduli[v.riferimento]?.stato === "ok");
+        const ha_testo = Boolean(testi[1] || testi[2]);
+        if (!ha_testo && moduli_area.length === 0) continue;
+
+        numero_capitolo++;
+        foglio.nuova();
+        const titolo = AREA_LABELS[area] ?? voce.titolo;
+        segnaIndice(`${numero_capitolo}. ${titolo}`);
+        foglio.titoloCapitolo(numero_capitolo, titolo);
+        if (testi[1]) foglio.paragrafo(testi[1], { corsivo: true, size: 11.5 });
+        foglio.kpi(kpi[area]);
+        if (testi[2]) foglio.paragrafo(testi[2]);
+        for (const v of moduli_area) {
+          const img = immagini.get(v.riferimento);
+          if (img) foglio.immagine(img.img, img.w, img.h);
+        }
+        continue;
+      }
+
+      if (voce.tipo === "blocco") {
+        const b = voce.payload ?? {};
+        const contenuto = String(b.contenuto ?? "").trim();
+        if (!contenuto) continue;
+        numero_capitolo++;
+        foglio.nuova();
+        segnaIndice(`${numero_capitolo}. ${voce.titolo}`);
+        foglio.titoloCapitolo(numero_capitolo, voce.titolo);
+        for (const p of contenuto.split(/\n{2,}/)) foglio.paragrafo(p.replace(/\n/g, " "), { size: 11.5 });
+        continue;
+      }
+
+      if (voce.tipo === "allegato") {
+        const a = voce.payload ?? {};
+        const bytes = await scaricaAllegato(a);
+        if (bytes) {
+          try {
+            const src = await PDFDocument.load(bytes, { ignoreEncryption: true });
+            const copiate = await pdf.copyPages(src, src.getPageIndices());
+            voci_indice.push({ titolo: `${voce.titolo} (allegato)`, pagina: paginaCorrente() + 1 });
+            copiate.forEach((p) => pdf.addPage(p));
+            continue;
+          } catch {
+            allegati_non_uniti.push({ titolo: voce.titolo, motivo: "il file non è un PDF leggibile" });
           }
-        } catch {
-          /* fallback placeholder */
+        } else {
+          allegati_non_uniti.push({ titolo: voce.titolo, motivo: "il file non è disponibile" });
         }
       }
-      if (!merged) blocks.push({ type: "allegato_placeholder", payload: it.payload, title: it.titolo });
     }
-  }
 
-  // Indice entries con pagine reali
-  // Calcolo pagine: ogni blocco occupa 1 pagina, tranne allegato_real (n pagine) e indice (1 placeholder iniziale).
-  // Per gestire l'indice dinamicamente: facciamo 2 passaggi.
-
-  function computePageMap(): { entries: { title: string; page: number; block: Block }[]; total: number } {
-    let p = 1;
-    const entries: { title: string; page: number; block: Block }[] = [];
-    for (const b of blocks) {
-      let title = "";
-      let pages = 1;
-      if (b.type === "copertina") title = "Copertina";
-      else if (b.type === "indice") { title = "Sommario"; pages = b.placeholderPages; }
-      else if (b.type === "area") { title = `${AREA_INFO[b.sezione_id]?.numero ?? ""}. ${AREA_INFO[b.sezione_id]?.titolo ?? b.title}`; pages = b.pages; }
-      else if (b.type === "blocco") title = b.title;
-      else if (b.type === "allegato_real") { title = `${b.title} (allegato)`; pages = b.pages; }
-      else if (b.type === "allegato_placeholder") title = `${b.title} (allegato)`;
-      else if (b.type === "chiusura") title = "Chiusura";
-      entries.push({ title, page: p, block: b });
-      p += pages;
-    }
-    return { entries, total: p - 1 };
-  }
-
-  // Primo calcolo (indice = 1 pagina). Se le entries sono > 28 stimiamo 2 pagine indice.
-  let map = computePageMap();
-  if (hasIndice) {
-    const visibleEntries = map.entries.filter((e) => e.block.type !== "copertina" && e.block.type !== "indice").length;
-    const indicePagesNeeded = Math.max(1, Math.ceil(visibleEntries / 28));
-    for (const b of blocks) {
-      if (b.type === "indice") b.placeholderPages = indicePagesNeeded;
-    }
-    map = computePageMap();
-  }
-
-  // Rendering
-  let pageCursor = 0;
-  for (const entry of map.entries) {
-    pageCursor = entry.page;
-    const b = entry.block;
-    if (b.type === "copertina") {
-      const page = pdf.addPage([PAGE_W, PAGE_H]);
-      drawCopertina(page, fonts, club, presidente, stagione_nome, pageCursor, dateStr);
-    } else if (b.type === "indice") {
-      const indiceEntries = map.entries
-        .filter((e) => e.block.type !== "indice")
-        .map((e) => ({ titolo: e.title, pagina: e.page }));
-      // pagina(e) indice
-      const perPage = 28;
-      const totalPages = b.placeholderPages;
-      for (let i = 0; i < totalPages; i++) {
-        const page = pdf.addPage([PAGE_W, PAGE_H]);
-        const slice = indiceEntries.slice(i * perPage, (i + 1) * perPage);
-        drawIndice(page, fonts, slice, pageCursor + i);
+    // ── Elenco degli allegati non uniti (senza promesse false) ──
+    if (allegati_non_uniti.length > 0) {
+      foglio.nuova();
+      segnaIndice("Elenco degli allegati");
+      foglio.titoloCapitolo(++numero_capitolo, "Elenco degli allegati");
+      foglio.nota("Questi documenti fanno parte della relazione ma non sono stati uniti al presente file.");
+      for (const a of allegati_non_uniti) {
+        foglio.spazio(18);
+        foglio.page.drawText(sanitize(`• ${a.titolo} — ${a.motivo}`), {
+          x: M_LEFT, y: foglio.y, size: 11, font: fonts.serif, color: INCHIOSTRO,
+        });
+        foglio.y -= 18;
       }
-    } else if (b.type === "area") {
-      const paras = paragrafiMap[b.sezione_id];
-      const charts = areaCharts[b.sezione_id] ?? {};
-      const layout = areaLayouts[b.sezione_id] ?? planAreaLayout(b.sezione_id, paras, charts, fonts);
-      const page = pdf.addPage([PAGE_W, PAGE_H]);
-      if (layout.totalPages === 1) {
-        drawAreaSingle(page, fonts, b.sezione_id, pageCursor, paras, charts, layout, kpiData);
-      } else {
-        drawAreaMain(page, fonts, b.sezione_id, pageCursor, paras, charts, layout, kpiData);
-        const page2 = pdf.addPage([PAGE_W, PAGE_H]);
-        drawAreaContinuation(page2, fonts, b.sezione_id, pageCursor + 1, paras, charts, layout);
-      }
-    } else if (b.type === "blocco") {
-      const page = pdf.addPage([PAGE_W, PAGE_H]);
-      drawBloccoPage(page, fonts, b.payload, pageCursor);
-    } else if (b.type === "allegato_real") {
-      try {
-        const src = await PDFDocument.load(b.bytes, { ignoreEncryption: true });
-        const copied = await pdf.copyPages(src, src.getPageIndices());
-        copied.forEach((p) => pdf.addPage(p));
-      } catch {
-        const page = pdf.addPage([PAGE_W, PAGE_H]);
-        drawAllegatoPlaceholder(page, fonts, { titolo: b.title, categoria: "altro" }, pageCursor);
-      }
-    } else if (b.type === "allegato_placeholder") {
-      const page = pdf.addPage([PAGE_W, PAGE_H]);
-      drawAllegatoPlaceholder(page, fonts, b.payload, pageCursor);
-    } else if (b.type === "chiusura") {
-      const page = pdf.addPage([PAGE_W, PAGE_H]);
-      drawChiusura(page, fonts, club, stagione_nome, pageCursor, dateStr);
     }
-    // Silenzio l'unused var warning
-    void degrees;
-  }
 
-  const bytes = await pdf.save();
-  const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
-  return { blob, pages: pdf.getPageCount() };
+    // ── Chiusura ──
+    if (voci.some((v) => v.tipo === "sistema" && v.riferimento === "chiusura")) {
+      const page = foglio.nuova();
+      const banda = PAGE_H * 0.3;
+      page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: banda, color: colore });
+      const cx = PAGE_W / 2;
+      const nome = sanitize(club?.nome ?? "Club");
+      const nw = fonts.serifBold.widthOfTextAtSize(nome, 18);
+      page.drawText(nome, { x: cx - nw / 2, y: banda + 200, size: 18, font: fonts.serifBold, color: INCHIOSTRO });
+      const sub = sanitize(`RELAZIONE DEL PRESIDENTE - STAGIONE ${stagione.nome}`).toUpperCase();
+      const sw = fonts.sansBold.widthOfTextAtSize(sub, 9);
+      page.drawText(sub, { x: cx - sw / 2, y: banda + 180, size: 9, font: fonts.sansBold, color: TENUE });
+      const dt = sanitize(`DOCUMENTO GENERATO IL ${dataStr}`);
+      const dw = fonts.sansBold.widthOfTextAtSize(dt, 9);
+      page.drawText(dt, { x: cx - dw / 2, y: banda / 2, size: 9, font: fonts.sansBold, color: BIANCO });
+    }
+
+    // ── Indice: inserito dopo la copertina, numeri ricalcolati ──
+    if (vuole_indice && voci_indice.length > 0) {
+      const per_pagina = 26;
+      const pagine_indice = Math.max(1, Math.ceil(voci_indice.length / per_pagina));
+      const posizione = pdf.getPageCount() > 0 ? 1 : 0;
+      const nuove: PDFPage[] = [];
+      for (let i = 0; i < pagine_indice; i++) {
+        nuove.push(pdf.insertPage(posizione + i, [PAGE_W, PAGE_H]));
+      }
+      const voci_spostate = voci_indice.map((v) => ({ ...v, pagina: v.pagina + pagine_indice }));
+      nuove.forEach((page, i) => {
+        page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: CREMA });
+        let y = PAGE_H - M_TOP;
+        page.drawText("INDICE", { x: M_LEFT, y, size: 9, font: fonts.sansBold, color: colore });
+        y -= 8;
+        page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + CONTENT_W, y }, thickness: 0.4, color: colore });
+        y -= 34;
+        for (const e of voci_spostate.slice(i * per_pagina, (i + 1) * per_pagina)) {
+          const titolo = sanitize(e.titolo);
+          const num = String(e.pagina);
+          page.drawText(titolo, { x: M_LEFT, y, size: 12, font: fonts.serif, color: INCHIOSTRO });
+          const numW = fonts.serif.widthOfTextAtSize(num, 12);
+          page.drawText(num, { x: M_LEFT + CONTENT_W - numW, y, size: 12, font: fonts.serif, color: INCHIOSTRO });
+          y -= 20;
+        }
+      });
+    }
+
+    // ── Numeri di pagina (dopo l'inserimento dell'indice) ──
+    pdf.getPages().forEach((page, i) => {
+      if (i === 0) return;
+      const txt = `- ${i + 1} -`;
+      const w = fonts.sans.widthOfTextAtSize(txt, 9);
+      page.drawText(txt, { x: (PAGE_W - w) / 2, y: 30, size: 9, font: fonts.sans, color: TENUE });
+    });
+
+    const bytes = await pdf.save();
+    const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
+    return { blob, pages: pdf.getPageCount(), avvisi };
   } finally {
-    generation_in_progress = false;
+    generazione_in_corso = false;
+  }
+}
+
+/** Scarica il PDF di un allegato: link pubblico oppure percorso nel bucket privato. */
+async function scaricaAllegato(allegato: any): Promise<ArrayBuffer | null> {
+  const riferimento: string = String(allegato?.file_url ?? "");
+  if (!riferimento || riferimento.startsWith("placeholder://")) return null;
+  try {
+    if (/^https?:\/\//i.test(riferimento)) {
+      const resp = await fetch(riferimento);
+      return resp.ok ? await resp.arrayBuffer() : null;
+    }
+    const { data, error } = await supabase.storage
+      .from("relazioni-allegati").createSignedUrl(riferimento, 600);
+    if (error || !data?.signedUrl) return null;
+    const resp = await fetch(data.signedUrl);
+    return resp.ok ? await resp.arrayBuffer() : null;
+  } catch {
+    return null;
   }
 }
 
