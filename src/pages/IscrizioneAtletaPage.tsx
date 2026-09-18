@@ -21,11 +21,26 @@ const messaggi_errore: Record<string, string> = {
   file_troppo_grande: "Il file supera i 2MB. Scegli una foto più leggera.",
   upload_fallito: "Caricamento della foto non riuscito, riprova.",
   contratto_non_accettato: "Devi accettare le condizioni del contratto di adesione.",
+  contratto_cambiato:
+    "Le condizioni del contratto sono cambiate mentre la pagina era aperta. Ricarica la pagina, rileggi il testo e conferma di nuovo.",
+  contratto_non_archiviato:
+    "Non è stato possibile registrare il contratto, quindi l'iscrizione non è stata confermata. Riprova fra poco.",
   data_non_valida: "La data di nascita non è valida.",
   dati_non_validi: "Dati non validi, ricontrolla il modulo.",
   db_error: "Errore del server, riprova più tardi.",
   server_error: "Errore del server, riprova più tardi.",
 };
+
+// I motivi arrivano dal server come codici: il messaggio tecnico resta nei log.
+const motivi_corso: Record<string, string> = {
+  gia_iscritta: "risulta già iscritta a questo corso",
+  anagrafica_incompleta: "mancano alcuni dati dell'atleta",
+  livello_non_sufficiente: "il livello richiesto non corrisponde",
+  corso_non_disponibile: "il corso non è più disponibile",
+  errore_generico: "non è stato possibile registrarlo, scrivi al club",
+};
+const testo_motivo = (m: string) => motivi_corso[m] ?? motivi_corso.errore_generico;
+
 
 interface Stagione {
   id: string;
