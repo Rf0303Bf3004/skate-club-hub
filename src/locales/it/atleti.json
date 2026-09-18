@@ -193,6 +193,7 @@
     "flag_ospite": "Ospite di campo — {{club}}",
     "ospite_scade": "scheda eliminata il {{data}}",
     "country_iso": "Paese (ISO)",
+    "fattura_scelta_title": "A chi intestare questa fattura?",
     "separati": {
       "switch": "Genitori separati",
       "fatture_label": "Fatture intestate a",
