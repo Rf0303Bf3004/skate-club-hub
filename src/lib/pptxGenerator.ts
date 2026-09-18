@@ -167,7 +167,7 @@ function larghezze_colonne(
 ): number[] {
   const ncol = colonne.length;
   if (ncol <= 1) return [CONTENUTO_W];
-  const CARATTERE = (CORPO_PT * 0.58) / 96;   // larghezza di un carattere, in pollici
+  const CARATTERE = (CORPO_PT * 0.64) / 96;   // larghezza di un carattere, in pollici
   const contenuto = colonne.map((c, i) =>
     [String(c ?? ""), ...righe.map((r) => String(r.celle[i] ?? ""))]);
 
@@ -177,7 +177,7 @@ function larghezze_colonne(
     const parola = Math.max(
       3, ...celle.flatMap((t) => t.split(/\s+/).map((p) => p.length)),
     );
-    return Math.min(CONTENUTO_W * 0.45, Math.max(0.6, parola * CARATTERE + 0.24));
+    return Math.min(CONTENUTO_W * 0.45, Math.max(0.6, parola * CARATTERE + 0.34));
   });
   const pesi = contenuto.map((celle, i) =>
     prima_stretta && i === 0 ? 5 : Math.min(42, Math.max(8, ...celle.map((t) => t.length))));
