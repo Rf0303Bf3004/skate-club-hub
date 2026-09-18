@@ -149,16 +149,21 @@ export default function AllegatoForm({ open, on_close, club_id, stagione_id, all
               accept="application/pdf,.pdf"
               onChange={(e) => set_file(e.target.files?.[0] ?? null)}
             />
-            {allegato && !file && (
+            {file_esistente && !file && (
               <p className="text-xs text-muted-foreground mt-1">
-                {t("relazione.allegato_form.file_corrente", { file: allegato.file_url })}
+                {t("relazione.allegato_form.file_corrente", { file: file_esistente })}
+              </p>
+            )}
+            {file_mancante && (
+              <p className="text-xs text-amber-700 mt-1">
+                {t("relazione.allegato_form.errore_file_mancante")}
               </p>
             )}
           </div>
         </div>
         <SheetFooter className="mt-6">
           <Button variant="outline" onClick={on_close}>{t("relazione.allegato_form.annulla")}</Button>
-          <Button onClick={() => m_save.mutate()} disabled={!titolo.trim() || m_save.isPending}>
+          <Button onClick={() => m_save.mutate()} disabled={!titolo.trim() || file_mancante || m_save.isPending}>
             {t("relazione.allegato_form.salva")}
           </Button>
         </SheetFooter>
