@@ -61,5 +61,79 @@
       "drafts_tooltip_other": "{{count}} brouillons à émettre",
       "ente_non_attivo": "plus actif"
     }
+  },
+  "esporta": {
+    "titolo": "Exporter pour la comptabilité",
+    "sottotitolo": "Préparez le fichier des écritures à importer dans votre logiciel de comptabilité.",
+    "torna_fatture": "Retour aux factures",
+    "periodo": "Période",
+    "dal": "Du",
+    "al": "Au",
+    "mese_scorso": "Mois dernier",
+    "trimestre": "Trimestre",
+    "anno": "Année",
+    "periodo_non_valido": "Indiquez une période valable : la date de début ne peut pas être après la date de fin.",
+    "ente": "Entité émettrice",
+    "ente_tutti": "Toutes les entités",
+    "incassi": "Inclure les encaissements",
+    "incassi_desc": "Ajoute les écritures des paiements reçus.",
+    "formato": "Logiciel de comptabilité",
+    "formati": {
+      "banana": "Banana Comptabilité",
+      "cresus": "Crésus Comptabilité",
+      "csv": "CSV générique (CashCtrl, Infoniqa/Sage 50, Excel)"
+    },
+    "aiuto": {
+      "banana": "Dans Banana : Données > Importer en comptabilité > Écritures > Écritures (générique).",
+      "cresus": "Dans Crésus : Fichier > Importer > Importation d'écritures, fichier tabulé sans ligne d'en-tête.",
+      "csv": "Fichier CSV avec point-virgule : s'ouvre dans Excel et s'importe dans CashCtrl, Infoniqa ou Sage 50."
+    },
+    "anteprima_titolo": "Aperçu",
+    "caricamento": "Lecture des écritures…",
+    "nessuna_riga": "Aucune écriture sur cette période.",
+    "righe_totali_one": "{{count}} écriture",
+    "righe_totali_other": "{{count}} écritures",
+    "altre_righe_one": "et une autre écriture dans le fichier.",
+    "altre_righe_other": "et {{count}} autres écritures dans le fichier.",
+    "scarica": "Télécharger le fichier",
+    "riprova": "Réessayer",
+    "errore_lettura": "Impossible de lire les écritures comptables.",
+    "errore_download": "Impossible de préparer le fichier.",
+    "errore_impostazioni": "Impossible de lire les paramètres comptables : les comptes proposés sont utilisés.",
+    "avviso_non_configurato": "Les paramètres comptables ne sont pas encore remplis : le fichier utilise les comptes proposés.",
+    "vai_setup": "Aller à la configuration du club",
+    "col": {
+      "data": "Date",
+      "numero": "Numéro",
+      "descrizione": "Description",
+      "dare": "Débit",
+      "avere": "Crédit",
+      "importo": "Montant",
+      "tipo": "Type"
+    }
+  },
+  "contabilita": {
+    "titolo": "Comptabilité",
+    "descrizione": "Comptes et codes utilisés dans les fichiers importés dans le logiciel de comptabilité.",
+    "scheda_club": "Le club",
+    "nota_ente": "Si tu laisses vide, le paramètre du club s'applique.",
+    "conti": {
+      "debitori": "Compte débiteurs",
+      "banca": "Compte banque",
+      "ricavi": "Compte produits",
+      "iva": "Compte TVA due",
+      "sconti": "Compte rabais accordés"
+    },
+    "codice_iva": "Code TVA",
+    "codice_iva_nota": "C'est le code de votre plan comptable, par exemple V81. Demandez-le à votre fiduciaire.",
+    "mappa_titolo": "Comptes par type de poste",
+    "mappa_nota": "Si un champ reste vide, le compte de produits général est utilisé.",
+    "formato_preferito": "Logiciel préféré",
+    "salva": "Enregistrer les paramètres comptables",
+    "salvato": "Paramètres comptables enregistrés",
+    "caricamento": "Lecture des paramètres…",
+    "errore_lettura": "Impossible de lire les paramètres comptables.",
+    "errore_salvataggio": "Impossible d'enregistrer les paramètres comptables.",
+    "riprova": "Réessayer"
   }
 }

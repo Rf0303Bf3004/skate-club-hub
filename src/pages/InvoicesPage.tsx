@@ -15,7 +15,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AnteprimaFatturePeriodoDialog from "@/components/fatture/AnteprimaFatturePeriodoDialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Receipt } from "lucide-react";
+import { FileText, Receipt, FileSpreadsheet } from "lucide-react";
 import EmptyState from "@/components/common/EmptyState";
 import { toast } from "@/hooks/use-toast";
 import { get_fattura_stato_ui, get_fattura_stato_label, get_fattura_stato_classes, fattura_chiusa } from "@/lib/fattura-status";
@@ -202,9 +202,14 @@ const InvoicesPage: React.FC = () => {
             )}
           </div>
           {puo_gestire_fatture ? (
-            <Button className="bg-primary hover:bg-primary/90" onClick={() => set_anteprima_open(true)}>
-              <FileText className="w-4 h-4 mr-2" /> {t("invoices_page.generate_button")}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => navigate("/fatture/esporta-contabilita")}>
+                <FileSpreadsheet className="w-4 h-4 mr-2" /> {t("esporta.titolo")}
+              </Button>
+              <Button className="bg-primary hover:bg-primary/90" onClick={() => set_anteprima_open(true)}>
+                <FileText className="w-4 h-4 mr-2" /> {t("invoices_page.generate_button")}
+              </Button>
+            </div>
           ) : (
             <NotaPermesso testo="Solo la segreteria e il presidente possono emettere fatture." />
           )}

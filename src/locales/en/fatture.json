@@ -61,5 +61,79 @@
       "drafts_tooltip_other": "{{count}} drafts to issue",
       "ente_non_attivo": "no longer active"
     }
+  },
+  "esporta": {
+    "titolo": "Export for accounting",
+    "sottotitolo": "Prepare the entries file to import into your accounting software.",
+    "torna_fatture": "Back to invoices",
+    "periodo": "Period",
+    "dal": "From",
+    "al": "To",
+    "mese_scorso": "Last month",
+    "trimestre": "Quarter",
+    "anno": "Year",
+    "periodo_non_valido": "Choose a valid period: the start date cannot be after the end date.",
+    "ente": "Issuing entity",
+    "ente_tutti": "All entities",
+    "incassi": "Include payments",
+    "incassi_desc": "Adds the entries for payments received.",
+    "formato": "Accounting software",
+    "formati": {
+      "banana": "Banana Accounting",
+      "cresus": "Crésus Comptabilité",
+      "csv": "Generic CSV (CashCtrl, Infoniqa/Sage 50, Excel)"
+    },
+    "aiuto": {
+      "banana": "In Banana: Data > Import to accounting > Transactions > Transactions (generic).",
+      "cresus": "In Crésus: File > Import > Import entries, tab-separated file without a header row.",
+      "csv": "Semicolon CSV file: opens in Excel and imports into CashCtrl, Infoniqa or Sage 50."
+    },
+    "anteprima_titolo": "Preview",
+    "caricamento": "Reading the entries…",
+    "nessuna_riga": "No entry in this period.",
+    "righe_totali_one": "{{count}} entry",
+    "righe_totali_other": "{{count}} entries",
+    "altre_righe_one": "and one more entry in the file.",
+    "altre_righe_other": "and {{count}} more entries in the file.",
+    "scarica": "Download the file",
+    "riprova": "Try again",
+    "errore_lettura": "The accounting entries could not be read.",
+    "errore_download": "The file could not be prepared.",
+    "errore_impostazioni": "The accounting settings could not be read: the suggested accounts are used.",
+    "avviso_non_configurato": "The accounting settings have not been filled in yet: the file uses the suggested accounts.",
+    "vai_setup": "Go to club setup",
+    "col": {
+      "data": "Date",
+      "numero": "Number",
+      "descrizione": "Description",
+      "dare": "Debit",
+      "avere": "Credit",
+      "importo": "Amount",
+      "tipo": "Type"
+    }
+  },
+  "contabilita": {
+    "titolo": "Accounting",
+    "descrizione": "Accounts and codes used in the files imported into your accounting software.",
+    "scheda_club": "The club",
+    "nota_ente": "If you leave it empty, the club setting applies.",
+    "conti": {
+      "debitori": "Receivables account",
+      "banca": "Bank account",
+      "ricavi": "Revenue account",
+      "iva": "VAT payable account",
+      "sconti": "Discounts granted account"
+    },
+    "codice_iva": "VAT code",
+    "codice_iva_nota": "It is the code of your chart of accounts, for example V81. Ask your accountant.",
+    "mappa_titolo": "Accounts by item type",
+    "mappa_nota": "If you leave a field empty, the general revenue account is used.",
+    "formato_preferito": "Preferred software",
+    "salva": "Save the accounting settings",
+    "salvato": "Accounting settings saved",
+    "caricamento": "Reading the settings…",
+    "errore_lettura": "The accounting settings could not be read.",
+    "errore_salvataggio": "The accounting settings could not be saved.",
+    "riprova": "Try again"
   }
 }

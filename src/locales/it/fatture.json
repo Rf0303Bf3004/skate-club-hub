@@ -140,5 +140,79 @@
     "reminder_days_label": "Giorni dopo la scadenza",
     "reminder_days_help": "Per esempio 7, 21: il primo promemoria una settimana dopo la scadenza, il secondo tre settimane dopo.",
     "reminder_days_invalid": "Scrivi i giorni separati da virgola, per esempio 7, 21"
+  },
+  "esporta": {
+    "titolo": "Esporta per la contabilità",
+    "sottotitolo": "Prepara il file delle registrazioni da importare nel programma di contabilità.",
+    "torna_fatture": "Torna alle fatture",
+    "periodo": "Periodo",
+    "dal": "Dal",
+    "al": "Al",
+    "mese_scorso": "Mese scorso",
+    "trimestre": "Trimestre",
+    "anno": "Anno",
+    "periodo_non_valido": "Indica un periodo valido: la data iniziale non può essere dopo quella finale.",
+    "ente": "Ente che emette",
+    "ente_tutti": "Tutti gli enti",
+    "incassi": "Includi gli incassi",
+    "incassi_desc": "Aggiunge le registrazioni dei pagamenti ricevuti.",
+    "formato": "Programma di contabilità",
+    "formati": {
+      "banana": "Banana Contabilità",
+      "cresus": "Crésus Comptabilité",
+      "csv": "CSV generico (CashCtrl, Infoniqa/Sage 50, Excel)"
+    },
+    "aiuto": {
+      "banana": "In Banana: Dati > Importa in contabilità > Movimenti > Movimenti (generico).",
+      "cresus": "In Crésus: File > Importa > Importazione di registrazioni, file a tabulazioni senza intestazione.",
+      "csv": "File CSV con punto e virgola: si apre in Excel e si importa in CashCtrl, Infoniqa o Sage 50."
+    },
+    "anteprima_titolo": "Anteprima",
+    "caricamento": "Lettura delle registrazioni…",
+    "nessuna_riga": "Nessuna registrazione in questo periodo.",
+    "righe_totali_one": "{{count}} registrazione",
+    "righe_totali_other": "{{count}} registrazioni",
+    "altre_righe_one": "e un'altra registrazione nel file.",
+    "altre_righe_other": "e altre {{count}} registrazioni nel file.",
+    "scarica": "Scarica il file",
+    "riprova": "Riprova",
+    "errore_lettura": "Impossibile leggere le registrazioni contabili.",
+    "errore_download": "Impossibile preparare il file.",
+    "errore_impostazioni": "Impossibile leggere le impostazioni contabili: si usano i conti proposti.",
+    "avviso_non_configurato": "Le impostazioni contabili non sono ancora state compilate: il file usa i conti proposti.",
+    "vai_setup": "Vai al Setup del club",
+    "col": {
+      "data": "Data",
+      "numero": "Numero",
+      "descrizione": "Descrizione",
+      "dare": "Dare",
+      "avere": "Avere",
+      "importo": "Importo",
+      "tipo": "Tipo"
+    }
+  },
+  "contabilita": {
+    "titolo": "Contabilità",
+    "descrizione": "Conti e codici usati nei file da importare nel programma di contabilità.",
+    "scheda_club": "Il club",
+    "nota_ente": "Se lasci vuoto, vale l'impostazione del club.",
+    "conti": {
+      "debitori": "Conto debitori",
+      "banca": "Conto banca",
+      "ricavi": "Conto ricavi",
+      "iva": "Conto IVA dovuta",
+      "sconti": "Conto sconti concessi"
+    },
+    "codice_iva": "Codice IVA",
+    "codice_iva_nota": "È il codice del vostro piano dei conti, per esempio V81. Chiedetelo al vostro fiduciario.",
+    "mappa_titolo": "Conti per tipo di voce",
+    "mappa_nota": "Se lasci vuoto un campo, si usa il conto ricavi generale.",
+    "formato_preferito": "Programma preferito",
+    "salva": "Salva le impostazioni contabili",
+    "salvato": "Impostazioni contabili salvate",
+    "caricamento": "Lettura delle impostazioni…",
+    "errore_lettura": "Impossibile leggere le impostazioni contabili.",
+    "errore_salvataggio": "Impossibile salvare le impostazioni contabili.",
+    "riprova": "Riprova"
   }
 }

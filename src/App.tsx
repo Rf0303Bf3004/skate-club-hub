@@ -25,6 +25,7 @@ import CoursesPage from "@/pages/CoursesPage";
 import CompetitionsPage from "@/pages/CompetitionsPage";
 import PrivateLessonsPage from "@/pages/PrivateLessonsPage";
 import InvoicesPage from "@/pages/InvoicesPage";
+import EsportaContabilitaPage from "@/pages/EsportaContabilitaPage";
 import SegreteriaFatturePage from "@/pages/SegreteriaFatturePage";
 import CommunicationsPage from "@/pages/CommunicationsPage";
 import SeasonsPage from "@/pages/SeasonsPage";
@@ -419,6 +420,7 @@ const AuthenticatedApp = () => {
           <Route path="/eventi" element={<SezioneGuard codice_sezione="eventi"><EventiPage /></SezioneGuard>} />
           <Route path="/eventi/:id" element={<Navigate to="/eventi" replace />} />
           <Route path="/fatture" element={<SezioneGuard codice_sezione="fatture"><InvoicesPage /></SezioneGuard>} />
+          <Route path="/fatture/esporta-contabilita" element={<SezioneGuard codice_sezione="fatture"><EsportaContabilitaPage /></SezioneGuard>} />
           <Route path="/segreteria/fatture" element={<SezioneGuard codice_sezione="fatture"><SegreteriaFatturePage /></SezioneGuard>} />
           <Route path="/segreteria/fatture/:id" element={<SezioneGuard codice_sezione="fatture"><SegreteriaFatturaDetailPage /></SezioneGuard>} />
           <Route path="/comunicazioni" element={<SezioneGuard codice_sezione="comunicazioni"><CommunicationsPage /></SezioneGuard>} />
