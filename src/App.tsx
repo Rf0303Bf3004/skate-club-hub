@@ -10,6 +10,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { I18nProvider } from "@/lib/i18n";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 import MainLayout from "@/components/MainLayout";
 import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
@@ -109,13 +110,21 @@ const PistaGate = ({ children }: { children: React.ReactNode }) => {
     const codice = leggi_codice_pista();
     if (!codice) return;
     set_riaccredito("in_corso");
-    void accedi_pista_con_codice(codice).then((esito) => {
+    void (async () => {
+      // Se qualcuno del club è già entrato con le proprie credenziali su questo
+      // dispositivo, non gli si toglie la sessione per rimetterci il tablet.
+      const { data, error } = await supabase.auth.getSession();
+      if (error || data.session) {
+        set_riaccredito("fallito");
+        return;
+      }
+      const esito = await accedi_pista_con_codice(codice);
       if (esito.ok) return; // la sessione cambia: il gate si ridisegna da solo
       // Tipicamente il club ha rigenerato il codice: si dimentica e si chiede.
       cancella_codice_pista();
       set_riaccredito("fallito");
       window.location.replace("/pista-login?motivo=codice_cambiato");
-    });
+    })();
   }, [is_loading, is_pista, riaccredito]);
 
   if (is_loading || riaccredito === "in_corso") {

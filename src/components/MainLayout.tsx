@@ -11,7 +11,7 @@ import GlobalSearchPalette from "@/components/common/GlobalSearchPalette";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { use_count_iscrizioni_non_lette } from "@/components/comunicazioni/IscrizioniAtletiNotifiche";
-import { MENU_BLOCCHI, MENU_GRUPPI, MENU_TOP, gruppi_del_blocco, type MenuBlocco, type MenuGruppo } from "@/config/menuSections";
+import { MENU_BLOCCHI, MENU_GRUPPI, MENU_SECTIONS, MENU_TOP, gruppi_del_blocco, type MenuBlocco, type MenuGruppo } from "@/config/menuSections";
 import { registra_silenzioso } from "@/lib/errori";
 
 
@@ -71,6 +71,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   const is_nuovo_ruolo = !is_superadmin && RUOLI_NUOVI.includes(session?.ruolo as string);
 
+  // Amministratore e vicepresidente non hanno una colonna nella matrice dei
+  // permessi (RuoliPermessiPage): senza righe il menu resterebbe vuoto e non
+  // ci sarebbe nessun posto dove ripararlo. Per loro il menu è completo.
+  const vede_tutte_le_sezioni =
+    session?.ruolo === "admin" || session?.ruolo === "vicepresidente";
+
   const { data: permessi_sezioni = [] } = useQuery({
     queryKey: ["ruoli_permessi_sezioni", session?.club_id, session?.ruolo],
     queryFn: async () => {
@@ -86,14 +92,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       }
       return data ?? [];
     },
-    enabled: is_nuovo_ruolo,
+    enabled: is_nuovo_ruolo && !vede_tutte_le_sezioni,
   });
 
   const visibile_set = React.useMemo(() => {
+    if (vede_tutte_le_sezioni) return new Set<string>(MENU_SECTIONS.map((s) => s.codice));
     const s = new Set<string>();
     for (const p of permessi_sezioni as any[]) if (p.visibile) s.add(p.codice_sezione);
     return s;
-  }, [permessi_sezioni]);
+  }, [permessi_sezioni, vede_tutte_le_sezioni]);
 
   const nuovo_top = MENU_TOP.filter((s) => visibile_set.has(s.codice));
 
