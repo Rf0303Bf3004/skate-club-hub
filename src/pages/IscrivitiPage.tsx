@@ -62,6 +62,10 @@ const IscrivitiPage: React.FC = () => {
     consenso_foto_video: false, partecipa_gare: false, intende_test_livello: false,
   });
   const [contratto_ok, set_contratto_ok] = useState(false);
+  // Il contratto arriva dal server: la pagina lo mostra e rimanda solo l'impronta.
+  const [articoli, set_articoli] = useState<ArticoloContratto[]>([]);
+  const [contratto_impronta, set_contratto_impronta] = useState<string | null>(null);
+
 
   const set_val = (k: string, v: any) => set_form((p) => ({ ...p, [k]: v }));
 
