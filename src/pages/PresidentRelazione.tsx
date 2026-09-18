@@ -5,42 +5,26 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Maximize2, FileDown, AlertTriangle } from "lucide-react";
+import { Loader2, FileDown, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { saveAs } from "file-saver";
 import { toast } from "sonner";
 import { segnala_errore } from "@/lib/errori";
 import { useTranslation } from "react-i18next";
 import { use_persisted_state } from "@/hooks/use-persisted-state";
-import SavingIndicator from "@/components/relazione/SavingIndicator";
-import MessaggioPresidente, { useMessaggioPresidente } from "@/components/relazione/MessaggioPresidente";
+import { useMessaggioPresidente } from "@/components/relazione/MessaggioPresidente";
 import PannelloModuli from "@/components/relazione/PannelloModuli";
-import AnteprimaFedele from "@/components/relazione/AnteprimaFedele";
-import BlocchiTestoTab from "@/components/relazione/BlocchiTestoTab";
-import AllegatiTab from "@/components/relazione/AllegatiTab";
+import DocumentoRelazione from "@/components/relazione/DocumentoRelazione";
 import { useComposizioneRelazione } from "@/hooks/use-composizione-relazione";
 import { fetchStagioniOrdinate, stagioneDaProporre, fetchModuli, type Stagione } from "@/lib/relazione/moduli";
 import { generateRelazionePDF, buildRelazioneFilename, type VoceComposizione } from "@/lib/pdfGenerator";
 import type { Tono } from "@/lib/paragraphGenerator";
 
-function Passo({ numero, titolo, children }: { numero: number; titolo: string; children: React.ReactNode }) {
-  return (
-    <Card className="p-4 space-y-3">
-      <div className="flex items-center gap-2">
-        <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center">{numero}</span>
-        <h2 className="text-sm font-semibold">{titolo}</h2>
-      </div>
-      {children}
-    </Card>
-  );
-}
-
 export default function PresidentRelazione() {
   const { t } = useTranslation("dashboard");
   const { session } = useAuth();
   const club_id = session?.club_id ?? undefined;
-  const [fullscreen, set_fullscreen] = useState(false);
+  const [pannello_aperto, set_pannello_aperto] = useState(false);
   const [tono, set_tono] = use_persisted_state<Tono>("relazione_tono", "soci");
   const [stagione_id, set_stagione_id] = useState<string | undefined>(undefined);
   const [scaricando, set_scaricando] = useState(false);
@@ -104,8 +88,6 @@ export default function PresidentRelazione() {
     .filter((v) => v.attivo)
     .map((v) => ({ id: v.id, tipo: v.tipo, riferimento: v.riferimento, titolo: v.titolo, payload: v.payload }));
 
-  const firma = JSON.stringify([tono, stagione?.id, voci_attive.map((v) => v.id), q_messaggio.data ?? ""]);
-
   // Specchio di user_is_presidenza() del database, esteso ad amministrazione e superadmin.
   if (session && !["superadmin", "admin", "presidente", "vicepresidente"].includes(session.ruolo as string)) {
     return <Navigate to="/" replace />;
@@ -147,22 +129,19 @@ export default function PresidentRelazione() {
   }
 
   return (
-    <div className={fullscreen ? "fixed inset-0 z-50 bg-background p-6 overflow-auto" : "space-y-4"}>
-      <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-3xl font-serif tracking-tight text-foreground">{t("relazione.title")}</h1>
-          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">{t("relazione.subtitle")}</p>
+    <div className="space-y-4">
+      <header className="sticky top-0 z-30 flex flex-col gap-3 border-b bg-background/95 py-3 backdrop-blur md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-serif text-2xl text-foreground">{t("relazione.title")}</h1>
+          <Select value={stagione?.id} onValueChange={set_stagione_id} disabled={stagioni.length === 0}>
+            <SelectTrigger className="h-9 w-52 text-sm"><SelectValue placeholder={t("relazione.season")} /></SelectTrigger>
+            <SelectContent>{stagioni.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}</SelectContent>
+          </Select>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <SavingIndicator />
-          <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => set_fullscreen((f) => !f)}>
-            <Maximize2 className="w-4 h-4" />{fullscreen ? t("relazione.exit_fullscreen") : t("relazione.fullscreen")}
-          </Button>
-          <Button size="sm" className="gap-2 h-9" onClick={scarica} disabled={!dati_pronti || scaricando}>
+        <Button className="h-11 gap-2" onClick={scarica} disabled={!dati_pronti || scaricando}>
             {scaricando ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
             {t("relazione.scarica_relazione")}
-          </Button>
-        </div>
+        </Button>
       </header>
 
       {q_stagioni.isError && (
@@ -178,104 +157,16 @@ export default function PresidentRelazione() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
-        <div className="space-y-4">
-          <Passo numero={1} titolo={t("relazione.passo1")}>
-            <div className="flex flex-wrap items-center gap-3">
-              <Select value={stagione?.id} onValueChange={set_stagione_id} disabled={stagioni.length === 0}>
-                <SelectTrigger className="w-52 h-9 text-sm"><SelectValue placeholder={t("relazione.season")} /></SelectTrigger>
-                <SelectContent>
-                  {stagioni.map((s) => (<SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>))}
-                </SelectContent>
-              </Select>
-              <Tabs value={tono} onValueChange={(v) => set_tono(v as Tono)}>
-                <TabsList className="h-9">
-                  <TabsTrigger value="soci">{t("relazione.tono_soci")}</TabsTrigger>
-                  <TabsTrigger value="formale">{t("relazione.tono_formale")}</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-            <p className="text-xs text-muted-foreground">{t("relazione.tono_nota")}</p>
-            <div className="flex flex-wrap gap-2 pt-1">
-              <span className="text-xs text-muted-foreground self-center">{t("relazione.preset_titolo")}</span>
-              {(["completa", "assemblea", "comitato"] as const).map((p) => (
-                <Button key={p} size="sm" variant="outline" className="h-7 text-xs"
-                  disabled={!dati_pronti || comp.in_salvataggio}
-                  onClick={() => comp.applica_preset(p)}>
-                  {t(`relazione.preset_${p}`)}
-                </Button>
-              ))}
-            </div>
-          </Passo>
-
-          {stagione && (
-            <>
-              <Passo numero={2} titolo={t("relazione.passo2")}>
-                <MessaggioPresidente club_id={club_id} stagione_id={stagione.id} />
-              </Passo>
-
-              <Passo numero={3} titolo={t("relazione.passo3")}>
-                {comp.is_error ? (
-                  <div className="text-sm text-destructive flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" />{t("relazione.errore_composizione")}
-                    <Button size="sm" variant="outline" className="ml-auto" onClick={() => comp.ricarica()}>{t("relazione.riprova")}</Button>
-                  </div>
-                ) : comp.is_loading ? (
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />{t("relazione.caricamento")}
-                  </p>
-                ) : (
-                  <PannelloModuli
-                    club_id={club_id}
-                    stagione={stagione}
-                    tono={tono}
-                    voci={comp.voci}
-                    toggle={comp.toggle}
-                    sposta={comp.sposta}
-                    moduli_in_caricamento={q_moduli.isLoading}
-                  />
-                )}
-                {q_moduli.isError && (
-                  <div className="text-sm text-destructive flex items-center gap-2 mt-2">
-                    <AlertTriangle className="w-4 h-4" />{t("relazione.errore_moduli")}
-                    <Button size="sm" variant="outline" className="ml-auto" onClick={() => q_moduli.refetch()}>{t("relazione.riprova")}</Button>
-                  </div>
-                )}
-              </Passo>
-
-              <Passo numero={4} titolo={t("relazione.passo4")}>
-                <div className="space-y-6">
-                  <BlocchiTestoTab club_id={club_id} stagione_id={stagione.id} />
-                  <AllegatiTab club_id={club_id} stagione_id={stagione.id} />
-                  <Button onClick={scarica} disabled={!dati_pronti || scaricando} className="gap-2">
-                    {scaricando ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-                    {t("relazione.scarica_relazione")}
-                  </Button>
-                </div>
-              </Passo>
-            </>
-          )}
-        </div>
-
-        <div className="xl:sticky xl:top-4 border rounded-lg bg-card overflow-hidden">
-          {stagione && dati_pronti ? (
-            <AnteprimaFedele
-              club={q_club.data}
-              club_id={club_id}
-              presidente={`${session?.nome ?? ""} ${session?.cognome ?? ""}`.trim() || session?.email || t("relazione.presidente_fallback")}
-              stagione={stagione}
-              tono={tono}
-              messaggio={q_messaggio.data ?? null}
-              voci={voci_attive}
-              moduli={q_moduli.data ?? {}}
-              structural_signature={firma}
-            />
-          ) : (
-            <div className="flex items-center justify-center min-h-[400px] text-sm text-muted-foreground gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" />{t("relazione.caricamento")}
-            </div>
-          )}
-        </div>
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <main className="min-w-0 bg-muted/30 p-3 md:p-6">
+          {stagione && dati_pronti ? <DocumentoRelazione club_nome={q_club.data?.nome ?? t("relazione.club_fallback")} club_id={club_id} stagione={stagione} tono={tono} voci={comp.voci} moduli={q_moduli.data ?? {}} /> : <div className="flex min-h-[400px] items-center justify-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />{t("relazione.caricamento")}</div>}
+        </main>
+        <aside className="space-y-4 border bg-card p-4 xl:sticky xl:top-20">
+          <h2 className="font-semibold">{t("relazione.pannello.titolo")}</h2>
+          <div className="flex flex-wrap gap-2">{(["completa", "assemblea", "comitato"] as const).map((p) => <Button key={p} size="sm" variant="outline" disabled={!dati_pronti || comp.in_salvataggio} onClick={() => comp.applica_preset(p)}>{t(`relazione.preset_${p}`)}</Button>)}</div>
+          <Button variant="ghost" className="w-full justify-between px-0" onClick={() => set_pannello_aperto((v) => !v)}>{t("relazione.pannello.scegli_moduli")}{pannello_aperto ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</Button>
+          {pannello_aperto && <div className="space-y-5 border-t pt-4"><div><p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">{t("relazione.pannello.tono")}</p><Tabs value={tono} onValueChange={(v) => set_tono(v as Tono)}><TabsList className="grid w-full grid-cols-2"><TabsTrigger value="soci">{t("relazione.tono_soci")}</TabsTrigger><TabsTrigger value="formale">{t("relazione.tono_formale")}</TabsTrigger></TabsList></Tabs></div>{comp.is_error ? <div className="flex items-center gap-2 text-sm text-destructive"><AlertTriangle className="h-4 w-4" />{t("relazione.errore_composizione")}<Button size="sm" variant="outline" onClick={() => comp.ricarica()}>{t("relazione.riprova")}</Button></div> : comp.is_loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <PannelloModuli club_id={club_id} stagione={stagione!} tono={tono} voci={comp.voci} toggle={comp.toggle} sposta={comp.sposta} moduli_in_caricamento={q_moduli.isPending} />}</div>}
+        </aside>
       </div>
     </div>
   );
