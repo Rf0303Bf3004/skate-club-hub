@@ -60,10 +60,23 @@ Deno.serve(async (req) => {
     const codice = normalizza_codice(raw);
     if (!codice) return json({ error: "codice_non_trovato" }, 404);
 
+    // Riconoscimento via RPC: copre entrambi i codici dei genitori separati
+    // (e il tag NFC). La colonna codice_atleta contiene solo il primo codice,
+    // quindi cercarla a mano escludeva il secondo genitore.
+    const { data: identita, error: id_err } = await admin
+      .rpc("riconosci_identita", { p_valore: codice });
+    if (id_err) {
+      console.error("[upload-foto-atleta] id_err", id_err);
+      return json({ error: "db_error" }, 500);
+    }
+    const riga = (identita ?? []).find((r: { tipo?: string }) => r.tipo === "atleta");
+
+    if (!riga) return json({ error: "codice_non_trovato" }, 404);
+
     const { data: atleta, error: atl_err } = await admin
       .from("atleti")
       .select("id, nome, cognome, club_id, attivo, foto_url, foto_path")
-      .eq("codice_atleta", codice)
+      .eq("id", (riga as { id: string }).id)
       .maybeSingle();
     if (atl_err) {
       console.error("[upload-foto-atleta] atl_err", atl_err);
