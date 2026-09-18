@@ -287,13 +287,87 @@ Deno.serve(async (req) => {
       return json({ error: "db_error" }, 500);
     }
 
+    // Rinnovo di stagione: archivio del contratto, conferma e corsi scelti.
+    const corsi_falliti: { nome: string; motivo: string }[] = [];
+    let rinnovo_confermato = false;
+
+    if (rinnovo_attivo && stagione?.id) {
+      const testo = clean(payload.contratto_testo, 60000);
+      if (testo) {
+        const { error: ctr_err } = await admin.from("contratti_accettati").insert({
+          club_id: atleta.club_id,
+          atleta_id: atleta.id,
+          stagione_id: stagione.id,
+          testo,
+          accettato_il: new Date().toISOString(),
+          accettato_da: [clean(payload.genitore1_nome, 80), clean(payload.genitore1_cognome, 80)]
+            .filter(Boolean)
+            .join(" "),
+          origine: "rinnovo",
+        });
+        if (ctr_err) {
+          console.error("[iscrizione-atleta] ctr_err", ctr_err);
+          return json({ error: "db_error" }, 500);
+        }
+      }
+
+      const { error: conf_err } = await admin.rpc("conferma_rinnovo", {
+        p_atleta: atleta.id,
+        p_stagione: stagione.id,
+        p_da: "famiglia",
+      });
+      if (conf_err) {
+        console.error("[iscrizione-atleta] conf_err", conf_err);
+        return json({ error: "db_error" }, 500);
+      }
+      rinnovo_confermato = true;
+
+      const scelti = Array.isArray(payload.corsi_scelti) ? payload.corsi_scelti : [];
+      for (const raw_id of scelti) {
+        const corso_id = clean(raw_id, 40);
+        if (!corso_id) continue;
+        const { data: corso } = await admin
+          .from("corsi")
+          .select("id, nome, richiede_approvazione")
+          .eq("id", corso_id)
+          .eq("club_id", atleta.club_id)
+          .eq("stagione_id", stagione.id)
+          .eq("attivo", true)
+          .maybeSingle();
+        if (!corso) {
+          corsi_falliti.push({ nome: corso_id, motivo: "corso_non_disponibile" });
+          continue;
+        }
+        const errore_ins = corso.richiede_approvazione
+          ? (
+              await admin.from("richieste_iscrizione").insert({
+                club_id: atleta.club_id,
+                atleta_id: atleta.id,
+                corso_id: corso.id,
+                stato: "in_attesa",
+              })
+            ).error
+          : (
+              await admin.from("iscrizioni_corsi").insert({
+                corso_id: corso.id,
+                atleta_id: atleta.id,
+                attiva: true,
+              })
+            ).error;
+        if (errore_ins) {
+          console.error("[iscrizione-atleta] corso_ins_err", corso.id, errore_ins);
+          corsi_falliti.push({ nome: corso.nome, motivo: errore_ins.message });
+        }
+      }
+    }
+
     let foto_firmata: string | null = null;
     if (foto_path_finale) {
       const { data: sig } = await admin.storage.from("foto-atleti").createSignedUrl(foto_path_finale, 3600);
       foto_firmata = sig?.signedUrl ?? null;
     }
 
-    return json({ ok: true, foto_url: foto_firmata });
+    return json({ ok: true, foto_url: foto_firmata, rinnovo_confermato, corsi_falliti });
   } catch (e) {
     console.error("[iscrizione-atleta] fatal", e);
     return json({ error: "server_error" }, 500);
