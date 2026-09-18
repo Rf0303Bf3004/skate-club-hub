@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Copy, Check, QrCode, Mail, X, Link2 } from "lucide-react";
+import { Copy, Check, QrCode, Mail, X, Link2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,6 +17,7 @@ import {
   use_approva_domanda,
   use_rifiuta_domanda,
   use_invia_email_iscrizioni,
+  use_rigenera_token_iscrizioni,
   type Domanda,
 } from "@/hooks/use-iscrizioni-stagione";
 import { CATEGORIE, LIVELLI_AMATORI, LIVELLI_CARRIERA, get_categoria_label } from "@/lib/atleta-livello";
@@ -35,17 +36,61 @@ const eta_da = (data_nascita: string | null): number | null => {
 };
 
 /** Il link pubblico del club, con copia e QR. */
-const LinkPubblico: React.FC<{ token: string | null }> = ({ token }) => {
+const LinkPubblico: React.FC<{ token: string | null; puo_gestire: boolean }> = ({ token, puo_gestire }) => {
   const { t } = useTranslation("atleti");
   const k = (s: string, o?: any) => t(`iscrizioni_stagione.${s}`, o as any) as string;
   const [copiato, set_copiato] = useState(false);
+  const [dialog_rigenera, set_dialog_rigenera] = useState(false);
+  const rigenera = use_rigenera_token_iscrizioni();
   const url = token ? `https://app.icearena.ch/iscriviti/${token}` : "";
   const qr = use_qr_data_url(url, 200);
 
+  const bottone_rigenera = puo_gestire ? (
+    <Button size="sm" variant="outline" className="gap-1.5 mt-1" onClick={() => set_dialog_rigenera(true)}>
+      <RefreshCw className="w-4 h-4" />
+      {k("domande.rigenera_link")}
+    </Button>
+  ) : null;
+
+  const dialogo = (
+    <Dialog open={dialog_rigenera} onOpenChange={(o) => !rigenera.isPending && set_dialog_rigenera(o)}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{k("domande.rigenera_titolo")}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 text-sm">
+          <p className="text-muted-foreground">{k("domande.rigenera_testo")}</p>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => set_dialog_rigenera(false)} disabled={rigenera.isPending}>
+              {k("comune.annulla")}
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={rigenera.isPending}
+              onClick={async () => {
+                try {
+                  await rigenera.mutateAsync();
+                  toast({ title: k("domande.rigenera_ok") });
+                  set_dialog_rigenera(false);
+                } catch (e) {
+                  segnala_errore("TabDomandeNuove", k("domande.rigenera_link"), e);
+                }
+              }}
+            >
+              {k("comune.conferma")}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (!token) {
     return (
-      <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
-        {k("domande.link_mancante")}
+      <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground space-y-2">
+        <p>{k("domande.link_mancante")}</p>
+        {bottone_rigenera}
+        {dialogo}
       </div>
     );
   }
@@ -74,12 +119,14 @@ const LinkPubblico: React.FC<{ token: string | null }> = ({ token }) => {
           {copiato ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
           {copiato ? k("domande.copiato") : k("domande.copia")}
         </Button>
+        {bottone_rigenera && <span className="ml-2 inline-block">{bottone_rigenera}</span>}
       </div>
       {qr ? (
         <img src={qr} alt={k("domande.qr_alt")} className="w-28 h-28 rounded-xl border bg-white" />
       ) : (
         <div className="w-28 h-28 rounded-xl border bg-muted animate-pulse" />
       )}
+      {dialogo}
     </div>
   );
 };
@@ -95,6 +142,7 @@ const SchedaDomanda: React.FC<{ d: Domanda; puo_gestire: boolean }> = ({ d, puo_
   const [livello, set_livello] = useState("");
   const [categoria, set_categoria] = useState("");
   const [errore_livello, set_errore_livello] = useState<string | null>(null);
+  const [errore_categoria, set_errore_categoria] = useState<string | null>(null);
   const [nota, set_nota] = useState("");
   const [dialog_rifiuto, set_dialog_rifiuto] = useState(false);
   const [esito, set_esito] = useState<{ atleta_id: string; codice_atleta: string } | null>(null);
@@ -106,15 +154,23 @@ const SchedaDomanda: React.FC<{ d: Domanda; puo_gestire: boolean }> = ({ d, puo_
 
   const on_approva = async () => {
     set_errore_livello(null);
+    set_errore_categoria(null);
     if (!livello) {
       set_errore_livello(k("domande.livello_obbligatorio"));
+      if (!categoria) set_errore_categoria(k("domande.categoria_obbligatoria"));
+      return;
+    }
+    // Senza categoria il database ripiegherebbe su "amatori": un'anagrafica
+    // storta dal primo giorno. Si chiede sempre.
+    if (!categoria) {
+      set_errore_categoria(k("domande.categoria_obbligatoria"));
       return;
     }
     try {
       const r = await approva.mutateAsync({
         domanda_id: d.id,
         livello,
-        categoria: categoria || null,
+        categoria,
         note: nota.trim() || null,
       });
       set_esito(r);
@@ -123,6 +179,7 @@ const SchedaDomanda: React.FC<{ d: Domanda; puo_gestire: boolean }> = ({ d, puo_
       // normali sotto la tendina, non come errore tecnico.
       const msg = messaggio_leggibile(e).toLowerCase();
       if (msg.includes("livello")) set_errore_livello(k("domande.livello_obbligatorio"));
+      else if (msg.includes("categoria")) set_errore_categoria(k("domande.categoria_obbligatoria"));
       else segnala_errore("TabDomandeNuove", k("domande.approva"), e, { domanda_id: d.id });
     }
   };
@@ -270,7 +327,7 @@ const SchedaDomanda: React.FC<{ d: Domanda; puo_gestire: boolean }> = ({ d, puo_
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">{k("domande.categoria")}</label>
-              <Select value={categoria} onValueChange={set_categoria}>
+              <Select value={categoria} onValueChange={(v) => { set_categoria(v); set_errore_categoria(null); }}>
                 <SelectTrigger className="h-10"><SelectValue placeholder={k("domande.scegli")} /></SelectTrigger>
                 <SelectContent>
                   {CATEGORIE.map((c) => (
@@ -278,6 +335,7 @@ const SchedaDomanda: React.FC<{ d: Domanda; puo_gestire: boolean }> = ({ d, puo_
                   ))}
                 </SelectContent>
               </Select>
+              {errore_categoria && <p className="text-xs text-destructive">{errore_categoria}</p>}
             </div>
           </div>
 
@@ -343,7 +401,7 @@ const TabDomandeNuove: React.FC<{ puo_gestire: boolean }> = ({ puo_gestire }) =>
           {k("domande.errore_club")}
         </div>
       ) : (
-        <LinkPubblico token={(club as any)?.iscrizioni_token ?? null} />
+        <LinkPubblico token={(club as any)?.iscrizioni_token ?? null} puo_gestire={puo_gestire} />
       )}
 
       {domande.isLoading && (
