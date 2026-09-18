@@ -85,6 +85,9 @@ const IscrivitiPage: React.FC = () => {
         set_stagione((data as any).stagione ?? null);
         set_contesto((data as any).contesto ?? {});
         set_livelli(((data as any).livelli ?? []) as string[]);
+        const ctr = (data as any).contratto;
+        set_articoli(((ctr?.articoli ?? []) as ArticoloContratto[]));
+        set_contratto_impronta(ctr?.impronta ?? null);
       }
       set_is_loading(false);
     };
@@ -92,18 +95,13 @@ const IscrivitiPage: React.FC = () => {
     return () => { vivo = false; };
   }, [token]);
 
-  const articoli = useMemo(() => build_contratto(contesto), [contesto]);
-  const contratto_testo = useMemo(
-    () => articoli.map((a) => `Art. ${a.numero} — ${a.titolo}\n${a.testo}`).join("\n\n"),
-    [articoli],
-  );
-
   const on_submit = async () => {
     if (!form.nome.trim() || !form.cognome.trim()) { set_errore(messaggi_errore.atleta_incompleto); return; }
     if (!form.data_nascita) { set_errore(messaggi_errore.data_non_valida); return; }
     if (!form.genitore1_nome.trim() || !form.genitore1_cognome.trim()) { set_errore(messaggi_errore.genitore_incompleto); return; }
     if (!form.genitore1_email.trim()) { set_errore(messaggi_errore.email_non_valida); return; }
     if (!contratto_ok) { set_errore(messaggi_errore.contratto_non_accettato); return; }
+    if (!contratto_impronta) { set_errore(messaggi_errore.contratto_cambiato); return; }
 
     set_inviando(true);
     set_errore(null);
@@ -111,9 +109,10 @@ const IscrivitiPage: React.FC = () => {
       body: {
         token: token ?? "",
         azione: "invia",
-        dati: { ...form, contratto_accettato: true, contratto_testo },
+        dati: { ...form, contratto_accettato: true, contratto_impronta },
       },
     });
+
     const codice_errore = (data as any)?.error;
     if (error || codice_errore) {
       set_errore(messaggi_errore[codice_errore] ?? "Invio non riuscito, riprova.");
