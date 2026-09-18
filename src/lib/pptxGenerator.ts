@@ -310,6 +310,7 @@ function aggiungiGrafico(mazzo: Mazzo, grafico: GraficoSpec) {
     showLegend: ha_seconda,
     legendPos: "b" as const,
     legendColor: INCHIOSTRO,
+    legendFontSize: CORPO_PT,
     // Regola dei 18 punti anche sui grafici: se le etichette si accavallano si
     // riduce il numero di etichette, mai il corpo del carattere.
     showValue: dati.length <= 8,
@@ -394,7 +395,7 @@ function aggiungiResoconto(mazzo: Mazzo, grafico: Extract<GraficoSpec, { tipo: "
       aggiungiTabella(mazzo, `${gara.titolo} — ${ts("le_nostre")}`, colonne, nostre, {
         allinea_destra: destra_unione, prima_stretta: true,
         colonna_nome: i_nome >= 0 ? i_nome : undefined,
-        nota: ts("legenda_classifica"),
+        // Niente legenda del ▲: qui sono tutte atlete del club.
       });
     }
 
