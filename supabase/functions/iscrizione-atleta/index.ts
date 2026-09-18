@@ -4,6 +4,8 @@
 // consensi, accettazione contratto e foto profilo. Scrittura con service role.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { contratto_completo } from "../_shared/contratto.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -64,6 +66,25 @@ const clean = (v: unknown, max = 255) => {
   if (!s) return null;
   return s.slice(0, max);
 };
+
+/**
+ * Motivo comprensibile per un'iscrizione a un corso non riuscita.
+ * Il messaggio tecnico resta nei log: alla famiglia va un codice che la
+ * pagina traduce in una frase normale.
+ */
+function motivo_corso(err: { code?: string; message?: string } | null): string {
+  const codice = String(err?.code ?? "");
+  const testo = String(err?.message ?? "").toLowerCase();
+  if (codice === "23505" || testo.includes("duplicate key") || testo.includes("già iscritt")) {
+    return "gia_iscritta";
+  }
+  if (codice === "23502" || testo.includes("null value") || testo.includes("anagrafic")) {
+    return "anagrafica_incompleta";
+  }
+  if (testo.includes("livello") || testo.includes("conforme")) return "livello_non_sufficiente";
+  return "errore_generico";
+}
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -144,7 +165,13 @@ Deno.serve(async (req) => {
       clausole_contratto: setup?.clausole_contratto ?? null,
     };
 
+    // Il contratto lo costruisce sempre il server: quello che arriva dal
+    // browser non fa testo. Alla pagina si manda anche l'impronta, che torna
+    // indietro al salvataggio per verificare che il testo sia lo stesso.
+    const contratto = await contratto_completo(contesto);
+
     const rinnovo_attivo = !!stagione?.iscrizioni_aperte;
+
 
     if (azione === "lookup") {
       let registro: { status: string; confermato_il: string | null } | null = null;
@@ -204,7 +231,9 @@ Deno.serve(async (req) => {
           : null,
         registro,
         corsi_ammessi,
+        contratto: { articoli: contratto.articoli, impronta: contratto.impronta },
       });
+
     }
 
     if (azione === "rinuncia") {
@@ -225,6 +254,14 @@ Deno.serve(async (req) => {
     if (azione !== "salva") return json({ error: "azione_non_valida" }, 400);
 
     if (!payload?.contratto_accettato) return json({ error: "contratto_non_accettato" }, 400);
+
+    // L'impronta ricevuta deve corrispondere al testo appena ricostruito:
+    // se il club ha cambiato le clausole mentre la pagina era aperta non si
+    // archivia un consenso su un testo diverso da quello letto.
+    if (clean(payload.contratto_impronta, 100) !== contratto.impronta) {
+      return json({ error: "contratto_cambiato" }, 409);
+    }
+
 
     const update: Record<string, unknown> = {};
 
@@ -292,23 +329,24 @@ Deno.serve(async (req) => {
     let rinnovo_confermato = false;
 
     if (rinnovo_attivo && stagione?.id) {
-      const testo = clean(payload.contratto_testo, 60000);
-      if (testo) {
-        const { error: ctr_err } = await admin.from("contratti_accettati").insert({
-          club_id: atleta.club_id,
-          atleta_id: atleta.id,
-          stagione_id: stagione.id,
-          testo,
-          accettato_il: new Date().toISOString(),
-          accettato_da: [clean(payload.genitore1_nome, 80), clean(payload.genitore1_cognome, 80)]
-            .filter(Boolean)
-            .join(" "),
-          origine: "rinnovo",
-        });
-        if (ctr_err) {
-          console.error("[iscrizione-atleta] ctr_err", ctr_err);
-          return json({ error: "db_error" }, 500);
-        }
+      // Prima il contratto, poi la conferma: un rinnovo senza contratto
+      // archiviato non deve poter esistere.
+      const { error: ctr_err } = await admin.from("contratti_accettati").insert({
+        club_id: atleta.club_id,
+        atleta_id: atleta.id,
+        stagione_id: stagione.id,
+        testo: contratto.testo,
+        accettato_il: new Date().toISOString(),
+        accettato_da: [clean(payload.genitore1_nome, 80), clean(payload.genitore1_cognome, 80)]
+          .filter(Boolean)
+          .join(" "),
+        origine: "rinnovo",
+      });
+      // 23505: contratto già firmato per questa stagione (ricarico della
+      // pagina o doppio invio). Non è un guasto: l'archivio c'è già.
+      if (ctr_err && (ctr_err as any).code !== "23505") {
+        console.error("[iscrizione-atleta] ctr_err", ctr_err);
+        return json({ error: "contratto_non_archiviato" }, 500);
       }
 
       const { error: conf_err } = await admin.rpc("conferma_rinnovo", {
@@ -321,6 +359,7 @@ Deno.serve(async (req) => {
         return json({ error: "db_error" }, 500);
       }
       rinnovo_confermato = true;
+
 
       const scelti = Array.isArray(payload.corsi_scelti) ? payload.corsi_scelti : [];
       for (const raw_id of scelti) {
@@ -356,8 +395,9 @@ Deno.serve(async (req) => {
             ).error;
         if (errore_ins) {
           console.error("[iscrizione-atleta] corso_ins_err", corso.id, errore_ins);
-          corsi_falliti.push({ nome: corso.nome, motivo: errore_ins.message });
+          corsi_falliti.push({ nome: corso.nome, motivo: motivo_corso(errore_ins) });
         }
+
       }
     }
 

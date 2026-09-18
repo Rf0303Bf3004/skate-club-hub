@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Camera, CheckCircle2, Loader2, AlertCircle, Send } from "lucide-react";
-import { build_contratto, type DatiContratto } from "@/lib/contratto-adesione";
+import { type ArticoloContratto, type DatiContratto } from "@/lib/contratto-adesione";
 import { get_livello_display } from "@/lib/atleta-livello";
 
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -21,11 +21,26 @@ const messaggi_errore: Record<string, string> = {
   file_troppo_grande: "Il file supera i 2MB. Scegli una foto più leggera.",
   upload_fallito: "Caricamento della foto non riuscito, riprova.",
   contratto_non_accettato: "Devi accettare le condizioni del contratto di adesione.",
+  contratto_cambiato:
+    "Le condizioni del contratto sono cambiate mentre la pagina era aperta. Ricarica la pagina, rileggi il testo e conferma di nuovo.",
+  contratto_non_archiviato:
+    "Non è stato possibile registrare il contratto, quindi l'iscrizione non è stata confermata. Riprova fra poco.",
   data_non_valida: "La data di nascita non è valida.",
   dati_non_validi: "Dati non validi, ricontrolla il modulo.",
   db_error: "Errore del server, riprova più tardi.",
   server_error: "Errore del server, riprova più tardi.",
 };
+
+// I motivi arrivano dal server come codici: il messaggio tecnico resta nei log.
+const motivi_corso: Record<string, string> = {
+  gia_iscritta: "risulta già iscritta a questo corso",
+  anagrafica_incompleta: "mancano alcuni dati dell'atleta",
+  livello_non_sufficiente: "il livello richiesto non corrisponde",
+  corso_non_disponibile: "il corso non è più disponibile",
+  errore_generico: "non è stato possibile registrarlo, scrivi al club",
+};
+const testo_motivo = (m: string) => motivi_corso[m] ?? motivi_corso.errore_generico;
+
 
 interface Stagione {
   id: string;
@@ -92,6 +107,13 @@ const IscrizioneAtletaPage: React.FC = () => {
   const [corsi_scelti, set_corsi_scelti] = useState<string[]>([]);
   const [corsi_falliti, set_corsi_falliti] = useState<{ nome: string; motivo: string }[]>([]);
   const [rinuncia_fatta, set_rinuncia_fatta] = useState(false);
+  // Contratto: testo e impronta arrivano dal server, la pagina non ne compone uno suo.
+  const [articoli, set_articoli] = useState<ArticoloContratto[]>([]);
+  const [contratto_impronta, set_contratto_impronta] = useState<string | null>(null);
+  // Stato dell'atleta nella stagione: serve a non ripresentare la scelta a chi ha già risposto.
+  const [registro, set_registro] = useState<{ status?: string; confermato_il?: string | null } | null>(null);
+  const [riapri, set_riapri] = useState(false);
+
 
   const set_val = (k: string, v: any) => set_form((p) => ({ ...p, [k]: v }));
 
@@ -128,6 +150,11 @@ const IscrizioneAtletaPage: React.FC = () => {
         });
         set_stagione(((data as any).stagione ?? null) as Stagione | null);
         set_corsi_ammessi((((data as any).corsi_ammessi ?? []) as Corso[]));
+        const ctr = (data as any).contratto;
+        set_articoli(((ctr?.articoli ?? []) as ArticoloContratto[]));
+        set_contratto_impronta(ctr?.impronta ?? null);
+        set_registro(((data as any).registro ?? null));
+
       }
       set_is_loading(false);
     };
@@ -142,7 +169,6 @@ const IscrizioneAtletaPage: React.FC = () => {
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  const articoli = useMemo(() => build_contratto(contesto), [contesto]);
 
   const on_select_file = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -160,10 +186,6 @@ const IscrizioneAtletaPage: React.FC = () => {
 
   const rinnovo_aperto = !!stagione?.iscrizioni_aperte;
 
-  const contratto_testo = useMemo(
-    () => articoli.map((a) => `Art. ${a.numero} — ${a.titolo}\n${a.testo}`).join("\n\n"),
-    [articoli],
-  );
 
   const on_rinuncia = async () => {
     set_salvando(true);
@@ -182,6 +204,7 @@ const IscrizioneAtletaPage: React.FC = () => {
 
   const on_submit = async () => {
     if (!contratto_ok) { set_errore(messaggi_errore.contratto_non_accettato); return; }
+    if (!contratto_impronta) { set_errore(messaggi_errore.contratto_cambiato); return; }
     if (!nome_bloccato && !form.nome?.trim()) { set_errore("Inserisci il nome dell'atleta."); return; }
     if (!cognome_bloccato && !form.cognome?.trim()) { set_errore("Inserisci il cognome dell'atleta."); return; }
     if (!form.genitore1_nome?.trim() || !form.genitore1_cognome?.trim()) { set_errore("Inserisci nome e cognome del genitore/tutore."); return; }
@@ -192,9 +215,10 @@ const IscrizioneAtletaPage: React.FC = () => {
     const dati = {
       ...form,
       contratto_accettato: true,
-      contratto_testo,
+      contratto_impronta,
       corsi_scelti: rinnovo_aperto ? corsi_scelti : [],
     };
+
     const body = new FormData();
     body.append("codice_atleta", codice_atleta ?? "");
     body.append("azione", "salva");
@@ -265,7 +289,7 @@ const IscrizioneAtletaPage: React.FC = () => {
                 Il rinnovo è registrato, ma questi corsi non sono stati accettati:
               </p>
               {corsi_falliti.map((c, i) => (
-                <p key={i} className="text-xs text-amber-900">• {c.nome}: {c.motivo}</p>
+                <p key={i} className="text-xs text-amber-900">• {c.nome}: {testo_motivo(c.motivo)}</p>
               ))}
               <p className="text-xs text-amber-900">Il club ti ricontatterà per sistemarli.</p>
             </div>
@@ -275,11 +299,19 @@ const IscrizioneAtletaPage: React.FC = () => {
     );
   }
 
+  // Chi ha già risposto non rivede la scelta come se non fosse successo niente.
+  const gia_attivo = registro?.status === "attivo";
+  const gia_non_rinnovato = registro?.status === "non_rinnovato";
+  const data_conferma = registro?.confermato_il
+    ? new Date(registro.confermato_il).toLocaleDateString("it-CH")
+    : null;
+
   // Rinnovo di stagione: prima la scelta, poi (se conferma) il resto della pagina.
   if (rinnovo_aperto && scelta !== "confermo") {
     const scadenza = stagione?.iscrizioni_scadenza
       ? new Date(stagione.iscrizioni_scadenza + "T00:00:00").toLocaleDateString("it-CH")
       : null;
+    const risposta_data = (gia_attivo || gia_non_rinnovato) && !riapri;
     return (
       <div className="min-h-screen bg-muted/30 p-4 flex justify-center">
         <div className="w-full max-w-xl space-y-4 pb-10">
@@ -291,7 +323,25 @@ const IscrizioneAtletaPage: React.FC = () => {
             </p>
           </header>
 
-          {scelta === null && (
+          {risposta_data && (
+            <section className="bg-card border rounded-2xl p-5 space-y-4 text-center">
+              <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
+              <p className="text-sm font-medium">
+                {gia_attivo
+                  ? `Hai già confermato l'iscrizione${data_conferma ? ` il ${data_conferma}` : ""}.`
+                  : "Hai comunicato che quest'anno non continua."}
+              </p>
+              <Button
+                variant="outline"
+                className="h-11"
+                onClick={() => { set_riapri(true); if (gia_attivo) set_scelta("confermo"); }}
+              >
+                {gia_attivo ? "Modifica i dati" : "Ho cambiato idea"}
+              </Button>
+            </section>
+          )}
+
+          {!risposta_data && scelta === null && (
             <div className="grid grid-cols-1 gap-3">
               <Button className="w-full h-16 text-base" onClick={() => set_scelta("confermo")}>
                 Confermo l'iscrizione
@@ -301,6 +351,7 @@ const IscrizioneAtletaPage: React.FC = () => {
               </Button>
             </div>
           )}
+
 
           {scelta === "rinuncia" && (
             <section className="bg-card border rounded-2xl p-5 space-y-4">

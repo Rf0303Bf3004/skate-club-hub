@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertCircle, CheckCircle2, Loader2, Send } from "lucide-react";
-import { build_contratto, type DatiContratto } from "@/lib/contratto-adesione";
+import { type ArticoloContratto, type DatiContratto } from "@/lib/contratto-adesione";
 
 const CANTONI_CH = [
   "AG","AI","AR","BE","BL","BS","FR","GE","GL","GR","JU","LU","NE","NW","OW","SG","SH","SO","SZ","TG","TI","UR","VD","VS","ZG","ZH",
@@ -22,7 +22,11 @@ const messaggi_errore: Record<string, string> = {
   genitore_incompleto: "Inserisci nome e cognome del genitore o tutore.",
   email_non_valida: "Inserisci un indirizzo email valido.",
   contratto_non_accettato: "Devi accettare le condizioni del contratto di adesione.",
+  contratto_cambiato:
+    "Le condizioni del contratto sono cambiate mentre la pagina era aperta. Ricarica la pagina, rileggi il testo e invia di nuovo.",
+  domanda_gia_inviata: "Abbiamo già ricevuto questa richiesta: è in attesa della segreteria.",
   troppe_richieste: "Troppe richieste inviate di recente. Riprova più tardi.",
+
   db_error: "Errore del server, riprova più tardi.",
   server_error: "Errore del server, riprova più tardi.",
 };
@@ -58,6 +62,10 @@ const IscrivitiPage: React.FC = () => {
     consenso_foto_video: false, partecipa_gare: false, intende_test_livello: false,
   });
   const [contratto_ok, set_contratto_ok] = useState(false);
+  // Il contratto arriva dal server: la pagina lo mostra e rimanda solo l'impronta.
+  const [articoli, set_articoli] = useState<ArticoloContratto[]>([]);
+  const [contratto_impronta, set_contratto_impronta] = useState<string | null>(null);
+
 
   const set_val = (k: string, v: any) => set_form((p) => ({ ...p, [k]: v }));
 
@@ -77,6 +85,9 @@ const IscrivitiPage: React.FC = () => {
         set_stagione((data as any).stagione ?? null);
         set_contesto((data as any).contesto ?? {});
         set_livelli(((data as any).livelli ?? []) as string[]);
+        const ctr = (data as any).contratto;
+        set_articoli(((ctr?.articoli ?? []) as ArticoloContratto[]));
+        set_contratto_impronta(ctr?.impronta ?? null);
       }
       set_is_loading(false);
     };
@@ -84,18 +95,13 @@ const IscrivitiPage: React.FC = () => {
     return () => { vivo = false; };
   }, [token]);
 
-  const articoli = useMemo(() => build_contratto(contesto), [contesto]);
-  const contratto_testo = useMemo(
-    () => articoli.map((a) => `Art. ${a.numero} — ${a.titolo}\n${a.testo}`).join("\n\n"),
-    [articoli],
-  );
-
   const on_submit = async () => {
     if (!form.nome.trim() || !form.cognome.trim()) { set_errore(messaggi_errore.atleta_incompleto); return; }
     if (!form.data_nascita) { set_errore(messaggi_errore.data_non_valida); return; }
     if (!form.genitore1_nome.trim() || !form.genitore1_cognome.trim()) { set_errore(messaggi_errore.genitore_incompleto); return; }
     if (!form.genitore1_email.trim()) { set_errore(messaggi_errore.email_non_valida); return; }
     if (!contratto_ok) { set_errore(messaggi_errore.contratto_non_accettato); return; }
+    if (!contratto_impronta) { set_errore(messaggi_errore.contratto_cambiato); return; }
 
     set_inviando(true);
     set_errore(null);
@@ -103,9 +109,10 @@ const IscrivitiPage: React.FC = () => {
       body: {
         token: token ?? "",
         azione: "invia",
-        dati: { ...form, contratto_accettato: true, contratto_testo },
+        dati: { ...form, contratto_accettato: true, contratto_impronta },
       },
     });
+
     const codice_errore = (data as any)?.error;
     if (error || codice_errore) {
       set_errore(messaggi_errore[codice_errore] ?? "Invio non riuscito, riprova.");
