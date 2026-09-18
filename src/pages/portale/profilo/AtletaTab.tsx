@@ -115,7 +115,7 @@ const AtletaTab: React.FC = () => {
     (async () => {
       const id = ctx?.session?.atleta?.id;
       if (!id) { set_loading(false); return; }
-      const { data } = await supabase.from("atleti").select("*").eq("id", id).maybeSingle();
+      const { data } = await supabase.from("atleti_famiglia").select("*").eq("id", id).maybeSingle();
       set_atleta(data);
       applica_form(data);
       set_loading(false);

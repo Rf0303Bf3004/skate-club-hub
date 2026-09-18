@@ -12,11 +12,14 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import CodiceAtletaInput from "@/components/portale/CodiceAtletaInput";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 import {
   portale_logout, portale_restore_session, portale_get_profili_collegati,
   portale_switch_profilo, portale_remove_profilo, portale_login,
   type PortaleSession,
 } from "@/lib/portale-auth";
+
 
 const PortaleLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -29,6 +32,32 @@ const PortaleLayout: React.FC = () => {
   const [codice, set_codice] = useState("");
   const [busy, set_busy] = useState(false);
   const [da_rimuovere, set_da_rimuovere] = useState<PortaleSession | null>(null);
+
+  // Con quale accesso si è entrati: si mostra solo se i genitori sono separati.
+  const famiglia = useQuery({
+    queryKey: ["portale_famiglia_accesso", session?.atleta.id],
+    enabled: !!session?.atleta.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("atleti_famiglia")
+        .select("genitori_separati, genitore1_nome, genitore1_cognome, genitore2_nome, genitore2_cognome")
+        .eq("id", session!.atleta.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const nome_accesso = (() => {
+    const f = famiglia.data;
+    if (!f?.genitori_separati) return null;
+    const g2 = session?.genitore === "genitore2";
+    const nome = g2
+      ? `${f.genitore2_nome ?? ""} ${f.genitore2_cognome ?? ""}`.trim()
+      : `${f.genitore1_nome ?? ""} ${f.genitore1_cognome ?? ""}`.trim();
+    return nome || t(g2 ? "accesso.genitore2" : "accesso.genitore1");
+  })();
+
 
   const refresh_profili = useCallback(() => {
     set_profili(portale_get_profili_collegati());
@@ -128,6 +157,15 @@ const PortaleLayout: React.FC = () => {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold truncate">{session.atleta.nome} {session.atleta.cognome}</p>
             <p className="text-xs text-slate-500 truncate">{session.club?.nome ?? ""}</p>
+            {nome_accesso && (
+              <p className="text-[11px] text-slate-400 truncate" title={t("accesso.riga", { nome: nome_accesso })}>
+                {t("accesso.riga", { nome: nome_accesso })}
+              </p>
+            )}
+            {famiglia.isError && (
+              <p className="text-[11px] text-amber-600 truncate">{t("accesso.errore")}</p>
+            )}
+
           </div>
           <button className="lg:hidden" onClick={() => set_open(false)} aria-label="Chiudi menu"><X className="w-5 h-5" /></button>
         </div>

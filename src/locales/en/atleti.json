@@ -87,7 +87,22 @@
     "print_popup_blocked": "Could not open the print window: allow pop-ups for this site."
   },
   "codice_card": {
-    "popup_blocked": "Could not open the print window: allow pop-ups for this site."
+    "popup_blocked": "Could not open the print window: allow pop-ups for this site.",
+    "parent_1_fallback": "First parent",
+    "parent_2_fallback": "Second parent",
+    "create_second": "Create the code for the second parent",
+    "creating_second": "Creating the code...",
+    "second_missing": "The second parent does not have an access code yet.",
+    "revoke": "Revoke",
+    "revoke_yes": "Yes, revoke",
+    "revoking": "Revoking...",
+    "revoke_confirm_title": "Revoke the second parent's code?",
+    "revoke_confirm_desc": "The second parent will no longer be able to sign in. The first parent is not affected.",
+    "warn_first": "Regenerating this code locks out the first parent. The second one keeps signing in with theirs.",
+    "warn_second": "Regenerating this code locks out the second parent. The first one keeps signing in with theirs.",
+    "toast_second_created": "Second parent's code created",
+    "toast_second_revoked": "Second parent's code revoked",
+    "toast_second_error": "Operation failed"
   },
   "badges": {
     "ospite": "GUEST",

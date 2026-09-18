@@ -134,10 +134,14 @@ Deno.serve(async (req) => {
     let istruttore: any = null;
     let club_id: string = identita.club_id;
 
+    // Quale dei due genitori è entrato (secondo codice = 'genitore2')
+    let gen: "genitore1" | "genitore2" = "genitore1";
+
     if (identita.tipo === "atleta") {
+      gen = identita.genitore === "genitore2" ? "genitore2" : "genitore1";
       const { data: a } = await admin
         .from("atleti")
-        .select("id, nome, cognome, club_id, codice_atleta")
+        .select("id, nome, cognome, club_id, codice_atleta, codice_atleta_2")
         .eq("id", identita.id)
         .maybeSingle();
       if (!a) {
@@ -146,10 +150,13 @@ Deno.serve(async (req) => {
       }
       atleta = a;
       club_id = a.club_id;
-      email = `atleta-${a.id}@portal.local`;
-      seme_password = a.codice_atleta ?? a.id;
-      app_metadata = { atleta_id: a.id, club_id: a.club_id, role: "mobile_parent" };
+      email = gen === "genitore2"
+        ? `atleta-${a.id}-g2@portal.local`
+        : `atleta-${a.id}@portal.local`;
+      seme_password = (gen === "genitore2" ? a.codice_atleta_2 : a.codice_atleta) ?? a.id;
+      app_metadata = { atleta_id: a.id, club_id: a.club_id, role: "mobile_parent", genitore: gen };
       user_metadata = { nome: a.nome, cognome: a.cognome };
+
     } else if (identita.tipo === "istruttore") {
       const { data: i } = await admin
         .from("istruttori")
@@ -247,12 +254,15 @@ Deno.serve(async (req) => {
       token_type: signin.data.session.token_type,
       tipo: identita.tipo,
       mezzo: identita.mezzo,
+      genitore: atleta ? gen : null,
       atleta: atleta
         ? {
             id: atleta.id, nome: atleta.nome, cognome: atleta.cognome,
-            club_id: atleta.club_id, codice_atleta: atleta.codice_atleta,
+            club_id: atleta.club_id,
+            codice_atleta: gen === "genitore2" ? atleta.codice_atleta_2 : atleta.codice_atleta,
           }
         : null,
+
       istruttore: istruttore
         ? {
             id: istruttore.id, nome: istruttore.nome, cognome: istruttore.cognome,

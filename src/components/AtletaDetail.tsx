@@ -1536,7 +1536,9 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
             <CodiceAtletaCard
               atleta={form}
               on_updated={(nuovo) => upd("codice_atleta", nuovo)}
+              on_updated_2={(nuovo) => upd("codice_atleta_2", nuovo)}
             />
+
             {[
               { label: t("genitore_1"), prefix: "genitore1", collapsible: false },
               { label: t("genitore_2"), prefix: "genitore2", collapsible: true },

@@ -41,7 +41,7 @@ const PortaleEventiPage: React.FC = () => {
         supabase.from("gare_calendario").select("id,nome,data,ora,luogo,indirizzo,club_ospitante,carriera,livello_minimo,scadenza_iscrizioni,archiviata,note").eq("club_id", session.atleta.club_id).gte("data", oggi).order("data"),
         supabase.from("training_camps").select("*").eq("club_id", session.atleta.club_id).gte("data_inizio", oggi).order("data_inizio"),
         supabase.from("eventi_straordinari").select("*").eq("club_id", session.atleta.club_id).gte("data", oggi).order("data"),
-        supabase.from("atleti").select("carriera_artistica,carriera_stile,livello_attuale").eq("id", session.atleta.id).maybeSingle(),
+        supabase.from("atleti_famiglia").select("carriera_artistica,carriera_stile,livello_attuale").eq("id", session.atleta.id).maybeSingle(),
       ]);
       set_gare(g.data ?? []);
       set_campi(c.data ?? []);
