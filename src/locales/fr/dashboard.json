@@ -276,6 +276,9 @@
     "attendi_dati": "Attendez le chargement des donnees avant de telecharger.",
     "scarica_relazione": "Telecharger le rapport",
     "scarica_errore": "Echec de la creation du PDF",
+    "club_fallback": "Club",
+    "pannello": { "titolo": "Contenu à inclure", "scegli_moduli": "Choisir module par module", "tono": "Ton" },
+    "documento": { "messaggio_titolo": "Le message du président" },
     "passo1": "Saison et ton",
     "passo2": "Le message du president",
     "passo3": "Les modules",
@@ -294,6 +297,7 @@
       "salvato": "Message enregistre",
       "salvataggio": "Enregistrement du message",
       "errore_lettura": "Impossible de lire le message.",
+      "salvataggio_automatico": "Enregistrement automatique",
       "parole_one": "{{count}} mot",
       "parole_other": "{{count}} mots"
     },
@@ -329,7 +333,11 @@
       "toast_errore": "Echec de la creation de l'apercu"
     },
     "allegati_tab": {
-      "header_testo": "Chargez ici les documents PDF à joindre à la fin du rapport : comptes annuels, documents fédéraux, contrats de sponsors, certifications, procès-verbaux d'assemblée."
+      "header_testo": "Chargez ici les documents PDF à joindre à la fin du rapport : comptes annuels, documents fédéraux, contrats de sponsors, certifications, procès-verbaux d'assemblée.",
+      "zona_titolo": "Déposez ici les comptes annuels ou d'autres PDF",
+      "zona_testo": "Ou cliquez pour choisir un fichier PDF",
+      "solo_pdf": "Seuls les fichiers PDF peuvent être joints",
+      "errore_lettura": "Impossible de lire les pièces jointes."
     },
     "allegato_form": {
       "errore_file_mancante": "Choisissez le fichier PDF à joindre"

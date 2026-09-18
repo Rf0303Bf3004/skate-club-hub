@@ -508,7 +508,11 @@
       "empty": "Nessun allegato. Carica il primo documento PDF.",
       "toast_eliminato": "Allegato eliminato",
       "toast_riordino_ko": "Riordino non salvato",
-      "toast_ordine_ok": "Ordine salvato"
+      "toast_ordine_ok": "Ordine salvato",
+      "zona_titolo": "Trascina qui il bilancio o altri PDF",
+      "zona_testo": "Oppure clicca per scegliere un file PDF",
+      "solo_pdf": "Puoi allegare soltanto file PDF",
+      "errore_lettura": "Non è stato possibile leggere gli allegati."
     },
     "blocchi_tab": {
       "header_titolo": "Notizie e messaggi del Presidente",
@@ -669,6 +673,15 @@
     "attendi_dati": "Attendi il caricamento dei dati prima di scaricare.",
     "scarica_relazione": "Scarica la relazione",
     "scarica_errore": "Creazione del PDF non riuscita",
+    "club_fallback": "Club",
+    "pannello": {
+      "titolo": "Cosa includere",
+      "scegli_moduli": "Scegli modulo per modulo",
+      "tono": "Tono"
+    },
+    "documento": {
+      "messaggio_titolo": "Il messaggio del presidente"
+    },
     "passo1": "Stagione e tono",
     "passo2": "Il messaggio del presidente",
     "passo3": "I moduli",
@@ -687,6 +700,7 @@
       "salvato": "Messaggio salvato",
       "salvataggio": "Salvataggio del messaggio",
       "errore_lettura": "Non e' stato possibile leggere il messaggio.",
+      "salvataggio_automatico": "Salvataggio automatico",
       "parole_one": "{{count}} parola",
       "parole_other": "{{count}} parole"
     },

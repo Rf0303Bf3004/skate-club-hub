@@ -276,6 +276,9 @@
     "attendi_dati": "Warten Sie das Laden der Daten ab, bevor Sie herunterladen.",
     "scarica_relazione": "Bericht herunterladen",
     "scarica_errore": "PDF-Erstellung fehlgeschlagen",
+    "club_fallback": "Club",
+    "pannello": { "titolo": "Inhalt auswählen", "scegli_moduli": "Module einzeln auswählen", "tono": "Ton" },
+    "documento": { "messaggio_titolo": "Botschaft des Präsidenten" },
     "passo1": "Saison und Ton",
     "passo2": "Die Botschaft des Prasidenten",
     "passo3": "Die Module",
@@ -294,6 +297,7 @@
       "salvato": "Botschaft gespeichert",
       "salvataggio": "Speichern der Botschaft",
       "errore_lettura": "Die Botschaft konnte nicht gelesen werden.",
+      "salvataggio_automatico": "Automatisch gespeichert",
       "parole_one": "{{count}} Wort",
       "parole_other": "{{count}} Worter"
     },
@@ -329,7 +333,11 @@
       "toast_errore": "Erstellung der Vorschau fehlgeschlagen"
     },
     "allegati_tab": {
-      "header_testo": "Laden Sie hier die PDF-Dokumente hoch, die am Ende des Berichts angehängt werden: Jahresrechnung, Verbandsdokumente, Sponsorenverträge, Zertifikate, Versammlungsprotokolle."
+      "header_testo": "Laden Sie hier die PDF-Dokumente hoch, die am Ende des Berichts angehängt werden: Jahresrechnung, Verbandsdokumente, Sponsorenverträge, Zertifikate, Versammlungsprotokolle.",
+      "zona_titolo": "Jahresrechnung oder andere PDFs hier ablegen",
+      "zona_testo": "Oder klicken, um eine PDF-Datei auszuwählen",
+      "solo_pdf": "Es können nur PDF-Dateien angehängt werden",
+      "errore_lettura": "Die Anhänge konnten nicht gelesen werden."
     },
     "allegato_form": {
       "errore_file_mancante": "Wählen Sie die anzuhängende PDF-Datei"

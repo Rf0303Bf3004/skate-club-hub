@@ -276,6 +276,9 @@
     "attendi_dati": "Wait for the data to load before downloading.",
     "scarica_relazione": "Download the report",
     "scarica_errore": "PDF creation failed",
+    "club_fallback": "Club",
+    "pannello": { "titolo": "What to include", "scegli_moduli": "Choose module by module", "tono": "Tone" },
+    "documento": { "messaggio_titolo": "The president's message" },
     "passo1": "Season and tone",
     "passo2": "The president's message",
     "passo3": "Modules",
@@ -294,6 +297,7 @@
       "salvato": "Message saved",
       "salvataggio": "Saving the message",
       "errore_lettura": "The message could not be read.",
+      "salvataggio_automatico": "Saved automatically",
       "parole_one": "{{count}} word",
       "parole_other": "{{count}} words"
     },
@@ -329,7 +333,11 @@
       "toast_errore": "Preview creation failed"
     },
     "allegati_tab": {
-      "header_testo": "Upload here the PDF documents to be appended to the report: financial statements, federal documents, sponsor contracts, certifications, assembly minutes."
+      "header_testo": "Upload here the PDF documents to be appended to the report: financial statements, federal documents, sponsor contracts, certifications, assembly minutes.",
+      "zona_titolo": "Drop the financial statements or other PDFs here",
+      "zona_testo": "Or click to choose a PDF file",
+      "solo_pdf": "Only PDF files can be attached",
+      "errore_lettura": "The attachments could not be read."
     },
     "allegato_form": {
       "errore_file_mancante": "Choose the PDF file to attach"
