@@ -55,11 +55,11 @@ export default function PresidentRelazione() {
   });
 
   const q_moduli = useQuery({
-    queryKey: ["relazione_moduli", club_id, stagione?.id, i18n.language],
+    queryKey: ["relazione_moduli", club_id, stagione?.id, i18n.language, tono],
     enabled: !!club_id && !!stagione?.id && stagioni.length > 0,
     queryFn: () => {
       if (!club_id || !stagione) throw new Error(t("relazione.attendi_dati"));
-      return fetchModuli({ club_id, stagione, stagioni });
+      return fetchModuli({ club_id, stagione, stagioni, tono });
     },
   });
 
