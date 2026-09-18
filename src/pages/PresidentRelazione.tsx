@@ -12,7 +12,7 @@ import { saveAs } from "file-saver";
 import { toast } from "sonner";
 import { segnala_errore } from "@/lib/errori";
 import { useTranslation } from "react-i18next";
-import { usePersistedState } from "@/hooks/use-persisted-state";
+import { use_persisted_state } from "@/hooks/use-persisted-state";
 import SavingIndicator from "@/components/relazione/SavingIndicator";
 import MessaggioPresidente, { useMessaggioPresidente } from "@/components/relazione/MessaggioPresidente";
 import PannelloModuli from "@/components/relazione/PannelloModuli";
@@ -41,7 +41,7 @@ export default function PresidentRelazione() {
   const { session } = useAuth();
   const club_id = session?.club_id ?? undefined;
   const [fullscreen, set_fullscreen] = useState(false);
-  const [tono, set_tono] = usePersistedState<Tono>("relazione_tono", "soci");
+  const [tono, set_tono] = use_persisted_state<Tono>("relazione_tono", "soci");
   const [stagione_id, set_stagione_id] = useState<string | undefined>(undefined);
   const [scaricando, set_scaricando] = useState(false);
 
