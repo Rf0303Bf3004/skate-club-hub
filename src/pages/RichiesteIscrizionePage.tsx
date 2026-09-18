@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TabRinnovi from "@/components/iscrizioni/TabRinnovi";
 import TabDomandeNuove from "@/components/iscrizioni/TabDomandeNuove";
 import TabRichiesteCorsi from "@/components/iscrizioni/TabRichiesteCorsi";
+import { use_richieste_iscrizione } from "@/hooks/use-supabase-data";
+import { use_domande_iscrizione } from "@/hooks/use-iscrizioni-stagione";
 
 /**
  * Una pagina sola per tutto quello che la segreteria deve decidere:
