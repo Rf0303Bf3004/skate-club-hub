@@ -9025,6 +9025,10 @@ export type Database = {
           esito: string
         }[]
       }
+      email_comunicazioni_atleta: {
+        Args: { p_atleta: string }
+        Returns: string[]
+      }
       emittente_documento: {
         Args: { p_club: string; p_ragione_sociale?: string }
         Returns: {
