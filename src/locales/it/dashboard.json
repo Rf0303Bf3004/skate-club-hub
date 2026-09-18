@@ -767,6 +767,7 @@
       "vuoto_gare": "Non ci sono gare in calendario per questa stagione.",
       "vuoto_classifiche": "Nessuna classifica di gara è stata importata per questa stagione.",
       "vuoto_agoniste": "Non ci sono agoniste registrate per questa stagione.",
+      "agoniste_storico": "Il dato sulle agoniste non è conservato nello storico di stagione.",
       "classifica_mancante": "Classifica non ancora importata",
       "senza_categoria": "Categoria non indicata",
       "col_pos": "Pos.",

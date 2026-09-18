@@ -392,6 +392,7 @@
       "vuoto_gare": "Für diese Saison sind keine Wettkämpfe im Kalender.",
       "vuoto_classifiche": "Für diese Saison wurde keine Wettkampfrangliste importiert.",
       "vuoto_agoniste": "Für diese Saison sind keine Wettkampfathletinnen erfasst.",
+      "agoniste_storico": "Die Angabe zu den Wettkampfathletinnen wird nicht im Saisonarchiv gespeichert.",
       "classifica_mancante": "Rangliste noch nicht importiert",
       "senza_categoria": "Kategorie nicht angegeben",
       "col_pos": "Pos.",
