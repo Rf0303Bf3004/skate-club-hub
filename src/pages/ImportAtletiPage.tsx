@@ -1,20 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import {
   Upload, FileSpreadsheet, Download, ArrowRight, ArrowLeft,
-  CheckCircle2, AlertCircle, Loader2, Home,
+  CheckCircle2, AlertCircle, Loader2, Home, UserPlus,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 import { segnala_errore } from "@/lib/errori";
+import { CATEGORIE, get_categoria_label, type Categoria } from "@/lib/atleta-livello";
 
 const ti = (key: string, opts?: any) => i18n.t(`import.${key}`, { ns: "atleti", ...(opts || {}) }) as string;
 
@@ -22,14 +22,26 @@ const ti = (key: string, opts?: any) => i18n.t(`import.${key}`, { ns: "atleti", 
 // Tipi & costanti
 // ──────────────────────────────────────────────────────────────────
 
+/**
+ * `colonna` è la colonna della tabella `atleti` su cui finisce davvero il dato:
+ * le etichette devono dire la verità su dove va a scrivere ogni campo.
+ */
 const TARGET_FIELDS = [
-  { key: "nome",          label_key: "field.nome",         required: true  },
-  { key: "cognome",       label_key: "field.cognome",      required: true  },
-  { key: "data_nascita",  label_key: "field.data_nascita", required: true },
-  { key: "sesso",         label_key: "field.sesso",        required: false },
-  { key: "email",         label_key: "field.email",        required: false },
-  { key: "telefono",      label_key: "field.telefono",     required: false },
-  { key: "livello",       label_key: "field.livello",      required: false },
+  { key: "nome",                label_key: "field.nome",                colonna: "nome",                required: true  },
+  { key: "cognome",             label_key: "field.cognome",             colonna: "cognome",             required: true  },
+  { key: "data_nascita",        label_key: "field.data_nascita",        colonna: "data_nascita",        required: true  },
+  { key: "sesso",               label_key: "field.sesso",               colonna: "sesso",               required: false },
+  { key: "telefono",            label_key: "field.telefono_atleta",            colonna: "telefono",            required: false },
+  { key: "livello",             label_key: "field.livello",             colonna: "livello_attuale",     required: false },
+  { key: "categoria",           label_key: "field.categoria",           colonna: "categoria",           required: false },
+  { key: "email",               label_key: "field.email_genitore",               colonna: "genitore1_email",     required: false },
+  { key: "genitore1_telefono",  label_key: "field.genitore1_telefono",  colonna: "genitore1_telefono",  required: false },
+  { key: "genitore1_nome",      label_key: "field.genitore1_nome",      colonna: "genitore1_nome",      required: false },
+  { key: "genitore1_cognome",   label_key: "field.genitore1_cognome",   colonna: "genitore1_cognome",   required: false },
+  { key: "genitore1_indirizzo", label_key: "field.genitore1_indirizzo", colonna: "genitore1_indirizzo", required: false },
+  { key: "genitore1_cap",       label_key: "field.genitore1_cap",       colonna: "genitore1_cap",       required: false },
+  { key: "genitore1_citta",     label_key: "field.genitore1_citta",     colonna: "genitore1_citta",     required: false },
+  { key: "genitore1_cantone",   label_key: "field.genitore1_cantone",   colonna: "genitore1_cantone",   required: false },
 ] as const;
 
 type TargetKey = typeof TARGET_FIELDS[number]["key"];
@@ -39,24 +51,81 @@ const SYNONYMS: Record<TargetKey, string[]> = {
   cognome:      ["cognome", "surname", "last name", "lastname", "family name"],
   data_nascita: ["data nascita", "data di nascita", "datanascita", "birthday", "birthdate", "date of birth", "dob", "nato il"],
   sesso:        ["sesso", "genere", "gender", "sex"],
-  email:        ["email", "e-mail", "mail", "posta", "indirizzo email"],
-  telefono:     ["telefono", "tel", "cell", "cellulare", "phone", "mobile", "numero"],
-  livello:      ["livello", "level", "categoria", "livello attuale"],
+  email:        ["email", "e-mail", "mail", "posta", "indirizzo email", "email genitore", "mail genitore", "email famiglia"],
+  telefono:     ["telefono", "tel", "cell", "cellulare", "phone", "mobile", "numero", "telefono atleta"],
+  livello:      ["livello", "level", "livello attuale"],
+  categoria:    ["categoria", "category", "categorie"],
+  genitore1_telefono:  ["telefono genitore", "tel genitore", "cellulare genitore", "telefono mamma", "telefono papa", "parent phone"],
+  genitore1_nome:      ["nome genitore", "genitore", "nome mamma", "nome papa", "parent first name", "parent name"],
+  genitore1_cognome:   ["cognome genitore", "cognome mamma", "cognome papa", "parent last name", "parent surname"],
+  genitore1_indirizzo: ["indirizzo", "via", "strada", "address", "adresse", "strasse", "indirizzo genitore"],
+  genitore1_cap:       ["cap", "npa", "codice postale", "plz", "zip", "postal code"],
+  genitore1_citta:     ["localita", "luogo", "citta", "comune", "city", "ort", "ville"],
+  genitore1_cantone:   ["cantone", "canton", "ct", "kanton"],
 };
+
+/** Campi che il modello scaricabile propone, nell'ordine dell'intestazione. */
+const TEMPLATE_HEADERS: Record<TargetKey, string> = {
+  nome: "nome",
+  cognome: "cognome",
+  data_nascita: "data_nascita",
+  sesso: "sesso",
+  telefono: "telefono",
+  livello: "livello",
+  categoria: "categoria",
+  email: "email genitore",
+  genitore1_telefono: "telefono genitore",
+  genitore1_nome: "nome genitore",
+  genitore1_cognome: "cognome genitore",
+  genitore1_indirizzo: "indirizzo",
+  genitore1_cap: "cap",
+  genitore1_citta: "localita",
+  genitore1_cantone: "cantone",
+};
+
+const TEMPLATE_ESEMPIO: Record<TargetKey, string> = {
+  nome: "Mario",
+  cognome: "Rossi",
+  data_nascita: "12.05.2010",
+  sesso: "M",
+  telefono: "+41791234567",
+  livello: "Stellina 2",
+  categoria: "amatori",
+  email: "famiglia.rossi@example.com",
+  genitore1_telefono: "+41791112233",
+  genitore1_nome: "Anna",
+  genitore1_cognome: "Rossi",
+  genitore1_indirizzo: "Via del Ghiaccio 12",
+  genitore1_cap: "6900",
+  genitore1_citta: "Lugano",
+  genitore1_cantone: "TI",
+};
+
+/** Oltre questa soglia l'anteprima non disegna tutte le righe. */
+const SOGLIA_RIGHE = 500;
+const RIGHE_ANTEPRIMA = 100;
 
 type RowRecord = Record<string, any>;
 type ParsedRow = {
   idx: number;
   raw: RowRecord;
   normalized: Record<TargetKey, string>;
+  /** Categoria che verrà scritta (dal file se mappata, altrimenti quella scelta per tutto l'elenco). */
+  categoria_finale: string;
   /** Valore originale del livello dal file (mostrato in caso di warning). */
   livello_raw?: string;
   /** True se il livello del file non è stato riconosciuto: import permissivo, livello → NULL. */
   livello_warning?: boolean;
+  /** True se la categoria scritta nel file non è riconosciuta: si usa quella generale. */
+  categoria_warning?: boolean;
+  /** True se una riga nuova non ha l'email del genitore: nessun invito possibile. */
+  email_mancante?: boolean;
   errors: string[];
   status: "nuovo" | "aggiornamento" | "errore";
   existing_id?: string;
 };
+
+type RigaFallita = { riga: number; nome: string; motivo: string };
 
 // ──────────────────────────────────────────────────────────────────
 // Helpers
@@ -69,14 +138,15 @@ function normalize_header(s: string): string {
   return strip_accents(String(s || "").trim().toLowerCase()).replace(/[\s._-]+/g, " ");
 }
 
-function detect_mapping(headers: string[]): Record<TargetKey, string> {
+function detect_mapping(headers: string[]): Partial<Record<TargetKey, string>> {
   const out: Partial<Record<TargetKey, string>> = {};
+  const usate = new Set<string>();
   for (const t of TARGET_FIELDS) {
     const syns = SYNONYMS[t.key].map(normalize_header);
-    const found = headers.find((h) => syns.includes(normalize_header(h)));
-    if (found) out[t.key] = found;
+    const found = headers.find((h) => !usate.has(h) && syns.includes(normalize_header(h)));
+    if (found) { out[t.key] = found; usate.add(found); }
   }
-  return out as Record<TargetKey, string>;
+  return out;
 }
 
 function build_iso(y: number, mo: number, d: number): string | null {
@@ -124,6 +194,16 @@ function normalize_sesso(s: any): string {
   if (["m", "maschio", "male", "uomo", "boy"].includes(v)) return "M";
   if (["f", "femmina", "female", "donna", "girl"].includes(v)) return "F";
   return v.toUpperCase(); // ritorna il valore originale in maiuscolo per validazione
+}
+
+/** Riconosce la categoria scritta nel file. Ritorna null se non riconosciuta. */
+function match_categoria(input: string): Categoria | null {
+  const v = strip_accents(norm_string(input).toLowerCase());
+  if (!v) return null;
+  if (["pulcini", "pulcino", "minis", "mini"].includes(v)) return "pulcini";
+  if (["amatori", "amatoriale", "amatore", "hobby", "loisir"].includes(v)) return "amatori";
+  if (["artistica", "agonistica", "agoniste", "agonisti", "competizione"].includes(v)) return "artistica";
+  return null;
 }
 
 /**
@@ -178,6 +258,8 @@ function dup_key(nome: string, cognome: string, data_nascita: string): string {
   return `${nome.toLowerCase()}|${cognome.toLowerCase()}|${data_nascita}`;
 }
 
+const EMPTY_MAPPING = Object.fromEntries(TARGET_FIELDS.map((t) => [t.key, ""])) as Record<TargetKey, string>;
+
 // ──────────────────────────────────────────────────────────────────
 // Step components
 // ──────────────────────────────────────────────────────────────────
@@ -217,18 +299,21 @@ const StepIndicator: React.FC<{ step: number }> = ({ step }) => {
 const ImportAtletiPage: React.FC = () => {
   const { t } = useTranslation("atleti");
   const navigate = useNavigate();
+  const query_client = useQueryClient();
   const club_id = get_current_club_id();
 
   const [step, set_step] = useState<1 | 2 | 3 | 4>(1);
   const [file_name, set_file_name] = useState<string>("");
   const [headers, set_headers] = useState<string[]>([]);
   const [rows, set_rows] = useState<RowRecord[]>([]);
-  const [mapping, set_mapping] = useState<Record<TargetKey, string>>(
-    Object.fromEntries(TARGET_FIELDS.map((t) => [t.key, ""])) as any
-  );
+  const [mapping, set_mapping] = useState<Record<TargetKey, string>>(EMPTY_MAPPING);
+  const [categoria_generale, set_categoria_generale] = useState<string>("");
   const [parsed, set_parsed] = useState<ParsedRow[]>([]);
   const [importing, set_importing] = useState(false);
-  const [report, set_report] = useState<{ creati: number; aggiornati: number; errori: number; codici: string[] } | null>(null);
+  const [progresso, set_progresso] = useState<{ fatte: number; totale: number }>({ fatte: 0, totale: 0 });
+  const [report, set_report] = useState<{
+    creati: number; aggiornati: number; errori: number; falliti: RigaFallita[];
+  } | null>(null);
   const [drag_active, set_drag_active] = useState(false);
   const file_input_ref = useRef<HTMLInputElement>(null);
 
@@ -251,7 +336,7 @@ const ImportAtletiPage: React.FC = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("atleti")
-        .select("id, nome, cognome, data_nascita, telefono, genitore1_email, livello_attuale, sesso")
+        .select("id, nome, cognome, data_nascita, telefono, sesso, livello_attuale, categoria, genitore1_email, genitore1_telefono, genitore1_nome, genitore1_cognome, genitore1_indirizzo, genitore1_cap, genitore1_citta, genitore1_cantone")
         .eq("club_id", club_id);
       if (error) throw error;
       return data ?? [];
@@ -275,6 +360,14 @@ const ImportAtletiPage: React.FC = () => {
       void segnala_errore("ImportAtletiPage", ti("toast.atleti_lettura_fallita"), atleti_query.error);
     }
   }, [atleti_query.error]);
+
+  // Avviso alla chiusura della pagina mentre l'importazione è in corso.
+  useEffect(() => {
+    if (!importing) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [importing]);
 
   // Solo la lettura degli atleti blocca: i livelli sono facoltativi e degradano con grazia.
   const lettura_fallita = atleti_errore;
@@ -304,15 +397,7 @@ const ImportAtletiPage: React.FC = () => {
       set_headers(hdrs);
       set_rows(json);
       const auto = detect_mapping(hdrs);
-      set_mapping({
-        nome: auto.nome ?? "",
-        cognome: auto.cognome ?? "",
-        data_nascita: auto.data_nascita ?? "",
-        sesso: auto.sesso ?? "",
-        email: auto.email ?? "",
-        telefono: auto.telefono ?? "",
-        livello: auto.livello ?? "",
-      });
+      set_mapping({ ...EMPTY_MAPPING, ...auto });
       set_step(2);
     } catch (e: any) {
       toast.error(ti("toast.read_error", { msg: e?.message || ti("unknown") }));
@@ -327,9 +412,10 @@ const ImportAtletiPage: React.FC = () => {
   };
 
   const download_template = () => {
+    const chiavi = TARGET_FIELDS.map((f) => f.key);
     const ws = XLSX.utils.aoa_to_sheet([
-      ["nome", "cognome", "data_nascita", "sesso", "email", "telefono", "livello"],
-      ["Mario", "Rossi", "12.05.2010", "M", "mario@example.com", "+41791234567", "Stellina 2"],
+      chiavi.map((k) => TEMPLATE_HEADERS[k]),
+      chiavi.map((k) => TEMPLATE_ESEMPIO[k]),
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Atleti");
@@ -337,13 +423,17 @@ const ImportAtletiPage: React.FC = () => {
   };
 
   // ── STEP 2: validazione mapping ──
+  const categoria_decisa = !!mapping.categoria || !!categoria_generale;
   const mapping_valido = useMemo(() => {
-    return TARGET_FIELDS.filter((t) => t.required).every((t) => mapping[t.key]);
-  }, [mapping]);
+    return TARGET_FIELDS.filter((f) => f.required).every((f) => mapping[f.key]) && categoria_decisa;
+  }, [mapping, categoria_decisa]);
 
   // ── STEP 3: build parsed ──
   const build_parsed = useCallback(() => {
     const out: ParsedRow[] = [];
+    // Specchio dei doppioni interni al file: la prima riga vale, le altre no.
+    const viste = new Map<string, number>();
+
     rows.forEach((r, idx) => {
       const get = (k: TargetKey) => (mapping[k] ? norm_string(r[mapping[k]]) : "");
       const nome = get("nome");
@@ -352,8 +442,8 @@ const ImportAtletiPage: React.FC = () => {
       const data_nascita = parse_date(data_raw) || "";
       const sesso_raw = normalize_sesso(mapping.sesso ? r[mapping.sesso] : "");
       const email = get("email").toLowerCase();
-      const telefono = get("telefono");
       const livello_input = get("livello");
+      const categoria_input = get("categoria");
 
       // Normalizzazione livello: matching permissivo contro elenco ufficiale.
       // Se non riconosciuto → warning (non errore), livello salvato come "".
@@ -361,12 +451,14 @@ const ImportAtletiPage: React.FC = () => {
       let livello_warning = false;
       if (livello_input) {
         const matched = match_livello_canonico(livello_input, livelli_db);
-        if (matched) {
-          livello_canonico = matched;
-        } else {
-          livello_warning = true;
-        }
+        if (matched) livello_canonico = matched;
+        else livello_warning = true;
       }
+
+      // Categoria: la colonna del file vince sulla scelta valida per tutto l'elenco.
+      const cat_file = categoria_input ? match_categoria(categoria_input) : null;
+      const categoria_warning = !!categoria_input && !cat_file;
+      const categoria_finale = cat_file ?? categoria_generale;
 
       const errors: string[] = [];
       if (!nome) errors.push(ti("err.nome"));
@@ -375,21 +467,45 @@ const ImportAtletiPage: React.FC = () => {
       else if (!data_nascita) errors.push(ti("err.data_missing"));
       if (sesso_raw && !["M", "F"].includes(sesso_raw)) errors.push(ti("err.sesso"));
       if (email && !valid_email(email)) errors.push(ti("err.email"));
+      if (!categoria_finale) errors.push(ti("err.categoria"));
 
-      const existing = (nome && cognome && data_nascita)
-        ? atleti_index.get(dup_key(nome, cognome, data_nascita))
-        : undefined;
+      // Doppione dentro lo stesso file
+      const chiave = (nome && cognome && data_nascita) ? dup_key(nome, cognome, data_nascita) : "";
+      if (chiave) {
+        const prima = viste.get(chiave);
+        if (prima !== undefined) errors.push(ti("err.doppione_file", { riga: prima }));
+        else viste.set(chiave, idx + 2);
+      }
+
+      const existing = chiave ? atleti_index.get(chiave) : undefined;
 
       let status: ParsedRow["status"] = "nuovo";
       if (errors.length > 0) status = "errore";
       else if (existing) status = "aggiornamento";
 
+      const email_mancante = status === "nuovo" && !email;
+
       out.push({
         idx,
         raw: r,
-        normalized: { nome, cognome, data_nascita, sesso: sesso_raw, email, telefono, livello: livello_canonico },
+        normalized: {
+          nome, cognome, data_nascita, sesso: sesso_raw, email,
+          telefono: get("telefono"),
+          livello: livello_canonico,
+          categoria: categoria_finale,
+          genitore1_telefono: get("genitore1_telefono"),
+          genitore1_nome: get("genitore1_nome"),
+          genitore1_cognome: get("genitore1_cognome"),
+          genitore1_indirizzo: get("genitore1_indirizzo"),
+          genitore1_cap: get("genitore1_cap"),
+          genitore1_citta: get("genitore1_citta"),
+          genitore1_cantone: get("genitore1_cantone"),
+        },
+        categoria_finale,
         livello_raw: livello_input || undefined,
         livello_warning,
+        categoria_warning,
+        email_mancante,
         errors,
         status,
         existing_id: existing?.id,
@@ -397,7 +513,7 @@ const ImportAtletiPage: React.FC = () => {
     });
     set_parsed(out);
     set_step(3);
-  }, [rows, mapping, livelli_db, atleti_index]);
+  }, [rows, mapping, livelli_db, atleti_index, categoria_generale]);
 
   // Se l'elenco atleti (o dei livelli) arriva dopo la classificazione, la rifacciamo:
   // altrimenti resterebbe in giro uno snapshot costruito su un elenco vuoto.
@@ -411,7 +527,29 @@ const ImportAtletiPage: React.FC = () => {
     aggiornamenti: parsed.filter((p) => p.status === "aggiornamento").length,
     errori: parsed.filter((p) => p.status === "errore").length,
     warning_livello: parsed.filter((p) => p.livello_warning).length,
+    senza_email: parsed.filter((p) => p.email_mancante).length,
   }), [parsed]);
+
+  // Anteprima ridotta sui file grossi: prime 100 righe + tutte quelle con errori o warning.
+  const file_grosso = parsed.length > SOGLIA_RIGHE;
+  const righe_visibili = useMemo(() => {
+    if (!file_grosso) return parsed;
+    return parsed.filter((p, i) =>
+      i < RIGHE_ANTEPRIMA || p.errors.length > 0 || p.livello_warning || p.email_mancante || p.categoria_warning
+    );
+  }, [parsed, file_grosso]);
+
+  /** Valori da scrivere su `atleti` per una riga, colonna per colonna. */
+  const valori_riga = (row: ParsedRow): Record<string, any> => {
+    const out: Record<string, any> = {};
+    for (const f of TARGET_FIELDS) {
+      if (f.key === "categoria") continue;
+      const v = row.normalized[f.key];
+      if (v) out[f.colonna] = v;
+    }
+    out.categoria = row.categoria_finale;
+    return out;
+  };
 
   // ── STEP 4: import ──
   const run_import = async () => {
@@ -419,62 +557,93 @@ const ImportAtletiPage: React.FC = () => {
       toast.error(ti("blocco_atleti"));
       return;
     }
+    const da_fare = parsed.filter((p) => p.status !== "errore");
     set_importing(true);
     set_step(4);
+    set_report(null);
+    set_progresso({ fatte: 0, totale: da_fare.length });
+
     let creati = 0;
     let aggiornati = 0;
-    let errori = 0;
-    const codici: string[] = [];
+    const falliti: RigaFallita[] = parsed
+      .filter((p) => p.status === "errore")
+      .map((p) => ({ riga: p.idx + 2, nome: `${p.normalized.nome} ${p.normalized.cognome}`.trim(), motivo: p.errors.join("; ") }));
 
-    for (const row of parsed) {
-      if (row.status === "errore") { errori++; continue; }
+    for (const row of da_fare) {
       try {
+        const valori = valori_riga(row);
         if (row.status === "aggiornamento" && row.existing_id) {
           const existing = atleti_db.find((a: any) => a.id === row.existing_id);
           const patch: Record<string, any> = {};
-          if (!existing?.telefono && row.normalized.telefono) patch.telefono = row.normalized.telefono;
-          if (!existing?.genitore1_email && row.normalized.email) patch.genitore1_email = row.normalized.email;
-          if (!existing?.livello_attuale && row.normalized.livello) patch.livello_attuale = row.normalized.livello;
-          if (!existing?.sesso && row.normalized.sesso) patch.sesso = row.normalized.sesso;
+          // Si riempiono solo i campi vuoti: l'Excel non sovrascrive quello che c'è già.
+          for (const [col, val] of Object.entries(valori)) {
+            if (col === "nome" || col === "cognome" || col === "data_nascita" || col === "categoria") continue;
+            if (!(existing as any)?.[col] && val) patch[col] = val;
+          }
           if (Object.keys(patch).length > 0) {
             const { error } = await supabase.from("atleti").update(patch).eq("id", row.existing_id);
             if (error) throw error;
           }
           aggiornati++;
         } else {
-          // Genera codice
-          const { data: code_data, error: code_err } = await supabase.rpc("genera_codice_atleta" as any);
-          if (code_err) throw code_err;
-          const codice_atleta = String(code_data);
+          // Nessuna chiamata a genera_codice_atleta: il codice lo assegna il database
+          // (trigger trg_atleti_set_codice_atleta) quando arriva vuoto.
           const insert_payload: Record<string, any> = {
+            ...valori,
             club_id,
-            nome: row.normalized.nome,
-            cognome: row.normalized.cognome,
-            data_nascita: row.normalized.data_nascita,
-            categoria: "amatori",
             agonista: false,
-            codice_atleta,
             importato_da_excel: true,
             verificato: false,
           };
-          if (row.normalized.telefono) insert_payload.telefono = row.normalized.telefono;
-          if (row.normalized.email) insert_payload.genitore1_email = row.normalized.email;
-          if (row.normalized.livello) insert_payload.livello_attuale = row.normalized.livello;
-          if (row.normalized.sesso) insert_payload.sesso = row.normalized.sesso;
           const { error } = await supabase.from("atleti").insert(insert_payload);
           if (error) throw error;
           creati++;
-          codici.push(codice_atleta);
-          toast.success(ti("toast.created", { nome: row.normalized.nome, cognome: row.normalized.cognome, codice: codice_atleta }));
         }
       } catch (e: any) {
-        errori++;
-        toast.error(ti("toast.row_error", { riga: row.idx + 2, msg: e?.message || ti("unknown") }));
+        falliti.push({
+          riga: row.idx + 2,
+          nome: `${row.normalized.nome} ${row.normalized.cognome}`.trim(),
+          motivo: e?.message || ti("unknown"),
+        });
+        void segnala_errore("ImportAtletiPage", ti("toast.row_error", { riga: row.idx + 2, msg: e?.message || ti("unknown") }), e, undefined, "avviso");
+      } finally {
+        set_progresso((p) => ({ ...p, fatte: p.fatte + 1 }));
       }
     }
 
-    set_report({ creati, aggiornati, errori, codici });
+    set_report({ creati, aggiornati, errori: falliti.length, falliti });
     set_importing(false);
+
+    // Lo specchio locale è vecchio: senza rilettura un secondo giro ricreerebbe tutto.
+    await query_client.invalidateQueries({ queryKey: ["atleti"] });
+    await query_client.invalidateQueries({ queryKey: ["atleti_import_match", club_id] });
+  };
+
+  const scarica_falliti = () => {
+    if (!report || report.falliti.length === 0) return;
+    const righe = [
+      [ti("scarica.col_riga"), ti("scarica.col_atleta"), ti("scarica.col_motivo")],
+      ...report.falliti.map((f) => [String(f.riga), f.nome, f.motivo]),
+    ];
+    const csv = righe.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\r\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "righe-non-importate.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const ricomincia = async () => {
+    // Prima si rilegge lo specchio, poi si riparte: altrimenti gli atleti appena
+    // creati risulterebbero di nuovo nuovi.
+    await ricarica_atleti();
+    set_step(1);
+    set_file_name(""); set_headers([]); set_rows([]); set_parsed([]); set_report(null);
+    set_mapping(EMPTY_MAPPING);
+    set_categoria_generale("");
+    set_progresso({ fatte: 0, totale: 0 });
   };
 
   // ──────────────────────────────────────────────────────────────────
@@ -487,7 +656,7 @@ const ImportAtletiPage: React.FC = () => {
           </h1>
           <p className="text-sm text-muted-foreground">{t("import.subtitle")}</p>
         </div>
-        <Button variant="outline" onClick={() => navigate("/atleti")}>
+        <Button variant="outline" onClick={() => navigate("/atleti")} disabled={importing}>
           <ArrowLeft className="w-4 h-4 mr-2" /> {t("import.back_athletes")}
         </Button>
       </div>
@@ -557,6 +726,23 @@ const ImportAtletiPage: React.FC = () => {
           <div className="rounded-lg border border-border p-4 bg-muted/30">
             <p className="text-sm"><strong>{t("import.file")}</strong> {file_name} — {t("import.rows_found", { count: rows.length })}</p>
           </div>
+
+          <div className="rounded-lg border border-border p-4 space-y-2">
+            <p className="text-sm font-semibold">{t("import.categoria_domanda")}</p>
+            <p className="text-xs text-muted-foreground">{t("import.categoria_nota")}</p>
+            <Select value={categoria_generale || "__none__"} onValueChange={(v) => set_categoria_generale(v === "__none__" ? "" : v)}>
+              <SelectTrigger className="w-full max-w-md">
+                <SelectValue placeholder={t("import.categoria_placeholder")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">{t("import.categoria_placeholder")}</SelectItem>
+                {CATEGORIE.map((c) => (
+                  <SelectItem key={c} value={c}>{get_categoria_label(c)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="rounded-lg border border-border overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-xs uppercase">
@@ -599,7 +785,9 @@ const ImportAtletiPage: React.FC = () => {
             </Button>
           </div>
           {!mapping_valido && (
-            <p className="text-xs text-destructive">{t("import.required_hint")}</p>
+            <p className="text-xs text-destructive">
+              {categoria_decisa ? t("import.required_hint") : t("import.categoria_hint")}
+            </p>
           )}
         </div>
       )}
@@ -614,8 +802,20 @@ const ImportAtletiPage: React.FC = () => {
             {counts.warning_livello > 0 && (
               <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">⚠️ {t("import.count_warn_livello", { count: counts.warning_livello })}</Badge>
             )}
+            {counts.senza_email > 0 && (
+              <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">⚠️ {t("import.count_senza_email", { count: counts.senza_email })}</Badge>
+            )}
             <span className="text-xs text-muted-foreground ml-2">{t("import.total_rows", { count: parsed.length })}</span>
           </div>
+
+          {file_grosso && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <p className="text-sm text-amber-800">
+                {t("import.file_grosso", { totale: parsed.length, mostrate: righe_visibili.length })}
+              </p>
+            </div>
+          )}
+
           <div className="rounded-lg border border-border overflow-x-auto max-h-[60vh] overflow-y-auto">
             <table className="w-full text-xs">
               <thead className="bg-muted/50 sticky top-0">
@@ -626,15 +826,16 @@ const ImportAtletiPage: React.FC = () => {
                   <th className="px-2 py-2 text-left">{t("import.field.cognome")}</th>
                   <th className="px-2 py-2 text-left">{t("import.col.data_nasc")}</th>
                   <th className="px-2 py-2 text-left">{t("import.col.sesso")}</th>
-                  <th className="px-2 py-2 text-left">{t("import.field.email")}</th>
-                  <th className="px-2 py-2 text-left">{t("import.field.telefono")}</th>
+                  <th className="px-2 py-2 text-left">{t("import.field.email_genitore")}</th>
+                  <th className="px-2 py-2 text-left">{t("import.field.telefono_atleta")}</th>
                   <th className="px-2 py-2 text-left">{t("import.field.livello")}</th>
+                  <th className="px-2 py-2 text-left">{t("import.field.categoria")}</th>
                   <th className="px-2 py-2 text-left">{t("import.col.note")}</th>
                 </tr>
               </thead>
               <tbody>
-                {parsed.map((p) => (
-                  <tr key={p.idx} className={`border-t border-border ${p.livello_warning && p.status !== "errore" ? "bg-yellow-50/60 dark:bg-yellow-950/10" : ""}`}>
+                {righe_visibili.map((p) => (
+                  <tr key={p.idx} className={`border-t border-border ${(p.livello_warning || p.email_mancante) && p.status !== "errore" ? "bg-yellow-50/60 dark:bg-yellow-950/10" : ""}`}>
                     <td className="px-2 py-1.5">{p.idx + 2}</td>
                     <td className="px-2 py-1.5">
                       {p.status === "nuovo" && <span title={t("import.status.nuovo")}>🟢</span>}
@@ -658,10 +859,17 @@ const ImportAtletiPage: React.FC = () => {
                         p.normalized.livello
                       )}
                     </td>
-                    <td className="px-2 py-1.5">
-                      {p.errors.length > 0 && <span className="text-destructive">{p.errors.join("; ")}</span>}
+                    <td className="px-2 py-1.5">{get_categoria_label(p.categoria_finale)}</td>
+                    <td className="px-2 py-1.5 space-y-0.5">
+                      {p.errors.length > 0 && <div className="text-destructive">{p.errors.join("; ")}</div>}
                       {p.errors.length === 0 && p.livello_warning && (
-                        <span className="text-yellow-700 dark:text-yellow-400">{t("import.livello_warn", { livello: p.livello_raw })}</span>
+                        <div className="text-yellow-700 dark:text-yellow-400">{t("import.livello_warn", { livello: p.livello_raw })}</div>
+                      )}
+                      {p.errors.length === 0 && p.email_mancante && (
+                        <div className="text-yellow-700 dark:text-yellow-400">{t("import.warn_senza_email")}</div>
+                      )}
+                      {p.errors.length === 0 && p.categoria_warning && (
+                        <div className="text-yellow-700 dark:text-yellow-400">{t("import.warn_categoria", { categoria: get_categoria_label(p.categoria_finale) })}</div>
                       )}
                     </td>
                   </tr>
@@ -671,7 +879,7 @@ const ImportAtletiPage: React.FC = () => {
           </div>
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => set_step(2)} disabled={importing}>
-              <ArrowLeft className="w-4 h-4 mr-2" /> Indietro
+              <ArrowLeft className="w-4 h-4 mr-2" /> {t("import.back")}
             </Button>
             <Button onClick={run_import} disabled={importing || !atleti_pronti || (counts.nuovi + counts.aggiornamenti) === 0}>
               <CheckCircle2 className="w-4 h-4 mr-2" />
@@ -685,9 +893,20 @@ const ImportAtletiPage: React.FC = () => {
       {step === 4 && (
         <div className="space-y-4">
           {importing && (
-            <div className="flex items-center gap-3 p-6 rounded-lg border border-border bg-muted/30">
-              <Loader2 className="w-5 h-5 animate-spin text-primary" />
-              <span className="text-sm font-medium">{t("import.in_progress")}</span>
+            <div className="p-6 rounded-lg border border-border bg-muted/30 space-y-3">
+              <div className="flex items-center gap-3">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                <span className="text-sm font-medium">{t("import.in_progress")}</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{ width: `${progresso.totale ? Math.round((progresso.fatte / progresso.totale) * 100) : 0}%` }}
+                />
+              </div>
+              <p className="text-sm tabular-nums text-muted-foreground">
+                {t("import.avanzamento", { fatte: progresso.fatte, totale: progresso.totale })}
+              </p>
             </div>
           )}
           {report && (
@@ -703,24 +922,52 @@ const ImportAtletiPage: React.FC = () => {
                     <li className="text-destructive">🔴 <strong>{report.errori}</strong> {t("import.report_errors")}</li>
                   )}
                 </ul>
-                {report.codici.length > 0 && (
-                  <div className="mt-3">
-                    <p className="text-xs text-muted-foreground mb-1">{t("import.codes_assigned")}</p>
-                    <div className="flex flex-wrap gap-1">
-                      {report.codici.map((c) => (
-                        <code key={c} className="text-[10px] px-1.5 py-0.5 rounded bg-background border border-border">{c}</code>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
+
+              {report.falliti.length > 0 && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <p className="text-sm font-semibold text-destructive">{t("import.falliti_titolo", { count: report.falliti.length })}</p>
+                    <Button variant="outline" size="sm" onClick={scarica_falliti}>
+                      <Download className="w-4 h-4 mr-2" /> {t("import.scarica_falliti")}
+                    </Button>
+                  </div>
+                  <div className="rounded-md border border-border bg-background overflow-x-auto max-h-64 overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted/50 sticky top-0">
+                        <tr>
+                          <th className="px-2 py-2 text-left">{t("import.scarica.col_riga")}</th>
+                          <th className="px-2 py-2 text-left">{t("import.scarica.col_atleta")}</th>
+                          <th className="px-2 py-2 text-left">{t("import.scarica.col_motivo")}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {report.falliti.map((f) => (
+                          <tr key={`${f.riga}-${f.motivo}`} className="border-t border-border">
+                            <td className="px-2 py-1.5 tabular-nums">{f.riga}</td>
+                            <td className="px-2 py-1.5">{f.nome}</td>
+                            <td className="px-2 py-1.5">{f.motivo}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-5 space-y-3">
+                <h3 className="text-sm font-bold text-foreground">{t("import.prossimo_passo_titolo")}</h3>
+                <p className="text-sm text-muted-foreground">{t("import.prossimo_passo_testo")}</p>
+                <Button onClick={() => navigate("/richieste-iscrizione")}>
+                  <UserPlus className="w-4 h-4 mr-2" /> {t("import.prossimo_passo_bottone")}
+                </Button>
+              </div>
+
               <div className="flex gap-2">
-                <Button onClick={() => navigate("/atleti")}>
+                <Button variant="outline" onClick={() => navigate("/atleti")}>
                   <Home className="w-4 h-4 mr-2" /> {t("import.back_athletes")}
                 </Button>
-                <Button variant="outline" onClick={() => {
-                  set_step(1); set_file_name(""); set_headers([]); set_rows([]); set_parsed([]); set_report(null);
-                }}>
+                <Button variant="outline" onClick={ricomincia}>
                   {t("import.another_file")}
                 </Button>
               </div>

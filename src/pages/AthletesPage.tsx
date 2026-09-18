@@ -28,6 +28,7 @@ import { stampa_schede_codice } from "@/lib/scheda-codice-html";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import FotoAtleta from "@/components/common/FotoAtleta";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import { useHasPermesso } from "@/hooks/usePermessi";
 import NotaPermesso from "@/components/common/NotaPermesso";
 
 import { capitalizza_nome, capitalizza_indirizzo, normalizza_email, cerca_nap } from "@/lib/formato-testo";
@@ -650,6 +651,10 @@ const AthletesPage: React.FC = () => {
   const query_client = useQueryClient();
   const { session } = useAuth();
   const { puo_gestire_sportivo } = usePermessiAzione();
+  // La pagina di import è protetta dalla sezione `import_dati`: senza quel permesso
+  // il pulsante rimbalzerebbe in home, quindi non si mostra.
+  const vede_sezione_import = useHasPermesso("import_dati");
+  const puo_importare = puo_gestire_sportivo && vede_sezione_import;
   const params = useParams<{ id?: string }>();
   const { data: atleti = [], isLoading } = use_atleti();
   const upsert = use_upsert_atleta();
@@ -1173,7 +1178,7 @@ const AthletesPage: React.FC = () => {
               <Switch checked={solo_da_verificare} onCheckedChange={set_solo_da_verificare} />
               <span>{t2('header.only_to_verify')}</span>
             </label>
-            {puo_gestire_sportivo && (
+            {puo_importare && (
               <Button
                 variant="outline"
                 onClick={() => navigate("/import-atleti")}
