@@ -45,11 +45,18 @@ Deno.serve(async (req) => {
     const codice = normalizza_codice(raw);
     if (!codice) return json({ error: "invalid_token" }, 400);
 
-    // Risolvi atleta dal codice_atleta (server-side, solo questa riga)
+    // Chi è entrato: il codice del primo o del secondo genitore
+    const { data: ident_rows, error: ident_err } = await admin
+      .rpc("riconosci_identita" as any, { p_valore: codice });
+    if (ident_err) { console.error("[portale-atleta] ident_err", ident_err); return json({ error: "db_error" }, 500); }
+    const identita: any = Array.isArray(ident_rows) ? ident_rows[0] : ident_rows;
+    if (!identita?.id || identita.tipo !== "atleta") return json({ error: "invalid_token" }, 404);
+    const genitore = identita.genitore === "genitore2" ? "genitore2" : "genitore1";
+
     const { data: atleta, error: atl_err } = await admin
       .from("atleti")
       .select("*")
-      .eq("codice_atleta", codice)
+      .eq("id", identita.id)
       .maybeSingle();
     if (atl_err) { console.error("[portale-atleta] atl_err", atl_err); return json({ error: "db_error" }, 500); }
     if (!atleta) return json({ error: "invalid_token" }, 404);
@@ -57,6 +64,7 @@ Deno.serve(async (req) => {
     const atleta_id = atleta.id;
     const club_id = atleta.club_id;
     const oggi = new Date().toISOString().split("T")[0];
+    const separati = !!(atleta as any).genitori_separati;
 
     // La foto è esposta solo come URL firmato a tempo, mai come URL pubblico
     let foto_firmata: string | null = null;
@@ -65,6 +73,19 @@ Deno.serve(async (req) => {
         .from("foto-atleti")
         .createSignedUrl((atleta as any).foto_path, 3600);
       foto_firmata = sig?.signedUrl ?? null;
+    }
+
+    // Con i genitori separati i recapiti dell'altro genitore non escono mai:
+    // restano solo nome e cognome. I codici di accesso non escono mai.
+    const campi_recapito = ["telefono", "email", "indirizzo", "cap", "citta", "cantone", "paese_iso"];
+    const recapiti_genitori: Record<string, unknown> = {};
+    for (const g of ["genitore1", "genitore2"]) {
+      recapiti_genitori[`${g}_nome`] = (atleta as any)[`${g}_nome`] ?? null;
+      recapiti_genitori[`${g}_cognome`] = (atleta as any)[`${g}_cognome`] ?? null;
+      const nascondi = separati && g !== genitore;
+      for (const c of campi_recapito) {
+        recapiti_genitori[`${g}_${c}`] = nascondi ? null : ((atleta as any)[`${g}_${c}`] ?? null);
+      }
     }
 
     // Whitelist dei campi atleta esposti (esclude verificato_da_user_id, importato_da_excel ecc.)
@@ -78,7 +99,11 @@ Deno.serve(async (req) => {
       licenza_sis_categoria: atleta.licenza_sis_categoria,
       licenza_sis_disciplina: atleta.licenza_sis_disciplina,
       licenza_sis_validita_a: atleta.licenza_sis_validita_a,
+      genitori_separati: separati,
+      genitore,
+      ...recapiti_genitori,
     };
+
 
     if (action === "init") {
       const { data: club } = await admin.from("clubs").select("id, nome, logo_url, colore_primario").eq("id", club_id).maybeSingle();
