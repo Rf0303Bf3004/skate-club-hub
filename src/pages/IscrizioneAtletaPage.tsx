@@ -299,11 +299,19 @@ const IscrizioneAtletaPage: React.FC = () => {
     );
   }
 
+  // Chi ha già risposto non rivede la scelta come se non fosse successo niente.
+  const gia_attivo = registro?.status === "attivo";
+  const gia_non_rinnovato = registro?.status === "non_rinnovato";
+  const data_conferma = registro?.confermato_il
+    ? new Date(registro.confermato_il).toLocaleDateString("it-CH")
+    : null;
+
   // Rinnovo di stagione: prima la scelta, poi (se conferma) il resto della pagina.
   if (rinnovo_aperto && scelta !== "confermo") {
     const scadenza = stagione?.iscrizioni_scadenza
       ? new Date(stagione.iscrizioni_scadenza + "T00:00:00").toLocaleDateString("it-CH")
       : null;
+    const risposta_data = (gia_attivo || gia_non_rinnovato) && !riapri;
     return (
       <div className="min-h-screen bg-muted/30 p-4 flex justify-center">
         <div className="w-full max-w-xl space-y-4 pb-10">
@@ -315,7 +323,25 @@ const IscrizioneAtletaPage: React.FC = () => {
             </p>
           </header>
 
-          {scelta === null && (
+          {risposta_data && (
+            <section className="bg-card border rounded-2xl p-5 space-y-4 text-center">
+              <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
+              <p className="text-sm font-medium">
+                {gia_attivo
+                  ? `Hai già confermato l'iscrizione${data_conferma ? ` il ${data_conferma}` : ""}.`
+                  : "Hai comunicato che quest'anno non continua."}
+              </p>
+              <Button
+                variant="outline"
+                className="h-11"
+                onClick={() => { set_riapri(true); if (gia_attivo) set_scelta("confermo"); }}
+              >
+                {gia_attivo ? "Modifica i dati" : "Ho cambiato idea"}
+              </Button>
+            </section>
+          )}
+
+          {!risposta_data && scelta === null && (
             <div className="grid grid-cols-1 gap-3">
               <Button className="w-full h-16 text-base" onClick={() => set_scelta("confermo")}>
                 Confermo l'iscrizione
@@ -325,6 +351,7 @@ const IscrizioneAtletaPage: React.FC = () => {
               </Button>
             </div>
           )}
+
 
           {scelta === "rinuncia" && (
             <section className="bg-card border rounded-2xl p-5 space-y-4">
