@@ -262,6 +262,26 @@ Deno.serve(async (req) => {
       return json({ error: "contratto_cambiato" }, 409);
     }
 
+    // Il contratto si archivia SEMPRE, dentro o fuori campagna: senza il testo
+    // archiviato non si scrive nessun consenso sull'atleta. Fuori stagione la
+    // riga va con stagione_id nullo, come previsto dall'indice unico.
+    const { error: ctr_err } = await admin.from("contratti_accettati").insert({
+      club_id: atleta.club_id,
+      atleta_id: atleta.id,
+      stagione_id: stagione?.id ?? null,
+      testo: contratto.testo,
+      accettato_il: new Date().toISOString(),
+      accettato_da: [clean(payload.genitore1_nome, 80), clean(payload.genitore1_cognome, 80)]
+        .filter(Boolean)
+        .join(" "),
+      origine: rinnovo_attivo ? "rinnovo" : "iscrizione",
+    });
+    // 23505: contratto già firmato (ricarico della pagina o doppio invio).
+    // Non è un guasto: l'archivio c'è già.
+    if (ctr_err && (ctr_err as any).code !== "23505") {
+      console.error("[iscrizione-atleta] ctr_err", ctr_err);
+      return json({ error: "contratto_non_archiviato" }, 500);
+    }
 
     const update: Record<string, unknown> = {};
 
