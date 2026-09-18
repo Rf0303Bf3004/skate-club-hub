@@ -858,6 +858,23 @@
       "kpi_entrate": "Entrate (bilancio della stagione)",
       "kpi_uscite": "Uscite (bilancio della stagione)",
       "kpi_saldo": "Saldo (bilancio della stagione)"
+    },
+    "slide": {
+      "scarica_slide": "Scarica le slide",
+      "scarica_errore": "Non è stato possibile creare le slide.",
+      "continua": "(continua)",
+      "le_nostre": "Le nostre",
+      "chiusura_titolo": "I numeri della stagione",
+      "chiusura_senza_numeri": "Nessun numero disponibile per questa stagione.",
+      "generato_il": "Generato il {{data}}",
+      "foto_switch": "Aggiungi una slide per atleta con la foto",
+      "foto_nota": "Le atlete sono minorenni: attiva solo se il club ha il consenso dei genitori all'uso delle immagini.",
+      "gia_in_corso": "Le slide sono già in preparazione.",
+      "avviso_testi": "I testi della relazione non si sono aggiornati:",
+      "avviso_numeri": "Alcuni numeri non si sono potuti leggere:",
+      "avviso_logo": "Il logo del club non si è potuto scaricare: la copertina esce senza logo.",
+      "avviso_atlete": "Le slide per atleta non si sono potute creare:",
+      "col_categoria": "Categoria"
     }
   },
   "onboarding_banner": {

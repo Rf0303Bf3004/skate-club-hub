@@ -483,6 +483,23 @@
       "kpi_entrate": "Income (season accounts)",
       "kpi_uscite": "Expenses (season accounts)",
       "kpi_saldo": "Balance (season accounts)"
+    },
+    "slide": {
+      "scarica_slide": "Download the slides",
+      "scarica_errore": "The slides could not be created.",
+      "continua": "(continued)",
+      "le_nostre": "Our skaters",
+      "chiusura_titolo": "The season in numbers",
+      "chiusura_senza_numeri": "No figures available for this season.",
+      "generato_il": "Generated on {{data}}",
+      "foto_switch": "Add one slide per skater with the photo",
+      "foto_nota": "The skaters are minors: switch on only if the club has parental consent for the use of images.",
+      "gia_in_corso": "The slides are already being prepared.",
+      "avviso_testi": "The report texts were not refreshed:",
+      "avviso_numeri": "Some figures could not be read:",
+      "avviso_logo": "The club logo could not be downloaded: the cover comes without a logo.",
+      "avviso_atlete": "The per-skater slides could not be created:",
+      "col_categoria": "Category"
     }
   }
 }

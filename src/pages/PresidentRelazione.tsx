@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, FileDown, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, FileDown, AlertTriangle, ChevronDown, ChevronUp, Presentation } from "lucide-react";
 import { saveAs } from "file-saver";
 import { toast } from "sonner";
 import { segnala_errore } from "@/lib/errori";
@@ -18,6 +18,9 @@ import DocumentoRelazione from "@/components/relazione/DocumentoRelazione";
 import { useComposizioneRelazione } from "@/hooks/use-composizione-relazione";
 import { fetchStagioniOrdinate, stagioneDaProporre, fetchModuli, type Stagione } from "@/lib/relazione/moduli";
 import { generateRelazionePDF, buildRelazioneFilename, type VoceComposizione } from "@/lib/pdfGenerator";
+import { generateRelazionePPTX, buildRelazioneSlideFilename } from "@/lib/pptxGenerator";
+import { Switch } from "@/components/ui/switch";
+
 import type { Tono } from "@/lib/paragraphGenerator";
 
 export default function PresidentRelazione() {
@@ -29,6 +32,10 @@ export default function PresidentRelazione() {
   const [tono, set_tono] = use_persisted_state<Tono>("relazione_tono", "soci");
   const [stagione_id, set_stagione_id] = useState<string | undefined>(undefined);
   const [scaricando, set_scaricando] = useState(false);
+  const [scaricando_slide, set_scaricando_slide] = useState(false);
+  // Slide per atleta con la foto: spenta di default, riguarda minorenni.
+  const [slide_foto, set_slide_foto] = use_persisted_state<boolean>("relazione_slide_foto", false);
+
 
   const q_stagioni = useQuery({
     queryKey: ["relazione_stagioni", club_id],
@@ -131,6 +138,31 @@ export default function PresidentRelazione() {
     }
   };
 
+  // Le slide dell'assemblea: stessa composizione, stesso tono, stessi dati del PDF.
+  const scarica_slide = async () => {
+    if (!dati_pronti || !stagione) {
+      toast.warning(t("relazione.attendi_dati"));
+      return;
+    }
+    set_scaricando_slide(true);
+    try {
+      const res = await generateRelazionePPTX({
+        club: q_club.data, club_id, presidente:
+          `${session?.nome ?? ""} ${session?.cognome ?? ""}`.trim() || session?.email || t("relazione.presidente_fallback"),
+        stagione, tono, messaggio: q_messaggio.data ?? null,
+        voci: voci_attive, moduli: q_moduli.data ?? {},
+        con_foto_atlete: slide_foto,
+      });
+      saveAs(res.blob, buildRelazioneSlideFilename(q_club.data?.nome ?? "Club", stagione.nome));
+      for (const avviso of res.avvisi) toast.warning(avviso);
+    } catch (e) {
+      await segnala_errore("Relazione", t("relazione.slide.scarica_errore"), e);
+    } finally {
+      set_scaricando_slide(false);
+    }
+  };
+
+
   if (!club_id) {
     return (
       <div className="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 flex items-start gap-2">
@@ -150,10 +182,17 @@ export default function PresidentRelazione() {
             <SelectContent>{stagioni.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}</SelectContent>
           </Select>
         </div>
-        <Button className="h-11 gap-2" onClick={scarica} disabled={!dati_pronti || scaricando}>
-            {scaricando ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-            {t("relazione.scarica_relazione")}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button className="h-11 gap-2" onClick={scarica} disabled={!dati_pronti || scaricando || scaricando_slide}>
+              {scaricando ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+              {t("relazione.scarica_relazione")}
+          </Button>
+          <Button variant="outline" className="h-11 gap-2" onClick={scarica_slide} disabled={!dati_pronti || scaricando || scaricando_slide}>
+              {scaricando_slide ? <Loader2 className="w-4 h-4 animate-spin" /> : <Presentation className="w-4 h-4" />}
+              {t("relazione.slide.scarica_slide")}
+          </Button>
+        </div>
+
       </header>
 
       {q_stagioni.isError && (
@@ -184,7 +223,15 @@ export default function PresidentRelazione() {
           <div className="flex flex-wrap gap-2">{(["completa", "assemblea", "comitato"] as const).map((p) => <Button key={p} size="sm" variant="outline" disabled={!dati_pronti || comp.in_salvataggio} onClick={() => comp.applica_preset(p)}>{t(`relazione.preset_${p}`)}</Button>)}</div>
           <Button variant="ghost" className="w-full justify-between px-0" onClick={() => set_pannello_aperto((v) => !v)}>{t("relazione.pannello.scegli_moduli")}{pannello_aperto ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</Button>
           {pannello_aperto && <div className="space-y-5 border-t pt-4"><div><p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">{t("relazione.pannello.tono")}</p><Tabs value={tono} onValueChange={(v) => set_tono(v as Tono)}><TabsList className="grid w-full grid-cols-2"><TabsTrigger value="soci">{t("relazione.tono_soci")}</TabsTrigger><TabsTrigger value="formale">{t("relazione.tono_formale")}</TabsTrigger></TabsList></Tabs></div>{comp.is_error ? <div className="flex items-center gap-2 text-sm text-destructive"><AlertTriangle className="h-4 w-4" />{t("relazione.errore_composizione")}<Button size="sm" variant="outline" onClick={() => comp.ricarica()}>{t("relazione.riprova")}</Button></div> : comp.is_loading || !stagione ? <Loader2 className="h-4 w-4 animate-spin" /> : <PannelloModuli club_id={club_id} stagione={stagione} tono={tono} voci={comp.voci} toggle={comp.toggle} sposta={comp.sposta} moduli_in_caricamento={q_moduli.isPending} />}</div>}
+          <div className="space-y-2 border-t pt-4">
+            <div className="flex items-start justify-between gap-3">
+              <label htmlFor="slide_foto" className="text-sm font-medium">{t("relazione.slide.foto_switch")}</label>
+              <Switch id="slide_foto" checked={slide_foto} onCheckedChange={set_slide_foto} />
+            </div>
+            <p className="text-xs text-muted-foreground">{t("relazione.slide.foto_nota")}</p>
+          </div>
         </aside>}
+
       </div>
     </div>
   );
