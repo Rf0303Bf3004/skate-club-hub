@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertCircle, CheckCircle2, Loader2, Send } from "lucide-react";
-import { build_contratto, type DatiContratto } from "@/lib/contratto-adesione";
+import { type ArticoloContratto, type DatiContratto } from "@/lib/contratto-adesione";
 
 const CANTONI_CH = [
   "AG","AI","AR","BE","BL","BS","FR","GE","GL","GR","JU","LU","NE","NW","OW","SG","SH","SO","SZ","TG","TI","UR","VD","VS","ZG","ZH",
