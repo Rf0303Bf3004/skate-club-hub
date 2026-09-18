@@ -336,38 +336,54 @@ const AtletaTab: React.FC = () => {
 
         {/* Genitori (sola lettura) */}
         <SectionCard icon={Users} title="Genitori" gradient="from-emerald-500 to-teal-600">
-          {!has_g1 && !has_g2 ? (
-            <p className="text-sm text-slate-500">Nessun genitore registrato.</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {has_g1 && (
-                <GenitoreCard
-                  nome={atleta.genitore1_nome}
-                  cognome={atleta.genitore1_cognome}
-                  email={atleta.genitore1_email}
-                  tel={atleta.genitore1_telefono}
-                  indirizzo={atleta.genitore1_indirizzo}
-                  cap={atleta.genitore1_cap}
-                  citta={atleta.genitore1_citta}
-                  cantone={atleta.genitore1_cantone}
-                  idx={0}
-                />
-              )}
-              {has_g2 && (
-                <GenitoreCard
-                  nome={atleta.genitore2_nome}
-                  cognome={atleta.genitore2_cognome}
-                  email={atleta.genitore2_email}
-                  tel={atleta.genitore2_telefono}
-                  indirizzo={atleta.genitore2_indirizzo}
-                  cap={atleta.genitore2_cap}
-                  citta={atleta.genitore2_citta}
-                  cantone={atleta.genitore2_cantone}
-                  idx={1}
-                />
-              )}
-            </div>
-          )}
+          {(() => {
+            // Con i genitori separati si mostra SOLO la card del genitore della
+            // sessione: dell'altro restano visibili nome e cognome (più sopra),
+            // ma i suoi recapiti non devono comparire in una card mezza vuota.
+            const separati = !!atleta.genitori_separati;
+            const gen_attivo = separati ? quale_genitore(atleta) : null;
+            const mostra_g1 = !!has_g1 && (!separati || gen_attivo === "genitore1");
+            const mostra_g2 = !!has_g2 && (!separati || gen_attivo === "genitore2");
+            const altro_presente = separati && (gen_attivo === "genitore1" ? !!has_g2 : !!has_g1);
+            if (!mostra_g1 && !mostra_g2) {
+              return <p className="text-sm text-slate-500">Nessun genitore registrato.</p>;
+            }
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {mostra_g1 && (
+                  <GenitoreCard
+                    nome={atleta.genitore1_nome}
+                    cognome={atleta.genitore1_cognome}
+                    email={atleta.genitore1_email}
+                    tel={atleta.genitore1_telefono}
+                    indirizzo={atleta.genitore1_indirizzo}
+                    cap={atleta.genitore1_cap}
+                    citta={atleta.genitore1_citta}
+                    cantone={atleta.genitore1_cantone}
+                    idx={0}
+                  />
+                )}
+                {mostra_g2 && (
+                  <GenitoreCard
+                    nome={atleta.genitore2_nome}
+                    cognome={atleta.genitore2_cognome}
+                    email={atleta.genitore2_email}
+                    tel={atleta.genitore2_telefono}
+                    indirizzo={atleta.genitore2_indirizzo}
+                    cap={atleta.genitore2_cap}
+                    citta={atleta.genitore2_citta}
+                    cantone={atleta.genitore2_cantone}
+                    idx={1}
+                  />
+                )}
+                {altro_presente && (
+                  <p className="text-sm text-slate-500 self-center">
+                    L'altro genitore gestisce i propri recapiti dal suo accesso.
+                  </p>
+                )}
+              </div>
+            );
+          })()}
         </SectionCard>
       </div>
 
