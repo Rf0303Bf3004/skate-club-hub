@@ -16,6 +16,12 @@ import { registra_silenzioso } from "@/lib/errori";
 
 
 
+/**
+ * Il bollino conta le tre cose in attesa della pagina Richieste Iscrizione:
+ * richieste ai corsi, domande delle famiglie nuove e rinnovi non ancora
+ * confermati della stagione attiva. Se una delle tre letture fallisce
+ * l'errore risale: meglio nessun numero che un numero più basso del vero.
+ */
 function use_count_richieste_pendenti() {
   const { session } = useAuth();
   const { data = 0 } = useQuery({
@@ -23,12 +29,43 @@ function use_count_richieste_pendenti() {
     enabled: !!session?.club_id,
     refetchInterval: 60000,
     queryFn: async () => {
-      const { count } = await supabase
+      const club_id = session!.club_id;
+
+      const corsi = await supabase
         .from("richieste_iscrizione")
         .select("id", { count: "exact", head: true })
-        .eq("club_id", session!.club_id)
+        .eq("club_id", club_id)
         .eq("stato", "in_attesa");
-      return count ?? 0;
+      if (corsi.error) throw corsi.error;
+
+      const domande = await supabase
+        .from("domande_iscrizione")
+        .select("id", { count: "exact", head: true })
+        .eq("club_id", club_id)
+        .eq("stato", "in_attesa");
+      if (domande.error) throw domande.error;
+
+      const stagione = await supabase
+        .from("stagioni")
+        .select("id")
+        .eq("club_id", club_id)
+        .eq("attiva", true)
+        .maybeSingle();
+      if (stagione.error) throw stagione.error;
+
+      let invitati = 0;
+      if (stagione.data?.id) {
+        const reg = await supabase
+          .from("atleti_storici_stagioni")
+          .select("atleta_id", { count: "exact", head: true })
+          .eq("club_id", club_id)
+          .eq("stagione_id", stagione.data.id)
+          .eq("status", "invitato");
+        if (reg.error) throw reg.error;
+        invitati = reg.count ?? 0;
+      }
+
+      return (corsi.count ?? 0) + (domande.count ?? 0) + invitati;
     },
   });
   return data;
