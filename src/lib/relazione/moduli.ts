@@ -8,7 +8,7 @@
 import { supabase } from "@/lib/supabase";
 import i18n from "@/i18n";
 import { formatta, type GraficoSpec, type PuntoSerie } from "./grafici";
-import { fetchAtletiDellaStagione } from "./atleti-stagione";
+import { fetchAtletiDellaStagione, stagione_in_corso } from "./atleti-stagione";
 import {
   fetchFonteEconomica, testo_economia, SOGLIA_FATTURE, type EsitoFonte,
 } from "./fonte-economica";
@@ -407,6 +407,13 @@ async function modAtletiFlussi(ctx: ContestoModuli): Promise<ModuloRisultato> {
 async function modAtletiAgoniste(ctx: ContestoModuli): Promise<ModuloRisultato> {
   const def = def_di("atleti_agoniste");
   return sicuro(def, async () => {
+    // La flag agonista vive solo nell'anagrafico di oggi: lo storico di stagione
+    // non conserva chi allora era agonista. Su una stagione chiusa il numero di
+    // oggi non può essere presentato come quello di allora (stessa regola del
+    // KPI "Agoniste" e dei paragrafi).
+    if (!stagione_in_corso(ctx.stagione)) {
+      return vuoto(def, testo_resoconto("agoniste_storico"));
+    }
     const atleti = await atletiAttivi(ctx);
     if (atleti.length === 0) return vuoto(def, "Non ci sono atlete attive.");
     const agoniste = atleti.filter((a) => a.agonista).length;

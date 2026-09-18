@@ -425,6 +425,10 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     }
   };
   const nuova_fattura = () => {
+    // Il pagante segue la scheda solo con i genitori separati attivi: altrimenti
+    // la fattura esce come sempre (pagante nullo), anche se in database è
+    // rimasto un valore vecchio dell'interruttore.
+    if (!form.genitori_separati) { crea_bozza_fattura(null); return; }
     if (form.fatture_intestate_a === "genitore2") crea_bozza_fattura("genitore2");
     else if (form.fatture_intestate_a === "meta") set_scelta_pagante_aperta(true);
     else crea_bozza_fattura(null);
@@ -630,8 +634,12 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         genitore1_paese_iso: form.genitore1_paese_iso || null,
         genitore2_paese_iso: form.genitore2_paese_iso || null,
         genitori_separati: !!form.genitori_separati,
-        fatture_intestate_a: form.fatture_intestate_a || "genitore1",
-        comunicazioni_a: form.comunicazioni_a || "entrambi",
+        // Spengere l'interruttore riporta tutto al caso normale: nessuno stato
+        // nascosto in database (valore vecchio che sopravvive allo switch).
+        fatture_intestate_a: form.genitori_separati
+          ? (form.fatture_intestate_a || "genitore1") : "genitore1",
+        comunicazioni_a: form.genitori_separati
+          ? (form.comunicazioni_a || "entrambi") : "entrambi",
         sesso: form.sesso || null,
         indirizzo: form.indirizzo || null,
         cap: form.cap || null,

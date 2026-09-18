@@ -392,6 +392,7 @@
       "vuoto_gare": "There are no competitions scheduled for this season.",
       "vuoto_classifiche": "No competition results have been imported for this season.",
       "vuoto_agoniste": "There are no competitive athletes recorded for this season.",
+      "agoniste_storico": "The breakdown of competitive athletes is not kept in the season archive.",
       "classifica_mancante": "Results not imported yet",
       "senza_categoria": "Category not specified",
       "col_pos": "Pos.",
