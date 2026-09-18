@@ -69,7 +69,11 @@ Deno.serve(async (req) => {
       console.error("[upload-foto-atleta] id_err", id_err);
       return json({ error: "db_error" }, 500);
     }
-    const riga = (identita ?? []).find((r: { tipo?: string }) => r.tipo === "atleta");
+    // La RPC può restituire un oggetto singolo invece di un array: normalizza.
+    const lista: { tipo?: string; id?: string }[] = Array.isArray(identita)
+      ? identita
+      : (identita ? [identita] : []);
+    const riga = lista.find((r) => r.tipo === "atleta");
 
     if (!riga) return json({ error: "codice_non_trovato" }, 404);
 
@@ -83,6 +87,7 @@ Deno.serve(async (req) => {
       return json({ error: "db_error" }, 500);
     }
     if (!atleta) return json({ error: "codice_non_trovato" }, 404);
+    if (!atleta.attivo) return json({ error: "atleta_non_attivo" }, 403);
 
 
     // Firma al volo il percorso della foto (mai l'URL pubblico grezzo)

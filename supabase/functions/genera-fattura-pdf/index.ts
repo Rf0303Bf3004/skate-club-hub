@@ -86,7 +86,8 @@ function build_pdf_data(fattura: any, atleta: any, club: any, qr: any): FatturaA
     atleta: {
       nome: atleta?.nome ?? "",
       cognome: atleta?.cognome ?? "",
-      codice: atleta?.codice_atleta ?? null,
+      // Nessun codice di accesso sul documento: sulla fattura serve il numero
+      // della fattura, non la chiave con cui la famiglia entra nel portale.
       livello,
     },
     club,
@@ -252,7 +253,7 @@ Deno.serve(async (req) => {
     const [atletaRes, clubRes, setupRes, ragioneRes] = await Promise.all([
       f.atleta_id
         ? supabase.from("atleti")
-            .select("nome, cognome, codice_atleta, livello_attuale, livello_artistica, livello_stile")
+            .select("nome, cognome, livello_attuale, livello_artistica, livello_stile")
             .eq("id", f.atleta_id).maybeSingle()
         : Promise.resolve({ data: null } as any),
       supabase.from("clubs")
