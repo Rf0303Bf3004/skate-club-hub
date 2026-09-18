@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Camera, CheckCircle2, Loader2, AlertCircle, Send } from "lucide-react";
-import { build_contratto, type DatiContratto } from "@/lib/contratto-adesione";
+import { type ArticoloContratto, type DatiContratto } from "@/lib/contratto-adesione";
 import { get_livello_display } from "@/lib/atleta-livello";
 
 const MAX_BYTES = 2 * 1024 * 1024;
