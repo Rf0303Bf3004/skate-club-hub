@@ -18,7 +18,7 @@ interface Props {
 }
 
 export default function PannelloModuli({
-  club_id, stagione, tono, voci, toggle, sposta, moduli_in_caricamento,
+  voci, toggle, sposta, moduli_in_caricamento,
 }: Props) {
   const { t } = useTranslation("dashboard");
   const mobili = voci.filter((v) => !v.bloccato);
@@ -41,7 +41,7 @@ export default function PannelloModuli({
                 onCheckedChange={(c) => toggle(v, c === true)}
                 aria-label={v.titolo}
               />
-              <span className="min-w-0 flex-1 truncate text-sm" title={v.titolo}>{v.titolo}</span>
+              <span className="min-w-0 flex-1 truncate text-sm" title={v.titolo}>{v.riferimento === "sportivo_podio_dettaglio" ? t("relazione.moduli_catalogo.podio_titolo") : v.riferimento === "sportivo_test_dettaglio" ? t("relazione.moduli_catalogo.test_titolo") : v.titolo}</span>
               {spento_per_dati && !moduli_in_caricamento && <span title={v.motivo}><AlertTriangle className={v.stato_modulo === "errore" ? "h-3 w-3 text-destructive" : "h-3 w-3 text-amber-700"} /></span>}
                 <div className="flex gap-1">
                   <Button size="icon" variant="ghost" className="h-6 w-6" disabled={idx <= 0}

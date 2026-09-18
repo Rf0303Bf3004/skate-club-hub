@@ -33,7 +33,10 @@ export default function PresidentRelazione() {
   const q_stagioni = useQuery({
     queryKey: ["relazione_stagioni", club_id],
     enabled: !!club_id,
-    queryFn: () => fetchStagioniOrdinate(club_id!),
+    queryFn: () => {
+      if (!club_id) throw new Error(t("relazione.senza_club"));
+      return fetchStagioniOrdinate(club_id);
+    },
   });
   const stagioni = q_stagioni.data ?? [];
   const proposta = useMemo(() => stagioneDaProporre(stagioni), [stagioni]);
@@ -44,7 +47,8 @@ export default function PresidentRelazione() {
     queryKey: ["club_for_relazione", club_id],
     enabled: !!club_id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("clubs").select("*").eq("id", club_id!).maybeSingle();
+      if (!club_id) throw new Error(t("relazione.senza_club"));
+      const { data, error } = await supabase.from("clubs").select("*").eq("id", club_id).maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -53,7 +57,10 @@ export default function PresidentRelazione() {
   const q_moduli = useQuery({
     queryKey: ["relazione_moduli", club_id, stagione?.id, i18n.language],
     enabled: !!club_id && !!stagione?.id && stagioni.length > 0,
-    queryFn: () => fetchModuli({ club_id: club_id!, stagione: stagione!, stagioni }),
+    queryFn: () => {
+      if (!club_id || !stagione) throw new Error(t("relazione.attendi_dati"));
+      return fetchModuli({ club_id, stagione, stagioni });
+    },
   });
 
   const q_blocchi = useQuery({
@@ -62,7 +69,7 @@ export default function PresidentRelazione() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("relazioni_blocchi_testo" as any).select("*")
-        .eq("club_id", club_id!).eq("stagione_id", stagione!.id).order("ordine");
+        .eq("club_id", club_id).eq("stagione_id", stagione?.id).order("ordine");
       if (error) throw error;
       return (data ?? []) as any[];
     },
@@ -74,7 +81,7 @@ export default function PresidentRelazione() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("relazioni_allegati" as any).select("*")
-        .eq("club_id", club_id!).eq("stagione_id", stagione!.id).order("ordine");
+        .eq("club_id", club_id).or(`stagione_id.eq.${stagione?.id},stagione_id.is.null`).order("ordine");
       if (error) throw error;
       return (data ?? []) as any[];
     },
@@ -107,7 +114,7 @@ export default function PresidentRelazione() {
     set_scaricando(true);
     try {
       const res = await generateRelazionePDF({
-        club: q_club.data, club_id: club_id!, presidente:
+        club: q_club.data, club_id, presidente:
           `${session?.nome ?? ""} ${session?.cognome ?? ""}`.trim() || session?.email || t("relazione.presidente_fallback"),
         stagione, tono, messaggio: q_messaggio.data ?? null,
         voci: voci_attive, moduli: q_moduli.data ?? {},
@@ -166,13 +173,13 @@ export default function PresidentRelazione() {
 
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
         <main className="min-w-0 bg-muted/30 p-3 md:p-6">
-          {stagione && dati_pronti ? <DocumentoRelazione club_nome={q_club.data?.nome ?? t("relazione.club_fallback")} club_id={club_id} stagione={stagione} tono={tono} voci={comp.voci} moduli={q_moduli.data ?? {}} /> : <div className="flex min-h-[400px] items-center justify-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />{t("relazione.caricamento")}</div>}
+          {stagione && dati_pronti ? <DocumentoRelazione club_nome={q_club.data?.nome ?? t("relazione.club_fallback")} club_id={club_id} stagione={stagione} tono={tono} voci={comp.voci} moduli={q_moduli.data ?? {}} /> : (q_club.isError || q_blocchi.isError || q_allegati.isError || q_messaggio.isError || q_moduli.isError || q_stagioni.isError || comp.is_error) ? <div className="flex min-h-[400px] items-center justify-center gap-2 text-sm text-destructive"><AlertTriangle className="h-4 w-4" />{t("relazione.errore_dati_documento")}</div> : <div className="flex min-h-[400px] items-center justify-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />{t("relazione.caricamento")}</div>}
         </main>
         <aside className="space-y-4 border bg-card p-4 xl:sticky xl:top-20">
           <h2 className="font-semibold">{t("relazione.pannello.titolo")}</h2>
           <div className="flex flex-wrap gap-2">{(["completa", "assemblea", "comitato"] as const).map((p) => <Button key={p} size="sm" variant="outline" disabled={!dati_pronti || comp.in_salvataggio} onClick={() => comp.applica_preset(p)}>{t(`relazione.preset_${p}`)}</Button>)}</div>
           <Button variant="ghost" className="w-full justify-between px-0" onClick={() => set_pannello_aperto((v) => !v)}>{t("relazione.pannello.scegli_moduli")}{pannello_aperto ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</Button>
-          {pannello_aperto && <div className="space-y-5 border-t pt-4"><div><p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">{t("relazione.pannello.tono")}</p><Tabs value={tono} onValueChange={(v) => set_tono(v as Tono)}><TabsList className="grid w-full grid-cols-2"><TabsTrigger value="soci">{t("relazione.tono_soci")}</TabsTrigger><TabsTrigger value="formale">{t("relazione.tono_formale")}</TabsTrigger></TabsList></Tabs></div>{comp.is_error ? <div className="flex items-center gap-2 text-sm text-destructive"><AlertTriangle className="h-4 w-4" />{t("relazione.errore_composizione")}<Button size="sm" variant="outline" onClick={() => comp.ricarica()}>{t("relazione.riprova")}</Button></div> : comp.is_loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <PannelloModuli club_id={club_id} stagione={stagione!} tono={tono} voci={comp.voci} toggle={comp.toggle} sposta={comp.sposta} moduli_in_caricamento={q_moduli.isPending} />}</div>}
+          {pannello_aperto && <div className="space-y-5 border-t pt-4"><div><p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">{t("relazione.pannello.tono")}</p><Tabs value={tono} onValueChange={(v) => set_tono(v as Tono)}><TabsList className="grid w-full grid-cols-2"><TabsTrigger value="soci">{t("relazione.tono_soci")}</TabsTrigger><TabsTrigger value="formale">{t("relazione.tono_formale")}</TabsTrigger></TabsList></Tabs></div>{comp.is_error ? <div className="flex items-center gap-2 text-sm text-destructive"><AlertTriangle className="h-4 w-4" />{t("relazione.errore_composizione")}<Button size="sm" variant="outline" onClick={() => comp.ricarica()}>{t("relazione.riprova")}</Button></div> : comp.is_loading || !stagione ? <Loader2 className="h-4 w-4 animate-spin" /> : <PannelloModuli club_id={club_id} stagione={stagione} tono={tono} voci={comp.voci} toggle={comp.toggle} sposta={comp.sposta} moduli_in_caricamento={q_moduli.isPending} />}</div>}
         </aside>
       </div>
     </div>

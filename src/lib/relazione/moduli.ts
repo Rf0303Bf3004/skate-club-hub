@@ -150,7 +150,11 @@ async function sicuro(def: ModuloDef, fn: () => Promise<ModuloRisultato>): Promi
   }
 }
 
-const def_di = (id: string): ModuloDef => MODULI.find((m) => m.id === id)!;
+const def_di = (id: string): ModuloDef => {
+  const definizione = MODULI.find((m) => m.id === id);
+  if (!definizione) throw new Error(`Modulo relazione non definito: ${id}`);
+  return definizione;
+};
 
 // ────────────────────────────────────────────────────────────────
 // Costruzione dei moduli
@@ -771,6 +775,7 @@ async function modSportivoPodioDettaglio(ctx: ContestoModuli): Promise<ModuloRis
     const medaglie = iscrizioni.filter((i) => ["oro", "argento", "bronzo"].includes(String(i.medaglia ?? "").toLowerCase()));
     if (medaglie.length === 0) return vuoto(def, testo_modulo("podio_vuoto"));
     const nomi = await nomiAtlete(ctx.club_id, medaglie.map((i) => i.atleta_id));
+    if (medaglie.some((i) => !nomi.get(i.atleta_id))) throw new Error(testo_modulo("atleta_mancante"));
     const gare_per_id = new Map(gare.map((g) => [g.id, g]));
     const righe = medaglie
       .map((i) => {
@@ -778,7 +783,7 @@ async function modSportivoPodioDettaglio(ctx: ContestoModuli): Promise<ModuloRis
         return {
           data: String(gara?.data ?? ""),
           celle: [
-            nomi.get(i.atleta_id) ?? String(i.atleta_id).slice(0, 8),
+            nomi.get(i.atleta_id) ?? "",
             String(gara?.nome ?? "—"),
             gara?.data ? String(gara.data).slice(0, 10).split("-").reverse().join(".") : "—",
             String(i.livello_atleta ?? "—"),
@@ -840,6 +845,7 @@ async function modSportivoTestDettaglio(ctx: ContestoModuli): Promise<ModuloRisu
     const superati = (data ?? []) as any[];
     if (superati.length === 0) return vuoto(def, testo_modulo("test_vuoto"));
     const nomi = await nomiAtlete(ctx.club_id, superati.map((r) => r.atleta_id));
+    if (superati.some((r) => !nomi.get(r.atleta_id))) throw new Error(testo_modulo("atleta_mancante"));
     const test_per_id = new Map(sessioni.map((r) => [r.id, r]));
     const righe = superati
       .map((r) => {
@@ -847,7 +853,7 @@ async function modSportivoTestDettaglio(ctx: ContestoModuli): Promise<ModuloRisu
         return {
           data: String(sessione?.data ?? ""),
           celle: [
-            nomi.get(r.atleta_id) ?? String(r.atleta_id).slice(0, 8),
+            nomi.get(r.atleta_id) ?? "",
             String(r.livello_target ?? "—"),
             sessione?.data ? String(sessione.data).slice(0, 10).split("-").reverse().join(".") : "—",
           ],

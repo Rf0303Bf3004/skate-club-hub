@@ -325,6 +325,7 @@
       "podio_titolo": "Le podium de la saison", "podio_vuoto": "Aucun podium enregistré cette saison",
       "test_titolo": "Tests réussis", "test_vuoto": "Aucun test réussi enregistré cette saison",
       "atleta": "Athlète", "gara": "Compétition", "data": "Date", "livello": "Niveau", "medaglia": "Médaille", "livello_ottenuto": "Niveau obtenu"
+      ,"atleta_mancante": "Une athlète du résultat n'a pas pu être identifiée"
     },
     "anteprima_fedele": {
       "generazione": "Creation du PDF...",

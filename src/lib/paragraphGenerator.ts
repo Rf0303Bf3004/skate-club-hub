@@ -211,9 +211,10 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
          if (err3) throw err3;
          const nomi = new Map(((atlete ?? []) as any[]).map((a) => [a.id, `${a.nome ?? ""} ${a.cognome ?? ""}`.trim()]));
          const gare_per_id = new Map(((gare ?? []) as any[]).map((g) => [g.id, g]));
-         d.podi_atlete = con_podio
+          if (con_podio.some((i) => !nomi.get(i.atleta_id))) throw new Error("Atleta del podio non trovata nel club");
+          d.podi_atlete = con_podio
            .map((i) => ({
-             nome: nomi.get(i.atleta_id) ?? String(i.atleta_id).slice(0, 8),
+              nome: nomi.get(i.atleta_id) ?? "",
              medaglia: String(i.medaglia).toLowerCase(),
              gara: String(gare_per_id.get(i.gara_id)?.nome ?? "—"),
              data: String(gare_per_id.get(i.gara_id)?.data ?? ""),

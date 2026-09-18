@@ -728,6 +728,7 @@
       "podio_titolo": "Il podio della stagione", "podio_vuoto": "Nessun podio registrato in questa stagione",
       "test_titolo": "Test superati", "test_vuoto": "Nessun test superato registrato in questa stagione",
       "atleta": "Atleta", "gara": "Gara", "data": "Data", "livello": "Livello", "medaglia": "Medaglia", "livello_ottenuto": "Livello ottenuto"
+      ,"atleta_mancante": "Non è stato possibile identificare un'atleta del risultato"
     }
   },
   "onboarding_banner": {

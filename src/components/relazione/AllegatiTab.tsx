@@ -12,6 +12,7 @@ import { DndContext, PointerSensor, KeyboardSensor, useSensor, useSensors, close
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
+import { segnala_errore } from "@/lib/errori";
 
 interface Props { club_id: string; stagione_id: string; compatto?: boolean; }
 
@@ -122,10 +123,13 @@ export default function AllegatiTab({ club_id, stagione_id, compatto = false }: 
       const { error: upload_error } = await supabase.storage.from("relazioni-allegati").upload(path, file, { contentType: "application/pdf", upsert: false });
       if (upload_error) throw upload_error;
       const { error } = await supabase.from("relazioni_allegati" as any).insert({ club_id, stagione_id, categoria: "altro", titolo: file.name.replace(/\.pdf$/i, ""), ordine: max_ordine + 10, file_url: path, file_size_bytes: file.size, mime_type: "application/pdf" });
-      if (error) throw error;
+      if (error) {
+        await supabase.storage.from("relazioni-allegati").remove([path]);
+        throw error;
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["relazioni_allegati", club_id, stagione_id] }),
-    onError: (e: any) => toast.error(e?.message ?? t("relazione.allegato_form.toast_errore")),
+    onError: (e: any) => segnala_errore("Relazione", e?.message ?? t("relazione.allegato_form.toast_errore"), e),
   });
 
   return (

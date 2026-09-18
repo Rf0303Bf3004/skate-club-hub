@@ -325,6 +325,7 @@
       "podio_titolo": "Das Saisonpodest", "podio_vuoto": "In dieser Saison wurde kein Podestplatz erfasst",
       "test_titolo": "Bestandene Tests", "test_vuoto": "In dieser Saison wurde kein bestandener Test erfasst",
       "atleta": "Athletin", "gara": "Wettkampf", "data": "Datum", "livello": "Niveau", "medaglia": "Medaille", "livello_ottenuto": "Erreichtes Niveau"
+      ,"atleta_mancante": "Eine Athletin im Ergebnis konnte nicht identifiziert werden"
     },
     "anteprima_fedele": {
       "generazione": "PDF wird erstellt...",
