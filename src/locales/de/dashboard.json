@@ -273,6 +273,7 @@
     "errore_stagioni": "Die Saisons konnten nicht gelesen werden.",
     "errore_composizione": "Die gespeicherte Zusammenstellung konnte nicht gelesen werden.",
     "errore_moduli": "Die Moduldaten konnten nicht gelesen werden.",
+    "errore_dati_documento": "Nicht alle Berichtsdaten konnten gelesen werden.",
     "attendi_dati": "Warten Sie das Laden der Daten ab, bevor Sie herunterladen.",
     "scarica_relazione": "Bericht herunterladen",
     "scarica_errore": "PDF-Erstellung fehlgeschlagen",
@@ -319,6 +320,11 @@
       "giu": "Nach unten",
       "errore": "Daten nicht lesbar: {{motivo}}",
       "senza_dati": "Aus: {{motivo}}"
+    },
+    "moduli_catalogo": {
+      "podio_titolo": "Das Saisonpodest", "podio_vuoto": "In dieser Saison wurde kein Podestplatz erfasst",
+      "test_titolo": "Bestandene Tests", "test_vuoto": "In dieser Saison wurde kein bestandener Test erfasst",
+      "atleta": "Athletin", "gara": "Wettkampf", "data": "Datum", "livello": "Niveau", "medaglia": "Medaille", "livello_ottenuto": "Erreichtes Niveau"
     },
     "anteprima_fedele": {
       "generazione": "PDF wird erstellt...",

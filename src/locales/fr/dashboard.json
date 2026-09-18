@@ -273,6 +273,7 @@
     "errore_stagioni": "Impossible de lire les saisons.",
     "errore_composizione": "Impossible de lire la composition enregistree.",
     "errore_moduli": "Impossible de lire les donnees des modules.",
+    "errore_dati_documento": "Impossible de lire toutes les données du rapport.",
     "attendi_dati": "Attendez le chargement des donnees avant de telecharger.",
     "scarica_relazione": "Telecharger le rapport",
     "scarica_errore": "Echec de la creation du PDF",
@@ -319,6 +320,11 @@
       "giu": "Deplacer vers le bas",
       "errore": "Donnees illisibles : {{motivo}}",
       "senza_dati": "Desactive : {{motivo}}"
+    },
+    "moduli_catalogo": {
+      "podio_titolo": "Le podium de la saison", "podio_vuoto": "Aucun podium enregistré cette saison",
+      "test_titolo": "Tests réussis", "test_vuoto": "Aucun test réussi enregistré cette saison",
+      "atleta": "Athlète", "gara": "Compétition", "data": "Date", "livello": "Niveau", "medaglia": "Médaille", "livello_ottenuto": "Niveau obtenu"
     },
     "anteprima_fedele": {
       "generazione": "Creation du PDF...",

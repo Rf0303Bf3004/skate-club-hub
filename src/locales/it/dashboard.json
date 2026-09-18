@@ -670,6 +670,7 @@
     "errore_stagioni": "Non e' stato possibile leggere le stagioni.",
     "errore_composizione": "Non e' stato possibile leggere la composizione salvata.",
     "errore_moduli": "Non e' stato possibile leggere i dati dei moduli.",
+    "errore_dati_documento": "Non è stato possibile leggere tutti i dati della relazione.",
     "attendi_dati": "Attendi il caricamento dei dati prima di scaricare.",
     "scarica_relazione": "Scarica la relazione",
     "scarica_errore": "Creazione del PDF non riuscita",
@@ -722,6 +723,11 @@
       "giu": "Sposta giu",
       "errore": "Dati non leggibili: {{motivo}}",
       "senza_dati": "Spento: {{motivo}}"
+    },
+    "moduli_catalogo": {
+      "podio_titolo": "Il podio della stagione", "podio_vuoto": "Nessun podio registrato in questa stagione",
+      "test_titolo": "Test superati", "test_vuoto": "Nessun test superato registrato in questa stagione",
+      "atleta": "Atleta", "gara": "Gara", "data": "Data", "livello": "Livello", "medaglia": "Medaglia", "livello_ottenuto": "Livello ottenuto"
     }
   },
   "onboarding_banner": {
