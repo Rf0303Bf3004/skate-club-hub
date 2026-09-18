@@ -725,10 +725,35 @@
       "senza_dati": "Spento: {{motivo}}"
     },
     "moduli_catalogo": {
-      "podio_titolo": "Il podio della stagione", "podio_vuoto": "Nessun podio registrato in questa stagione",
-      "test_titolo": "Test superati", "test_vuoto": "Nessun test superato registrato in questa stagione",
-      "atleta": "Atleta", "gara": "Gara", "data": "Data", "livello": "Livello", "medaglia": "Medaglia", "livello_ottenuto": "Livello ottenuto"
-      ,"atleta_mancante": "Non è stato possibile identificare un'atleta del risultato"
+      "podio_titolo": "Il podio della stagione",
+      "podio_vuoto": "Nessun podio registrato in questa stagione",
+      "test_titolo": "Test superati",
+      "test_vuoto": "Nessun test superato registrato in questa stagione",
+      "atleta": "Atleta",
+      "gara": "Gara",
+      "data": "Data",
+      "livello": "Livello",
+      "medaglia": "Medaglia",
+      "livello_ottenuto": "Livello ottenuto",
+      "atleta_mancante": "Non è stato possibile identificare un'atleta del risultato",
+      "altro": "Altro",
+      "capienza": "Capienza",
+      "riempimento_sottotitolo": "posti occupati sulla capienza",
+      "livello_non_indicato": "Livello non indicato",
+      "podi_sottotitolo": "medaglie per livello",
+      "test_livello_sottotitolo": "esito dei test per livello",
+      "test_superati": "Superati",
+      "test_non_superati": "Non superati"
+    },
+    "didascalie": {
+      "serie": "In tutto {{totale}}. Il valore più alto è {{prima}} con {{prima_valore}}, seguito da {{seconda}} con {{seconda_valore}}.",
+      "serie_formale": "Il totale ammonta a {{totale}}. Il valore maggiore si registra per {{prima}} ({{prima_valore}}), seguito da {{seconda}} ({{seconda_valore}}).",
+      "una_voce": "Una sola voce: {{prima}}, con {{prima_valore}}.",
+      "una_voce_formale": "Si registra un'unica voce: {{prima}}, pari a {{prima_valore}}.",
+      "due_serie": "{{serie1}}: {{totale1}} in tutto; {{serie2}}: {{totale2}}.",
+      "due_serie_formale": "Il totale di {{serie1}} è pari a {{totale1}}; quello di {{serie2}} a {{totale2}}.",
+      "linea": "Si passa da {{prima}} ({{prima_valore}}) a {{ultima}} ({{ultima_valore}}); il massimo è {{massima}} con {{massimo_valore}}.",
+      "linea_formale": "L'andamento va da {{prima}} ({{prima_valore}}) a {{ultima}} ({{ultima_valore}}), con un massimo in {{massima}} pari a {{massimo_valore}}."
     }
   },
   "onboarding_banner": {

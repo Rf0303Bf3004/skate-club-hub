@@ -278,8 +278,14 @@
     "scarica_relazione": "Download the report",
     "scarica_errore": "PDF creation failed",
     "club_fallback": "Club",
-    "pannello": { "titolo": "What to include", "scegli_moduli": "Choose module by module", "tono": "Tone" },
-    "documento": { "messaggio_titolo": "The president's message" },
+    "pannello": {
+      "titolo": "What to include",
+      "scegli_moduli": "Choose module by module",
+      "tono": "Tone"
+    },
+    "documento": {
+      "messaggio_titolo": "The president's message"
+    },
     "passo1": "Season and tone",
     "passo2": "The president's message",
     "passo3": "Modules",
@@ -322,10 +328,25 @@
       "senza_dati": "Off: {{motivo}}"
     },
     "moduli_catalogo": {
-      "podio_titolo": "The season podium", "podio_vuoto": "No podium recorded this season",
-      "test_titolo": "Tests passed", "test_vuoto": "No passed test recorded this season",
-      "atleta": "Athlete", "gara": "Competition", "data": "Date", "livello": "Level", "medaglia": "Medal", "livello_ottenuto": "Level achieved"
-      ,"atleta_mancante": "An athlete in the result could not be identified"
+      "podio_titolo": "The season podium",
+      "podio_vuoto": "No podium recorded this season",
+      "test_titolo": "Tests passed",
+      "test_vuoto": "No passed test recorded this season",
+      "atleta": "Athlete",
+      "gara": "Competition",
+      "data": "Date",
+      "livello": "Level",
+      "medaglia": "Medal",
+      "livello_ottenuto": "Level achieved",
+      "atleta_mancante": "An athlete in the result could not be identified",
+      "altro": "Other",
+      "capienza": "Capacity",
+      "riempimento_sottotitolo": "places taken out of capacity",
+      "livello_non_indicato": "Level not specified",
+      "podi_sottotitolo": "medals by level",
+      "test_livello_sottotitolo": "test results by level",
+      "test_superati": "Passed",
+      "test_non_superati": "Not passed"
     },
     "anteprima_fedele": {
       "generazione": "Creating the PDF...",
@@ -348,6 +369,16 @@
     },
     "allegato_form": {
       "errore_file_mancante": "Choose the PDF file to attach"
+    },
+    "didascalie": {
+      "serie": "{{totale}} in total. The highest value is {{prima}} with {{prima_valore}}, followed by {{seconda}} with {{seconda_valore}}.",
+      "serie_formale": "The total amounts to {{totale}}. The highest value is recorded for {{prima}} ({{prima_valore}}), followed by {{seconda}} ({{seconda_valore}}).",
+      "una_voce": "A single entry: {{prima}}, with {{prima_valore}}.",
+      "una_voce_formale": "A single entry is recorded: {{prima}}, equal to {{prima_valore}}.",
+      "due_serie": "{{serie1}}: {{totale1}} in total; {{serie2}}: {{totale2}}.",
+      "due_serie_formale": "The total for {{serie1}} is {{totale1}}; for {{serie2}} it is {{totale2}}.",
+      "linea": "It goes from {{prima}} ({{prima_valore}}) to {{ultima}} ({{ultima_valore}}); the peak is {{massima}} with {{massimo_valore}}.",
+      "linea_formale": "The trend runs from {{prima}} ({{prima_valore}}) to {{ultima}} ({{ultima_valore}}), peaking at {{massima}} with {{massimo_valore}}."
     }
   }
 }
