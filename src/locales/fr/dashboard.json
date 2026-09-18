@@ -318,7 +318,9 @@
       "rigenera": "Regenerer",
       "salva": "Enregistrer",
       "annulla": "Annuler",
-      "clicca_per_correggere": "Cliquez pour corriger le texte"
+      "clicca_per_correggere": "Cliquez pour corriger le texte",
+      "errore_dati_incompleti": "Certaines données de la saison n'ont pas pu être lues : les textes n'ont pas été réécrits.",
+      "errore_sincronizzazione": "Impossible de mettre à jour les textes générés."
     },
     "moduli": {
       "sempre": "toujours present",
@@ -416,6 +418,29 @@
       "didascalia_one": "{{count}} compétition avec le classement complet importé.",
       "didascalia_other": "{{count}} compétitions avec le classement complet importé.",
       "nostre_atlete": "Les athlètes du club sont en gras, avec un triangle avant la position."
+    },
+    "paragrafi_auto": {
+      "gare_one": "Il y a eu 1 compétition au calendrier.",
+      "gare_other": "Il y a eu {{count}} compétitions au calendrier.",
+      "podi_one": "1 podium a été obtenu.",
+      "podi_other": "{{count}} podiums ont été obtenus.",
+      "medaglie": "Dans le détail : {{ori}}, {{argenti}} et {{bronzi}}.",
+      "ori_nessuno": "aucun or",
+      "ori_one": "1 or",
+      "ori_other": "{{count}} ors",
+      "argenti_nessuno": "aucun argent",
+      "argenti_one": "1 argent",
+      "argenti_other": "{{count}} argents",
+      "bronzi_nessuno": "aucun bronze",
+      "bronzi_one": "1 bronze",
+      "bronzi_other": "{{count}} bronzes",
+      "podio_elenco": "Sur le podium cette saison : {{elenco}}.",
+      "test_one": "1 test de niveau a été réussi.",
+      "test_other": "{{count}} tests de niveau ont été réussis.",
+      "lezioni_one": "1 leçon privée a été donnée.",
+      "lezioni_other": "{{count}} leçons privées ont été données.",
+      "ore_one": "Cela représente 1 heure.",
+      "ore_other": "Cela représente {{count}} heures."
     }
   }
 }

@@ -5,7 +5,7 @@
 
 import { PDFDocument, StandardFonts, rgb, PDFFont, PDFPage, PDFImage } from "pdf-lib";
 import { supabase } from "@/lib/supabase";
-import { fetchParagrafiForPdf, AREA_LABELS, type Tono } from "@/lib/paragraphGenerator";
+import { fetchParagrafiForPdf, sincronizzaParagrafi, AREA_LABELS, type Tono } from "@/lib/paragraphGenerator";
 import { fetchKpiData, type KpiData, type KpiCell } from "@/lib/kpiData";
 import type { AreaId, ModuloRisultato, Stagione } from "@/lib/relazione/moduli";
 import { renderGraficoSVG, svgToPngBytes, type RigaResoconto } from "@/lib/relazione/grafici";
@@ -333,6 +333,13 @@ export async function generateRelazionePDF(
     const colore = hexToRgb(club?.colore_primario);
 
     let paragrafi: Record<string, Record<number, string>> = {};
+    // Prima di stampare, i testi generati vengono riallineati ai dati di oggi:
+    // così il PDF non riporta una frase vecchia rimasta in tabella.
+    try {
+      await sincronizzaParagrafi(club_id, stagione, tono);
+    } catch (e: any) {
+      avvisi.push("I testi generati non sono stati aggiornati: " + (e?.message ?? e));
+    }
     try {
       paragrafi = await fetchParagrafiForPdf(club_id, stagione.id, tono);
     } catch (e: any) {

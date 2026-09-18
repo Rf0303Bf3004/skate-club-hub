@@ -715,7 +715,9 @@
       "rigenera": "Rigenera",
       "salva": "Salva",
       "annulla": "Annulla",
-      "clicca_per_correggere": "Clicca per correggere il testo"
+      "clicca_per_correggere": "Clicca per correggere il testo",
+      "errore_dati_incompleti": "Alcuni dati della stagione non sono stati letti: i testi non sono stati riscritti.",
+      "errore_sincronizzazione": "Non è stato possibile aggiornare i testi generati."
     },
     "moduli": {
       "sempre": "sempre presente",
@@ -791,6 +793,29 @@
       "didascalia_one": "{{count}} gara con la classifica completa importata.",
       "didascalia_other": "{{count}} gare con la classifica completa importata.",
       "nostre_atlete": "Le atlete del club sono in grassetto, con il triangolo prima della posizione."
+    },
+    "paragrafi_auto": {
+      "gare_one": "In calendario c'è stata 1 gara.",
+      "gare_other": "Le gare in calendario sono state {{count}}.",
+      "podi_one": "È arrivato 1 podio.",
+      "podi_other": "I podi conquistati sono {{count}}.",
+      "medaglie": "Nel dettaglio: {{ori}}, {{argenti}} e {{bronzi}}.",
+      "ori_nessuno": "nessun oro",
+      "ori_one": "1 oro",
+      "ori_other": "{{count}} ori",
+      "argenti_nessuno": "nessun argento",
+      "argenti_one": "1 argento",
+      "argenti_other": "{{count}} argenti",
+      "bronzi_nessuno": "nessun bronzo",
+      "bronzi_one": "1 bronzo",
+      "bronzi_other": "{{count}} bronzi",
+      "podio_elenco": "Sul podio in questa stagione: {{elenco}}.",
+      "test_one": "È stato superato 1 test di livello.",
+      "test_other": "I test di livello superati sono {{count}}.",
+      "lezioni_one": "È stata svolta 1 lezione privata.",
+      "lezioni_other": "Le lezioni private svolte sono {{count}}.",
+      "ore_one": "Corrisponde a 1 ora.",
+      "ore_other": "Corrispondono a {{count}} ore."
     }
   },
   "onboarding_banner": {

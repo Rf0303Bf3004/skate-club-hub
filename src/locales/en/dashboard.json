@@ -318,7 +318,9 @@
       "rigenera": "Regenerate",
       "salva": "Save",
       "annulla": "Cancel",
-      "clicca_per_correggere": "Click to edit the text"
+      "clicca_per_correggere": "Click to edit the text",
+      "errore_dati_incompleti": "Some season data could not be read: the texts were not rewritten.",
+      "errore_sincronizzazione": "The generated texts could not be updated."
     },
     "moduli": {
       "sempre": "always included",
@@ -416,6 +418,29 @@
       "didascalia_one": "{{count}} competition with full results imported.",
       "didascalia_other": "{{count}} competitions with full results imported.",
       "nostre_atlete": "Club athletes are in bold, with a triangle before the position."
+    },
+    "paragrafi_auto": {
+      "gare_one": "There was 1 competition on the calendar.",
+      "gare_other": "There were {{count}} competitions on the calendar.",
+      "podi_one": "1 podium was achieved.",
+      "podi_other": "{{count}} podiums were achieved.",
+      "medaglie": "In detail: {{ori}}, {{argenti}} and {{bronzi}}.",
+      "ori_nessuno": "no gold",
+      "ori_one": "1 gold",
+      "ori_other": "{{count}} golds",
+      "argenti_nessuno": "no silver",
+      "argenti_one": "1 silver",
+      "argenti_other": "{{count}} silvers",
+      "bronzi_nessuno": "no bronze",
+      "bronzi_one": "1 bronze",
+      "bronzi_other": "{{count}} bronzes",
+      "podio_elenco": "On the podium this season: {{elenco}}.",
+      "test_one": "1 level test was passed.",
+      "test_other": "{{count}} level tests were passed.",
+      "lezioni_one": "1 private lesson was held.",
+      "lezioni_other": "{{count}} private lessons were held.",
+      "ore_one": "That is 1 hour.",
+      "ore_other": "That is {{count}} hours."
     }
   }
 }

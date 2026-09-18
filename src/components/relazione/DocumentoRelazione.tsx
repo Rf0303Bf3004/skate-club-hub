@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { segnala_errore } from "@/lib/errori";
 import type { VocePannello } from "@/hooks/use-composizione-relazione";
 import type { ModuloRisultato, Stagione } from "@/lib/relazione/moduli";
-import type { Tono } from "@/lib/paragraphGenerator";
+import { sincronizzaParagrafi, type Tono } from "@/lib/paragraphGenerator";
 import MessaggioPresidente from "./MessaggioPresidente";
 import AllegatiTab from "./AllegatiTab";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,35 @@ interface Props {
   aree_modificabili?: string[];
 }
 
-function TestoCapitolo({ club_id, stagione, tono, area, modificabile = true }: { club_id: string; stagione: Stagione; tono: Tono; area: string; modificabile?: boolean }) {
+/**
+ * Riallinea i testi generati ai dati di oggi, una volta per club/stagione/tono.
+ * I capitoli si leggono solo dopo: così non si mostra una frase vecchia.
+ */
+function useSincronizzazione(club_id: string, stagione: Stagione, tono: Tono) {
+  const { t } = useTranslation("dashboard");
+  const qc = useQueryClient();
+  const [stato, set_stato] = useState<"attesa" | "pronto" | "errore">("attesa");
+  const sincronizza = useMutation({
+    mutationFn: () => sincronizzaParagrafi(club_id, stagione, tono),
+    onError: (e) => { set_stato("errore"); segnala_errore("Relazione", t("relazione.paragrafi.errore_sincronizzazione"), e); },
+    onSuccess: (r) => {
+      set_stato("pronto");
+      if (r.aggiornati > 0 || r.rimossi > 0) qc.invalidateQueries({ queryKey: ["relazione_paragrafi"] });
+    },
+  });
+  const chiave = `${club_id}|${stagione.id}|${tono}`;
+  const eseguito = useRef<string | null>(null);
+  const avvia = sincronizza.mutate;
+  useEffect(() => {
+    if (eseguito.current === chiave) return;
+    eseguito.current = chiave;
+    set_stato("attesa");
+    avvia();
+  }, [chiave, avvia]);
+  return { stato, riprova: () => { set_stato("attesa"); avvia(); } };
+}
+
+function TestoCapitolo({ club_id, stagione, tono, area, modificabile = true, pronto }: { club_id: string; stagione: Stagione; tono: Tono; area: string; modificabile?: boolean; pronto: boolean }) {
   const { t } = useTranslation("dashboard");
   const qc = useQueryClient();
   const chiave = ["relazione_paragrafi", club_id, stagione.id, tono, area];
@@ -40,6 +68,8 @@ function TestoCapitolo({ club_id, stagione, tono, area, modificabile = true }: {
       if (error) throw error;
       return (data ?? []) as any[];
     },
+    // Si legge solo dopo il riallineamento: mai un testo vecchio a schermo.
+    enabled: pronto,
   });
   useEffect(() => {
     if (!q.isSuccess) return;
@@ -122,7 +152,12 @@ function Modulo({ risultato, colore }: { risultato: ModuloRisultato; colore: str
 export default function DocumentoRelazione({ club_nome, club_id, stagione, tono, voci, moduli, colore_primario, aree_modificabili }: Props) {
   const { t } = useTranslation("dashboard");
   const attive = voci.filter((v) => v.attivo);
+  const sincronia = useSincronizzazione(club_id, stagione, tono);
   return <div className="space-y-5">
+    {sincronia.stato === "errore" && <div className="mx-auto flex max-w-4xl items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+      <AlertTriangle className="h-4 w-4 shrink-0" />{t("relazione.paragrafi.errore_sincronizzazione")}
+      <Button size="sm" variant="outline" onClick={sincronia.riprova}>{t("relazione.riprova")}</Button>
+    </div>}
     <section className="mx-auto min-h-[70vh] max-w-4xl border bg-card px-8 py-14 shadow-sm md:px-16">
       <p className="text-sm uppercase text-muted-foreground">{stagione.nome}</p>
       <h1 className="mt-8 font-serif text-4xl font-semibold">{t("relazione.title")}</h1>
@@ -131,7 +166,7 @@ export default function DocumentoRelazione({ club_nome, club_id, stagione, tono,
     {attive.some((v) => v.tipo === "messaggio") && <section className="mx-auto min-h-[70vh] max-w-4xl border bg-card px-8 py-14 shadow-sm md:px-16"><h2 className="font-serif text-3xl font-semibold">{t("relazione.documento.messaggio_titolo")}</h2><div className="mt-8"><MessaggioPresidente club_id={club_id} stagione_id={stagione.id} /></div></section>}
     {attive.filter((v) => v.tipo === "sezione").map((sezione) => {
       const contenuti = attive.filter((v) => v.tipo === "modulo" && moduli[v.riferimento]?.area === sezione.riferimento);
-      return <section key={sezione.id} className="mx-auto min-h-[70vh] max-w-4xl border bg-card px-8 py-14 shadow-sm md:px-16"><h2 className="font-serif text-3xl font-semibold">{sezione.titolo}</h2><div className="mt-6"><TestoCapitolo club_id={club_id} stagione={stagione} tono={tono} area={sezione.riferimento} modificabile={!aree_modificabili || aree_modificabili.includes(sezione.riferimento)} /></div>{contenuti.map((v) => <Modulo key={v.id} risultato={moduli[v.riferimento]} colore={colore_primario ?? "#14b8a6"} />)}</section>;
+      return <section key={sezione.id} className="mx-auto min-h-[70vh] max-w-4xl border bg-card px-8 py-14 shadow-sm md:px-16"><h2 className="font-serif text-3xl font-semibold">{sezione.titolo}</h2><div className="mt-6"><TestoCapitolo club_id={club_id} stagione={stagione} tono={tono} area={sezione.riferimento} modificabile={!aree_modificabili || aree_modificabili.includes(sezione.riferimento)} pronto={sincronia.stato !== "attesa"} /></div>{contenuti.map((v) => <Modulo key={v.id} risultato={moduli[v.riferimento]} colore={colore_primario ?? "#14b8a6"} />)}</section>;
     })}
     {attive.filter((v) => v.tipo === "blocco").map((v) => <section key={v.id} className="mx-auto max-w-4xl border bg-card px-8 py-14 shadow-sm md:px-16"><h2 className="font-serif text-3xl font-semibold">{v.titolo}</h2><p className="mt-6 whitespace-pre-wrap font-serif text-base leading-relaxed">{v.payload?.contenuto}</p></section>)}
     <section className="mx-auto max-w-4xl border bg-card px-6 py-8 shadow-sm"><AllegatiTab club_id={club_id} stagione_id={stagione.id} compatto /></section>

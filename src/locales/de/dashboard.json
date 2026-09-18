@@ -318,7 +318,9 @@
       "rigenera": "Neu erzeugen",
       "salva": "Speichern",
       "annulla": "Abbrechen",
-      "clicca_per_correggere": "Zum Bearbeiten klicken"
+      "clicca_per_correggere": "Zum Bearbeiten klicken",
+      "errore_dati_incompleti": "Einige Saisondaten konnten nicht gelesen werden: Die Texte wurden nicht neu geschrieben.",
+      "errore_sincronizzazione": "Die generierten Texte konnten nicht aktualisiert werden."
     },
     "moduli": {
       "sempre": "immer enthalten",
@@ -416,6 +418,29 @@
       "didascalia_one": "{{count}} Wettkampf mit vollständiger importierter Rangliste.",
       "didascalia_other": "{{count}} Wettkämpfe mit vollständiger importierter Rangliste.",
       "nostre_atlete": "Athletinnen des Clubs sind fett gedruckt, mit einem Dreieck vor der Platzierung."
+    },
+    "paragrafi_auto": {
+      "gare_one": "Im Kalender stand 1 Wettkampf.",
+      "gare_other": "Im Kalender standen {{count}} Wettkämpfe.",
+      "podi_one": "1 Podestplatz wurde erreicht.",
+      "podi_other": "{{count}} Podestplätze wurden erreicht.",
+      "medaglie": "Im Einzelnen: {{ori}}, {{argenti}} und {{bronzi}}.",
+      "ori_nessuno": "kein Gold",
+      "ori_one": "1 Gold",
+      "ori_other": "{{count}} Mal Gold",
+      "argenti_nessuno": "kein Silber",
+      "argenti_one": "1 Silber",
+      "argenti_other": "{{count}} Mal Silber",
+      "bronzi_nessuno": "keine Bronze",
+      "bronzi_one": "1 Bronze",
+      "bronzi_other": "{{count}} Mal Bronze",
+      "podio_elenco": "Auf dem Podest in dieser Saison: {{elenco}}.",
+      "test_one": "1 Niveautest wurde bestanden.",
+      "test_other": "{{count}} Niveautests wurden bestanden.",
+      "lezioni_one": "Es wurde 1 Privatstunde erteilt.",
+      "lezioni_other": "Es wurden {{count}} Privatstunden erteilt.",
+      "ore_one": "Das entspricht 1 Stunde.",
+      "ore_other": "Das entspricht {{count}} Stunden."
     }
   }
 }
