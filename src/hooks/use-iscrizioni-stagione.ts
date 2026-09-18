@@ -84,24 +84,41 @@ export function use_registro_stagione(stagione_id?: string | null) {
     enabled: !!club_id && !!stagione_id,
     staleTime: 0,
     queryFn: async (): Promise<RigaRegistro[]> => {
+      // Niente join: fra atleti_storici_stagioni e atleti non esiste una chiave
+      // esterna dichiarata, quindi le anagrafiche si leggono a parte.
       const { data, error } = await supabase
         .from("atleti_storici_stagioni")
-        .select(
-          "atleta_id, status, confermato_il, confermato_da, note, livello, atleti(id, nome, cognome, codice_atleta, categoria, livello_amatori, livello_artistica)",
-        )
+        .select("atleta_id, status, confermato_il, confermato_da, note, livello")
         .eq("club_id", club_id)
         .eq("stagione_id", stagione_id);
       if (error) throw error;
-      return ((data ?? []) as any[]).map((r) => ({
+      const righe = (data ?? []) as any[];
+      const ids = [...new Set(righe.map((r) => r.atleta_id).filter(Boolean))];
+
+      const anagrafiche = new Map<string, RigaRegistro["atleta"]>();
+      for (let i = 0; i < ids.length; i += 200) {
+        const blocco = ids.slice(i, i + 200);
+        const { data: atleti, error: err_atleti } = await supabase
+          .from("atleti")
+          .select("id, nome, cognome, codice_atleta, categoria, livello_amatori, livello_artistica")
+          .eq("club_id", club_id)
+          .in("id", blocco);
+        // Una lettura fallita non diventa una lista senza nomi: si ferma qui.
+        if (err_atleti) throw err_atleti;
+        ((atleti ?? []) as any[]).forEach((a) => anagrafiche.set(a.id, a as any));
+      }
+
+      return righe.map((r) => ({
         atleta_id: r.atleta_id,
         status: r.status,
         confermato_il: r.confermato_il ?? null,
         confermato_da: r.confermato_da ?? null,
         note: r.note ?? null,
         livello: r.livello ?? null,
-        atleta: r.atleti ?? null,
+        atleta: anagrafiche.get(r.atleta_id) ?? null,
       }));
     },
+
   });
 }
 
