@@ -7,7 +7,10 @@
 
 import { supabase } from "@/lib/supabase";
 import i18n from "@/i18n";
-import type { GraficoSpec } from "./grafici";
+import { formatta, type GraficoSpec, type PuntoSerie } from "./grafici";
+
+// Il tono è definito qui per non creare una dipendenza circolare con paragraphGenerator.
+export type TonoModuli = "soci" | "formale";
 
 export type AreaId =
   | "atleti" | "corsi" | "economia" | "lezioni"
@@ -164,7 +167,7 @@ export interface ContestoModuli {
   club_id: string;
   stagione: Stagione;
   stagioni: Stagione[];
-  tono?: Tono;
+  tono?: TonoModuli;
 }
 
 /**
@@ -189,7 +192,7 @@ function limita_voci(dati: PuntoSerie[], massimo = 7): PuntoSerie[] {
 }
 
 /** Didascalia generata, nel tono scelto: dice a parole cosa mostra il grafico. */
-function didascalia_di(g: GraficoSpec, tono: Tono): string | undefined {
+function didascalia_di(g: GraficoSpec, tono: TonoModuli): string | undefined {
   const suffisso = tono === "formale" ? "_formale" : "";
   const chiave = (k: string, opzioni: Record<string, string>) =>
     i18n.t(`relazione.didascalie.${k}${suffisso}`, { ns: "dashboard", ...opzioni }) as string;
