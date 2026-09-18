@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
       admin.from("setup_club").select("clausole_contratto").eq("club_id", atleta.club_id).maybeSingle(),
       admin
         .from("stagioni")
-        .select("nome, data_inizio, data_fine")
+        .select("id, nome, data_inizio, data_fine, iscrizioni_aperte, iscrizioni_scadenza")
         .eq("club_id", atleta.club_id)
         .eq("attiva", true)
         .maybeSingle(),
@@ -144,8 +144,82 @@ Deno.serve(async (req) => {
       clausole_contratto: setup?.clausole_contratto ?? null,
     };
 
+    const rinnovo_attivo = !!stagione?.iscrizioni_aperte;
+
     if (azione === "lookup") {
-      return json({ ok: true, atleta, contesto });
+      let registro: { status: string; confermato_il: string | null } | null = null;
+      let corsi_ammessi: unknown[] = [];
+
+      if (stagione?.id) {
+        const { data: reg, error: reg_err } = await admin
+          .from("atleti_storici_stagioni")
+          .select("status, confermato_il")
+          .eq("atleta_id", atleta.id)
+          .eq("stagione_id", stagione.id)
+          .maybeSingle();
+        if (reg_err) {
+          console.error("[iscrizione-atleta] reg_err", reg_err);
+          return json({ error: "db_error" }, 500);
+        }
+        registro = reg ?? null;
+
+        if (rinnovo_attivo) {
+          const { data: corsi, error: corsi_err } = await admin
+            .from("corsi")
+            .select("id, nome, giorno, ora_inizio, ora_fine, costo_mensile, livello_richiesto, richiede_approvazione")
+            .eq("club_id", atleta.club_id)
+            .eq("stagione_id", stagione.id)
+            .eq("attivo", true)
+            .order("nome");
+          if (corsi_err) {
+            console.error("[iscrizione-atleta] corsi_err", corsi_err);
+            return json({ error: "db_error" }, 500);
+          }
+          for (const c of corsi ?? []) {
+            const { data: val, error: val_err } = await admin.rpc("valuta_iscrizione", {
+              p_atleta_id: atleta.id,
+              p_corso_id: c.id,
+            });
+            if (val_err) {
+              console.error("[iscrizione-atleta] val_err", val_err);
+              return json({ error: "db_error" }, 500);
+            }
+            const riga = Array.isArray(val) ? val[0] : val;
+            if (riga?.conforme) corsi_ammessi.push(c);
+          }
+        }
+      }
+
+      return json({
+        ok: true,
+        atleta,
+        contesto,
+        stagione: stagione
+          ? {
+              id: stagione.id,
+              nome: stagione.nome,
+              iscrizioni_aperte: !!stagione.iscrizioni_aperte,
+              iscrizioni_scadenza: stagione.iscrizioni_scadenza ?? null,
+            }
+          : null,
+        registro,
+        corsi_ammessi,
+      });
+    }
+
+    if (azione === "rinuncia") {
+      if (!rinnovo_attivo || !stagione?.id) return json({ error: "iscrizioni_chiuse" }, 400);
+      const { error: rif_err } = await admin.rpc("rifiuta_rinnovo", {
+        p_atleta: atleta.id,
+        p_stagione: stagione.id,
+        p_motivo: clean(payload.motivo, 500) ?? "",
+        p_da: "famiglia",
+      });
+      if (rif_err) {
+        console.error("[iscrizione-atleta] rif_err", rif_err);
+        return json({ error: "db_error" }, 500);
+      }
+      return json({ ok: true, rinuncia: true });
     }
 
     if (azione !== "salva") return json({ error: "azione_non_valida" }, 400);
