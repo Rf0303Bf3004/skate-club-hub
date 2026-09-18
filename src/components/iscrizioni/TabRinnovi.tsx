@@ -16,6 +16,7 @@ import {
   use_conferma_rinnovo_segreteria,
   use_rifiuta_rinnovo_segreteria,
   use_invia_email_iscrizioni,
+  use_anteprima_apertura,
   type RigaRegistro,
   type EsitoInvio,
 } from "@/hooks/use-iscrizioni-stagione";
@@ -26,13 +27,18 @@ type FiltroStato = "tutti" | "invitato" | "attivo" | "non_rinnovato";
 const data_breve = (v: string | null, lingua: string) =>
   v ? new Date(v).toLocaleDateString(lingua, { day: "numeric", month: "short", year: "numeric" }) : "";
 
-const TabRinnovi: React.FC<{ puo_gestire: boolean }> = ({ puo_gestire }) => {
+const TabRinnovi: React.FC<{ puo_gestire: boolean; vai_a_domande: () => void }> = ({
+  puo_gestire,
+  vai_a_domande,
+}) => {
   const { t, i18n } = useTranslation("atleti");
   const k = (s: string, o?: any) => t(`iscrizioni_stagione.${s}`, o as any) as string;
 
   const { data: stagione, isLoading: load_stagione, isError: err_stagione } = use_stagione_attiva();
   const stato = use_stato_campagna(stagione?.id);
   const registro = use_registro_stagione(stagione?.id);
+  // Numeri veri prima di aprire: senza questa lettura non si esegue niente.
+  const anteprima = use_anteprima_apertura(stagione?.id);
 
   const apri = use_apri_campagna();
   const chiudi = use_chiudi_campagna();
@@ -68,6 +74,7 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean }> = ({ puo_gestire }) => {
     const parti = [k("rinnovi.esito_invio", { count: e.inviati })];
     if (e.senza_email > 0) parti.push(k("rinnovi.esito_senza_email", { count: e.senza_email }));
     if ((e.senza_codice ?? 0) > 0) parti.push(k("rinnovi.esito_senza_codice", { count: e.senza_codice }));
+    if ((e.non_registrati ?? 0) > 0) parti.push(k("rinnovi.esito_non_registrati", { count: e.non_registrati }));
     if ((e.falliti?.length ?? 0) > 0) parti.push(k("rinnovi.esito_falliti", { count: e.falliti!.length }));
     toast({
       title: parti.join(" · "),
@@ -123,8 +130,8 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean }> = ({ puo_gestire }) => {
 
   return (
     <div className="space-y-5">
-      {/* Quattro numeri */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* I numeri della campagna */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {[
           { label: k("rinnovi.invitati"), valore: String(s.invitati) },
           { label: k("rinnovi.confermati"), valore: String(s.confermati) },
@@ -139,6 +146,15 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean }> = ({ puo_gestire }) => {
             <p className="text-2xl font-bold text-foreground mt-1 break-words">{c.valore}</p>
           </div>
         ))}
+        <button
+          type="button"
+          onClick={vai_a_domande}
+          className="rounded-xl border border-border bg-card p-4 text-left transition-colors hover:bg-muted/40"
+        >
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">{k("rinnovi.domande_in_attesa")}</p>
+          <p className="text-2xl font-bold text-foreground mt-1">{s.domande_in_attesa}</p>
+          <p className="text-xs text-primary mt-1">{k("rinnovi.vai_alle_domande")}</p>
+        </button>
       </div>
 
       {/* Apertura / chiusura */}
@@ -297,13 +313,27 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean }> = ({ puo_gestire }) => {
               <span className="text-xs text-muted-foreground">{k("rinnovi.apri_scadenza_label")}</span>
               <Input type="date" value={scadenza} onChange={(e) => set_scadenza(e.target.value)} className="h-10" />
             </label>
+            {anteprima.isLoading && (
+              <p className="text-muted-foreground">{k("rinnovi.apri_conteggio_in_corso")}</p>
+            )}
+            {anteprima.isError && (
+              <p className="text-destructive">{k("rinnovi.apri_conteggio_errore")}</p>
+            )}
+            {anteprima.isSuccess && (
+              <p className="text-foreground font-medium">
+                {k("rinnovi.apri_conteggio", { count: anteprima.data.da_invitare })}
+                {anteprima.data.gia_presenti > 0
+                  ? ` ${k("rinnovi.apri_gia_presenti", { count: anteprima.data.gia_presenti })}`
+                  : ""}
+              </p>
+            )}
             <p className="text-muted-foreground">{k("rinnovi.apri_conferma_testo")}</p>
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="ghost" onClick={() => set_dialog_apri(false)} disabled={apri.isPending}>
                 {k("comune.annulla")}
               </Button>
               <Button
-                disabled={apri.isPending}
+                disabled={apri.isPending || !anteprima.isSuccess}
                 onClick={async () => {
                   try {
                     const esito = await apri.mutateAsync({
