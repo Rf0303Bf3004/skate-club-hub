@@ -169,7 +169,6 @@ const IscrizioneAtletaPage: React.FC = () => {
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  const articoli = useMemo(() => build_contratto(contesto), [contesto]);
 
   const on_select_file = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
