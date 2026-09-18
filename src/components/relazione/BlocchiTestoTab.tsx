@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { Plus, Newspaper, ArrowRight } from "lucide-react";
+import { Plus, Newspaper } from "lucide-react";
 import { toast } from "sonner";
 import BloccoCard from "./BloccoCard";
 import BloccoForm from "./BloccoForm";
@@ -238,18 +237,6 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
         </SortableContext>
       </DndContext>
 
-      <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground flex items-start gap-2">
-        <ArrowRight className="w-4 h-4 mt-0.5 shrink-0" />
-        <div>
-          {t("relazione.blocchi_tab.rimando_testo")}{" "}
-          <Link
-            to="/presidente/relazione/contenuti?tab=paragrafi"
-            className="text-teal-700 hover:text-teal-900 underline font-medium"
-          >
-            {t("relazione.blocchi_tab.rimando_link")}
-          </Link>.
-        </div>
-      </div>
 
       <BloccoForm
         open={open_form}

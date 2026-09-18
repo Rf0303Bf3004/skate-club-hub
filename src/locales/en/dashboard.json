@@ -327,6 +327,12 @@
       "aggiorna_anteprima": "Refresh the preview",
       "scarica": "Download",
       "toast_errore": "Preview creation failed"
+    },
+    "allegati_tab": {
+      "header_testo": "Upload here the PDF documents to be appended to the report: financial statements, federal documents, sponsor contracts, certifications, assembly minutes."
+    },
+    "allegato_form": {
+      "errore_file_mancante": "Choose the PDF file to attach"
     }
   }
 }

@@ -473,16 +473,37 @@ async function modEconomiaEnti(ctx: ContestoModuli): Promise<ModuloRisultato> {
 async function modEconomiaFonti(ctx: ContestoModuli): Promise<ModuloRisultato> {
   const def = def_di("economia_fonti");
   return sicuro(def, async () => {
-    const fatture = await fattureStagione(ctx);
+    // La ripartizione per fonte sta nelle righe della fattura: fatture.tipo è quasi sempre "Mensile".
+    const { data, error } = await supabase
+      .from("fatture")
+      .select("id,importo,data_emissione,stato,righe")
+      .eq("club_id", ctx.club_id);
+    if (error) throw error;
+    const fatture = ((data ?? []) as any[]).filter(
+      (f) => f.stato !== "bozza" && f.stato !== "annullata" && dentro(f.data_emissione, ctx.stagione),
+    );
     if (fatture.length === 0) return vuoto(def, "Non ci sono fatture emesse in questa stagione.");
+
     const per_tipo = new Map<string, number>();
+    const aggiungi = (etichetta: string, importo: number) => {
+      if (!(importo > 0)) return;
+      per_tipo.set(etichetta, (per_tipo.get(etichetta) ?? 0) + importo);
+    };
     for (const f of fatture) {
-      const k = String(f.tipo ?? "altro");
-      per_tipo.set(k, (per_tipo.get(k) ?? 0) + (Number(f.importo) || 0));
+      const righe = Array.isArray(f.righe) ? (f.righe as any[]) : [];
+      if (righe.length === 0) {
+        aggiungi("Altro", Number(f.importo) || 0);
+        continue;
+      }
+      for (const r of righe) {
+        const etichetta = String(r?.tipo ?? "").trim() || "Altro";
+        aggiungi(etichetta, Number(r?.importo) || 0);
+      }
     }
     const dati = Array.from(per_tipo.entries())
       .map(([etichetta, valore]) => ({ etichetta, valore }))
       .sort((a, b) => b.valore - a.valore);
+    if (dati.length === 0) return vuoto(def, "Le fatture di questa stagione non hanno righe con un importo.");
     return ok(def, { tipo: "donut", titolo: def.titolo, sottotitolo: "fatturato per fonte", formato: "chf", dati });
   });
 }
