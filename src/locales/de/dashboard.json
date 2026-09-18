@@ -327,6 +327,12 @@
       "aggiorna_anteprima": "Vorschau aktualisieren",
       "scarica": "Herunterladen",
       "toast_errore": "Erstellung der Vorschau fehlgeschlagen"
+    },
+    "allegati_tab": {
+      "header_testo": "Laden Sie hier die PDF-Dokumente hoch, die am Ende des Berichts angehängt werden: Jahresrechnung, Verbandsdokumente, Sponsorenverträge, Zertifikate, Versammlungsprotokolle."
+    },
+    "allegato_form": {
+      "errore_file_mancante": "Wählen Sie die anzuhängende PDF-Datei"
     }
   }
 }

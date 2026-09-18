@@ -327,6 +327,12 @@
       "aggiorna_anteprima": "Actualiser l'apercu",
       "scarica": "Telecharger",
       "toast_errore": "Echec de la creation de l'apercu"
+    },
+    "allegati_tab": {
+      "header_testo": "Chargez ici les documents PDF à joindre à la fin du rapport : comptes annuels, documents fédéraux, contrats de sponsors, certifications, procès-verbaux d'assemblée."
+    },
+    "allegato_form": {
+      "errore_file_mancante": "Choisissez le fichier PDF à joindre"
     }
   }
 }

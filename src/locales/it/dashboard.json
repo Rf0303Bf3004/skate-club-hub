@@ -497,12 +497,12 @@
       "errore_dimensione": "File troppo grande (max 20MB)",
       "toast_creato": "Allegato creato",
       "toast_aggiornato": "Allegato aggiornato",
-      "toast_storage_ko": "Storage non disponibile, file salvato solo come riferimento",
-      "toast_errore": "Errore salvataggio"
+      "toast_errore": "Errore salvataggio",
+      "errore_file_mancante": "Scegli il file PDF da allegare"
     },
     "allegati_tab": {
       "header_titolo": "Documenti PDF allegati",
-      "header_testo": "Carica qui i documenti PDF che devono essere inclusi in coda alla relazione: bilancio civilistico, scheda federale FISG, contratti sponsor, certificazioni, verbali assemblea.",
+      "header_testo": "Carica qui i documenti PDF che devono essere inclusi in coda alla relazione: bilancio civilistico, documenti federali, contratti sponsor, certificazioni, verbali assemblea.",
       "nuovo": "Carica nuovo allegato",
       "caricamento": "Caricamento...",
       "empty": "Nessun allegato. Carica il primo documento PDF.",
@@ -529,8 +529,6 @@
       "nuovo": "Nuovo blocco",
       "caricamento": "Caricamento...",
       "empty": "Nessun blocco. Aggiungi il primo blocco redazionale.",
-      "rimando_testo": "Cerchi il messaggio di apertura o di chiusura? Quelli si modificano nel Racconto dei dati:",
-      "rimando_link": "vai alla tab e cerca area \"Apertura\" o \"Chiusura\"",
       "migrazione_title": "Riorganizzazione delle notizie",
       "migrazione_desc_one": "Abbiamo riorganizzato la struttura delle notizie. Il blocco con categoria Apertura o Conclusioni ora e' gestito automaticamente nel Racconto dei dati (aree \"Apertura\" e \"Chiusura\").",
       "migrazione_desc_other": "Abbiamo riorganizzato la struttura delle notizie. {{count}} blocchi con categoria Apertura o Conclusioni ora sono gestiti automaticamente nel Racconto dei dati (aree \"Apertura\" e \"Chiusura\").",
