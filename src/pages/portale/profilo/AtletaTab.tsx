@@ -92,8 +92,20 @@ const AtletaTab: React.FC = () => {
     genitore_email: "", genitore_telefono: "",
   });
 
+  // Quale genitore si sta modificando NON si indovina dai dati: con i genitori separati
+  // lo dice la sessione (il codice usato per entrare), altrimenti resta il criterio storico.
+  const genitore_sessione: "genitore1" | "genitore2" =
+    ctx?.session?.genitore === "genitore2" ? "genitore2" : "genitore1";
+
+  const quale_genitore = (a: any): "genitore1" | "genitore2" => {
+    if (a?.genitori_separati) return genitore_sessione;
+    return !a?.genitore1_nome && !a?.genitore1_email && !!(a?.genitore2_nome || a?.genitore2_email)
+      ? "genitore2"
+      : "genitore1";
+  };
+
   const applica_form = (a: any) => {
-    const usa_g2 = !a?.genitore1_nome && !a?.genitore1_email && !!(a?.genitore2_nome || a?.genitore2_email);
+    const usa_g2 = quale_genitore(a) === "genitore2";
     set_form({
       indirizzo: a?.indirizzo ?? "",
       cap: a?.cap ?? "",
@@ -122,7 +134,7 @@ const AtletaTab: React.FC = () => {
     })();
   }, [ctx]);
 
-  const usa_g2 = !!atleta && !atleta.genitore1_nome && !atleta.genitore1_email && !!(atleta.genitore2_nome || atleta.genitore2_email);
+  const usa_g2 = !!atleta && quale_genitore(atleta) === "genitore2";
 
   const on_file = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];

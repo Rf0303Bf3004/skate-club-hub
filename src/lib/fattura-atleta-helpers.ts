@@ -65,7 +65,9 @@ export async function load_fattura_full(id: string): Promise<{
   const [atletaRes, clubRes, setupRes, ragioneRes] = await Promise.all([
     f.atleta_id
       ? supabase
-          .from("atleti")
+          // Vista di famiglia: al genitore che è entrato mostra il SUO codice di accesso,
+          // mai quello dell'altro genitore. Per lo staff restituisce i dati completi.
+          .from("atleti_famiglia")
           .select("nome, cognome, codice_atleta, livello_attuale, livello_artistica, livello_stile")
           .eq("id", f.atleta_id)
           .maybeSingle()
