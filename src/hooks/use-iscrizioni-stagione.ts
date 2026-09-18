@@ -335,6 +335,7 @@ export function use_invia_email_iscrizioni() {
         inviati: Number(d.inviati ?? 0),
         senza_email: Number(d.senza_email ?? 0),
         senza_codice: Number(d.senza_codice ?? 0),
+        non_registrati: Number(d.non_registrati ?? 0),
         falliti: (d.falliti ?? []) as { atleta: string; motivo: string }[],
       };
     },
