@@ -278,8 +278,14 @@
     "scarica_relazione": "Bericht herunterladen",
     "scarica_errore": "PDF-Erstellung fehlgeschlagen",
     "club_fallback": "Club",
-    "pannello": { "titolo": "Inhalt auswählen", "scegli_moduli": "Module einzeln auswählen", "tono": "Ton" },
-    "documento": { "messaggio_titolo": "Botschaft des Präsidenten" },
+    "pannello": {
+      "titolo": "Inhalt auswählen",
+      "scegli_moduli": "Module einzeln auswählen",
+      "tono": "Ton"
+    },
+    "documento": {
+      "messaggio_titolo": "Botschaft des Präsidenten"
+    },
     "passo1": "Saison und Ton",
     "passo2": "Die Botschaft des Prasidenten",
     "passo3": "Die Module",
@@ -322,10 +328,25 @@
       "senza_dati": "Aus: {{motivo}}"
     },
     "moduli_catalogo": {
-      "podio_titolo": "Das Saisonpodest", "podio_vuoto": "In dieser Saison wurde kein Podestplatz erfasst",
-      "test_titolo": "Bestandene Tests", "test_vuoto": "In dieser Saison wurde kein bestandener Test erfasst",
-      "atleta": "Athletin", "gara": "Wettkampf", "data": "Datum", "livello": "Niveau", "medaglia": "Medaille", "livello_ottenuto": "Erreichtes Niveau"
-      ,"atleta_mancante": "Eine Athletin im Ergebnis konnte nicht identifiziert werden"
+      "podio_titolo": "Das Saisonpodest",
+      "podio_vuoto": "In dieser Saison wurde kein Podestplatz erfasst",
+      "test_titolo": "Bestandene Tests",
+      "test_vuoto": "In dieser Saison wurde kein bestandener Test erfasst",
+      "atleta": "Athletin",
+      "gara": "Wettkampf",
+      "data": "Datum",
+      "livello": "Niveau",
+      "medaglia": "Medaille",
+      "livello_ottenuto": "Erreichtes Niveau",
+      "atleta_mancante": "Eine Athletin im Ergebnis konnte nicht identifiziert werden",
+      "altro": "Andere",
+      "capienza": "Kapazität",
+      "riempimento_sottotitolo": "belegte Plätze von der Kapazität",
+      "livello_non_indicato": "Stufe nicht angegeben",
+      "podi_sottotitolo": "Medaillen nach Stufe",
+      "test_livello_sottotitolo": "Testergebnisse nach Stufe",
+      "test_superati": "Bestanden",
+      "test_non_superati": "Nicht bestanden"
     },
     "anteprima_fedele": {
       "generazione": "PDF wird erstellt...",
@@ -348,6 +369,16 @@
     },
     "allegato_form": {
       "errore_file_mancante": "Wählen Sie die anzuhängende PDF-Datei"
+    },
+    "didascalie": {
+      "serie": "Insgesamt {{totale}}. Der höchste Wert ist {{prima}} mit {{prima_valore}}, gefolgt von {{seconda}} mit {{seconda_valore}}.",
+      "serie_formale": "Die Gesamtsumme beträgt {{totale}}. Der höchste Wert entfällt auf {{prima}} ({{prima_valore}}), gefolgt von {{seconda}} ({{seconda_valore}}).",
+      "una_voce": "Nur ein Eintrag: {{prima}}, mit {{prima_valore}}.",
+      "una_voce_formale": "Es ist ein einziger Eintrag verzeichnet: {{prima}}, in Höhe von {{prima_valore}}.",
+      "due_serie": "{{serie1}}: insgesamt {{totale1}}; {{serie2}}: {{totale2}}.",
+      "due_serie_formale": "Die Summe von {{serie1}} beträgt {{totale1}}, jene von {{serie2}} {{totale2}}.",
+      "linea": "Von {{prima}} ({{prima_valore}}) bis {{ultima}} ({{ultima_valore}}); der Höchstwert ist {{massima}} mit {{massimo_valore}}.",
+      "linea_formale": "Der Verlauf reicht von {{prima}} ({{prima_valore}}) bis {{ultima}} ({{ultima_valore}}), mit einem Höchstwert in {{massima}} von {{massimo_valore}}."
     }
   }
 }

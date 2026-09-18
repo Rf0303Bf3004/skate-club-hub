@@ -7,7 +7,10 @@
 
 import { supabase } from "@/lib/supabase";
 import i18n from "@/i18n";
-import type { GraficoSpec } from "./grafici";
+import { formatta, type GraficoSpec, type PuntoSerie } from "./grafici";
+
+// Il tono è definito qui per non creare una dipendenza circolare con paragraphGenerator.
+export type TonoModuli = "soci" | "formale";
 
 export type AreaId =
   | "atleti" | "corsi" | "economia" | "lezioni"
@@ -164,6 +167,65 @@ export interface ContestoModuli {
   club_id: string;
   stagione: Stagione;
   stagioni: Stagione[];
+  tono?: TonoModuli;
+}
+
+/**
+ * Tiene le prime sette voci e raggruppa il resto in "Altro".
+ * Vale per le serie di categorie (livelli, fonti, istruttori): non si applica
+ * agli assi temporali, dove togliere mesi o ore falserebbe la lettura.
+ */
+function limita_voci(dati: PuntoSerie[], massimo = 7): PuntoSerie[] {
+  if (dati.length <= massimo + 1) return dati;
+  const tenute = dati.slice(0, massimo);
+  const resto = dati.slice(massimo);
+  return [
+    ...tenute,
+    {
+      etichetta: testo_modulo("altro"),
+      valore: resto.reduce((s, d) => s + d.valore, 0),
+      valore2: resto.some((d) => typeof d.valore2 === "number")
+        ? resto.reduce((s, d) => s + (d.valore2 ?? 0), 0)
+        : undefined,
+    },
+  ];
+}
+
+/** Didascalia generata, nel tono scelto: dice a parole cosa mostra il grafico. */
+function didascalia_di(g: GraficoSpec, tono: TonoModuli): string | undefined {
+  const suffisso = tono === "formale" ? "_formale" : "";
+  const chiave = (k: string, opzioni: Record<string, string>) =>
+    i18n.t(`relazione.didascalie.${k}${suffisso}`, { ns: "dashboard", ...opzioni }) as string;
+  if (g.tipo === "tabella" || g.dati.length === 0) return undefined;
+  const formato = g.formato ?? "numero";
+  const totale = g.dati.reduce((s, d) => s + d.valore, 0);
+  const ordinati = [...g.dati].sort((a, b) => b.valore - a.valore);
+
+  if (g.tipo === "linea") {
+    const prima = g.dati[0], ultima = g.dati[g.dati.length - 1], max = ordinati[0];
+    return chiave("linea", {
+      prima: prima.etichetta, prima_valore: formatta(prima.valore, formato),
+      ultima: ultima.etichetta, ultima_valore: formatta(ultima.valore, formato),
+      massima: max.etichetta, massimo_valore: formatta(max.valore, formato),
+    });
+  }
+  if (g.tipo === "barre" && g.dati.some((d) => typeof d.valore2 === "number")) {
+    const t2 = g.dati.reduce((s, d) => s + (d.valore2 ?? 0), 0);
+    return chiave("due_serie", {
+      serie1: g.etichetta_serie1 ?? "", totale1: formatta(totale, formato),
+      serie2: g.etichetta_serie2 ?? "", totale2: formatta(t2, formato),
+    });
+  }
+  if (ordinati.length === 1) {
+    return chiave("una_voce", {
+      prima: ordinati[0].etichetta, prima_valore: formatta(ordinati[0].valore, formato),
+    });
+  }
+  return chiave("serie", {
+    totale: formatta(totale, formato),
+    prima: ordinati[0].etichetta, prima_valore: formatta(ordinati[0].valore, formato),
+    seconda: ordinati[1].etichetta, seconda_valore: formatta(ordinati[1].valore, formato),
+  });
 }
 
 export async function fetchModuli(ctx: ContestoModuli): Promise<Record<string, ModuloRisultato>> {
@@ -193,7 +255,13 @@ export async function fetchModuli(ctx: ContestoModuli): Promise<Record<string, M
     modSponsor(ctx),
   ]);
   const out: Record<string, ModuloRisultato> = {};
-  for (const r of risultati) out[r.id] = r;
+  for (const r of risultati) {
+    // La didascalia si aggiunge qui una volta sola, così vale per ogni modulo.
+    if (r.stato === "ok" && r.grafico && !r.grafico.didascalia) {
+      r.grafico.didascalia = didascalia_di(r.grafico, ctx.tono ?? "soci");
+    }
+    out[r.id] = r;
+  }
   return out;
 }
 
@@ -244,10 +312,14 @@ async function modAtletiPiramide(ctx: ContestoModuli): Promise<ModuloRisultato> 
       per_livello.set(k, (per_livello.get(k) ?? 0) + 1);
     }
     if (per_livello.size === 0) return vuoto(def, "Il livello delle atlete non è stato registrato.");
-    const dati = Array.from(per_livello.entries())
+    // Piramide: dalla base (il livello più numeroso) alla cima.
+    const dati = limita_voci(Array.from(per_livello.entries())
       .map(([etichetta, valore]) => ({ etichetta, valore }))
-      .sort((a, b) => b.valore - a.valore);
-    return ok(def, { tipo: "barre", titolo: def.titolo, sottotitolo: "atlete attive per livello", dati });
+      .sort((a, b) => b.valore - a.valore));
+    return ok(def, {
+      tipo: "barre", orientamento: "orizzontale", titolo: def.titolo,
+      sottotitolo: "atlete attive per livello", dati,
+    });
   });
 }
 
@@ -353,22 +425,20 @@ async function modCorsiRiempimento(ctx: ContestoModuli): Promise<ModuloRisultato
       if (i.attiva === false) continue;
       conteggi.set(i.corso_id, (conteggi.get(i.corso_id) ?? 0) + 1);
     }
-    const righe = lista
-      .map((c) => {
-        const n = conteggi.get(c.id) ?? 0;
-        const cap = Number(c.capienza_max) || 0;
-        return [
-          String(c.nome ?? "—"),
-          String(n),
-          cap > 0 ? String(cap) : "—",
-          cap > 0 ? Math.round((n / cap) * 100) + "%" : "—",
-        ];
-      })
-      .sort((a, b) => Number(b[1]) - Number(a[1]));
+    // Solo i corsi con una capienza registrata: senza capienza la percentuale non esiste.
+    const dati = lista
+      .filter((c) => Number(c.capienza_max) > 0)
+      .map((c) => ({
+        etichetta: String(c.nome ?? "—"),
+        valore: Math.round(((conteggi.get(c.id) ?? 0) / Number(c.capienza_max)) * 100),
+      }))
+      .sort((a, b) => b.valore - a.valore);
+    if (dati.length === 0) return vuoto(def, "La capienza dei corsi non è stata registrata.");
     return ok(def, {
-      tipo: "tabella", titolo: def.titolo, sottotitolo: "iscritti su capienza",
-      colonne: ["Corso", "Iscritti", "Capienza", "Riempimento"],
-      righe, allinea_destra: [1, 2, 3],
+      tipo: "barre", orientamento: "orizzontale", titolo: def.titolo,
+      sottotitolo: testo_modulo("riempimento_sottotitolo"), formato: "percento",
+      dati: limita_voci(dati),
+      riferimento: { valore: 100, etichetta: testo_modulo("capienza") },
     });
   });
 }
@@ -514,7 +584,10 @@ async function modEconomiaFonti(ctx: ContestoModuli): Promise<ModuloRisultato> {
       .map(([etichetta, valore]) => ({ etichetta, valore }))
       .sort((a, b) => b.valore - a.valore);
     if (dati.length === 0) return vuoto(def, "Le fatture di questa stagione non hanno righe con un importo.");
-    return ok(def, { tipo: "donut", titolo: def.titolo, sottotitolo: "fatturato per fonte", formato: "chf", dati });
+    return ok(def, {
+      tipo: "barre", orientamento: "orizzontale", titolo: def.titolo,
+      sottotitolo: "fatturato per fonte", formato: "chf", dati: limita_voci(dati),
+    });
   });
 }
 
@@ -623,10 +696,13 @@ async function modLezioniIstruttore(ctx: ContestoModuli): Promise<ModuloRisultat
     }
     if (ore.size === 0) return vuoto(def, "Le lezioni private non sono collegate a un istruttore.");
     const nomi = await nomiIstruttori(Array.from(ore.keys()));
-    const dati = Array.from(ore.entries())
+    const dati = limita_voci(Array.from(ore.entries())
       .map(([id, valore]) => ({ etichetta: nomi.get(id) ?? "—", valore }))
-      .sort((a, b) => b.valore - a.valore);
-    return ok(def, { tipo: "barre", titolo: def.titolo, sottotitolo: "ore erogate", formato: "ore", dati });
+      .sort((a, b) => b.valore - a.valore));
+    return ok(def, {
+      tipo: "barre", orientamento: "orizzontale", titolo: def.titolo,
+      sottotitolo: "ore erogate", formato: "ore", dati,
+    });
   });
 }
 
@@ -651,7 +727,10 @@ async function modLezioniFasce(ctx: ContestoModuli): Promise<ModuloRisultato> {
         valore: per_ora.get(h) ?? 0,
       });
     }
-    return ok(def, { tipo: "barre", titolo: def.titolo, sottotitolo: "numero di lezioni per ora di inizio", dati });
+    return ok(def, {
+      tipo: "barre", orientamento: "verticale", titolo: def.titolo,
+      sottotitolo: "numero di lezioni per ora di inizio", dati,
+    });
   });
 }
 
@@ -757,14 +836,20 @@ async function modSportivoPodi(ctx: ContestoModuli): Promise<ModuloRisultato> {
     const { gare, iscrizioni } = await gareEIscrizioni(ctx);
     if (gare.length === 0) return vuoto(def, "Non ci sono gare in calendario per questa stagione.");
     if (iscrizioni.length === 0) return vuoto(def, "I risultati di gara non sono stati registrati.");
-    const conta = (t: string) => iscrizioni.filter((i) => medaglia_di(i) === t).length;
-    const dati = [
-      { etichetta: "Ori", valore: conta("oro") },
-      { etichetta: "Argenti", valore: conta("argento") },
-      { etichetta: "Bronzi", valore: conta("bronzo") },
-    ];
-    if (dati.every((d) => d.valore === 0)) return vuoto(def, "I risultati di gara non sono stati registrati.");
-    return ok(def, { tipo: "barre", titolo: def.titolo, sottotitolo: "medaglie della stagione", dati });
+    const podi = iscrizioni.filter((i) => medaglia_di(i));
+    if (podi.length === 0) return vuoto(def, "I risultati di gara non sono stati registrati.");
+    const per_livello = new Map<string, number>();
+    for (const i of podi) {
+      const k = String(i.livello_atleta ?? "").trim() || testo_modulo("livello_non_indicato");
+      per_livello.set(k, (per_livello.get(k) ?? 0) + 1);
+    }
+    const dati = limita_voci(Array.from(per_livello.entries())
+      .map(([etichetta, valore]) => ({ etichetta, valore }))
+      .sort((a, b) => b.valore - a.valore));
+    return ok(def, {
+      tipo: "barre", orientamento: "orizzontale", titolo: def.titolo,
+      sottotitolo: testo_modulo("podi_sottotitolo"), dati,
+    });
   });
 }
 
@@ -813,19 +898,28 @@ async function modSportivoTest(ctx: ContestoModuli): Promise<ModuloRisultato> {
       .from("test_livello_atleti").select("esito,livello_target")
       .in("test_id", ids);
     if (err2) throw err2;
-    const superati = ((righe ?? []) as any[]).filter(
-      (r) => String(r.esito ?? "").toLowerCase().includes("superat") || String(r.esito ?? "").toLowerCase() === "ok",
-    );
-    if (superati.length === 0) return vuoto(def, "L'esito dei test non è stato registrato.");
-    const per_livello = new Map<string, number>();
-    for (const r of superati) {
-      const k = r.livello_target || "Livello non indicato";
-      per_livello.set(k, (per_livello.get(k) ?? 0) + 1);
+    const con_esito = ((righe ?? []) as any[]).filter((r) => String(r.esito ?? "").trim() !== "");
+    if (con_esito.length === 0) return vuoto(def, "L'esito dei test non è stato registrato.");
+    const superato = (r: any) => {
+      const e = String(r.esito ?? "").toLowerCase();
+      return e.includes("superat") && !e.includes("non superat") || e === "ok";
+    };
+    const per_livello = new Map<string, { si: number; no: number }>();
+    for (const r of con_esito) {
+      const k = r.livello_target || testo_modulo("livello_non_indicato");
+      const v = per_livello.get(k) ?? { si: 0, no: 0 };
+      if (superato(r)) v.si++; else v.no++;
+      per_livello.set(k, v);
     }
-    const dati = Array.from(per_livello.entries())
-      .map(([etichetta, valore]) => ({ etichetta, valore }))
-      .sort((a, b) => b.valore - a.valore);
-    return ok(def, { tipo: "barre", titolo: def.titolo, sottotitolo: "test superati per livello", dati });
+    const dati = limita_voci(Array.from(per_livello.entries())
+      .map(([etichetta, v]) => ({ etichetta, valore: v.si, valore2: v.no }))
+      .sort((a, b) => (b.valore + (b.valore2 ?? 0)) - (a.valore + (a.valore2 ?? 0))));
+    return ok(def, {
+      tipo: "barre", orientamento: "orizzontale", impilate: true, titolo: def.titolo,
+      sottotitolo: testo_modulo("test_livello_sottotitolo"), dati,
+      etichetta_serie1: testo_modulo("test_superati"),
+      etichetta_serie2: testo_modulo("test_non_superati"),
+    });
   });
 }
 
@@ -898,9 +992,11 @@ async function modPresenzeCorsi(ctx: ContestoModuli): Promise<ModuloRisultato> {
       .filter((d) => d.valore > 0)
       .sort((a, b) => b.valore - a.valore);
     if (dati.length === 0) return vuoto(def, "Gli appelli registrati non contengono presenze.");
+    const dati_limitati = limita_voci(dati);
     return ok(def, {
       tipo: "barre", titolo: def.titolo,
-      sottotitolo: "media di atlete presenti per lezione (solo totali)", dati,
+      orientamento: "orizzontale",
+      sottotitolo: "media di atlete presenti per lezione (solo totali)", dati: dati_limitati,
     });
   });
 }
