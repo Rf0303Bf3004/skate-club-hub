@@ -28,6 +28,7 @@ import { stampa_schede_codice } from "@/lib/scheda-codice-html";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import FotoAtleta from "@/components/common/FotoAtleta";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import { useHasPermesso } from "@/hooks/usePermessi";
 import NotaPermesso from "@/components/common/NotaPermesso";
 
 import { capitalizza_nome, capitalizza_indirizzo, normalizza_email, cerca_nap } from "@/lib/formato-testo";
