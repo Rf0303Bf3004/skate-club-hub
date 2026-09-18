@@ -190,14 +190,17 @@ Deno.serve(async (req) => {
       partecipa_gare: !!dati.partecipa_gare,
       intende_test_livello: !!dati.intende_test_livello,
       contratto_accettato_at: new Date().toISOString(),
-      contratto_testo,
+      contratto_testo: contratto.testo,
       stato: "in_attesa",
       origine: ip,
     });
     if (ins_err) {
       console.error("[iscrizione-pubblica] ins_err", ins_err);
+      // Domanda identica già in attesa: non è un guasto, è la stessa richiesta.
+      if ((ins_err as any).code === "23505") return json({ error: "domanda_gia_inviata" }, 409);
       return json({ error: "db_error" }, 500);
     }
+
 
     return json({ ok: true, nome, email: gen_email });
   } catch (e) {
