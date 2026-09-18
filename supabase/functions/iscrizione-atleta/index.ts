@@ -67,6 +67,25 @@ const clean = (v: unknown, max = 255) => {
   return s.slice(0, max);
 };
 
+/**
+ * Motivo comprensibile per un'iscrizione a un corso non riuscita.
+ * Il messaggio tecnico resta nei log: alla famiglia va un codice che la
+ * pagina traduce in una frase normale.
+ */
+function motivo_corso(err: { code?: string; message?: string } | null): string {
+  const codice = String(err?.code ?? "");
+  const testo = String(err?.message ?? "").toLowerCase();
+  if (codice === "23505" || testo.includes("duplicate key") || testo.includes("già iscritt")) {
+    return "gia_iscritta";
+  }
+  if (codice === "23502" || testo.includes("null value") || testo.includes("anagrafic")) {
+    return "anagrafica_incompleta";
+  }
+  if (testo.includes("livello") || testo.includes("conforme")) return "livello_non_sufficiente";
+  return "errore_generico";
+}
+
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
