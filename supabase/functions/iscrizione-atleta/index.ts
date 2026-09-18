@@ -172,6 +172,14 @@ Deno.serve(async (req) => {
 
     const rinnovo_attivo = !!stagione?.iscrizioni_aperte;
 
+    // Solo il testo del contratto: lo chiede il portale (scheda anagrafica
+    // stampabile) per non ricostruirne una copia nel browser.
+    if (azione === "contratto") {
+      return json({ ok: true, contratto: { articoli: contratto.articoli, impronta: contratto.impronta } });
+    }
+
+
+
 
     if (azione === "lookup") {
       let registro: { status: string; confermato_il: string | null } | null = null;
