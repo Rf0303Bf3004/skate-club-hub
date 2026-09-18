@@ -146,7 +146,13 @@ Deno.serve(async (req) => {
       clausole_contratto: setup?.clausole_contratto ?? null,
     };
 
+    // Il contratto lo costruisce sempre il server: quello che arriva dal
+    // browser non fa testo. Alla pagina si manda anche l'impronta, che torna
+    // indietro al salvataggio per verificare che il testo sia lo stesso.
+    const contratto = await contratto_completo(contesto);
+
     const rinnovo_attivo = !!stagione?.iscrizioni_aperte;
+
 
     if (azione === "lookup") {
       let registro: { status: string; confermato_il: string | null } | null = null;
