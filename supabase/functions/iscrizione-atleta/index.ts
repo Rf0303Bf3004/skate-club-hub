@@ -4,6 +4,8 @@
 // consensi, accettazione contratto e foto profilo. Scrittura con service role.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { contratto_completo } from "../_shared/contratto.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
