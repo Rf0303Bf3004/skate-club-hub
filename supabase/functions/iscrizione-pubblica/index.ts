@@ -152,13 +152,17 @@ Deno.serve(async (req) => {
     const gen_nome = clean(dati.genitore1_nome, 80);
     const gen_cognome = clean(dati.genitore1_cognome, 80);
     const gen_email = clean(dati.genitore1_email, 120);
-    const contratto_testo = clean(dati.contratto_testo, 60000);
+    const impronta_ricevuta = clean(dati.contratto_impronta, 100);
 
     if (!nome || !cognome) return json({ error: "atleta_incompleto" }, 400);
     if (!data_nascita || !/^\d{4}-\d{2}-\d{2}$/.test(data_nascita)) return json({ error: "data_non_valida" }, 400);
     if (!gen_nome || !gen_cognome) return json({ error: "genitore_incompleto" }, 400);
     if (!gen_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(gen_email)) return json({ error: "email_non_valida" }, 400);
-    if (!dati.contratto_accettato || !contratto_testo) return json({ error: "contratto_non_accettato" }, 400);
+    if (!dati.contratto_accettato) return json({ error: "contratto_non_accettato" }, 400);
+    // Si archivia il testo del server, e solo se è lo stesso che la famiglia
+    // ha letto: altrimenti le condizioni sono cambiate mentre compilava.
+    if (impronta_ricevuta !== contratto.impronta) return json({ error: "contratto_cambiato" }, 409);
+
 
     const sesso = clean(dati.sesso, 1);
     const cantone = clean(dati.genitore1_cantone, 2);
