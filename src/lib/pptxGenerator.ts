@@ -124,7 +124,7 @@ class Mazzo {
 
 // ── Tabelle: quante righe entrano in una slide ──────────────────
 
-const ALTEZZA_TABELLA = 3.4;          // pollici disponibili sotto il titolo
+const ALTEZZA_TABELLA = 3.8;          // pollici disponibili sotto il titolo
 const ALTEZZA_RIGA = 0.5;            // riga a 18 punti, una linea di testo
 
 interface RigaTabella {
