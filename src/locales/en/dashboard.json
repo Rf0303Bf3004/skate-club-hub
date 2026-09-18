@@ -258,5 +258,75 @@
       "competitor": "Competitor",
       "podiums": "{{count}} podiums"
     }
+  },
+  "relazione": {
+    "title": "End-of-season report",
+    "subtitle": "Build the report in four steps: season and tone, message, modules, attachments.",
+    "season": "Season",
+    "fullscreen": "Full screen",
+    "exit_fullscreen": "Exit full screen",
+    "presidente_fallback": "President",
+    "riprova": "Try again",
+    "caricamento": "Loading...",
+    "senza_club": "Your profile is not linked to any club: the report cannot be composed.",
+    "nessuna_stagione": "No season configured: create one in Seasons to compose the report.",
+    "errore_stagioni": "Seasons could not be read.",
+    "errore_composizione": "The saved composition could not be read.",
+    "errore_moduli": "Module data could not be read.",
+    "attendi_dati": "Wait for the data to load before downloading.",
+    "scarica_relazione": "Download the report",
+    "scarica_errore": "PDF creation failed",
+    "passo1": "Season and tone",
+    "passo2": "The president's message",
+    "passo3": "Modules",
+    "passo4": "Attachments and download",
+    "tono_soci": "Members",
+    "tono_formale": "Formal",
+    "tono_nota": "Changing the tone rewrites only generated texts: hand-edited ones stay as they are.",
+    "preset_titolo": "Ready-made compositions:",
+    "preset_completa": "Complete",
+    "preset_assemblea": "Assembly",
+    "preset_comitato": "Committee",
+    "messaggio": {
+      "spiegazione": "This text opens the document, right after the cover.",
+      "placeholder": "Dear members...",
+      "salva": "Save the message",
+      "salvato": "Message saved",
+      "salvataggio": "Saving the message",
+      "errore_lettura": "The message could not be read.",
+      "parole_one": "{{count}} word",
+      "parole_other": "{{count}} words"
+    },
+    "paragrafi": {
+      "salvataggio": "Saving the text",
+      "rigenerazione": "Regenerating the text",
+      "rigenerato": "Text regenerated",
+      "errore_lettura": "The texts could not be read.",
+      "vuoto": "No text for this chapter.",
+      "modificato": "hand-edited",
+      "rigenera": "Regenerate",
+      "salva": "Save",
+      "annulla": "Cancel",
+      "clicca_per_correggere": "Click to edit the text"
+    },
+    "moduli": {
+      "sempre": "always included",
+      "su": "Move up",
+      "giu": "Move down",
+      "errore": "Data unreadable: {{motivo}}",
+      "senza_dati": "Off: {{motivo}}"
+    },
+    "anteprima_fedele": {
+      "generazione": "Creating the PDF...",
+      "durata": "It may take a few seconds.",
+      "empty_titolo": "Preview not created yet",
+      "empty_testo": "Generate the preview to see the document exactly as it will be printed.",
+      "genera": "Generate the preview",
+      "stale": "The composition changed: the preview is out of date.",
+      "aggiorna": "Refresh",
+      "aggiorna_anteprima": "Refresh the preview",
+      "scarica": "Download",
+      "toast_errore": "Preview creation failed"
+    }
   }
 }

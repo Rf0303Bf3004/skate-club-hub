@@ -258,5 +258,75 @@
       "competitor": "Wettkampf",
       "podiums": "{{count}} Podestplätze"
     }
+  },
+  "relazione": {
+    "title": "Saisonbericht",
+    "subtitle": "Erstellen Sie den Bericht in vier Schritten: Saison und Ton, Botschaft, Module, Anhange.",
+    "season": "Saison",
+    "fullscreen": "Vollbild",
+    "exit_fullscreen": "Vollbild verlassen",
+    "presidente_fallback": "Prasident",
+    "riprova": "Erneut versuchen",
+    "caricamento": "Wird geladen...",
+    "senza_club": "Ihr Profil ist keinem Club zugeordnet: Der Bericht kann nicht erstellt werden.",
+    "nessuna_stagione": "Keine Saison konfiguriert: Legen Sie unter Saisons eine an.",
+    "errore_stagioni": "Die Saisons konnten nicht gelesen werden.",
+    "errore_composizione": "Die gespeicherte Zusammenstellung konnte nicht gelesen werden.",
+    "errore_moduli": "Die Moduldaten konnten nicht gelesen werden.",
+    "attendi_dati": "Warten Sie das Laden der Daten ab, bevor Sie herunterladen.",
+    "scarica_relazione": "Bericht herunterladen",
+    "scarica_errore": "PDF-Erstellung fehlgeschlagen",
+    "passo1": "Saison und Ton",
+    "passo2": "Die Botschaft des Prasidenten",
+    "passo3": "Die Module",
+    "passo4": "Anhange und Download",
+    "tono_soci": "Mitglieder",
+    "tono_formale": "Formell",
+    "tono_nota": "Ein Tonwechsel schreibt nur generierte Texte neu; von Hand korrigierte bleiben unverandert.",
+    "preset_titolo": "Fertige Zusammenstellungen:",
+    "preset_completa": "Vollstandig",
+    "preset_assemblea": "Versammlung",
+    "preset_comitato": "Vorstand",
+    "messaggio": {
+      "spiegazione": "Dieser Text eroffnet das Dokument direkt nach dem Titelblatt.",
+      "placeholder": "Liebe Mitglieder...",
+      "salva": "Botschaft speichern",
+      "salvato": "Botschaft gespeichert",
+      "salvataggio": "Speichern der Botschaft",
+      "errore_lettura": "Die Botschaft konnte nicht gelesen werden.",
+      "parole_one": "{{count}} Wort",
+      "parole_other": "{{count}} Worter"
+    },
+    "paragrafi": {
+      "salvataggio": "Text speichern",
+      "rigenerazione": "Text neu erzeugen",
+      "rigenerato": "Text neu erzeugt",
+      "errore_lettura": "Die Texte konnten nicht gelesen werden.",
+      "vuoto": "Kein Text fur dieses Kapitel.",
+      "modificato": "von Hand korrigiert",
+      "rigenera": "Neu erzeugen",
+      "salva": "Speichern",
+      "annulla": "Abbrechen",
+      "clicca_per_correggere": "Zum Bearbeiten klicken"
+    },
+    "moduli": {
+      "sempre": "immer enthalten",
+      "su": "Nach oben",
+      "giu": "Nach unten",
+      "errore": "Daten nicht lesbar: {{motivo}}",
+      "senza_dati": "Aus: {{motivo}}"
+    },
+    "anteprima_fedele": {
+      "generazione": "PDF wird erstellt...",
+      "durata": "Das kann einige Sekunden dauern.",
+      "empty_titolo": "Vorschau noch nicht erstellt",
+      "empty_testo": "Erzeugen Sie die Vorschau, um das Dokument wie gedruckt zu sehen.",
+      "genera": "Vorschau erzeugen",
+      "stale": "Die Zusammenstellung hat sich geandert: Die Vorschau ist veraltet.",
+      "aggiorna": "Aktualisieren",
+      "aggiorna_anteprima": "Vorschau aktualisieren",
+      "scarica": "Herunterladen",
+      "toast_errore": "Erstellung der Vorschau fehlgeschlagen"
+    }
   }
 }

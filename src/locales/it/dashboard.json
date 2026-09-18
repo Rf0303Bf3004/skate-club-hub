@@ -418,12 +418,10 @@
   },
   "relazione": {
     "title": "Relazione di fine stagione",
-    "subtitle": "Componi visualmente la relazione PDF che andrà ai soci e agli stakeholder.",
+    "subtitle": "Componi la relazione in quattro passi: stagione e tono, messaggio, moduli, allegati.",
     "season": "Stagione",
-    "fullscreen": "Fullscreen",
-    "exit_fullscreen": "Esci fullscreen",
-    "tab_compositore": "Compositore",
-    "tab_contenuti": "Contenuti",
+    "fullscreen": "Schermo intero",
+    "exit_fullscreen": "Esci da schermo intero",
     "presidente_fallback": "Presidente",
     "gestione_title": "Gestione Relazione",
     "gestione_subtitle": "Configura i contenuti redazionali e gli allegati che andranno nella relazione PDF di fine stagione.",
@@ -550,16 +548,16 @@
       "toast_ordine_ok": "Ordine salvato"
     },
     "anteprima_fedele": {
-      "generazione": "Generazione anteprima in corso...",
-      "durata": "Richiede 2-3 secondi",
-      "empty_titolo": "Anteprima fedele del PDF",
-      "empty_testo": "Genera il PDF reale (con grafici e paragrafi narrativi) per vedere esattamente come apparira' il documento finale.",
-      "genera": "Genera anteprima fedele",
-      "stale": "Hai modificato la struttura. Aggiorna l'anteprima per vedere le ultime modifiche.",
+      "generazione": "Creazione del PDF in corso...",
+      "durata": "Puo' richiedere qualche secondo.",
+      "empty_titolo": "Anteprima non ancora creata",
+      "empty_testo": "Genera l'anteprima per vedere il documento esattamente come sara stampato.",
+      "genera": "Genera l'anteprima",
+      "stale": "La composizione e' cambiata: l'anteprima non e' aggiornata.",
       "aggiorna": "Aggiorna",
-      "aggiorna_anteprima": "Aggiorna anteprima",
-      "scarica": "Scarica PDF",
-      "toast_errore": "Errore nella generazione dell'anteprima."
+      "aggiorna_anteprima": "Aggiorna l'anteprima",
+      "scarica": "Scarica",
+      "toast_errore": "Creazione dell'anteprima non riuscita"
     },
     "pdf_viewer": {
       "pagina_di": "Pagina {{current}} di {{total}}",
@@ -644,57 +642,6 @@
       "modifica_paragrafi": "Modifica i paragrafi",
       "badge_sistema": "sistema"
     },
-    "mock_pdf": {
-      "area_numero": "Area {{numero}}",
-      "grafico_placeholder": "[grafico verrà incluso nel PDF finale]",
-      "pdf": "PDF",
-      "allegato_badge": "Allegato",
-      "allegato_nota": "Il PDF allegato sarà incluso nelle pagine successive del documento finale.",
-      "club_fallback": "Club",
-      "stagione_fallback": "Stagione",
-      "copertina_titolo": "Relazione di fine stagione",
-      "presidente": "Presidente",
-      "indice_kicker": "Indice",
-      "indice_titolo": "Sommario",
-      "chiusura": "{{club}} — {{stagione}} — Relazione del Presidente",
-      "aree": {
-        "sintesi": {
-          "titolo": "Sintesi della stagione",
-          "kpi": "Quadro generale coerente",
-          "insight": "La stagione mostra crescita della domanda e tenuta economica; le aree critiche sono presidiate."
-        },
-        "domanda": {
-          "titolo": "Domanda & Ghiaccio",
-          "kpi": "92% saturazione ghiaccio · 14 in lista d'attesa",
-          "insight": "La domanda supera la capacità: una fascia oraria aggiuntiva consentirebbe di assorbire la lista d'attesa."
-        },
-        "atleti": {
-          "titolo": "Atleti",
-          "kpi": "145 atleti attivi (-2% YoY)",
-          "insight": "Pulcini in calo, Interbronzo in crescita: i ragazzi avanzano verso l'agonismo."
-        },
-        "economia": {
-          "titolo": "Economia",
-          "kpi": "Ricavi CHF 218'400 · Cassa CHF 41'200",
-          "insight": "Margine positivo del 6%, generato in particolare da corsi base e pacchetti opzionali."
-        },
-        "lezioni": {
-          "titolo": "Lezioni private",
-          "kpi": "412 ore erogate (+18% YoY)",
-          "insight": "Le lezioni private trainano i ricavi e fidelizzano gli agonisti."
-        },
-        "sportivo": {
-          "titolo": "Risultati sportivi",
-          "kpi": "27 podi · 9 medaglie d'oro",
-          "insight": "Stagione record: la maturazione del gruppo Argento porta i suoi frutti in gara."
-        },
-        "catalogo": {
-          "titolo": "Catalogo & Promozione",
-          "kpi": "5 sponsor attivi · CHF 19'000",
-          "insight": "Cinque partner sostengono il club; cerchiamo uno sponsor pista per coprire le ore aggiuntive."
-        }
-      }
-    },
     "categorie": {
       "blocco": {
         "staff": "Staff",
@@ -713,6 +660,56 @@
         "verbale": "Verbale",
         "altro": "Altro"
       }
+    },
+    "riprova": "Riprova",
+    "caricamento": "Caricamento in corso...",
+    "senza_club": "Il tuo profilo non e' collegato a nessun club: la relazione non puo' essere composta.",
+    "nessuna_stagione": "Nessuna stagione configurata: creane una in Stagioni per comporre la relazione.",
+    "errore_stagioni": "Non e' stato possibile leggere le stagioni.",
+    "errore_composizione": "Non e' stato possibile leggere la composizione salvata.",
+    "errore_moduli": "Non e' stato possibile leggere i dati dei moduli.",
+    "attendi_dati": "Attendi il caricamento dei dati prima di scaricare.",
+    "scarica_relazione": "Scarica la relazione",
+    "scarica_errore": "Creazione del PDF non riuscita",
+    "passo1": "Stagione e tono",
+    "passo2": "Il messaggio del presidente",
+    "passo3": "I moduli",
+    "passo4": "Allegati e scarica",
+    "tono_soci": "Soci",
+    "tono_formale": "Formale",
+    "tono_nota": "Cambiando tono si riscrivono solo i testi generati: quelli corretti a mano restano come sono.",
+    "preset_titolo": "Composizioni pronte:",
+    "preset_completa": "Completa",
+    "preset_assemblea": "Assemblea",
+    "preset_comitato": "Comitato",
+    "messaggio": {
+      "spiegazione": "Questo testo apre il documento, subito dopo la copertina.",
+      "placeholder": "Care socie, cari soci...",
+      "salva": "Salva il messaggio",
+      "salvato": "Messaggio salvato",
+      "salvataggio": "Salvataggio del messaggio",
+      "errore_lettura": "Non e' stato possibile leggere il messaggio.",
+      "parole_one": "{{count}} parola",
+      "parole_other": "{{count}} parole"
+    },
+    "paragrafi": {
+      "salvataggio": "Salvataggio del testo",
+      "rigenerazione": "Rigenerazione del testo",
+      "rigenerato": "Testo rigenerato",
+      "errore_lettura": "Non e' stato possibile leggere i testi.",
+      "vuoto": "Nessun testo per questo capitolo.",
+      "modificato": "corretto a mano",
+      "rigenera": "Rigenera",
+      "salva": "Salva",
+      "annulla": "Annulla",
+      "clicca_per_correggere": "Clicca per correggere il testo"
+    },
+    "moduli": {
+      "sempre": "sempre presente",
+      "su": "Sposta su",
+      "giu": "Sposta giu",
+      "errore": "Dati non leggibili: {{motivo}}",
+      "senza_dati": "Spento: {{motivo}}"
     }
   },
   "onboarding_banner": {

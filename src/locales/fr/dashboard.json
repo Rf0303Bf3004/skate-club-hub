@@ -258,5 +258,75 @@
       "competitor": "Compétiteur",
       "podiums": "{{count}} podiums"
     }
+  },
+  "relazione": {
+    "title": "Rapport de fin de saison",
+    "subtitle": "Composez le rapport en quatre etapes : saison et ton, message, modules, annexes.",
+    "season": "Saison",
+    "fullscreen": "Plein ecran",
+    "exit_fullscreen": "Quitter le plein ecran",
+    "presidente_fallback": "President",
+    "riprova": "Reessayer",
+    "caricamento": "Chargement...",
+    "senza_club": "Votre profil n'est lie a aucun club : le rapport ne peut pas etre compose.",
+    "nessuna_stagione": "Aucune saison configuree : creez-en une dans Saisons pour composer le rapport.",
+    "errore_stagioni": "Impossible de lire les saisons.",
+    "errore_composizione": "Impossible de lire la composition enregistree.",
+    "errore_moduli": "Impossible de lire les donnees des modules.",
+    "attendi_dati": "Attendez le chargement des donnees avant de telecharger.",
+    "scarica_relazione": "Telecharger le rapport",
+    "scarica_errore": "Echec de la creation du PDF",
+    "passo1": "Saison et ton",
+    "passo2": "Le message du president",
+    "passo3": "Les modules",
+    "passo4": "Annexes et telechargement",
+    "tono_soci": "Membres",
+    "tono_formale": "Formel",
+    "tono_nota": "Changer de ton ne reecrit que les textes generes : ceux corriges a la main restent inchanges.",
+    "preset_titolo": "Compositions pretes :",
+    "preset_completa": "Complete",
+    "preset_assemblea": "Assemblee",
+    "preset_comitato": "Comite",
+    "messaggio": {
+      "spiegazione": "Ce texte ouvre le document, juste apres la couverture.",
+      "placeholder": "Cheres et chers membres...",
+      "salva": "Enregistrer le message",
+      "salvato": "Message enregistre",
+      "salvataggio": "Enregistrement du message",
+      "errore_lettura": "Impossible de lire le message.",
+      "parole_one": "{{count}} mot",
+      "parole_other": "{{count}} mots"
+    },
+    "paragrafi": {
+      "salvataggio": "Enregistrement du texte",
+      "rigenerazione": "Regeneration du texte",
+      "rigenerato": "Texte regenere",
+      "errore_lettura": "Impossible de lire les textes.",
+      "vuoto": "Aucun texte pour ce chapitre.",
+      "modificato": "corrige a la main",
+      "rigenera": "Regenerer",
+      "salva": "Enregistrer",
+      "annulla": "Annuler",
+      "clicca_per_correggere": "Cliquez pour corriger le texte"
+    },
+    "moduli": {
+      "sempre": "toujours present",
+      "su": "Deplacer vers le haut",
+      "giu": "Deplacer vers le bas",
+      "errore": "Donnees illisibles : {{motivo}}",
+      "senza_dati": "Desactive : {{motivo}}"
+    },
+    "anteprima_fedele": {
+      "generazione": "Creation du PDF...",
+      "durata": "Cela peut prendre quelques secondes.",
+      "empty_titolo": "Apercu pas encore cree",
+      "empty_testo": "Generez l'apercu pour voir le document tel qu'il sera imprime.",
+      "genera": "Generer l'apercu",
+      "stale": "La composition a change : l'apercu n'est plus a jour.",
+      "aggiorna": "Actualiser",
+      "aggiorna_anteprima": "Actualiser l'apercu",
+      "scarica": "Telecharger",
+      "toast_errore": "Echec de la creation de l'apercu"
+    }
   }
 }
