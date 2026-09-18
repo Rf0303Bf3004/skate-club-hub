@@ -87,7 +87,22 @@
     "print_popup_blocked": "Impossible d'ouvrir la fenêtre d'impression : autorisez les pop-ups pour ce site."
   },
   "codice_card": {
-    "popup_blocked": "Impossible d'ouvrir la fenêtre d'impression : autorisez les pop-ups pour ce site."
+    "popup_blocked": "Impossible d'ouvrir la fenêtre d'impression : autorisez les pop-ups pour ce site.",
+    "parent_1_fallback": "Premier parent",
+    "parent_2_fallback": "Second parent",
+    "create_second": "Créer le code du second parent",
+    "creating_second": "Création du code...",
+    "second_missing": "Le second parent n'a pas encore de code d'accès.",
+    "revoke": "Révoquer",
+    "revoke_yes": "Oui, révoquer",
+    "revoking": "Révocation...",
+    "revoke_confirm_title": "Révoquer le code du second parent ?",
+    "revoke_confirm_desc": "Le second parent ne pourra plus se connecter. Le premier parent n'est pas touché.",
+    "warn_first": "Régénérer ce code exclut le premier parent. Le second continue d'entrer avec le sien.",
+    "warn_second": "Régénérer ce code exclut le second parent. Le premier continue d'entrer avec le sien.",
+    "toast_second_created": "Code du second parent créé",
+    "toast_second_revoked": "Code du second parent révoqué",
+    "toast_second_error": "Opération échouée"
   },
   "badges": {
     "ospite": "INVITÉ",

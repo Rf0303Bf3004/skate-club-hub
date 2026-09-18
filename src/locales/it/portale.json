@@ -135,5 +135,11 @@
     "gia_iscritto": "Già iscritto",
     "richiesta_in_attesa": "⏳ Richiesta in attesa",
     "richiedi_iscrizione": "📨 Richiedi iscrizione"
+  },
+  "accesso": {
+    "riga": "Accesso di {{nome}}",
+    "genitore1": "Primo genitore",
+    "genitore2": "Secondo genitore",
+    "errore": "Non è stato possibile leggere con quale accesso sei entrato."
   }
 }

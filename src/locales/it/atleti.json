@@ -654,7 +654,22 @@
     "print_step_3": "Digita o scansiona <strong>{{codice}}</strong>.",
     "print_step_4": "Il profilo dell'atleta verrà collegato al dispositivo.",
     "print_footer": "Codice permanente — non scade. In caso di smarrimento, il club può rigenerarlo dalla scheda atleta.",
-    "popup_blocked": "Impossibile aprire la finestra di stampa: consenti i popup per questo sito."
+    "popup_blocked": "Impossibile aprire la finestra di stampa: consenti i popup per questo sito.",
+    "parent_1_fallback": "Primo genitore",
+    "parent_2_fallback": "Secondo genitore",
+    "create_second": "Crea il codice per il secondo genitore",
+    "creating_second": "Creo il codice...",
+    "second_missing": "Il secondo genitore non ha ancora un codice di accesso.",
+    "revoke": "Revoca",
+    "revoke_yes": "Sì, revoca",
+    "revoking": "Revoco...",
+    "revoke_confirm_title": "Revocare il codice del secondo genitore?",
+    "revoke_confirm_desc": "Il secondo genitore non potrà più entrare. Il primo genitore non viene toccato.",
+    "warn_first": "Rigenerare questo codice esclude il primo genitore. Il secondo continua a entrare col suo.",
+    "warn_second": "Rigenerare questo codice esclude il secondo genitore. Il primo continua a entrare col suo.",
+    "toast_second_created": "Codice del secondo genitore creato",
+    "toast_second_revoked": "Codice del secondo genitore revocato",
+    "toast_second_error": "Operazione non riuscita"
   },
   "calendario": {
     "type_corso": "Corso",

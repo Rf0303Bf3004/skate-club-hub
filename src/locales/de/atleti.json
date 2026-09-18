@@ -87,7 +87,22 @@
     "print_popup_blocked": "Druckfenster konnte nicht geöffnet werden: Pop-ups für diese Seite zulassen."
   },
   "codice_card": {
-    "popup_blocked": "Druckfenster konnte nicht geöffnet werden: Pop-ups für diese Seite zulassen."
+    "popup_blocked": "Druckfenster konnte nicht geöffnet werden: Pop-ups für diese Seite zulassen.",
+    "parent_1_fallback": "Erster Elternteil",
+    "parent_2_fallback": "Zweiter Elternteil",
+    "create_second": "Code für den zweiten Elternteil erstellen",
+    "creating_second": "Code wird erstellt...",
+    "second_missing": "Der zweite Elternteil hat noch keinen Zugangscode.",
+    "revoke": "Widerrufen",
+    "revoke_yes": "Ja, widerrufen",
+    "revoking": "Wird widerrufen...",
+    "revoke_confirm_title": "Code des zweiten Elternteils widerrufen?",
+    "revoke_confirm_desc": "Der zweite Elternteil kann sich nicht mehr anmelden. Der erste Elternteil bleibt unberührt.",
+    "warn_first": "Wird dieser Code neu erzeugt, ist der erste Elternteil ausgesperrt. Der zweite meldet sich weiter mit seinem Code an.",
+    "warn_second": "Wird dieser Code neu erzeugt, ist der zweite Elternteil ausgesperrt. Der erste meldet sich weiter mit seinem Code an.",
+    "toast_second_created": "Code des zweiten Elternteils erstellt",
+    "toast_second_revoked": "Code des zweiten Elternteils widerrufen",
+    "toast_second_error": "Vorgang fehlgeschlagen"
   },
   "badges": {
     "ospite": "GAST",
