@@ -91,13 +91,13 @@ export default function MessaggioPresidente({ club_id, stagione_id }: Props) {
 
   return (
     <div className="space-y-2">
-      <Textarea
+      <TextareaCrescente
         value={testo}
         onChange={(e) => { set_testo(e.target.value); set_toccato(true); }}
         rows={12}
         disabled={isLoading}
         placeholder={t("relazione.messaggio.placeholder")}
-        className="resize-none border-transparent bg-transparent px-0 font-serif text-base leading-relaxed shadow-none focus-visible:border-border focus-visible:px-3"
+        className="border-transparent bg-transparent px-0 font-serif text-base leading-relaxed shadow-none focus-visible:border-border focus-visible:px-3"
       />
       <span className="text-xs text-muted-foreground">{isLoading || m_salva.isPending ? t("relazione.caricamento") : t("relazione.messaggio.salvataggio_automatico")}</span>
     </div>
