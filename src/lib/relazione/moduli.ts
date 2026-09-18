@@ -305,13 +305,14 @@ async function modAtletiAndamento(ctx: ContestoModuli): Promise<ModuloRisultato>
   });
 }
 
-async function atletiAttivi(club_id: string) {
-  const { data, error } = await supabase
-    .from("atleti")
-    .select("id,livello_attuale,categoria,data_nascita,agonista,created_at")
-    .eq("club_id", club_id).eq("attivo", true);
-  if (error) throw error;
-  return (data ?? []) as any[];
+// Le atlete lette qui sono quelle della stagione scelta: in corso = anagrafico
+// vivo, chiusa = storico di quella stagione (stessa logica dei paragrafi e dei
+// KPI, in src/lib/relazione/atleti-stagione.ts).
+async function atletiAttivi(ctx: ContestoModuli) {
+  const righe = await fetchAtletiDellaStagione(
+    ctx.club_id, ctx.stagione, "id,livello_attuale,categoria,data_nascita,agonista,created_at",
+  );
+  return righe ?? [];
 }
 
 async function modAtletiPiramide(ctx: ContestoModuli): Promise<ModuloRisultato> {
