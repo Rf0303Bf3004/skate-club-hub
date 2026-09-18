@@ -336,7 +336,6 @@ export const FatturaAtletaDocument: React.FC<{ data: FatturaAtletaData }> = ({ d
           <View style={s.col}>
             <Text style={s.blockLabel}>Atleta</Text>
             <Text style={s.destName}>{data.atleta.nome} {data.atleta.cognome}</Text>
-            {data.atleta.codice ? <Text style={s.small}>Codice: {data.atleta.codice}</Text> : null}
             {data.atleta.livello ? <Text style={s.small}>Livello: {data.atleta.livello}</Text> : null}
           </View>
         </View>

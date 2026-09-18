@@ -92,13 +92,16 @@ const AtletaTab: React.FC = () => {
     genitore_email: "", genitore_telefono: "",
   });
 
-  // Quale genitore si sta modificando NON si indovina dai dati: con i genitori separati
-  // lo dice la sessione (il codice usato per entrare), altrimenti resta il criterio storico.
-  const genitore_sessione: "genitore1" | "genitore2" =
-    ctx?.session?.genitore === "genitore2" ? "genitore2" : "genitore1";
+  // Quale genitore si sta modificando lo dice prima di tutto la sessione (il codice
+  // usato per entrare): chi è entrato col secondo codice non può finire a scrivere
+  // nel blocco del primo, qualunque cosa dica il flag genitori_separati.
+  // L'euristica sui dati resta solo per le sessioni che non dicono niente.
+  const genitore_sessione = ctx?.session?.genitore;
 
   const quale_genitore = (a: any): "genitore1" | "genitore2" => {
-    if (a?.genitori_separati) return genitore_sessione;
+    if (genitore_sessione === "genitore2") return "genitore2";
+    if (genitore_sessione === "genitore1") return "genitore1";
+    if (a?.genitori_separati) return "genitore1";
     return !a?.genitore1_nome && !a?.genitore1_email && !!(a?.genitore2_nome || a?.genitore2_email)
       ? "genitore2"
       : "genitore1";
