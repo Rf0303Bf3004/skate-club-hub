@@ -157,6 +157,28 @@ const IscrizioneAtletaPage: React.FC = () => {
   const cognome_bloccato = !!atleta?.cognome;
   const nascita_bloccata = !!atleta?.data_nascita;
 
+  const rinnovo_aperto = !!stagione?.iscrizioni_aperte;
+
+  const contratto_testo = useMemo(
+    () => articoli.map((a) => `Art. ${a.numero} — ${a.titolo}\n${a.testo}`).join("\n\n"),
+    [articoli],
+  );
+
+  const on_rinuncia = async () => {
+    set_salvando(true);
+    set_errore(null);
+    const { data, error } = await supabase.functions.invoke("iscrizione-atleta", {
+      body: { codice_atleta: codice_atleta ?? "", azione: "rinuncia", dati: { motivo } },
+    });
+    const codice_errore = (data as any)?.error;
+    if (error || codice_errore) {
+      set_errore(messaggi_errore[codice_errore] ?? "Invio non riuscito, riprova.");
+    } else {
+      set_rinuncia_fatta(true);
+    }
+    set_salvando(false);
+  };
+
   const on_submit = async () => {
     if (!contratto_ok) { set_errore(messaggi_errore.contratto_non_accettato); return; }
     if (!nome_bloccato && !form.nome?.trim()) { set_errore("Inserisci il nome dell'atleta."); return; }
@@ -166,7 +188,12 @@ const IscrizioneAtletaPage: React.FC = () => {
 
     set_salvando(true);
     set_errore(null);
-    const dati = { ...form, contratto_accettato: true };
+    const dati = {
+      ...form,
+      contratto_accettato: true,
+      contratto_testo,
+      corsi_scelti: rinnovo_aperto ? corsi_scelti : [],
+    };
     const body = new FormData();
     body.append("codice_atleta", codice_atleta ?? "");
     body.append("azione", "salva");
@@ -178,6 +205,7 @@ const IscrizioneAtletaPage: React.FC = () => {
     if (error || codice_errore) {
       set_errore(messaggi_errore[codice_errore] ?? "Invio non riuscito, riprova.");
     } else {
+      set_corsi_falliti((((data as any).corsi_falliti ?? []) as { nome: string; motivo: string }[]));
       set_successo(true);
       set_file(null);
     }
@@ -204,15 +232,100 @@ const IscrizioneAtletaPage: React.FC = () => {
     );
   }
 
+  if (rinuncia_fatta) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+        <div className="max-w-sm w-full bg-card border rounded-2xl p-6 text-center space-y-3">
+          <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
+          <h1 className="text-lg font-semibold">Grazie</h1>
+          <p className="text-sm text-muted-foreground">
+            Abbiamo registrato che {atleta.nome} non continua questa stagione. Grazie per il tempo passato insieme:
+            le porte del club restano aperte.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (successo) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
         <div className="max-w-sm w-full bg-card border rounded-2xl p-6 text-center space-y-3">
           <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
-          <h1 className="text-lg font-semibold">Iscrizione completata</h1>
+          <h1 className="text-lg font-semibold">
+            {rinnovo_aperto ? "Rinnovo confermato" : "Iscrizione completata"}
+          </h1>
           <p className="text-sm text-muted-foreground">
             Grazie! I dati di {form.nome} {form.cognome} sono stati registrati e l'iscrizione è attiva.
           </p>
+          {corsi_falliti.length > 0 && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-left space-y-1">
+              <p className="text-sm font-medium text-amber-900">
+                Il rinnovo è registrato, ma questi corsi non sono stati accettati:
+              </p>
+              {corsi_falliti.map((c, i) => (
+                <p key={i} className="text-xs text-amber-900">• {c.nome}: {c.motivo}</p>
+              ))}
+              <p className="text-xs text-amber-900">Il club ti ricontatterà per sistemarli.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Rinnovo di stagione: prima la scelta, poi (se conferma) il resto della pagina.
+  if (rinnovo_aperto && scelta !== "confermo") {
+    const scadenza = stagione?.iscrizioni_scadenza
+      ? new Date(stagione.iscrizioni_scadenza + "T00:00:00").toLocaleDateString("it-CH")
+      : null;
+    return (
+      <div className="min-h-screen bg-muted/30 p-4 flex justify-center">
+        <div className="w-full max-w-xl space-y-4 pb-10">
+          <header className="text-center pt-4">
+            <h1 className="text-xl font-semibold">Rinnovo per la stagione {stagione?.nome}</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {contesto.club_nome || "Il tuo club"}
+              {scadenza ? ` · Conferma entro il ${scadenza}` : ""}
+            </p>
+          </header>
+
+          {scelta === null && (
+            <div className="grid grid-cols-1 gap-3">
+              <Button className="w-full h-16 text-base" onClick={() => set_scelta("confermo")}>
+                Confermo l'iscrizione
+              </Button>
+              <Button variant="outline" className="w-full h-16 text-base" onClick={() => set_scelta("rinuncia")}>
+                Quest'anno non continua
+              </Button>
+            </div>
+          )}
+
+          {scelta === "rinuncia" && (
+            <section className="bg-card border rounded-2xl p-5 space-y-4">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                Quest'anno non continua
+              </h2>
+              <Campo label="Motivo (facoltativo)">
+                <Textarea rows={3} value={motivo} onChange={(e) => set_motivo(e.target.value)} />
+              </Campo>
+              {errore && (
+                <div className="flex items-start gap-2 rounded-xl bg-destructive/10 border border-destructive/20 p-3">
+                  <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                  <p className="text-sm text-destructive">{errore}</p>
+                </div>
+              )}
+              <div className="flex gap-3">
+                <Button variant="ghost" className="h-12" onClick={() => set_scelta(null)} disabled={salvando}>
+                  Torna indietro
+                </Button>
+                <Button className="flex-1 h-12 text-base" onClick={on_rinuncia} disabled={salvando}>
+                  {salvando ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Send className="w-5 h-5 mr-2" />}
+                  Invia
+                </Button>
+              </div>
+            </section>
+          )}
         </div>
       </div>
     );
