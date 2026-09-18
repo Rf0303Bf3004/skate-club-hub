@@ -31,10 +31,10 @@ const TARGET_FIELDS = [
   { key: "cognome",             label_key: "field.cognome",             colonna: "cognome",             required: true  },
   { key: "data_nascita",        label_key: "field.data_nascita",        colonna: "data_nascita",        required: true  },
   { key: "sesso",               label_key: "field.sesso",               colonna: "sesso",               required: false },
-  { key: "telefono",            label_key: "field.telefono",            colonna: "telefono",            required: false },
+  { key: "telefono",            label_key: "field.telefono_atleta",            colonna: "telefono",            required: false },
   { key: "livello",             label_key: "field.livello",             colonna: "livello_attuale",     required: false },
   { key: "categoria",           label_key: "field.categoria",           colonna: "categoria",           required: false },
-  { key: "email",               label_key: "field.email",               colonna: "genitore1_email",     required: false },
+  { key: "email",               label_key: "field.email_genitore",               colonna: "genitore1_email",     required: false },
   { key: "genitore1_telefono",  label_key: "field.genitore1_telefono",  colonna: "genitore1_telefono",  required: false },
   { key: "genitore1_nome",      label_key: "field.genitore1_nome",      colonna: "genitore1_nome",      required: false },
   { key: "genitore1_cognome",   label_key: "field.genitore1_cognome",   colonna: "genitore1_cognome",   required: false },
@@ -826,8 +826,8 @@ const ImportAtletiPage: React.FC = () => {
                   <th className="px-2 py-2 text-left">{t("import.field.cognome")}</th>
                   <th className="px-2 py-2 text-left">{t("import.col.data_nasc")}</th>
                   <th className="px-2 py-2 text-left">{t("import.col.sesso")}</th>
-                  <th className="px-2 py-2 text-left">{t("import.field.email")}</th>
-                  <th className="px-2 py-2 text-left">{t("import.field.telefono")}</th>
+                  <th className="px-2 py-2 text-left">{t("import.field.email_genitore")}</th>
+                  <th className="px-2 py-2 text-left">{t("import.field.telefono_atleta")}</th>
                   <th className="px-2 py-2 text-left">{t("import.field.livello")}</th>
                   <th className="px-2 py-2 text-left">{t("import.field.categoria")}</th>
                   <th className="px-2 py-2 text-left">{t("import.col.note")}</th>

@@ -513,7 +513,9 @@
       "genitore1_indirizzo": "Indirizzo",
       "genitore1_cap": "CAP",
       "genitore1_citta": "Località",
-      "genitore1_cantone": "Cantone"
+      "genitore1_cantone": "Cantone",
+      "email_genitore": "Email del genitore",
+      "telefono_atleta": "Telefono dell'atleta"
     },
     "col": {
       "stato": "Stato",

@@ -128,7 +128,9 @@
       "genitore1_indirizzo": "Adresse",
       "genitore1_cap": "PLZ",
       "genitore1_citta": "Ort",
-      "genitore1_cantone": "Kanton"
+      "genitore1_cantone": "Kanton",
+      "email_genitore": "E-Mail des Elternteils",
+      "telefono_atleta": "Telefon der Athletin/des Athleten"
     },
     "err": {
       "categoria": "Kategorie fehlt",

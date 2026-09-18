@@ -128,7 +128,9 @@
       "genitore1_indirizzo": "Address",
       "genitore1_cap": "Postal code",
       "genitore1_citta": "Town",
-      "genitore1_cantone": "Canton"
+      "genitore1_cantone": "Canton",
+      "email_genitore": "Parent email",
+      "telefono_atleta": "Athlete phone"
     },
     "err": {
       "categoria": "Category missing",
