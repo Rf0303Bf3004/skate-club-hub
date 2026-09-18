@@ -26,6 +26,24 @@ const messaggi_errore: Record<string, string> = {
   server_error: "Errore del server, riprova più tardi.",
 };
 
+interface Stagione {
+  id: string;
+  nome: string;
+  iscrizioni_aperte: boolean;
+  iscrizioni_scadenza: string | null;
+}
+
+interface Corso {
+  id: string;
+  nome: string;
+  giorno: string | null;
+  ora_inizio: string | null;
+  ora_fine: string | null;
+  costo_mensile: number | null;
+  richiede_approvazione: boolean;
+}
+
+
 const Campo: React.FC<{ label: string; required?: boolean; children: React.ReactNode }> = ({ label, required, children }) => (
   <div className="space-y-1.5">
     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
