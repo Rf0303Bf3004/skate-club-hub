@@ -2516,6 +2516,30 @@ export type Database = {
           },
         ]
       }
+      demo_dati_inseriti: {
+        Row: {
+          id: number
+          inserito_at: string
+          lotto: string
+          riga_id: string
+          tabella: string
+        }
+        Insert: {
+          id?: number
+          inserito_at?: string
+          lotto: string
+          riga_id: string
+          tabella: string
+        }
+        Update: {
+          id?: number
+          inserito_at?: string
+          lotto?: string
+          riga_id?: string
+          tabella?: string
+        }
+        Relationships: []
+      }
       demo_email_originali: {
         Row: {
           atleta_id: string
