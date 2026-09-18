@@ -20,6 +20,7 @@ import { Calendar, Mail, FileText, Loader2, BellRing } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
+import ContabilitaSection from "@/components/setup/ContabilitaSection";
 
 /** "7, 21" -> [7, 21]. Torna null se il testo non è utilizzabile. */
 function leggi_giorni(testo: string): number[] | null {
@@ -301,6 +302,13 @@ const FatturazioneTab: React.FC = () => {
         )}
 
         <p className="text-xs text-muted-foreground">{t("billing_tab.no_duplicates_note")}</p>
+      </section>
+
+      <Separator />
+
+      {/* 5. Conti e codici per l'esportazione verso i programmi di contabilità */}
+      <section className="space-y-4">
+        <ContabilitaSection />
       </section>
 
       {puo_gestire_fatture && (
