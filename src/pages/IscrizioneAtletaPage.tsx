@@ -186,10 +186,6 @@ const IscrizioneAtletaPage: React.FC = () => {
 
   const rinnovo_aperto = !!stagione?.iscrizioni_aperte;
 
-  const contratto_testo = useMemo(
-    () => articoli.map((a) => `Art. ${a.numero} — ${a.titolo}\n${a.testo}`).join("\n\n"),
-    [articoli],
-  );
 
   const on_rinuncia = async () => {
     set_salvando(true);
