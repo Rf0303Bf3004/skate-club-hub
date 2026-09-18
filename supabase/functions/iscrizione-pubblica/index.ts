@@ -104,6 +104,10 @@ Deno.serve(async (req) => {
 
     const aperte = !!stagione?.iscrizioni_aperte;
 
+    // Il contratto lo costruisce il server: la pagina lo mostra soltanto e al
+    // salvataggio rimanda l'impronta ricevuta.
+    const contratto = await contratto_completo(contesto);
+
     if (azione === "info") {
       return json({
         ok: true,
@@ -116,9 +120,11 @@ Deno.serve(async (req) => {
             }
           : null,
         contesto,
+        contratto: { articoli: contratto.articoli, impronta: contratto.impronta },
         livelli: LIVELLI_OK,
       });
     }
+
 
     if (azione !== "invia") return json({ error: "azione_non_valida" }, 400);
     if (!stagione?.id || !aperte) return json({ error: "iscrizioni_chiuse" }, 400);
