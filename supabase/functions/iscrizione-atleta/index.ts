@@ -377,7 +377,18 @@ Deno.serve(async (req) => {
           .eq("attivo", true)
           .maybeSingle();
         if (!corso) {
-          corsi_falliti.push({ nome: corso_id, motivo: "corso_non_disponibile" });
+          // Alla famiglia si mostra il nome, mai l'identificativo interno: se
+          // il corso non esiste più non si scrive nessun codice.
+          const { data: corso_noto } = await admin
+            .from("corsi")
+            .select("nome")
+            .eq("id", corso_id)
+            .eq("club_id", atleta.club_id)
+            .maybeSingle();
+          corsi_falliti.push({
+            nome: clean(corso_noto?.nome, 120) ?? "",
+            motivo: "corso_non_disponibile",
+          });
           continue;
         }
         const errore_ins = corso.richiede_approvazione
