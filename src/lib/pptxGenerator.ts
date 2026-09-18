@@ -123,8 +123,8 @@ class Mazzo {
 
 // ── Tabelle: quante righe entrano in una slide ──────────────────
 
-const ALTEZZA_TABELLA = 3.5;          // pollici disponibili sotto il titolo
-const ALTEZZA_RIGA = 0.42;            // riga a 18 punti, una linea di testo
+const ALTEZZA_TABELLA = 3.4;          // pollici disponibili sotto il titolo
+const ALTEZZA_RIGA = 0.5;            // riga a 18 punti, una linea di testo
 
 interface RigaTabella {
   celle: string[];
@@ -167,10 +167,10 @@ function larghezze_colonne(
 ): number[] {
   const ncol = colonne.length;
   if (ncol <= 1) return [CONTENUTO_W];
-  const MIN = 0.75;
+  const MIN = 1.0;
   const pesi = colonne.map((c, i) => {
     const lunghezze = [String(c ?? "").length, ...righe.map((r) => String(r.celle[i] ?? "").length)];
-    return Math.min(42, Math.max(6, Math.max(...lunghezze)));
+    return Math.min(42, Math.max(8, Math.max(...lunghezze)));
   });
   if (prima_stretta) pesi[0] = 5;
   const somma = pesi.reduce((s, p) => s + p, 0);
