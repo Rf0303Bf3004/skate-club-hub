@@ -125,7 +125,7 @@ const IscrizioneAtletaPage: React.FC = () => {
         body: { codice_atleta: codice_atleta ?? "", azione: "lookup" },
       });
       if (!vivo) return;
-      const codice_errore = (data as any)?.error;
+      const codice_errore = await codice_errore_edge(data, error);
       if (error || codice_errore) {
         set_fatale(messaggi_errore[codice_errore] ?? "Codice non trovato, verifica con il tuo club.");
       } else {
@@ -193,7 +193,7 @@ const IscrizioneAtletaPage: React.FC = () => {
     const { data, error } = await supabase.functions.invoke("iscrizione-atleta", {
       body: { codice_atleta: codice_atleta ?? "", azione: "rinuncia", dati: { motivo } },
     });
-    const codice_errore = (data as any)?.error;
+    const codice_errore = await codice_errore_edge(data, error);
     if (error || codice_errore) {
       set_errore(messaggi_errore[codice_errore] ?? "Invio non riuscito, riprova.");
     } else {
@@ -226,7 +226,7 @@ const IscrizioneAtletaPage: React.FC = () => {
     if (file) body.append("file", file);
 
     const { data, error } = await supabase.functions.invoke("iscrizione-atleta", { body });
-    const codice_errore = (data as any)?.error;
+    const codice_errore = await codice_errore_edge(data, error);
     if (error || codice_errore) {
       set_errore(messaggi_errore[codice_errore] ?? "Invio non riuscito, riprova.");
     } else {

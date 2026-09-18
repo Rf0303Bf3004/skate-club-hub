@@ -76,7 +76,7 @@ const IscrivitiPage: React.FC = () => {
         body: { token: token ?? "", azione: "info" },
       });
       if (!vivo) return;
-      const codice_errore = (data as any)?.error;
+      const codice_errore = await codice_errore_edge(data, error);
       if (error || codice_errore) {
         set_fatale(messaggi_errore[codice_errore] ?? "Non è stato possibile aprire il modulo di iscrizione.");
       } else {
@@ -111,7 +111,7 @@ const IscrivitiPage: React.FC = () => {
       },
     });
 
-    const codice_errore = (data as any)?.error;
+    const codice_errore = await codice_errore_edge(data, error);
     if (error || codice_errore) {
       set_errore(messaggi_errore[codice_errore] ?? "Invio non riuscito, riprova.");
     } else {
