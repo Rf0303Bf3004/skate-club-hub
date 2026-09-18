@@ -324,20 +324,28 @@ function aggiungiResoconto(mazzo: Mazzo, grafico: Extract<GraficoSpec, { tipo: "
         sottotitolo: gara.sottotitolo,
       });
     }
-    // Dopo ogni gara, la slide con le sole atlete del club.
+    // Dopo ogni gara, la slide con le sole atlete del club: al posto del club,
+    // che qui è sempre lo stesso, si indica la categoria in cui hanno gareggiato.
+    const prima = gara.tabelle[0];
+    const i_club = prima ? prima.colonne.findIndex((c) => c === tr("col_club")) : -1;
     const nostre: RigaTabella[] = [];
     for (const tab of gara.tabelle) {
       for (const r of tab.righe) {
-        if (r.evidenzia) nostre.push({ celle: r.celle, evidenzia: true });
+        if (!r.evidenzia) continue;
+        const celle = [...r.celle];
+        if (i_club >= 0) celle[i_club] = tab.titolo;
+        nostre.push({ celle, evidenzia: true });
       }
     }
-    if (nostre.length > 0) {
-      const prima = gara.tabelle[0];
-      aggiungiTabella(mazzo, `${gara.titolo} — ${ts("le_nostre")}`, prima.colonne, nostre, {
+    if (nostre.length > 0 && prima) {
+      const colonne = [...prima.colonne];
+      if (i_club >= 0) colonne[i_club] = ts("col_categoria");
+      aggiungiTabella(mazzo, `${gara.titolo} — ${ts("le_nostre")}`, colonne, nostre, {
         allinea_destra: prima.allinea_destra, prima_stretta: true,
         colonna_nome: prima.colonna_nome,
       });
     }
+
   }
 }
 
