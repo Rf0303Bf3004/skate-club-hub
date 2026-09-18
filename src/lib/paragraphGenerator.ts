@@ -361,8 +361,8 @@ export function paragrafiArea(area: AreaId, tono: Tono, d: DatiNarrativi): Array
         ? `Le lezioni private accompagnano il percorso tecnico individuale delle atlete.`
         : `La sezione rendiconta il volume e il valore delle lezioni individuali erogate nella stagione.`;
       numeri = unisci([
-        d.lezioni_numero != null ? `Le lezioni private svolte sono ${fmt_n(d.lezioni_numero)}.` : null,
-        d.lezioni_ore != null ? `Corrispondono a ${fmt_n(d.lezioni_ore)} ore.` : null,
+        d.lezioni_numero != null ? tp("lezioni", { count: d.lezioni_numero }) : null,
+        d.lezioni_ore != null ? tp("ore", { count: d.lezioni_ore }) : null,
         d.lezioni_incasso != null ? `Il costo registrato su queste lezioni è di ${fmt_chf(d.lezioni_incasso)}.` : null,
       ]);
       break;
