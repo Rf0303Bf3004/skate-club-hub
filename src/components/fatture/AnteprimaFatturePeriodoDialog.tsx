@@ -11,6 +11,7 @@ import {
   type AnteprimaFattura,
   type EsitoGenerazione,
 } from "@/hooks/use-supabase-mutations";
+import { useTranslation } from "react-i18next";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
 
@@ -29,6 +30,7 @@ interface Props {
 
 const AnteprimaFatturePeriodoDialog: React.FC<Props> = ({ open, onOpenChange }) => {
   const { puo_gestire_fatture } = usePermessiAzione();
+  const { t } = useTranslation("fatture");
   const oggi = new Date();
   const [anno, set_anno] = useState<number>(oggi.getFullYear());
   const [mese, set_mese] = useState<number>(oggi.getMonth() + 1);
