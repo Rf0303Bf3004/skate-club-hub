@@ -54,7 +54,6 @@ import MedagliereePage from "@/pages/MedagliereePage";
 import TestMobileAuthPage from "@/pages/TestMobileAuthPage";
 import ImportAtletiPage from "@/pages/ImportAtletiPage";
 import EventiPage from "@/pages/EventiPage";
-import PresidentRelazioneGestione from "@/pages/PresidentRelazioneGestione";
 import PresidentRelazione from "@/pages/PresidentRelazione";
 import PacchettiSponsorPage from "@/pages/PacchettiSponsorPage";
 import RegisterClubPage from "@/pages/RegisterClubPage";
@@ -456,8 +455,8 @@ const AuthenticatedApp = () => {
           <Route path="/convenzioni" element={<SoloPresidenteGuard><ConvenzioniSociPage /></SoloPresidenteGuard>} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/presidente/relazione" element={<SoloPresidenteGuard><PresidentRelazione /></SoloPresidenteGuard>} />
-          <Route path="/presidente/relazione/contenuti" element={<SoloPresidenteGuard><PresidentRelazioneGestione /></SoloPresidenteGuard>} />
-          <Route path="/presidente/gestione-relazione" element={<Navigate to="/presidente/relazione/contenuti" replace />} />
+          <Route path="/presidente/relazione/contenuti" element={<Navigate to="/presidente/relazione" replace />} />
+          <Route path="/presidente/gestione-relazione" element={<Navigate to="/presidente/relazione" replace />} />
           <Route
             path="/superadmin"
             element={
