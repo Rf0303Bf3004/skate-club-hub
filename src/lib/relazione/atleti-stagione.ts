@@ -16,7 +16,7 @@ export function stagione_in_corso(stag: Stagione): boolean {
 /**
  * Le atlete della stagione scelta. In corso: anagrafico vivo. Chiusa: le
  * righe dello storico di quella stagione, arricchite con l'anagrafica.
- * Restituisce null se la lettura fallisce: chi chiama decide se scrivere.
+ * La lettura fallisce con un throw: chi chiama decide se scrivere.
  */
 export async function fetchAtletiDellaStagione(
   club_id: string,
