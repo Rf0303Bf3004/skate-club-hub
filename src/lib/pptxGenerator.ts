@@ -68,7 +68,8 @@ function schiarisci(hex: string, quota = 0.45): string {
 
 /** Righe stimate di un testo dentro una larghezza, al corpo indicato. */
 function righe_stimate(testo: string, larghezza_in: number, corpo_pt: number): number {
-  const per_riga = Math.max(8, Math.floor((larghezza_in * 96) / (corpo_pt * 0.58)));
+  const utile = Math.max(0.4, larghezza_in - 0.22);   // margini interni della cella
+  const per_riga = Math.max(6, Math.floor((utile * 96) / (corpo_pt * 0.64)));
   return (testo ?? "").split("\n").reduce(
     (tot, riga) => tot + Math.max(1, Math.ceil(riga.length / per_riga)), 0,
   );
@@ -137,7 +138,8 @@ interface RigaTabella {
  * gli serve invece di uscire dal bordo.
  */
 function gruppi_righe(righe: RigaTabella[], larghezze: number[]): RigaTabella[][] {
-  const capienza = Math.max(2, Math.floor(ALTEZZA_TABELLA / ALTEZZA_RIGA));
+  // l'intestazione occupa la sua riga: si toglie dalla capienza
+  const capienza = Math.max(2, Math.floor((ALTEZZA_TABELLA - ALTEZZA_RIGA) / ALTEZZA_RIGA));
   const gruppi: RigaTabella[][] = [];
   let corrente: RigaTabella[] = [];
   let usate = 0;
