@@ -19,8 +19,11 @@ export interface PortaleSession {
     club_id: string;
     codice_atleta: string;
   };
+  /** Con quale accesso si è entrati: il codice del primo o del secondo genitore. */
+  genitore?: "genitore1" | "genitore2";
   club: { id: string; nome: string } | null;
 }
+
 
 export function normalize_codice(raw: string): string {
   const compact = (raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
