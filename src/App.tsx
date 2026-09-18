@@ -354,11 +354,11 @@ const SezioneGuard = ({
 };
 
 /** Guard per pagine riservate alla presidenza (e superadmin), senza sezione dedicata. */
-const SoloPresidenteGuard = ({ children }: { children: React.ReactNode }) => {
+const SoloPresidenteGuard = ({ children, ruoli_extra = [] }: { children: React.ReactNode; ruoli_extra?: string[] }) => {
   const navigate = useNavigate();
   const { session, is_loading } = useAuth();
   // Specchio di user_is_presidenza() del database, esteso ad amministrazione e superadmin.
-  const allowed = ["superadmin", "admin", "presidente", "vicepresidente"].includes(session?.ruolo ?? "");
+  const allowed = ["superadmin", "admin", "presidente", "vicepresidente", ...ruoli_extra].includes(session?.ruolo ?? "");
 
   useEffect(() => {
     if (!is_loading && !allowed) {
@@ -454,7 +454,7 @@ const AuthenticatedApp = () => {
           <Route path="/pacchetti-sponsor" element={<SezioneGuard codice_sezione="pacchetti_sponsor"><PacchettiSponsorPage /></SezioneGuard>} />
           <Route path="/convenzioni" element={<SoloPresidenteGuard><ConvenzioniSociPage /></SoloPresidenteGuard>} />
           <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route path="/presidente/relazione" element={<SoloPresidenteGuard><PresidentRelazione /></SoloPresidenteGuard>} />
+          <Route path="/presidente/relazione" element={<SoloPresidenteGuard ruoli_extra={["dt"]}><PresidentRelazione /></SoloPresidenteGuard>} />
           <Route path="/presidente/relazione/contenuti" element={<Navigate to="/presidente/relazione" replace />} />
           <Route path="/presidente/gestione-relazione" element={<Navigate to="/presidente/relazione" replace />} />
           <Route

@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { segnala_errore } from "@/lib/errori";
 import {
-  MODULI, AREE_ORDINATE, MODULI_ASSEMBLEA, MODULI_COMITATO,
+  MODULI, AREE_ORDINATE, MODULI_ASSEMBLEA, MODULI_COMITATO, MODULI_SPENTI_DI_DEFAULT,
   type ModuloRisultato, type Stagione,
 } from "@/lib/relazione/moduli";
 import { AREA_LABELS } from "@/lib/paragraphGenerator";
@@ -43,7 +43,11 @@ function ordineCanonico(): RigaPref[] {
     const base = 100 + i * 100;
     righe.push({ sezione_tipo: "sezione", sezione_id: area, attivo: true, ordine: base });
     MODULI.filter((m) => m.area === area).forEach((m, j) => {
-      righe.push({ sezione_tipo: "modulo", sezione_id: m.id, attivo: true, ordine: base + j + 1 });
+      // Alcuni moduli sono lunghi da stampare: nascono spenti.
+      righe.push({
+        sezione_tipo: "modulo", sezione_id: m.id,
+        attivo: !MODULI_SPENTI_DI_DEFAULT.has(m.id), ordine: base + j + 1,
+      });
     });
   });
   righe.push({ sezione_tipo: "sistema", sezione_id: "chiusura", attivo: true, ordine: 9999 });

@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { fetchParagrafiForPdf, AREA_LABELS, type Tono } from "@/lib/paragraphGenerator";
 import { fetchKpiData, type KpiData, type KpiCell } from "@/lib/kpiData";
 import type { AreaId, ModuloRisultato, Stagione } from "@/lib/relazione/moduli";
-import { renderGraficoSVG, svgToPngBytes } from "@/lib/relazione/grafici";
+import { renderGraficoSVG, svgToPngBytes, type RigaResoconto } from "@/lib/relazione/grafici";
 
 // ── Geometria ───────────────────────────────────────────────────
 const PAGE_W = 595.28;
@@ -200,9 +200,15 @@ class Foglio {
    * la riga cresce di conseguenza e la tabella continua nella pagina seguente
    * ripetendo l'intestazione. Nessuna cella viene tagliata.
    */
-  tabella(colonne: string[], righe: string[][], allinea_destra: number[] = []) {
+  tabella(
+    colonne: string[],
+    righe: (string[] | RigaResoconto)[],
+    allinea_destra: number[] = [],
+    opz?: { colonna_nome?: number; prima_stretta?: boolean },
+  ) {
     const ncol = Math.max(1, colonne.length);
-    const prima = ncol > 1 ? CONTENT_W * 0.36 : CONTENT_W;
+    // Nel resoconto la prima colonna è la posizione: stretta, non il nome.
+    const prima = ncol > 1 ? CONTENT_W * (opz?.prima_stretta ? 0.09 : 0.36) : CONTENT_W;
     const altre = ncol > 1 ? (CONTENT_W - prima) / (ncol - 1) : 0;
     const xdi = (i: number) => (i === 0 ? M_LEFT : M_LEFT + prima + (i - 1) * altre);
     const wdi = (i: number) => (i === 0 ? prima : altre);
@@ -226,20 +232,34 @@ class Foglio {
     };
 
     intestazione();
-    for (const riga of righe) {
-      const celle = riga.map((c, i) => wrapText(String(c ?? ""), this.fonts.serif, corpo, wdi(i) - 8));
+    for (const riga_grezza of righe) {
+      const riga: RigaResoconto = Array.isArray(riga_grezza) ? { celle: riga_grezza } : riga_grezza;
+      // Riga di un'atleta del club: grassetto, nome nel colore del club e
+      // triangolo pieno prima della posizione. Tre segni insieme, così si
+      // riconosce anche su una stampa in bianco e nero.
+      const evidenzia = riga.evidenzia === true;
+      const font = evidenzia ? this.fonts.serifBold : this.fonts.serif;
+      const rientro = (i: number) => (evidenzia && i === 0 ? 8 : 0);
+      const celle = riga.celle.map((c, i) =>
+        wrapText(String(c ?? ""), font, corpo, wdi(i) - 8 - rientro(i)));
       const alt_riga = Math.max(...celle.map((c) => c.length)) * passo + 4;
       if (this.y - alt_riga < M_BOTTOM + 20) {
         this.nuova();
         intestazione();
       }
       const y_riga = this.y;
+      if (evidenzia) {
+        this.page.drawSvgPath("M 0 0 L 5 2.6 L 0 5.2 Z", {
+          x: xdi(0) + 3, y: y_riga + 7.5, color: this.colore, borderWidth: 0,
+        });
+      }
       celle.forEach((linee, i) => {
         const destra = allinea_destra.includes(i);
+        const colore_cella = evidenzia && i === (opz?.colonna_nome ?? -1) ? this.colore : INCHIOSTRO;
         linee.forEach((ln, j) => {
-          const w = this.fonts.serif.widthOfTextAtSize(ln, corpo);
-          const x = destra ? xdi(i) + wdi(i) - 4 - w : xdi(i) + 4;
-          this.page.drawText(ln, { x, y: y_riga - j * passo, size: corpo, font: this.fonts.serif, color: INCHIOSTRO });
+          const w = font.widthOfTextAtSize(ln, corpo);
+          const x = destra ? xdi(i) + wdi(i) - 4 - w : xdi(i) + 4 + rientro(i);
+          this.page.drawText(ln, { x, y: y_riga - j * passo, size: corpo, font, color: colore_cella });
         });
       });
       this.y -= alt_riga;
@@ -249,6 +269,37 @@ class Foglio {
       });
     }
     this.y -= 12;
+  }
+
+  /** Intestazione della pagina di una gara: nome, data e luogo. */
+  intestazioneGara(nome: string, dettagli?: string) {
+    for (const ln of wrapText(nome, this.fonts.serifBold, 18, CONTENT_W)) {
+      this.spazio(22);
+      this.page.drawText(ln, { x: M_LEFT, y: this.y, size: 18, font: this.fonts.serifBold, color: INCHIOSTRO });
+      this.y -= 22;
+    }
+    if (dettagli?.trim()) {
+      for (const ln of wrapText(dettagli, this.fonts.sans, 9.5, CONTENT_W)) {
+        this.spazio(13);
+        this.page.drawText(ln, { x: M_LEFT, y: this.y, size: 9.5, font: this.fonts.sans, color: TENUE });
+        this.y -= 13;
+      }
+    }
+    this.page.drawLine({
+      start: { x: M_LEFT, y: this.y + 4 }, end: { x: M_LEFT + CONTENT_W, y: this.y + 4 },
+      thickness: 0.7, color: this.colore,
+    });
+    this.y -= 16;
+  }
+
+  /** Titolo di una categoria dentro la gara. */
+  titoletto(testo: string) {
+    for (const ln of wrapText(testo, this.fonts.serifBold, 11.5, CONTENT_W)) {
+      this.spazio(30);
+      this.page.drawText(ln, { x: M_LEFT, y: this.y, size: 11.5, font: this.fonts.serifBold, color: INCHIOSTRO });
+      this.y -= 15;
+    }
+    this.y -= 3;
   }
 
   immagine(img: PDFImage, w: number, h: number) {
@@ -335,7 +386,8 @@ export async function generateRelazionePDF(
       if (!m || m.stato !== "ok" || !m.grafico) continue;
       // Le tabelle si disegnano native nel PDF (testo che va a capo e continua
       // nella pagina dopo), non come immagine.
-      if (m.grafico.tipo === "tabella") continue;
+      // Tabelle e resoconto si disegnano nativamente: mai come immagine.
+      if (m.grafico.tipo === "tabella" || m.grafico.tipo === "resoconto") continue;
       try {
         const { svg, w, h } = renderGraficoSVG(m.grafico, club?.colore_primario ?? "#14b8a6");
         const bytes = await svgToPngBytes(svg, w, h, 2);
@@ -457,8 +509,26 @@ export async function generateRelazionePDF(
           const m = moduli[v.riferimento];
           if (m?.stato === "ok" && m.grafico?.tipo === "tabella") {
             foglio.paragrafo(m.grafico.titolo ?? m.titolo, { size: 12 });
-            foglio.tabella(m.grafico.colonne ?? [], m.grafico.righe ?? []);
+            foglio.tabella(m.grafico.colonne ?? [], m.grafico.righe ?? [], m.grafico.allinea_destra ?? []);
             if (m.grafico.didascalia) foglio.nota(m.grafico.didascalia);
+            continue;
+          }
+          // Resoconto tecnico: una pagina per gara, tabelle native per categoria.
+          if (m?.stato === "ok" && m.grafico?.tipo === "resoconto") {
+            foglio.paragrafo(m.grafico.titolo ?? m.titolo, { size: 12 });
+            if (m.grafico.didascalia) foglio.nota(m.grafico.didascalia);
+            for (const gara of m.grafico.gare) {
+              foglio.nuova();
+              foglio.intestazioneGara(gara.titolo, gara.sottotitolo);
+              for (const tab of gara.tabelle) {
+                foglio.titoletto(tab.titolo);
+                foglio.tabella(tab.colonne, tab.righe, tab.allinea_destra ?? [], {
+                  colonna_nome: tab.colonna_nome, prima_stretta: true,
+                });
+                if (tab.sintesi) foglio.nota(tab.sintesi);
+              }
+              if (gara.nota) foglio.nota(gara.nota);
+            }
             continue;
           }
           const img = immagini.get(v.riferimento);

@@ -63,6 +63,9 @@ export const MODULI: ModuloDef[] = [
   { id: "sportivo_podio_dettaglio", area: "sportivo", titolo: "Il podio della stagione" },
   { id: "sportivo_test", area: "sportivo", titolo: "Test di livello superati" },
   { id: "sportivo_test_dettaglio", area: "sportivo", titolo: "Test superati" },
+  { id: "sportivo_gare_elenco", area: "sportivo", titolo: "Le gare della stagione" },
+  { id: "sportivo_resoconto", area: "sportivo", titolo: "Resoconto tecnico delle gare" },
+  { id: "sportivo_cammino", area: "sportivo", titolo: "Il cammino delle atlete" },
   { id: "presenze_corsi", area: "presenze", titolo: "Frequenza media per corso" },
   { id: "comunicazione_messaggi", area: "comunicazione", titolo: "Messaggi inviati e letti" },
   { id: "sponsor_elenco", area: "sponsor", titolo: "Sponsor della stagione" },
@@ -71,14 +74,19 @@ export const MODULI: ModuloDef[] = [
 export const MODULI_ASSEMBLEA = new Set([
   "atleti_andamento", "atleti_piramide", "atleti_agoniste",
   "corsi_riempimento", "economia_mensile", "economia_fonti",
-  "lezioni_istruttore", "sportivo_podi", "sportivo_podio_dettaglio", "sportivo_test_dettaglio", "sponsor_elenco",
+  "lezioni_istruttore", "sportivo_podi", "sportivo_podio_dettaglio", "sportivo_test_dettaglio",
+  "sportivo_gare_elenco", "sportivo_resoconto", "sponsor_elenco",
 ]);
 
 export const MODULI_COMITATO = new Set([
   "atleti_andamento", "atleti_flussi", "corsi_riempimento", "ghiaccio_ore",
   "economia_mensile", "economia_enti", "economia_bilancio", "economia_istruttori",
-  "lezioni_incasso", "sportivo_gare", "sportivo_podio_dettaglio", "sportivo_test", "sportivo_test_dettaglio", "presenze_corsi", "sponsor_elenco",
+  "lezioni_incasso", "sportivo_gare", "sportivo_podio_dettaglio", "sportivo_test", "sportivo_test_dettaglio",
+  "sportivo_gare_elenco", "sportivo_resoconto", "presenze_corsi", "sponsor_elenco",
 ]);
+
+/** Moduli presenti nel catalogo ma spenti all'apertura: sono lunghi da stampare. */
+export const MODULI_SPENTI_DI_DEFAULT = new Set(["sportivo_cammino"]);
 
 // ────────────────────────────────────────────────────────────────
 // Utilità
@@ -196,7 +204,7 @@ function didascalia_di(g: GraficoSpec, tono: TonoModuli): string | undefined {
   const suffisso = tono === "formale" ? "_formale" : "";
   const chiave = (k: string, opzioni: Record<string, string>) =>
     i18n.t(`relazione.didascalie.${k}${suffisso}`, { ns: "dashboard", ...opzioni }) as string;
-  if (g.tipo === "tabella" || g.dati.length === 0) return undefined;
+  if (g.tipo === "tabella" || g.tipo === "resoconto" || g.dati.length === 0) return undefined;
   const formato = g.formato ?? "numero";
   const totale = g.dati.reduce((s, d) => s + d.valore, 0);
   const ordinati = [...g.dati].sort((a, b) => b.valore - a.valore);
@@ -250,6 +258,9 @@ export async function fetchModuli(ctx: ContestoModuli): Promise<Record<string, M
     modSportivoPodioDettaglio(ctx),
     modSportivoTest(ctx),
     modSportivoTestDettaglio(ctx),
+    modGareStagione(ctx),
+    modResocontoGare(ctx),
+    modCamminoAtlete(ctx),
     modPresenzeCorsi(ctx),
     modComunicazione(ctx),
     modSponsor(ctx),
@@ -771,6 +782,231 @@ async function modLezioniIncasso(ctx: ContestoModuli): Promise<ModuloRisultato> 
 }
 
 // ── Attività sportiva ───────────────────────────────────────────
+
+const testo_resoconto = (chiave: string, opzioni: Record<string, any> = {}) =>
+  i18n.t(`relazione.resoconto.${chiave}`, { ns: "dashboard", ...opzioni }) as string;
+
+const data_it = (d: any) => (d ? String(d).slice(0, 10).split("-").reverse().join(".") : "—");
+
+/** Gare della stagione, ordinate per data. Ogni lettura è delimitata dal club. */
+async function gareStagione(ctx: ContestoModuli) {
+  const { data, error } = await supabase
+    .from("gare_calendario").select("id,nome,data,luogo,club_ospitante")
+    .eq("club_id", ctx.club_id).eq("stagione_id", ctx.stagione.id);
+  if (error) throw error;
+  return ((data ?? []) as any[]).sort((a, b) => String(a.data ?? "").localeCompare(String(b.data ?? "")));
+}
+
+/** Classifiche importate: tutte le righe, anche delle atlete degli altri club. */
+async function risultatiDelleGare(gara_ids: string[]) {
+  if (gara_ids.length === 0) return [] as any[];
+  const { data, error } = await supabase
+    .from("risultati_gara")
+    .select("gara_id,atleta_id,atleta_nome_esterno,club_esterno,rank,starting_number,tot,tes,pcs,deductions,categoria,gruppo,disciplina,segmento")
+    .in("gara_id", gara_ids);
+  if (error) throw error;
+  return (data ?? []) as any[];
+}
+
+async function nomeDelClub(club_id: string): Promise<string> {
+  const { data, error } = await supabase.from("clubs").select("nome").eq("id", club_id).maybeSingle();
+  if (error) throw error;
+  return String((data as any)?.nome ?? "").trim();
+}
+
+function ordinale(n: number): string {
+  return testo_resoconto("ordinale", { n });
+}
+
+/** Modulo indice: le gare della stagione con iscritte e podi. */
+async function modGareStagione(ctx: ContestoModuli): Promise<ModuloRisultato> {
+  const def = { ...def_di("sportivo_gare_elenco"), titolo: testo_resoconto("titolo_elenco") };
+  return sicuro(def, async () => {
+    const gare = await gareStagione(ctx);
+    if (gare.length === 0) return vuoto(def, testo_resoconto("vuoto_gare"));
+    const { iscrizioni } = await gareEIscrizioni(ctx);
+    const risultati = await risultatiDelleGare(gare.map((g) => g.id));
+    const righe = gare.map((g) => {
+      const sue_iscrizioni = iscrizioni.filter((i) => i.gara_id === g.id);
+      const sue_righe = risultati.filter((r) => r.gara_id === g.id);
+      const nostre = sue_righe.filter((r) => r.atleta_id);
+      const iscritte = Math.max(sue_iscrizioni.length, new Set(nostre.map((r) => r.atleta_id)).size);
+      const podi = Math.max(
+        sue_iscrizioni.filter((i) => medaglia_di(i)).length,
+        nostre.filter((r) => Number(r.rank) >= 1 && Number(r.rank) <= 3).length,
+      );
+      const nome = sue_righe.length === 0
+        ? `${String(g.nome ?? "—")}\n(${testo_resoconto("classifica_mancante")})`
+        : String(g.nome ?? "—");
+      return [
+        data_it(g.data), nome, String(g.luogo ?? g.club_ospitante ?? "—"),
+        String(iscritte), String(podi),
+      ];
+    });
+    return ok(def, {
+      tipo: "tabella", titolo: def.titolo, sottotitolo: testo_resoconto("sottotitolo_elenco"),
+      colonne: [
+        testo_resoconto("col_data"), testo_resoconto("col_gara"), testo_resoconto("col_luogo"),
+        testo_resoconto("col_iscritte"), testo_resoconto("col_podi"),
+      ],
+      righe, allinea_destra: [3, 4],
+    });
+  });
+}
+
+/** Resoconto tecnico: una pagina per gara, classifica completa per categoria. */
+async function modResocontoGare(ctx: ContestoModuli): Promise<ModuloRisultato> {
+  const def = { ...def_di("sportivo_resoconto"), titolo: testo_resoconto("titolo_resoconto") };
+  return sicuro(def, async () => {
+    const gare = await gareStagione(ctx);
+    if (gare.length === 0) return vuoto(def, testo_resoconto("vuoto_gare"));
+    const risultati = await risultatiDelleGare(gare.map((g) => g.id));
+    if (risultati.length === 0) return vuoto(def, testo_resoconto("vuoto_classifiche"));
+    const nome_club = await nomeDelClub(ctx.club_id);
+
+    const blocchi = [];
+    for (const g of gare) {
+      const sue = risultati.filter((r) => r.gara_id === g.id);
+      // Gara senza classifica: non si stampa una pagina vuota, resta nell'indice.
+      if (sue.length === 0) continue;
+      const gruppi = new Map<string, any[]>();
+      for (const r of sue) {
+        const categoria = String(r.categoria ?? "").trim() || testo_resoconto("senza_categoria");
+        const segmento = String(r.segmento ?? "").trim();
+        const chiave = segmento ? `${categoria} · ${segmento}` : categoria;
+        gruppi.set(chiave, [...(gruppi.get(chiave) ?? []), r]);
+      }
+      const tabelle = Array.from(gruppi.entries())
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([titolo, righe_gruppo]) => {
+          // Le colonne dei punteggi compaiono solo se la categoria le ha davvero.
+          const ha = (campo: string) => righe_gruppo.some((r) => r[campo] !== null && r[campo] !== undefined);
+          const punteggi = (["tot", "tes", "pcs"] as const).filter((c) => ha(c));
+          const colonne = [
+            testo_resoconto("col_pos"), testo_resoconto("col_atleta"), testo_resoconto("col_club"),
+            ...punteggi.map((c) => testo_resoconto(`col_${c}`)),
+          ];
+          const num = (v: any) =>
+            v === null || v === undefined ? "—" : new Intl.NumberFormat("it-CH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(v));
+          const ordinate = [...righe_gruppo].sort((a, b) => {
+            const ra = Number.isFinite(Number(a.rank)) && a.rank !== null ? Number(a.rank) : 9999;
+            const rb = Number.isFinite(Number(b.rank)) && b.rank !== null ? Number(b.rank) : 9999;
+            return ra - rb || Number(a.starting_number ?? 0) - Number(b.starting_number ?? 0);
+          });
+          const righe = ordinate.map((r) => ({
+            evidenzia: Boolean(r.atleta_id),
+            celle: [
+              r.rank === null || r.rank === undefined ? "—" : String(r.rank),
+              String(r.atleta_nome_esterno ?? "").trim() || "—",
+              String(r.club_esterno ?? "").trim() || "—",
+              ...punteggi.map((c) => num(r[c])),
+            ],
+          }));
+          const nostre = ordinate.filter((r) => r.atleta_id);
+          let sintesi: string | undefined;
+          if (nostre.length > 0) {
+            const piazzamenti = nostre
+              .map((r) => Number(r.rank))
+              .filter((n) => Number.isFinite(n) && n > 0);
+            const podi = nostre.filter((r) => Number(r.rank) >= 1 && Number(r.rank) <= 3).length;
+            sintesi = testo_resoconto("sintesi", {
+              count: nostre.length,
+              club: nome_club || testo_resoconto("col_club"),
+              miglior: piazzamenti.length > 0 ? ordinale(Math.min(...piazzamenti)) : "—",
+              podi: testo_resoconto(podi === 0 ? "podi_zero" : "podi", { count: podi }),
+            });
+          }
+          return {
+            titolo, colonne, righe, colonna_nome: 1,
+            allinea_destra: punteggi.map((_, i) => 3 + i),
+            sintesi,
+          };
+        });
+      blocchi.push({
+        titolo: String(g.nome ?? "—"),
+        sottotitolo: [data_it(g.data), String(g.luogo ?? g.club_ospitante ?? "").trim()]
+          .filter((s) => s && s !== "—").join(" · "),
+        nota: testo_resoconto("nostre_atlete"),
+        tabelle,
+      });
+    }
+    if (blocchi.length === 0) return vuoto(def, testo_resoconto("vuoto_classifiche"));
+    return ok(def, {
+      tipo: "resoconto", titolo: def.titolo, sottotitolo: testo_resoconto("sottotitolo_resoconto"),
+      gare: blocchi, didascalia: testo_resoconto("didascalia", { count: blocchi.length }),
+    });
+  });
+}
+
+/** Il cammino delle atlete: gare, miglior piazzamento, test e livello. */
+async function modCamminoAtlete(ctx: ContestoModuli): Promise<ModuloRisultato> {
+  const def = { ...def_di("sportivo_cammino"), titolo: testo_resoconto("titolo_cammino") };
+  return sicuro(def, async () => {
+    const { data: atlete, error } = await supabase
+      .from("atleti").select("id,nome,cognome,livello_attuale,categoria")
+      .eq("club_id", ctx.club_id).eq("attivo", true).eq("agonista", true);
+    if (error) throw error;
+    const lista = (atlete ?? []) as any[];
+    if (lista.length === 0) return vuoto(def, testo_resoconto("vuoto_agoniste"));
+
+    const gare = await gareStagione(ctx);
+    const risultati = await risultatiDelleGare(gare.map((g) => g.id));
+    const { iscrizioni } = await gareEIscrizioni(ctx);
+
+    const { data: sessioni, error: err2 } = await supabase
+      .from("test_livello").select("id")
+      .eq("club_id", ctx.club_id).eq("stagione_id", ctx.stagione.id);
+    if (err2) throw err2;
+    const sessione_ids = ((sessioni ?? []) as any[]).map((s) => s.id);
+    let test_righe: any[] = [];
+    if (sessione_ids.length > 0) {
+      const { data, error: err3 } = await supabase
+        .from("test_livello_atleti").select("atleta_id,esito,livello_target")
+        .in("test_id", sessione_ids);
+      if (err3) throw err3;
+      test_righe = (data ?? []) as any[];
+    }
+
+    const righe = lista
+      .map((a) => {
+        const sue_righe = risultati.filter((r) => r.atleta_id === a.id);
+        const sue_iscrizioni = iscrizioni.filter((i) => i.atleta_id === a.id);
+        const gare_disputate = new Set([
+          ...sue_righe.map((r) => r.gara_id),
+          ...sue_iscrizioni.map((i) => i.gara_id),
+        ]).size;
+        const piazzamenti = [
+          ...sue_righe.map((r) => Number(r.rank)),
+          ...sue_iscrizioni.map((i) => Number(i.posizione)),
+        ].filter((n) => Number.isFinite(n) && n > 0);
+        const test_superati = test_righe.filter(
+          (t) => t.atleta_id === a.id && String(t.esito ?? "").toLowerCase() === "superato",
+        ).length;
+        return {
+          nome: `${a.cognome ?? ""} ${a.nome ?? ""}`.trim() || "—",
+          celle: [
+            `${a.cognome ?? ""} ${a.nome ?? ""}`.trim() || "—",
+            String(gare_disputate),
+            piazzamenti.length > 0 ? ordinale(Math.min(...piazzamenti)) : "—",
+            String(test_superati),
+            String(a.livello_attuale ?? a.categoria ?? "—"),
+          ],
+        };
+      })
+      .sort((a, b) => a.nome.localeCompare(b.nome))
+      .map((r) => r.celle);
+
+    return ok(def, {
+      tipo: "tabella", titolo: def.titolo, sottotitolo: testo_resoconto("sottotitolo_cammino"),
+      colonne: [
+        testo_resoconto("col_atleta"), testo_resoconto("col_gare_disputate"),
+        testo_resoconto("col_miglior"), testo_resoconto("col_test_superati"), testo_resoconto("col_livello"),
+      ],
+      righe, allinea_destra: [1, 3],
+    });
+  });
+}
+
 
 async function gareEIscrizioni(ctx: ContestoModuli) {
   const { data: gare, error } = await supabase

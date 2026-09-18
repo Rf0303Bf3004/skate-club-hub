@@ -97,9 +97,13 @@ export default function PresidentRelazione() {
     .map((v) => ({ id: v.id, tipo: v.tipo, riferimento: v.riferimento, titolo: v.titolo, payload: v.payload }));
 
   // Specchio di user_is_presidenza() del database, esteso ad amministrazione e superadmin.
-  if (session && !["superadmin", "admin", "presidente", "vicepresidente"].includes(session.ruolo as string)) {
+  // Il direttore tecnico entra per scrivere il commento del capitolo sportivo.
+  const is_dt = session?.ruolo === "dt";
+  if (session && !["superadmin", "admin", "presidente", "vicepresidente", "dt"].includes(session.ruolo as string)) {
     return <Navigate to="/" replace />;
   }
+  // Il dt corregge solo il capitolo sportivo; la composizione resta al presidente.
+  const aree_modificabili = is_dt ? ["sportivo"] : undefined;
 
   // Le scritture si fermano se una lettura non è arrivata o è fallita.
   const dati_pronti =
@@ -173,14 +177,14 @@ export default function PresidentRelazione() {
 
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
         <main className="min-w-0 bg-muted/30 p-3 md:p-6">
-          {stagione && dati_pronti ? <DocumentoRelazione club_nome={q_club.data?.nome ?? t("relazione.club_fallback")} club_id={club_id} stagione={stagione} tono={tono} voci={comp.voci} moduli={q_moduli.data ?? {}} colore_primario={q_club.data?.colore_primario} /> : (q_club.isError || q_blocchi.isError || q_allegati.isError || q_messaggio.isError || q_moduli.isError || q_stagioni.isError || comp.is_error) ? <div className="flex min-h-[400px] items-center justify-center gap-2 text-sm text-destructive"><AlertTriangle className="h-4 w-4" />{t("relazione.errore_dati_documento")}</div> : <div className="flex min-h-[400px] items-center justify-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />{t("relazione.caricamento")}</div>}
+          {stagione && dati_pronti ? <DocumentoRelazione club_nome={q_club.data?.nome ?? t("relazione.club_fallback")} club_id={club_id} stagione={stagione} tono={tono} voci={comp.voci} moduli={q_moduli.data ?? {}} colore_primario={q_club.data?.colore_primario} aree_modificabili={aree_modificabili} /> : (q_club.isError || q_blocchi.isError || q_allegati.isError || q_messaggio.isError || q_moduli.isError || q_stagioni.isError || comp.is_error) ? <div className="flex min-h-[400px] items-center justify-center gap-2 text-sm text-destructive"><AlertTriangle className="h-4 w-4" />{t("relazione.errore_dati_documento")}</div> : <div className="flex min-h-[400px] items-center justify-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />{t("relazione.caricamento")}</div>}
         </main>
-        <aside className="space-y-4 border bg-card p-4 xl:sticky xl:top-20">
+        {!is_dt && <aside className="space-y-4 border bg-card p-4 xl:sticky xl:top-20">
           <h2 className="font-semibold">{t("relazione.pannello.titolo")}</h2>
           <div className="flex flex-wrap gap-2">{(["completa", "assemblea", "comitato"] as const).map((p) => <Button key={p} size="sm" variant="outline" disabled={!dati_pronti || comp.in_salvataggio} onClick={() => comp.applica_preset(p)}>{t(`relazione.preset_${p}`)}</Button>)}</div>
           <Button variant="ghost" className="w-full justify-between px-0" onClick={() => set_pannello_aperto((v) => !v)}>{t("relazione.pannello.scegli_moduli")}{pannello_aperto ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</Button>
           {pannello_aperto && <div className="space-y-5 border-t pt-4"><div><p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">{t("relazione.pannello.tono")}</p><Tabs value={tono} onValueChange={(v) => set_tono(v as Tono)}><TabsList className="grid w-full grid-cols-2"><TabsTrigger value="soci">{t("relazione.tono_soci")}</TabsTrigger><TabsTrigger value="formale">{t("relazione.tono_formale")}</TabsTrigger></TabsList></Tabs></div>{comp.is_error ? <div className="flex items-center gap-2 text-sm text-destructive"><AlertTriangle className="h-4 w-4" />{t("relazione.errore_composizione")}<Button size="sm" variant="outline" onClick={() => comp.ricarica()}>{t("relazione.riprova")}</Button></div> : comp.is_loading || !stagione ? <Loader2 className="h-4 w-4 animate-spin" /> : <PannelloModuli club_id={club_id} stagione={stagione} tono={tono} voci={comp.voci} toggle={comp.toggle} sposta={comp.sposta} moduli_in_caricamento={q_moduli.isPending} />}</div>}
-        </aside>
+        </aside>}
       </div>
     </div>
   );

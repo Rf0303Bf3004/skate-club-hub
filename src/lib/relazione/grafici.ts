@@ -68,7 +68,40 @@ export interface GraficoTabella {
   didascalia?: string;
 }
 
-export type GraficoSpec = GraficoBarre | GraficoLinea | GraficoDonut | GraficoTabella;
+/** Riga di una classifica: le atlete del club sono evidenziate. */
+export interface RigaResoconto {
+  celle: string[];
+  evidenzia?: boolean;
+}
+
+export interface TabellaResoconto {
+  titolo: string;
+  colonne: string[];
+  righe: RigaResoconto[];
+  allinea_destra?: number[];
+  /** Colonna del nome: sull'evidenziata prende il colore del club. */
+  colonna_nome?: number;
+  sintesi?: string;
+}
+
+export interface BloccoGara {
+  titolo: string;
+  sottotitolo?: string;
+  nota?: string;
+  tabelle: TabellaResoconto[];
+}
+
+/** Resoconto gara per gara: una pagina per gara, disegnato nativamente. */
+export interface GraficoResoconto {
+  tipo: "resoconto";
+  titolo: string;
+  sottotitolo?: string;
+  gare: BloccoGara[];
+  didascalia?: string;
+}
+
+export type GraficoSpec =
+  | GraficoBarre | GraficoLinea | GraficoDonut | GraficoTabella | GraficoResoconto;
 
 const FONT_SERIF = "Times, 'Times New Roman', serif";
 const FONT_SANS = "Helvetica, Arial, sans-serif";
@@ -484,6 +517,13 @@ export function renderGraficoSVG(spec: GraficoSpec, colore_primario: string): { 
     case "linea": return renderLinea(spec, colore);
     case "donut": return renderDonut(spec, colore);
     case "tabella": return renderTabella(spec, colore);
+    // Il resoconto gara per gara non è un'immagine: si disegna nativamente nel
+    // PDF e in HTML nell'anteprima (una pagina per gara, righe evidenziate).
+    case "resoconto": {
+      const testa = intestazione(spec.titolo, spec.sottotitolo);
+      const h = testa.y + 12;
+      return { svg: involucro(testa.svg, h), w: W_GRAFICO, h };
+    }
   }
 }
 
