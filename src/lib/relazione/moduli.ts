@@ -164,6 +164,65 @@ export interface ContestoModuli {
   club_id: string;
   stagione: Stagione;
   stagioni: Stagione[];
+  tono?: Tono;
+}
+
+/**
+ * Tiene le prime sette voci e raggruppa il resto in "Altro".
+ * Vale per le serie di categorie (livelli, fonti, istruttori): non si applica
+ * agli assi temporali, dove togliere mesi o ore falserebbe la lettura.
+ */
+function limita_voci(dati: PuntoSerie[], massimo = 7): PuntoSerie[] {
+  if (dati.length <= massimo + 1) return dati;
+  const tenute = dati.slice(0, massimo);
+  const resto = dati.slice(massimo);
+  return [
+    ...tenute,
+    {
+      etichetta: testo_modulo("altro"),
+      valore: resto.reduce((s, d) => s + d.valore, 0),
+      valore2: resto.some((d) => typeof d.valore2 === "number")
+        ? resto.reduce((s, d) => s + (d.valore2 ?? 0), 0)
+        : undefined,
+    },
+  ];
+}
+
+/** Didascalia generata, nel tono scelto: dice a parole cosa mostra il grafico. */
+function didascalia_di(g: GraficoSpec, tono: Tono): string | undefined {
+  const suffisso = tono === "formale" ? "_formale" : "";
+  const chiave = (k: string, opzioni: Record<string, string>) =>
+    i18n.t(`relazione.didascalie.${k}${suffisso}`, { ns: "dashboard", ...opzioni }) as string;
+  if (g.tipo === "tabella" || g.dati.length === 0) return undefined;
+  const formato = g.formato ?? "numero";
+  const totale = g.dati.reduce((s, d) => s + d.valore, 0);
+  const ordinati = [...g.dati].sort((a, b) => b.valore - a.valore);
+
+  if (g.tipo === "linea") {
+    const prima = g.dati[0], ultima = g.dati[g.dati.length - 1], max = ordinati[0];
+    return chiave("linea", {
+      prima: prima.etichetta, prima_valore: formatta(prima.valore, formato),
+      ultima: ultima.etichetta, ultima_valore: formatta(ultima.valore, formato),
+      massima: max.etichetta, massimo_valore: formatta(max.valore, formato),
+    });
+  }
+  if (g.tipo === "barre" && g.dati.some((d) => typeof d.valore2 === "number")) {
+    const t2 = g.dati.reduce((s, d) => s + (d.valore2 ?? 0), 0);
+    return chiave("due_serie", {
+      serie1: g.etichetta_serie1 ?? "", totale1: formatta(totale, formato),
+      serie2: g.etichetta_serie2 ?? "", totale2: formatta(t2, formato),
+    });
+  }
+  if (ordinati.length === 1) {
+    return chiave("una_voce", {
+      prima: ordinati[0].etichetta, prima_valore: formatta(ordinati[0].valore, formato),
+    });
+  }
+  return chiave("serie", {
+    totale: formatta(totale, formato),
+    prima: ordinati[0].etichetta, prima_valore: formatta(ordinati[0].valore, formato),
+    seconda: ordinati[1].etichetta, seconda_valore: formatta(ordinati[1].valore, formato),
+  });
 }
 
 export async function fetchModuli(ctx: ContestoModuli): Promise<Record<string, ModuloRisultato>> {
@@ -193,7 +252,13 @@ export async function fetchModuli(ctx: ContestoModuli): Promise<Record<string, M
     modSponsor(ctx),
   ]);
   const out: Record<string, ModuloRisultato> = {};
-  for (const r of risultati) out[r.id] = r;
+  for (const r of risultati) {
+    // La didascalia si aggiunge qui una volta sola, così vale per ogni modulo.
+    if (r.stato === "ok" && r.grafico && !r.grafico.didascalia) {
+      r.grafico.didascalia = didascalia_di(r.grafico, ctx.tono ?? "soci");
+    }
+    out[r.id] = r;
+  }
   return out;
 }
 
