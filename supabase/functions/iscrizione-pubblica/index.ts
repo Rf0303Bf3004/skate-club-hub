@@ -5,6 +5,8 @@
 // 'in_attesa'. Nessun atleta viene creato: nasce solo quando la segreteria approva.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { contratto_completo } from "../_shared/contratto.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
