@@ -273,9 +273,13 @@
     "errore_stagioni": "Seasons could not be read.",
     "errore_composizione": "The saved composition could not be read.",
     "errore_moduli": "Module data could not be read.",
+    "errore_dati_documento": "Not all report data could be read.",
     "attendi_dati": "Wait for the data to load before downloading.",
     "scarica_relazione": "Download the report",
     "scarica_errore": "PDF creation failed",
+    "club_fallback": "Club",
+    "pannello": { "titolo": "What to include", "scegli_moduli": "Choose module by module", "tono": "Tone" },
+    "documento": { "messaggio_titolo": "The president's message" },
     "passo1": "Season and tone",
     "passo2": "The president's message",
     "passo3": "Modules",
@@ -294,6 +298,7 @@
       "salvato": "Message saved",
       "salvataggio": "Saving the message",
       "errore_lettura": "The message could not be read.",
+      "salvataggio_automatico": "Saved automatically",
       "parole_one": "{{count}} word",
       "parole_other": "{{count}} words"
     },
@@ -316,6 +321,12 @@
       "errore": "Data unreadable: {{motivo}}",
       "senza_dati": "Off: {{motivo}}"
     },
+    "moduli_catalogo": {
+      "podio_titolo": "The season podium", "podio_vuoto": "No podium recorded this season",
+      "test_titolo": "Tests passed", "test_vuoto": "No passed test recorded this season",
+      "atleta": "Athlete", "gara": "Competition", "data": "Date", "livello": "Level", "medaglia": "Medal", "livello_ottenuto": "Level achieved"
+      ,"atleta_mancante": "An athlete in the result could not be identified"
+    },
     "anteprima_fedele": {
       "generazione": "Creating the PDF...",
       "durata": "It may take a few seconds.",
@@ -329,7 +340,11 @@
       "toast_errore": "Preview creation failed"
     },
     "allegati_tab": {
-      "header_testo": "Upload here the PDF documents to be appended to the report: financial statements, federal documents, sponsor contracts, certifications, assembly minutes."
+      "header_testo": "Upload here the PDF documents to be appended to the report: financial statements, federal documents, sponsor contracts, certifications, assembly minutes.",
+      "zona_titolo": "Drop the financial statements or other PDFs here",
+      "zona_testo": "Or click to choose a PDF file",
+      "solo_pdf": "Only PDF files can be attached",
+      "errore_lettura": "The attachments could not be read."
     },
     "allegato_form": {
       "errore_file_mancante": "Choose the PDF file to attach"

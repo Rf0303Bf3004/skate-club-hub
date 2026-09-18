@@ -6,6 +6,7 @@
 // Nessun valore di ripiego, nessuna stima, nessun dato di esempio.
 
 import { supabase } from "@/lib/supabase";
+import i18n from "@/i18n";
 import type { GraficoSpec } from "./grafici";
 
 export type AreaId =
@@ -56,7 +57,9 @@ export const MODULI: ModuloDef[] = [
   { id: "lezioni_incasso", area: "lezioni", titolo: "Incasso delle lezioni private" },
   { id: "sportivo_gare", area: "sportivo", titolo: "Gare e partecipazioni" },
   { id: "sportivo_podi", area: "sportivo", titolo: "Podi conquistati" },
+  { id: "sportivo_podio_dettaglio", area: "sportivo", titolo: "Il podio della stagione" },
   { id: "sportivo_test", area: "sportivo", titolo: "Test di livello superati" },
+  { id: "sportivo_test_dettaglio", area: "sportivo", titolo: "Test superati" },
   { id: "presenze_corsi", area: "presenze", titolo: "Frequenza media per corso" },
   { id: "comunicazione_messaggi", area: "comunicazione", titolo: "Messaggi inviati e letti" },
   { id: "sponsor_elenco", area: "sponsor", titolo: "Sponsor della stagione" },
@@ -65,13 +68,13 @@ export const MODULI: ModuloDef[] = [
 export const MODULI_ASSEMBLEA = new Set([
   "atleti_andamento", "atleti_piramide", "atleti_agoniste",
   "corsi_riempimento", "economia_mensile", "economia_fonti",
-  "lezioni_istruttore", "sportivo_podi", "sponsor_elenco",
+  "lezioni_istruttore", "sportivo_podi", "sportivo_podio_dettaglio", "sportivo_test_dettaglio", "sponsor_elenco",
 ]);
 
 export const MODULI_COMITATO = new Set([
   "atleti_andamento", "atleti_flussi", "corsi_riempimento", "ghiaccio_ore",
   "economia_mensile", "economia_enti", "economia_bilancio", "economia_istruttori",
-  "lezioni_incasso", "sportivo_gare", "sportivo_test", "presenze_corsi", "sponsor_elenco",
+  "lezioni_incasso", "sportivo_gare", "sportivo_podio_dettaglio", "sportivo_test", "sportivo_test_dettaglio", "presenze_corsi", "sponsor_elenco",
 ]);
 
 // ────────────────────────────────────────────────────────────────
@@ -79,6 +82,7 @@ export const MODULI_COMITATO = new Set([
 // ────────────────────────────────────────────────────────────────
 
 const MESI = ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"];
+const testo_modulo = (chiave: string) => i18n.t(`relazione.moduli_catalogo.${chiave}`, { ns: "dashboard" }) as string;
 
 function ok(def: ModuloDef, grafico: GraficoSpec): ModuloRisultato {
   return { ...def, stato: "ok", grafico };
@@ -146,7 +150,11 @@ async function sicuro(def: ModuloDef, fn: () => Promise<ModuloRisultato>): Promi
   }
 }
 
-const def_di = (id: string): ModuloDef => MODULI.find((m) => m.id === id)!;
+const def_di = (id: string): ModuloDef => {
+  const definizione = MODULI.find((m) => m.id === id);
+  if (!definizione) throw new Error(`Modulo relazione non definito: ${id}`);
+  return definizione;
+};
 
 // ────────────────────────────────────────────────────────────────
 // Costruzione dei moduli
@@ -177,7 +185,9 @@ export async function fetchModuli(ctx: ContestoModuli): Promise<Record<string, M
     modLezioniIncasso(ctx),
     modSportivoGare(ctx),
     modSportivoPodi(ctx),
+    modSportivoPodioDettaglio(ctx),
     modSportivoTest(ctx),
+    modSportivoTestDettaglio(ctx),
     modPresenzeCorsi(ctx),
     modComunicazione(ctx),
     modSponsor(ctx),
@@ -691,10 +701,22 @@ async function gareEIscrizioni(ctx: ContestoModuli) {
   const lista = (gare ?? []) as any[];
   if (lista.length === 0) return { gare: lista, iscrizioni: [] as any[] };
   const { data: iscr, error: err2 } = await supabase
-    .from("iscrizioni_gare").select("gara_id,atleta_id,posizione,medaglia")
+    .from("iscrizioni_gare").select("gara_id,atleta_id,posizione,medaglia,livello_atleta")
     .in("gara_id", lista.map((g) => g.id));
   if (err2) throw err2;
   return { gare: lista, iscrizioni: (iscr ?? []) as any[] };
+}
+
+async function nomiAtlete(club_id: string, ids: string[]): Promise<Map<string, string>> {
+  const unici = Array.from(new Set(ids.filter(Boolean)));
+  if (unici.length === 0) return new Map();
+  const { data, error } = await supabase
+    .from("atleti")
+    .select("id,nome,cognome")
+    .eq("club_id", club_id)
+    .in("id", unici);
+  if (error) throw error;
+  return new Map(((data ?? []) as any[]).map((a) => [a.id, `${a.nome ?? ""} ${a.cognome ?? ""}`.trim()]));
 }
 
 function medaglia_di(i: any): "oro" | "argento" | "bronzo" | null {
@@ -746,6 +768,38 @@ async function modSportivoPodi(ctx: ContestoModuli): Promise<ModuloRisultato> {
   });
 }
 
+async function modSportivoPodioDettaglio(ctx: ContestoModuli): Promise<ModuloRisultato> {
+  const def = { ...def_di("sportivo_podio_dettaglio"), titolo: testo_modulo("podio_titolo") };
+  return sicuro(def, async () => {
+    const { gare, iscrizioni } = await gareEIscrizioni(ctx);
+    const medaglie = iscrizioni.filter((i) => ["oro", "argento", "bronzo"].includes(String(i.medaglia ?? "").toLowerCase()));
+    if (medaglie.length === 0) return vuoto(def, testo_modulo("podio_vuoto"));
+    const nomi = await nomiAtlete(ctx.club_id, medaglie.map((i) => i.atleta_id));
+    if (medaglie.some((i) => !nomi.get(i.atleta_id))) throw new Error(testo_modulo("atleta_mancante"));
+    const gare_per_id = new Map(gare.map((g) => [g.id, g]));
+    const righe = medaglie
+      .map((i) => {
+        const gara = gare_per_id.get(i.gara_id);
+        return {
+          data: String(gara?.data ?? ""),
+          celle: [
+            nomi.get(i.atleta_id) ?? "",
+            String(gara?.nome ?? "—"),
+            gara?.data ? String(gara.data).slice(0, 10).split("-").reverse().join(".") : "—",
+            String(i.livello_atleta ?? "—"),
+            String(i.medaglia).toLowerCase(),
+          ],
+        };
+      })
+      .sort((a, b) => a.data.localeCompare(b.data) || a.celle[0].localeCompare(b.celle[0]))
+      .map((r) => r.celle);
+    return ok(def, {
+      tipo: "tabella", titolo: def.titolo,
+      colonne: [testo_modulo("atleta"), testo_modulo("gara"), testo_modulo("data"), testo_modulo("livello"), testo_modulo("medaglia")], righe,
+    });
+  });
+}
+
 async function modSportivoTest(ctx: ContestoModuli): Promise<ModuloRisultato> {
   const def = def_di("sportivo_test");
   return sicuro(def, async () => {
@@ -772,6 +826,42 @@ async function modSportivoTest(ctx: ContestoModuli): Promise<ModuloRisultato> {
       .map(([etichetta, valore]) => ({ etichetta, valore }))
       .sort((a, b) => b.valore - a.valore);
     return ok(def, { tipo: "barre", titolo: def.titolo, sottotitolo: "test superati per livello", dati });
+  });
+}
+
+async function modSportivoTestDettaglio(ctx: ContestoModuli): Promise<ModuloRisultato> {
+  const def = { ...def_di("sportivo_test_dettaglio"), titolo: testo_modulo("test_titolo") };
+  return sicuro(def, async () => {
+    const { data: test, error } = await supabase
+      .from("test_livello").select("id,data")
+      .eq("club_id", ctx.club_id).eq("stagione_id", ctx.stagione.id);
+    if (error) throw error;
+    const sessioni = (test ?? []) as any[];
+    if (sessioni.length === 0) return vuoto(def, testo_modulo("test_vuoto"));
+    const { data, error: err2 } = await supabase
+      .from("test_livello_atleti").select("test_id,atleta_id,livello_target,esito")
+      .in("test_id", sessioni.map((r) => r.id)).eq("esito", "superato");
+    if (err2) throw err2;
+    const superati = (data ?? []) as any[];
+    if (superati.length === 0) return vuoto(def, testo_modulo("test_vuoto"));
+    const nomi = await nomiAtlete(ctx.club_id, superati.map((r) => r.atleta_id));
+    if (superati.some((r) => !nomi.get(r.atleta_id))) throw new Error(testo_modulo("atleta_mancante"));
+    const test_per_id = new Map(sessioni.map((r) => [r.id, r]));
+    const righe = superati
+      .map((r) => {
+        const sessione = test_per_id.get(r.test_id);
+        return {
+          data: String(sessione?.data ?? ""),
+          celle: [
+            nomi.get(r.atleta_id) ?? "",
+            String(r.livello_target ?? "—"),
+            sessione?.data ? String(sessione.data).slice(0, 10).split("-").reverse().join(".") : "—",
+          ],
+        };
+      })
+      .sort((a, b) => a.data.localeCompare(b.data) || a.celle[0].localeCompare(b.celle[0]))
+      .map((r) => r.celle);
+    return ok(def, { tipo: "tabella", titolo: def.titolo, colonne: [testo_modulo("atleta"), testo_modulo("livello_ottenuto"), testo_modulo("data")], righe });
   });
 }
 
