@@ -212,7 +212,9 @@ Deno.serve(async (req) => {
           : null,
         registro,
         corsi_ammessi,
+        contratto: { articoli: contratto.articoli, impronta: contratto.impronta },
       });
+
     }
 
     if (azione === "rinuncia") {
