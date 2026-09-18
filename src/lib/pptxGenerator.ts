@@ -174,11 +174,13 @@ function larghezze_colonne(
   // Ogni colonna deve almeno contenere la sua parola più lunga: una parola
   // non va mai spezzata a metà per far stare la tabella.
   const minimi = contenuto.map((celle) => {
-    const parola = Math.max(
-      3, ...celle.flatMap((t) => t.split(/\s+/).map((p) => p.length)),
-    );
+    // l'intestazione è in grassetto: conta per un 15% in più
+    const parole = celle.flatMap((t, idx) =>
+      t.split(/\s+/).map((p) => p.length * (idx === 0 ? 1.15 : 1)));
+    const parola = Math.max(3, ...parole);
     return Math.min(CONTENUTO_W * 0.45, Math.max(0.6, parola * CARATTERE + 0.34));
   });
+
   const pesi = contenuto.map((celle, i) =>
     prima_stretta && i === 0 ? 5 : Math.min(42, Math.max(8, ...celle.map((t) => t.length))));
 
