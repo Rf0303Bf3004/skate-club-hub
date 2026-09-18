@@ -38,13 +38,11 @@ export async function fetchKpiData(club_id: string, stagione: Stagione): Promise
     if (out[area].length < 3) out[area].push(cella);
   };
 
-  // Atlete
+  // Atlete: il numero è della stagione scelta (in corso = anagrafico vivo,
+  // chiusa = storico di quella stagione), stessa logica di paragraphGenerator.
   try {
-    const { data, error } = await supabase
-      .from("atleti").select("id,agonista").eq("club_id", club_id).eq("attivo", true);
-    if (error) throw error;
-    const atleti = (data ?? []) as any[];
-    if (atleti.length > 0) {
+    const atleti = await fetchAtletiDellaStagione(club_id, stagione, "id,agonista");
+    if (atleti && atleti.length > 0) {
       aggiungi("atleti", { value: fmt_n(atleti.length), label: "Atlete attive" });
       const agoniste = atleti.filter((a) => a.agonista).length;
       if (agoniste > 0) aggiungi("atleti", { value: fmt_n(agoniste), label: "Agoniste" });
