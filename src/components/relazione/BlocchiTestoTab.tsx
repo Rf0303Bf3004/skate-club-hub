@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { Plus, Newspaper, ArrowRight } from "lucide-react";
+import { Plus, Newspaper } from "lucide-react";
 import { toast } from "sonner";
 import BloccoCard from "./BloccoCard";
 import BloccoForm from "./BloccoForm";
