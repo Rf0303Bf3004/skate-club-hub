@@ -503,7 +503,7 @@
       "avviso_logo": "Das Clublogo konnte nicht geladen werden: das Deckblatt erscheint ohne Logo.",
       "avviso_atlete": "Die Folien pro Läuferin konnten nicht erstellt werden:",
       "col_categoria": "Kategorie",
-      "legenda_classifica": "Die Läuferinnen des Clubs sind fett gedruckt, mit einem Dreieck vor der Platzierung."
+      "legenda_classifica": "▲ und Fettdruck = Läuferinnen des Clubs."
     }
   }
 }

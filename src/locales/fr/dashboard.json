@@ -503,7 +503,7 @@
       "avviso_logo": "Le logo du club n'a pas pu être téléchargé : la couverture est sans logo.",
       "avviso_atlete": "Les diapositives par patineuse n'ont pas pu être créées :",
       "col_categoria": "Catégorie",
-      "legenda_classifica": "Les patineuses du club sont en gras, avec un triangle devant la position."
+      "legenda_classifica": "▲ et gras = patineuses du club."
     }
   }
 }

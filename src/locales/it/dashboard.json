@@ -878,7 +878,7 @@
       "avviso_logo": "Il logo del club non si è potuto scaricare: la copertina esce senza logo.",
       "avviso_atlete": "Le slide per atleta non si sono potute creare:",
       "col_categoria": "Categoria",
-      "legenda_classifica": "Le atlete del club sono in grassetto, con il triangolo prima della posizione."
+      "legenda_classifica": "▲ e grassetto = atlete del club."
     }
   },
   "onboarding_banner": {

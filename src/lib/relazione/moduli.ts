@@ -8,6 +8,7 @@
 import { supabase } from "@/lib/supabase";
 import i18n from "@/i18n";
 import { formatta, type GraficoSpec, type PuntoSerie } from "./grafici";
+import { fetchAtletiDellaStagione } from "./atleti-stagione";
 import {
   fetchFonteEconomica, testo_economia, SOGLIA_FATTURE, type EsitoFonte,
 } from "./fonte-economica";
@@ -305,19 +306,20 @@ async function modAtletiAndamento(ctx: ContestoModuli): Promise<ModuloRisultato>
   });
 }
 
-async function atletiAttivi(club_id: string) {
-  const { data, error } = await supabase
-    .from("atleti")
-    .select("id,livello_attuale,categoria,data_nascita,agonista,created_at")
-    .eq("club_id", club_id).eq("attivo", true);
-  if (error) throw error;
-  return (data ?? []) as any[];
+// Le atlete lette qui sono quelle della stagione scelta: in corso = anagrafico
+// vivo, chiusa = storico di quella stagione (stessa logica dei paragrafi e dei
+// KPI, in src/lib/relazione/atleti-stagione.ts).
+async function atletiAttivi(ctx: ContestoModuli) {
+  const righe = await fetchAtletiDellaStagione(
+    ctx.club_id, ctx.stagione, "id,livello_attuale,categoria,data_nascita,agonista,created_at",
+  );
+  return righe ?? [];
 }
 
 async function modAtletiPiramide(ctx: ContestoModuli): Promise<ModuloRisultato> {
   const def = def_di("atleti_piramide");
   return sicuro(def, async () => {
-    const atleti = await atletiAttivi(ctx.club_id);
+    const atleti = await atletiAttivi(ctx);
     if (atleti.length === 0) return vuoto(def, "Non ci sono atlete attive.");
     const per_livello = new Map<string, number>();
     for (const a of atleti) {
@@ -340,7 +342,7 @@ async function modAtletiPiramide(ctx: ContestoModuli): Promise<ModuloRisultato> 
 async function modAtletiEta(ctx: ContestoModuli): Promise<ModuloRisultato> {
   const def = def_di("atleti_eta");
   return sicuro(def, async () => {
-    const atleti = await atletiAttivi(ctx.club_id);
+    const atleti = await atletiAttivi(ctx);
     const con_data = atleti.filter((a) => a.data_nascita);
     if (con_data.length === 0) return vuoto(def, "Le date di nascita non sono state registrate.");
     const riferimento = ctx.stagione.data_fine
@@ -405,7 +407,7 @@ async function modAtletiFlussi(ctx: ContestoModuli): Promise<ModuloRisultato> {
 async function modAtletiAgoniste(ctx: ContestoModuli): Promise<ModuloRisultato> {
   const def = def_di("atleti_agoniste");
   return sicuro(def, async () => {
-    const atleti = await atletiAttivi(ctx.club_id);
+    const atleti = await atletiAttivi(ctx);
     if (atleti.length === 0) return vuoto(def, "Non ci sono atlete attive.");
     const agoniste = atleti.filter((a) => a.agonista).length;
     if (agoniste === 0) return vuoto(def, "Nessuna atleta è registrata come agonista.");
