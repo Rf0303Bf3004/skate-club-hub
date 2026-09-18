@@ -42,7 +42,7 @@ export default function PannelloModuli({
                 aria-label={v.titolo}
               />
               <span className="min-w-0 flex-1 truncate text-sm" title={v.titolo}>{v.titolo}</span>
-              {spento_per_dati && !moduli_in_caricamento && <AlertTriangle className={v.stato_modulo === "errore" ? "h-3 w-3 text-destructive" : "h-3 w-3 text-amber-700"} title={v.motivo} />}
+              {spento_per_dati && !moduli_in_caricamento && <span title={v.motivo}><AlertTriangle className={v.stato_modulo === "errore" ? "h-3 w-3 text-destructive" : "h-3 w-3 text-amber-700"} /></span>}
                 <div className="flex gap-1">
                   <Button size="icon" variant="ghost" className="h-6 w-6" disabled={idx <= 0}
                     title={t("relazione.moduli.su")} onClick={() => sposta(v, -1)}>
