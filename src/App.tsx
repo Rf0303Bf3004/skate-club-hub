@@ -192,6 +192,15 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
       </BrowserRouter>
     );
   }
+  if (path.startsWith("/iscriviti/")) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/iscriviti/:token" element={<IscrivitiPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
   if (path.startsWith("/campo-ospite/")) {
     return (
       <BrowserRouter>
