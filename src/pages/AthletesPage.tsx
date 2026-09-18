@@ -1177,7 +1177,7 @@ const AthletesPage: React.FC = () => {
               <Switch checked={solo_da_verificare} onCheckedChange={set_solo_da_verificare} />
               <span>{t2('header.only_to_verify')}</span>
             </label>
-            {puo_gestire_sportivo && (
+            {puo_importare && (
               <Button
                 variant="outline"
                 onClick={() => navigate("/import-atleti")}
