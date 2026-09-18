@@ -69,12 +69,18 @@ const RichiesteIscrizionePage: React.FC = () => {
       <Tabs value={scheda} onValueChange={set_scheda}>
         <TabsList>
           <TabsTrigger value="rinnovi">{k("tabs.rinnovi")}</TabsTrigger>
-          <TabsTrigger value="domande">{k("tabs.domande")}</TabsTrigger>
-          <TabsTrigger value="corsi">{k("tabs.corsi")}</TabsTrigger>
+          <TabsTrigger value="domande">
+            {k("tabs.domande")}
+            <Bollino n={domande_in_attesa} />
+          </TabsTrigger>
+          <TabsTrigger value="corsi">
+            {k("tabs.corsi")}
+            <Bollino n={corsi_in_attesa} />
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="rinnovi" className="mt-5">
-          <TabRinnovi puo_gestire={puo_gestire_sportivo} />
+          <TabRinnovi puo_gestire={puo_gestire_sportivo} vai_a_domande={() => set_scheda("domande")} />
         </TabsContent>
         <TabsContent value="domande" className="mt-5">
           <TabDomandeNuove puo_gestire={puo_gestire_sportivo} />
