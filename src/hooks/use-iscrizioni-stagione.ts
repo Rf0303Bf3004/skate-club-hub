@@ -317,6 +317,8 @@ export interface EsitoInvio {
   inviati: number;
   senza_email: number;
   senza_codice?: number;
+  /** Messaggi spediti ma non finiti nel registro comunicazioni. */
+  non_registrati?: number;
   falliti?: { atleta: string; motivo: string }[];
 }
 
