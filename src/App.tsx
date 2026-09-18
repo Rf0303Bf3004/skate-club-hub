@@ -85,6 +85,7 @@ import SegreteriaFatturaDetailPage from "@/pages/SegreteriaFatturaDetailPage";
 import LandingPage from "@/pages/LandingPage";
 import CaricaFotoPage from "@/pages/CaricaFotoPage";
 import IscrizioneAtletaPage from "@/pages/IscrizioneAtletaPage";
+import IscrivitiPage from "@/pages/IscrivitiPage";
 import PistaLoginPage from "@/pages/PistaLoginPage";
 import { usePistaSession } from "@/lib/pista-sessione";
 import { accedi_pista_con_codice, cancella_codice_pista, leggi_codice_pista } from "@/lib/pista-codice";
@@ -187,6 +188,15 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
       <BrowserRouter>
         <Routes>
           <Route path="/iscrizione/:codice_atleta" element={<IscrizioneAtletaPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+  if (path.startsWith("/iscriviti/")) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/iscriviti/:token" element={<IscrivitiPage />} />
         </Routes>
       </BrowserRouter>
     );
