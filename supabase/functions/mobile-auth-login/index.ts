@@ -254,12 +254,15 @@ Deno.serve(async (req) => {
       token_type: signin.data.session.token_type,
       tipo: identita.tipo,
       mezzo: identita.mezzo,
+      genitore: atleta ? gen : null,
       atleta: atleta
         ? {
             id: atleta.id, nome: atleta.nome, cognome: atleta.cognome,
-            club_id: atleta.club_id, codice_atleta: atleta.codice_atleta,
+            club_id: atleta.club_id,
+            codice_atleta: gen === "genitore2" ? atleta.codice_atleta_2 : atleta.codice_atleta,
           }
         : null,
+
       istruttore: istruttore
         ? {
             id: istruttore.id, nome: istruttore.nome, cognome: istruttore.cognome,
