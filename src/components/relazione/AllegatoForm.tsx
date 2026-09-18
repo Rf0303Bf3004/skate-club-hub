@@ -47,11 +47,19 @@ export default function AllegatoForm({ open, on_close, club_id, stagione_id, all
     }
   }, [open, allegato, default_ordine]);
 
+  // Un allegato senza file caricato non è utilizzabile: si salva solo con un file valido.
+  const file_esistente: string | null =
+    allegato?.file_url && !String(allegato.file_url).startsWith("placeholder://")
+      ? String(allegato.file_url)
+      : null;
+  const file_mancante = !file && !file_esistente;
+
   const m_save = useMutation({
     mutationFn: async () => {
-      let file_url = allegato?.file_url ?? "placeholder://new-file.pdf";
+      if (file_mancante) throw new Error(tk("relazione.allegato_form.errore_file_mancante"));
+
+      let file_url = file_esistente as string;
       let file_size_bytes = allegato?.file_size_bytes ?? null;
-      let upload_failed = false;
 
       if (file) {
         if (file.size > MAX_BYTES) throw new Error(tk("relazione.allegato_form.errore_dimensione"));
@@ -60,14 +68,10 @@ export default function AllegatoForm({ open, on_close, club_id, stagione_id, all
           contentType: file.type || "application/pdf",
           upsert: false,
         });
-        if (up_err) {
-          upload_failed = true;
-          file_url = `placeholder://${file.name}`;
-          file_size_bytes = file.size;
-        } else {
-          file_url = path;
-          file_size_bytes = file.size;
-        }
+        // Se il caricamento fallisce non si scrive nulla: meglio nessun allegato che un allegato senza file.
+        if (up_err) throw up_err;
+        file_url = path;
+        file_size_bytes = file.size;
       }
 
       const payload = {
@@ -89,16 +93,10 @@ export default function AllegatoForm({ open, on_close, club_id, stagione_id, all
         const { error } = await supabase.from("relazioni_allegati" as any).insert(payload);
         if (error) throw error;
       }
-
-      return { upload_failed };
     },
-    onSuccess: ({ upload_failed }) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["relazioni_allegati", club_id, stagione_id] });
-      if (upload_failed) {
-        toast.warning(t("relazione.allegato_form.toast_storage_ko"));
-      } else {
-        toast.success(allegato ? t("relazione.allegato_form.toast_aggiornato") : t("relazione.allegato_form.toast_creato"));
-      }
+      toast.success(allegato ? t("relazione.allegato_form.toast_aggiornato") : t("relazione.allegato_form.toast_creato"));
       on_close();
     },
     onError: (e: any) => toast.error(e.message ?? t("relazione.allegato_form.toast_errore")),
