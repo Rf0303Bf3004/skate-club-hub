@@ -22,7 +22,11 @@ const messaggi_errore: Record<string, string> = {
   genitore_incompleto: "Inserisci nome e cognome del genitore o tutore.",
   email_non_valida: "Inserisci un indirizzo email valido.",
   contratto_non_accettato: "Devi accettare le condizioni del contratto di adesione.",
+  contratto_cambiato:
+    "Le condizioni del contratto sono cambiate mentre la pagina era aperta. Ricarica la pagina, rileggi il testo e invia di nuovo.",
+  domanda_gia_inviata: "Abbiamo già ricevuto questa richiesta: è in attesa della segreteria.",
   troppe_richieste: "Troppe richieste inviate di recente. Riprova più tardi.",
+
   db_error: "Errore del server, riprova più tardi.",
   server_error: "Errore del server, riprova più tardi.",
 };
