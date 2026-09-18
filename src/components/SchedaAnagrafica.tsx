@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useTranslation } from 'react-i18next';
-import { use_club, use_setup_club, use_stagioni } from '@/hooks/use-supabase-data';
+import { use_club, use_stagioni } from '@/hooks/use-supabase-data';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Printer, QrCode, Copy, Check, Send } from 'lucide-react';
 import { use_app_store_links } from '@/hooks/use-app-store-links';
@@ -23,7 +23,6 @@ const multiline = (testo: string) =>
 const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back, modo = 'foto' }) => {
   const { t } = useTranslation('atleti');
   const { data: club } = use_club();
-  const { data: setup } = use_setup_club();
   const { data: stagioni = [] } = use_stagioni();
   const stagione_attiva = (stagioni as any[]).find((s: any) => s.attiva);
   const codice = atleta.codice_atleta || (atleta.cognome + atleta.nome + '0001').toUpperCase().replace(/\s/g, '').slice(0, 16);
