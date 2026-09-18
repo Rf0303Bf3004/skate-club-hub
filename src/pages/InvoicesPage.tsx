@@ -364,7 +364,17 @@ const InvoicesPage: React.FC = () => {
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-foreground">{get_atleta_name_from_list(atleti, f.atleta_id)}</td>
+                      <td className="px-4 py-3 text-foreground">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span>{get_atleta_name_from_list(atleti, f.atleta_id)}</span>
+                          {/* Genitori separati: chi paga questa fattura. */}
+                          {f.pagante && (f.intestatario_nome || f.intestatario_cognome) && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+                              {[f.intestatario_nome, f.intestatario_cognome].filter(Boolean).join(" ")}
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-muted-foreground hidden md:table-cell max-w-xs truncate">
                         {f.descrizione}
                       </td>
