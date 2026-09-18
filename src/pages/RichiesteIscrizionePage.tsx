@@ -24,6 +24,22 @@ const RichiesteIscrizionePage: React.FC = () => {
   const allowed = is_admin_like || visibile_set.has("richieste_iscrizione");
   const [scheda, set_scheda] = useState("rinnovi");
 
+  // Bollini sulle schede: si mostrano solo su letture riuscite, mai un numero
+  // più basso del vero.
+  const richieste_corsi = use_richieste_iscrizione();
+  const domande = use_domande_iscrizione();
+  const corsi_in_attesa = richieste_corsi.isSuccess
+    ? ((richieste_corsi.data ?? []) as any[]).filter((r) => r.stato === "in_attesa").length
+    : null;
+  const domande_in_attesa = domande.isSuccess ? (domande.data ?? []).length : null;
+
+  const Bollino: React.FC<{ n: number | null }> = ({ n }) =>
+    n && n > 0 ? (
+      <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold tabular-nums">
+        {n}
+      </span>
+    ) : null;
+
   if (is_loading_permessi) {
     return (
       <div className="flex items-center justify-center h-64">
