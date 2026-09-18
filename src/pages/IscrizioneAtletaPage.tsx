@@ -107,6 +107,13 @@ const IscrizioneAtletaPage: React.FC = () => {
   const [corsi_scelti, set_corsi_scelti] = useState<string[]>([]);
   const [corsi_falliti, set_corsi_falliti] = useState<{ nome: string; motivo: string }[]>([]);
   const [rinuncia_fatta, set_rinuncia_fatta] = useState(false);
+  // Contratto: testo e impronta arrivano dal server, la pagina non ne compone uno suo.
+  const [articoli, set_articoli] = useState<ArticoloContratto[]>([]);
+  const [contratto_impronta, set_contratto_impronta] = useState<string | null>(null);
+  // Stato dell'atleta nella stagione: serve a non ripresentare la scelta a chi ha già risposto.
+  const [registro, set_registro] = useState<{ status?: string; confermato_il?: string | null } | null>(null);
+  const [riapri, set_riapri] = useState(false);
+
 
   const set_val = (k: string, v: any) => set_form((p) => ({ ...p, [k]: v }));
 
