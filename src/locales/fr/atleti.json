@@ -117,7 +117,44 @@
       "livelli_lettura_fallita": "Échec de la lecture des niveaux"
     },
     "attesa_atleti": "Lecture des athlètes existants en cours : patientez avant de continuer.",
-    "avviso_livelli": "Impossible de vérifier les niveaux : l'import peut continuer, les niveaux non reconnus resteront vides."
+    "avviso_livelli": "Impossible de vérifier les niveaux : l'import peut continuer, les niveaux non reconnus resteront vides.",
+    "field": {
+      "email": "E-mail du parent",
+      "telefono": "Téléphone de l'athlète",
+      "categoria": "Catégorie",
+      "genitore1_telefono": "Téléphone du parent",
+      "genitore1_nome": "Prénom du parent",
+      "genitore1_cognome": "Nom du parent",
+      "genitore1_indirizzo": "Adresse",
+      "genitore1_cap": "NPA",
+      "genitore1_citta": "Localité",
+      "genitore1_cantone": "Canton"
+    },
+    "err": {
+      "categoria": "Catégorie manquante",
+      "doppione_file": "Ligne en double : déjà présente à la ligne {{riga}} de ce fichier"
+    },
+    "categoria_domanda": "Quelle catégorie ont les athlètes de cette liste ?",
+    "categoria_nota": "Valable pour toutes les lignes. Si le fichier contient une colonne catégorie, c'est elle qui prime.",
+    "categoria_placeholder": "— Choisir la catégorie —",
+    "categoria_hint": "Choisis la catégorie valable pour toute la liste, ou associe la colonne Catégorie.",
+    "count_senza_email_one": "{{count}} sans e-mail",
+    "count_senza_email_other": "{{count}} sans e-mail",
+    "warn_senza_email": "Sans e-mail, la famille ne pourra pas recevoir l'invitation à compléter l'inscription",
+    "warn_categoria": "Catégorie du fichier non reconnue : {{categoria}} est utilisée",
+    "file_grosso": "Le fichier compte {{totale}} lignes : {{mostrate}} sont affichées ici (les 100 premières plus toutes celles avec erreurs ou avertissements). L'importation les traite toutes.",
+    "avanzamento": "{{fatte}} sur {{totale}}",
+    "falliti_titolo_one": "{{count}} ligne non importée",
+    "falliti_titolo_other": "{{count}} lignes non importées",
+    "scarica_falliti": "Télécharger la liste",
+    "scarica": {
+      "col_riga": "Ligne du fichier",
+      "col_atleta": "Athlète",
+      "col_motivo": "Motif"
+    },
+    "prossimo_passo_titolo": "L'étape suivante",
+    "prossimo_passo_testo": "Les athlètes existent, mais ne sont inscrits à aucune saison et n'ont ni consentements ni contrat.",
+    "prossimo_passo_bottone": "Ouvre maintenant la campagne d'inscriptions : les familles complèteront les données, les consentements et le contrat"
   },
   "iscrizioni_stagione": {
     "tabs": {

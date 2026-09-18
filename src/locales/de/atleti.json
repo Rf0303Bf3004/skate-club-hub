@@ -117,7 +117,44 @@
       "livelli_lettura_fallita": "Lesen der Stufen fehlgeschlagen"
     },
     "attesa_atleti": "Vorhandene Athletinnen werden gelesen: Bitte warten, bevor Sie fortfahren.",
-    "avviso_livelli": "Die Stufen konnten nicht überprüft werden: Der Import kann fortgesetzt werden, nicht erkannte Stufen bleiben leer."
+    "avviso_livelli": "Die Stufen konnten nicht überprüft werden: Der Import kann fortgesetzt werden, nicht erkannte Stufen bleiben leer.",
+    "field": {
+      "email": "E-Mail des Elternteils",
+      "telefono": "Telefon der Athletin/des Athleten",
+      "categoria": "Kategorie",
+      "genitore1_telefono": "Telefon des Elternteils",
+      "genitore1_nome": "Vorname des Elternteils",
+      "genitore1_cognome": "Nachname des Elternteils",
+      "genitore1_indirizzo": "Adresse",
+      "genitore1_cap": "PLZ",
+      "genitore1_citta": "Ort",
+      "genitore1_cantone": "Kanton"
+    },
+    "err": {
+      "categoria": "Kategorie fehlt",
+      "doppione_file": "Doppelte Zeile: bereits in Zeile {{riga}} dieser Datei vorhanden"
+    },
+    "categoria_domanda": "Welche Kategorie haben die Athletinnen und Athleten dieser Liste?",
+    "categoria_nota": "Gilt für alle Zeilen. Enthält die Datei eine Kategorie-Spalte, hat diese Vorrang.",
+    "categoria_placeholder": "— Kategorie wählen —",
+    "categoria_hint": "Wähle die Kategorie für die ganze Liste oder ordne die Spalte Kategorie zu.",
+    "count_senza_email_one": "{{count}} ohne E-Mail",
+    "count_senza_email_other": "{{count}} ohne E-Mail",
+    "warn_senza_email": "Ohne E-Mail kann die Einladung zum Abschluss der Anmeldung nicht zugestellt werden",
+    "warn_categoria": "Kategorie in der Datei nicht erkannt: es wird {{categoria}} verwendet",
+    "file_grosso": "Die Datei hat {{totale}} Zeilen: hier siehst du {{mostrate}} (die ersten 100 plus alle mit Fehlern oder Hinweisen). Importiert werden trotzdem alle.",
+    "avanzamento": "{{fatte}} von {{totale}}",
+    "falliti_titolo_one": "{{count}} Zeile nicht importiert",
+    "falliti_titolo_other": "{{count}} Zeilen nicht importiert",
+    "scarica_falliti": "Liste herunterladen",
+    "scarica": {
+      "col_riga": "Zeile der Datei",
+      "col_atleta": "Athlet/in",
+      "col_motivo": "Grund"
+    },
+    "prossimo_passo_titolo": "Der nächste Schritt",
+    "prossimo_passo_testo": "Die Athletinnen und Athleten existieren, sind aber noch für keine Saison angemeldet und haben weder Einwilligungen noch Vertrag.",
+    "prossimo_passo_bottone": "Öffne jetzt die Anmeldekampagne: die Familien vervollständigen Daten, Einwilligungen und Vertrag"
   },
   "iscrizioni_stagione": {
     "tabs": {

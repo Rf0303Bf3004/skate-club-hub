@@ -117,7 +117,44 @@
       "livelli_lettura_fallita": "Failed to read levels"
     },
     "attesa_atleti": "Reading existing athletes: please wait before continuing.",
-    "avviso_livelli": "Levels could not be verified: the import can continue, unrecognised levels will be left empty."
+    "avviso_livelli": "Levels could not be verified: the import can continue, unrecognised levels will be left empty.",
+    "field": {
+      "email": "Parent email",
+      "telefono": "Athlete phone",
+      "categoria": "Category",
+      "genitore1_telefono": "Parent phone",
+      "genitore1_nome": "Parent first name",
+      "genitore1_cognome": "Parent last name",
+      "genitore1_indirizzo": "Address",
+      "genitore1_cap": "Postal code",
+      "genitore1_citta": "Town",
+      "genitore1_cantone": "Canton"
+    },
+    "err": {
+      "categoria": "Category missing",
+      "doppione_file": "Duplicate row: already present at row {{riga}} of this file"
+    },
+    "categoria_domanda": "Which category are the athletes in this list?",
+    "categoria_nota": "Applies to every row. If the file has a category column, that one wins.",
+    "categoria_placeholder": "— Choose the category —",
+    "categoria_hint": "Choose the category for the whole list, or map the Category column.",
+    "count_senza_email_one": "{{count}} without email",
+    "count_senza_email_other": "{{count}} without email",
+    "warn_senza_email": "Without an email address they cannot receive the invitation to complete the registration",
+    "warn_categoria": "Category in the file not recognised: {{categoria}} is used instead",
+    "file_grosso": "The file has {{totale}} rows: {{mostrate}} are shown here (the first 100 plus every row with errors or warnings). The import still processes all of them.",
+    "avanzamento": "{{fatte}} of {{totale}}",
+    "falliti_titolo_one": "{{count}} row not imported",
+    "falliti_titolo_other": "{{count}} rows not imported",
+    "scarica_falliti": "Download the list",
+    "scarica": {
+      "col_riga": "File row",
+      "col_atleta": "Athlete",
+      "col_motivo": "Reason"
+    },
+    "prossimo_passo_titolo": "The next step",
+    "prossimo_passo_testo": "The athletes exist, but they are not registered for any season yet and have no consents or contract.",
+    "prossimo_passo_bottone": "Now open the registration campaign: families will complete the data, the consents and the contract"
   },
   "iscrizioni_stagione": {
     "tabs": {
