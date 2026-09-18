@@ -376,8 +376,9 @@ Deno.serve(async (req) => {
             ).error;
         if (errore_ins) {
           console.error("[iscrizione-atleta] corso_ins_err", corso.id, errore_ins);
-          corsi_falliti.push({ nome: corso.nome, motivo: errore_ins.message });
+          corsi_falliti.push({ nome: corso.nome, motivo: motivo_corso(errore_ins) });
         }
+
       }
     }
 
