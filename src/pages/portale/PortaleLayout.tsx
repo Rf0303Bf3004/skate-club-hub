@@ -33,6 +33,32 @@ const PortaleLayout: React.FC = () => {
   const [busy, set_busy] = useState(false);
   const [da_rimuovere, set_da_rimuovere] = useState<PortaleSession | null>(null);
 
+  // Con quale accesso si è entrati: si mostra solo se i genitori sono separati.
+  const famiglia = useQuery({
+    queryKey: ["portale_famiglia_accesso", session?.atleta.id],
+    enabled: !!session?.atleta.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("atleti_famiglia")
+        .select("genitori_separati, genitore1_nome, genitore1_cognome, genitore2_nome, genitore2_cognome")
+        .eq("id", session!.atleta.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const nome_accesso = (() => {
+    const f = famiglia.data;
+    if (!f?.genitori_separati) return null;
+    const g2 = session?.genitore === "genitore2";
+    const nome = g2
+      ? `${f.genitore2_nome ?? ""} ${f.genitore2_cognome ?? ""}`.trim()
+      : `${f.genitore1_nome ?? ""} ${f.genitore1_cognome ?? ""}`.trim();
+    return nome || t(g2 ? "accesso.genitore2" : "accesso.genitore1");
+  })();
+
+
   const refresh_profili = useCallback(() => {
     set_profili(portale_get_profili_collegati());
   }, []);
