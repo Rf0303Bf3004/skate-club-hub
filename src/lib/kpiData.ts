@@ -7,6 +7,7 @@
 
 import { supabase } from "@/lib/supabase";
 import type { Stagione } from "@/lib/relazione/moduli";
+import { fetchFonteEconomica, testo_economia } from "@/lib/relazione/fonte-economica";
 
 export interface KpiCell {
   value: string;
@@ -62,20 +63,17 @@ export async function fetchKpiData(club_id: string, stagione: Stagione): Promise
     }
   } catch { /* vedi sopra */ }
 
-  // Economia: fatturato e incassato della stagione
+  // Economia: una sola fonte per stagione, dichiarata nell'etichetta sotto il numero.
   try {
-    const { data, error } = await supabase
-      .from("fatture").select("importo,data_emissione,data_pagamento,stato").eq("club_id", club_id);
-    if (error) throw error;
-    const fatture = ((data ?? []) as any[]).filter(
-      (f) => f.stato !== "bozza" && f.stato !== "annullata" && dentro(f.data_emissione, stagione),
-    );
-    if (fatture.length > 0) {
-      const fatturato = fatture.reduce((s, f) => s + (Number(f.importo) || 0), 0);
-      const incassato = fatture.filter((f) => f.data_pagamento).reduce((s, f) => s + (Number(f.importo) || 0), 0);
-      aggiungi("economia", { value: fmt_chf(fatturato), label: "Fatturato" });
-      aggiungi("economia", { value: fmt_chf(incassato), label: "Incassato" });
-      aggiungi("economia", { value: fmt_n(fatture.length), label: "Fatture emesse" });
+    const f = await fetchFonteEconomica(club_id, stagione);
+    if (f.fonte === "fatture") {
+      aggiungi("economia", { value: fmt_chf(f.fatturato), label: testo_economia("kpi_fatturato") });
+      aggiungi("economia", { value: fmt_chf(f.incassato), label: testo_economia("kpi_incassato") });
+      aggiungi("economia", { value: fmt_n(f.n_fatture), label: testo_economia("kpi_fatture") });
+    } else if (f.fonte === "bilancio" && f.bilancio) {
+      aggiungi("economia", { value: fmt_chf(f.bilancio.totale_entrate), label: testo_economia("kpi_entrate") });
+      aggiungi("economia", { value: fmt_chf(f.bilancio.totale_uscite), label: testo_economia("kpi_uscite") });
+      aggiungi("economia", { value: fmt_chf(f.bilancio.saldo), label: testo_economia("kpi_saldo") });
     }
   } catch { /* vedi sopra */ }
 

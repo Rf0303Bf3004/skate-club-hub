@@ -10,6 +10,7 @@ import {
   AREE_ORDINATE, type AreaId, type Stagione,
   fetchStagioniOrdinate, stagionePrecedente,
 } from "@/lib/relazione/moduli";
+import { fetchFonteEconomica, fonteDiStagione } from "@/lib/relazione/fonte-economica";
 
 export type Tono = "soci" | "formale";
 
@@ -60,8 +61,15 @@ export interface DatiNarrativi {
   iscrizioni?: number;
   ore_ghiaccio_disponibili?: number;
   ore_ghiaccio_usate?: number;
+  /** Fonte economica della stagione: "fatture" o "bilancio", mai le due insieme. */
+  fonte_economica?: "fatture" | "bilancio";
   fatturato?: number;
   incassato?: number;
+  bilancio_entrate?: number;
+  bilancio_uscite?: number;
+  bilancio_saldo?: number;
+  /** La stagione prima usa un'altra fonte: nessun confronto percentuale. */
+  confronto_economico_impossibile?: boolean;
   lezioni_numero?: number;
   lezioni_ore?: number;
   lezioni_incasso?: number;
@@ -167,16 +175,24 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
     }
   } catch { d.letture_fallite = (d.letture_fallite ?? 0) + 1; }
 
+  // Economia: una sola fonte per stagione, mai le due mescolate.
   try {
-    const { data, error } = await supabase
-      .from("fatture").select("importo,data_emissione,data_pagamento,stato").eq("club_id", club_id);
-    if (error) throw error;
-    const fatture = ((data ?? []) as any[]).filter(
-      (f) => f.stato !== "bozza" && f.stato !== "annullata" && dentro(f.data_emissione, stagione),
-    );
-    if (fatture.length > 0) {
-      d.fatturato = fatture.reduce((s, f) => s + (Number(f.importo) || 0), 0);
-      d.incassato = fatture.filter((f) => f.data_pagamento).reduce((s, f) => s + (Number(f.importo) || 0), 0);
+    const f = await fetchFonteEconomica(club_id, stagione);
+    if (f.fonte === "fatture") {
+      d.fonte_economica = "fatture";
+      d.fatturato = f.fatturato;
+      d.incassato = f.incassato;
+    } else if (f.fonte === "bilancio" && f.bilancio) {
+      d.fonte_economica = "bilancio";
+      d.bilancio_entrate = f.bilancio.totale_entrate;
+      d.bilancio_uscite = f.bilancio.totale_uscite;
+      d.bilancio_saldo = f.bilancio.saldo;
+    }
+    // Il confronto fra stagioni vale solo fra stagioni con la stessa fonte.
+    if (prec && d.fonte_economica) {
+      const fonte_prec = await fonteDiStagione(club_id, prec);
+      d.confronto_economico_impossibile = fonte_prec !== "nessuna" && fonte_prec !== d.fonte_economica;
+      if (d.confronto_economico_impossibile) d.stagione_prec_nome = prec.nome;
     }
   } catch { d.letture_fallite = (d.letture_fallite ?? 0) + 1; }
 
@@ -347,12 +363,26 @@ export function paragrafiArea(area: AreaId, tono: Tono, d: DatiNarrativi): Array
       break;
     }
     case "economia": {
-      apertura = soci
-        ? `I conti del club sono esposti in modo semplice. La misura usata in tutto il documento è il fatturato, cioè la somma delle fatture emesse nella stagione; l'incassato è indicato a parte.`
-        : `L'analisi economica assume come grandezza di riferimento il fatturato della stagione, inteso come somma delle fatture emesse ed escluse bozze e note annullate. L'incassato è riportato separatamente.`;
+      // Una sola fonte per stagione, dichiarata nel testo: o le fatture del
+      // portale, o il bilancio. Mai le due mescolate, mai un totale che le somma.
+      const suffisso = soci ? "" : "_formale";
+      apertura = d.fonte_economica == null
+        ? tp(`eco_apertura_nessuna${suffisso}`)
+        : d.fonte_economica === "bilancio"
+          ? tp(`eco_apertura_bilancio${suffisso}`)
+          : tp(`eco_apertura_fatture${suffisso}`);
       numeri = unisci([
-        d.fatturato != null ? `Il fatturato della stagione è di ${fmt_chf(d.fatturato)}.` : null,
-        d.incassato != null ? `Di questo importo risulta incassato ${fmt_chf(d.incassato)}.` : null,
+        d.fonte_economica === "fatture" && d.fatturato != null
+          ? tp("eco_fatturato", { importo: fmt_chf(d.fatturato) }) : null,
+        d.fonte_economica === "fatture" && d.incassato != null
+          ? tp("eco_incassato", { importo: fmt_chf(d.incassato) }) : null,
+        d.fonte_economica === "bilancio" && d.bilancio_entrate != null
+          ? tp("eco_entrate", { importo: fmt_chf(d.bilancio_entrate) }) : null,
+        d.fonte_economica === "bilancio" && d.bilancio_uscite != null
+          ? tp("eco_uscite", { importo: fmt_chf(d.bilancio_uscite) }) : null,
+        d.fonte_economica === "bilancio" && d.bilancio_saldo != null
+          ? tp("eco_saldo", { importo: fmt_chf(d.bilancio_saldo) }) : null,
+        d.confronto_economico_impossibile ? tp("eco_non_confrontabile") : null,
       ]);
       break;
     }
