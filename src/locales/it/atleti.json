@@ -191,7 +191,22 @@
     "club_not_identified": "Club non identificato",
     "new_invoice_desc": "Nuova fattura",
     "flag_ospite": "Ospite di campo — {{club}}",
-    "ospite_scade": "scheda eliminata il {{data}}"
+    "ospite_scade": "scheda eliminata il {{data}}",
+    "country_iso": "Paese (ISO)",
+    "separati": {
+      "switch": "Genitori separati",
+      "fatture_label": "Fatture intestate a",
+      "fatture_genitore1": "Primo genitore",
+      "fatture_genitore2": "Secondo genitore",
+      "fatture_meta": "Metà e metà (due fatture, una per genitore)",
+      "comunicazioni_label": "Comunicazioni a",
+      "comunicazioni_entrambi": "Entrambi i genitori",
+      "comunicazioni_genitore1": "Solo il primo",
+      "comunicazioni_genitore2": "Solo il secondo",
+      "indirizzo_g2": "L'indirizzo del secondo genitore si modifica nella scheda «Genitore 2» qui sopra.",
+      "avviso_indirizzo": "Serve l'indirizzo del secondo genitore, altrimenti la sua metà di fattura non viene generata.",
+      "nota": "Il club non entra nel merito degli accordi familiari: registra solo a chi intestare le fatture e a chi mandare le comunicazioni."
+    }
   },
   "form": {
     "name": "Nome",

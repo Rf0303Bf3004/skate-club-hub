@@ -38,7 +38,22 @@
     "swiss_license": "Schweizer Lizenz",
     "nfc_tag": "NFC-Tag",
     "flag_ospite": "Camp-Gast — {{club}}",
-    "ospite_scade": "Datensatz gelöscht am {{data}}"
+    "ospite_scade": "Datensatz gelöscht am {{data}}",
+    "country_iso": "Land (ISO)",
+    "separati": {
+      "switch": "Getrennte Eltern",
+      "fatture_label": "Rechnungen lautend auf",
+      "fatture_genitore1": "Erster Elternteil",
+      "fatture_genitore2": "Zweiter Elternteil",
+      "fatture_meta": "Hälfte und Hälfte (zwei Rechnungen, eine pro Elternteil)",
+      "comunicazioni_label": "Mitteilungen an",
+      "comunicazioni_entrambi": "Beide Elternteile",
+      "comunicazioni_genitore1": "Nur der erste",
+      "comunicazioni_genitore2": "Nur der zweite",
+      "indirizzo_g2": "Die Adresse des zweiten Elternteils wird oben im Bereich „Elternteil 2“ bearbeitet.",
+      "avviso_indirizzo": "Die Adresse des zweiten Elternteils wird benötigt, sonst wird seine Rechnungshälfte nicht erstellt.",
+      "nota": "Der Club beurteilt keine familiären Vereinbarungen: Er hält nur fest, auf wen die Rechnungen lauten und wer die Mitteilungen erhält."
+    }
   },
   "form": {
     "name": "Vorname",

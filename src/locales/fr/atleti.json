@@ -38,7 +38,22 @@
     "swiss_license": "Licence suisse",
     "nfc_tag": "Étiquette NFC",
     "flag_ospite": "Invité du camp — {{club}}",
-    "ospite_scade": "fiche supprimée le {{data}}"
+    "ospite_scade": "fiche supprimée le {{data}}",
+    "country_iso": "Pays (ISO)",
+    "separati": {
+      "switch": "Parents séparés",
+      "fatture_label": "Factures au nom de",
+      "fatture_genitore1": "Premier parent",
+      "fatture_genitore2": "Second parent",
+      "fatture_meta": "Moitié-moitié (deux factures, une par parent)",
+      "comunicazioni_label": "Communications à",
+      "comunicazioni_entrambi": "Les deux parents",
+      "comunicazioni_genitore1": "Seulement le premier",
+      "comunicazioni_genitore2": "Seulement le second",
+      "indirizzo_g2": "L'adresse du second parent se modifie dans la fiche « Parent 2 » ci-dessus.",
+      "avviso_indirizzo": "L'adresse du second parent est nécessaire, sinon sa moitié de facture ne sera pas générée.",
+      "nota": "Le club ne se prononce pas sur les arrangements familiaux : il enregistre seulement à qui adresser les factures et à qui envoyer les communications."
+    }
   },
   "form": {
     "name": "Prénom",

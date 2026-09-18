@@ -214,5 +214,9 @@
     "errore_lettura": "Impossibile leggere le impostazioni contabili.",
     "errore_salvataggio": "Impossibile salvare le impostazioni contabili.",
     "riprova": "Riprova"
+  },
+  "anteprima": {
+    "intestata_a": "Intestata a {{nome}}",
+    "badge_meta": "metà"
   }
 }

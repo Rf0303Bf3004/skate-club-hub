@@ -201,6 +201,12 @@ export function use_upsert_atleta() {
         genitore2_cap: data.genitore2_cap || null,
         genitore2_citta: data.genitore2_citta || null,
         genitore2_cantone: data.genitore2_cantone || null,
+        ...(data.genitore1_paese_iso !== undefined ? { genitore1_paese_iso: data.genitore1_paese_iso || null } : {}),
+        ...(data.genitore2_paese_iso !== undefined ? { genitore2_paese_iso: data.genitore2_paese_iso || null } : {}),
+        // Genitori separati: proprietà della singola atleta, scritta solo se la scheda la passa.
+        ...(data.genitori_separati !== undefined ? { genitori_separati: !!data.genitori_separati } : {}),
+        ...(data.fatture_intestate_a !== undefined ? { fatture_intestate_a: data.fatture_intestate_a || "genitore1" } : {}),
+        ...(data.comunicazioni_a !== undefined ? { comunicazioni_a: data.comunicazioni_a || "entrambi" } : {}),
         licenza_sis_numero: data.licenza_sis_numero || "",
         licenza_sis_categoria: data.licenza_sis_categoria || "",
         licenza_sis_disciplina: data.licenza_sis_disciplina || "",
@@ -933,6 +939,10 @@ export type AnteprimaFattura = {
   righe: AnteprimaFatturaRiga[];
   gia_fatturata: boolean;
   avviso: string | null;
+  // Genitori separati: con 'meta' la stessa atleta torna in due righe, una per genitore.
+  pagante: string | null;
+  pagante_nome: string | null;
+  quota_meta: boolean;
 };
 
 export type EsitoGenerazione = {
@@ -956,6 +966,9 @@ export function use_anteprima_fatture_periodo() {
         ...r,
         totale: Number(r.totale ?? 0),
         righe: Array.isArray(r.righe) ? (r.righe as AnteprimaFatturaRiga[]) : [],
+        pagante: r.pagante ?? null,
+        pagante_nome: r.pagante_nome ?? null,
+        quota_meta: !!r.quota_meta,
       }));
     },
   });

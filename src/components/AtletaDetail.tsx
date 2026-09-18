@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SelectLivello } from "@/components/ui/select-livello";
 import { ArrowLeft, Shield, Medal, Save, Upload, Music, ArrowRightLeft, X, Mail, Copy, Printer, Link as LinkIcon, QrCode, Share2, Trophy, ShieldCheck, UserCog } from "lucide-react";
@@ -362,6 +363,11 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     genitore2_cognome: a.genitore2_cognome || a.genitore_2?.cognome || "",
     genitore2_telefono: a.genitore2_telefono || a.genitore_2?.telefono || "",
     genitore2_email: a.genitore2_email || a.genitore_2?.email || "",
+    genitore1_paese_iso: a.genitore1_paese_iso || "",
+    genitore2_paese_iso: a.genitore2_paese_iso || "",
+    genitori_separati: !!a.genitori_separati,
+    fatture_intestate_a: a.fatture_intestate_a || "genitore1",
+    comunicazioni_a: a.comunicazioni_a || "entrambi",
     foto_url: a.foto_url || "",
     foto_path: a.foto_path || "",
     disco_url: a.disco_url || "",
@@ -584,6 +590,11 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         genitore2_cap: form.genitore2_cap || null,
         genitore2_citta: form.genitore2_citta || null,
         genitore2_cantone: form.genitore2_cantone || null,
+        genitore1_paese_iso: form.genitore1_paese_iso || null,
+        genitore2_paese_iso: form.genitore2_paese_iso || null,
+        genitori_separati: !!form.genitori_separati,
+        fatture_intestate_a: form.fatture_intestate_a || "genitore1",
+        comunicazioni_a: form.comunicazioni_a || "entrambi",
         sesso: form.sesso || null,
         indirizzo: form.indirizzo || null,
         cap: form.cap || null,
@@ -1485,7 +1496,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               { label: t("genitore_1"), prefix: "genitore1", collapsible: false },
               { label: t("genitore_2"), prefix: "genitore2", collapsible: true },
             ].map(({ label, prefix, collapsible }) => {
-              const has_g2_data = prefix === "genitore2" && (form.genitore2_nome || form.genitore2_email || form.genitore2_indirizzo);
+              const has_g2_data = prefix === "genitore2" && (form.genitore2_nome || form.genitore2_email || form.genitore2_indirizzo || form.genitori_separati);
               const body = (
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1526,6 +1537,17 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">{td("detail.country_iso")}</Label>
+                    <Input
+                      value={form[`${prefix}_paese_iso`] || ""}
+                      onChange={(e) => upd(`${prefix}_paese_iso`, e.target.value.toUpperCase().slice(0, 2))}
+                      maxLength={2}
+                      className="h-9 w-24 uppercase"
+                      placeholder="CH"
+                    />
+                  </div>
+
                 </div>
               );
               if (collapsible) {
@@ -1543,6 +1565,69 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 </div>
               );
             })}
+
+            {/* ── Genitori separati ── */}
+            <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <Label htmlFor="genitori_separati" className="text-sm font-medium">
+                  {td("detail.separati.switch")}
+                </Label>
+                <Switch
+                  id="genitori_separati"
+                  checked={!!form.genitori_separati}
+                  onCheckedChange={(v) => upd("genitori_separati", v)}
+                />
+              </div>
+
+              {form.genitori_separati && (
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">{td("detail.separati.fatture_label")}</Label>
+                    <Select
+                      value={form.fatture_intestate_a || "genitore1"}
+                      onValueChange={(v) => upd("fatture_intestate_a", v)}
+                    >
+                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="genitore1">{td("detail.separati.fatture_genitore1")}</SelectItem>
+                        <SelectItem value="genitore2">{td("detail.separati.fatture_genitore2")}</SelectItem>
+                        <SelectItem value="meta">{td("detail.separati.fatture_meta")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">{td("detail.separati.comunicazioni_label")}</Label>
+                    <Select
+                      value={form.comunicazioni_a || "entrambi"}
+                      onValueChange={(v) => upd("comunicazioni_a", v)}
+                    >
+                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="entrambi">{td("detail.separati.comunicazioni_entrambi")}</SelectItem>
+                        <SelectItem value="genitore1">{td("detail.separati.comunicazioni_genitore1")}</SelectItem>
+                        <SelectItem value="genitore2">{td("detail.separati.comunicazioni_genitore2")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* L'indirizzo del secondo genitore si modifica nella scheda "Genitore 2" qui sopra,
+                      che resta aperta quando i genitori sono separati: un solo punto di modifica. */}
+                  <p className="text-sm text-muted-foreground border-t border-border pt-4">
+                    {td("detail.separati.indirizzo_g2")}
+                  </p>
+
+                  {form.fatture_intestate_a === "meta" && !String(form.genitore2_indirizzo || "").trim() && (
+                    <div className="flex items-start gap-2 rounded-lg border border-orange-300 bg-orange-50 p-3 text-sm text-orange-900">
+                      <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                      {td("detail.separati.avviso_indirizzo")}
+                    </div>
+                  )}
+
+                  <p className="text-xs text-muted-foreground">{td("detail.separati.nota")}</p>
+                </div>
+              )}
+            </div>
           </fieldset>
           </TabsContent>
 

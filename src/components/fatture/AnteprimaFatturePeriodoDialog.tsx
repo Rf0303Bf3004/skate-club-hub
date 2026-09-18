@@ -11,6 +11,7 @@ import {
   type AnteprimaFattura,
   type EsitoGenerazione,
 } from "@/hooks/use-supabase-mutations";
+import { useTranslation } from "react-i18next";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
 
@@ -29,6 +30,7 @@ interface Props {
 
 const AnteprimaFatturePeriodoDialog: React.FC<Props> = ({ open, onOpenChange }) => {
   const { puo_gestire_fatture } = usePermessiAzione();
+  const { t } = useTranslation("fatture");
   const oggi = new Date();
   const [anno, set_anno] = useState<number>(oggi.getFullYear());
   const [mese, set_mese] = useState<number>(oggi.getMonth() + 1);
@@ -135,7 +137,9 @@ const AnteprimaFatturePeriodoDialog: React.FC<Props> = ({ open, onOpenChange }) 
                     <tr><td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">Nessuna fattura da generare per {MESI[mese - 1]} {anno}.</td></tr>
                   ) : (
                     righe.map((r) => {
-                      const key = `${r.atleta_id}-${r.ragione_sociale_id ?? "x"}`;
+                      // Con "Metà e metà" la stessa atleta arriva due volte, una per genitore:
+                      // senza `pagante` nella chiave React perderebbe una delle due righe.
+                      const key = `${r.atleta_id}-${r.ragione_sociale_id ?? "x"}-${r.pagante ?? "unico"}`;
                       const aperta = espanse.has(key);
                       const cls = r.avviso
                         ? "bg-orange-50 hover:bg-orange-100"
@@ -150,6 +154,16 @@ const AnteprimaFatturePeriodoDialog: React.FC<Props> = ({ open, onOpenChange }) 
                             </td>
                             <td className="px-3 py-2">
                               <div className="font-medium text-foreground">{r.atleta}</div>
+                              {r.pagante && (
+                                <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                                  <span>{t("anteprima.intestata_a", { nome: r.pagante_nome ?? "—" })}</span>
+                                  {r.quota_meta && (
+                                    <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+                                      {t("anteprima.badge_meta")}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                               {r.avviso && (
                                 <div className="text-xs text-orange-700 flex items-center gap-1 mt-0.5">
                                   <AlertTriangle className="w-3 h-3" /> {r.avviso} — questa fattura non verrà creata

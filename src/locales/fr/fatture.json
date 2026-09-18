@@ -135,5 +135,9 @@
     "errore_lettura": "Impossible de lire les paramètres comptables.",
     "errore_salvataggio": "Impossible d'enregistrer les paramètres comptables.",
     "riprova": "Réessayer"
+  },
+  "anteprima": {
+    "intestata_a": "Au nom de {{nome}}",
+    "badge_meta": "moitié"
   }
 }

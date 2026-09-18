@@ -38,7 +38,22 @@
     "swiss_license": "Swiss license",
     "nfc_tag": "NFC tag",
     "flag_ospite": "Camp guest — {{club}}",
-    "ospite_scade": "record deleted on {{data}}"
+    "ospite_scade": "record deleted on {{data}}",
+    "country_iso": "Country (ISO)",
+    "separati": {
+      "switch": "Separated parents",
+      "fatture_label": "Invoices made out to",
+      "fatture_genitore1": "First parent",
+      "fatture_genitore2": "Second parent",
+      "fatture_meta": "Half and half (two invoices, one per parent)",
+      "comunicazioni_label": "Communications to",
+      "comunicazioni_entrambi": "Both parents",
+      "comunicazioni_genitore1": "First parent only",
+      "comunicazioni_genitore2": "Second parent only",
+      "indirizzo_g2": "The second parent's address is edited in the “Parent 2” card above.",
+      "avviso_indirizzo": "The second parent's address is required, otherwise their half of the invoice will not be generated.",
+      "nota": "The club takes no view on family arrangements: it only records who the invoices go to and who receives the communications."
+    }
   },
   "form": {
     "name": "First name",
