@@ -38,6 +38,13 @@ const fmt_chf = (n: number) =>
   "CHF " + new Intl.NumberFormat("it-CH", { maximumFractionDigits: 0 }).format(Math.round(n));
 const fmt_pct = (n: number) => (n >= 0 ? "+" : "") + n.toFixed(1).replace(".", ",") + "%";
 
+/** La stagione è quella in corso se oggi cade fra le sue date. */
+export function stagione_in_corso(stag: Stagione): boolean {
+  if (!stag?.data_inizio || !stag?.data_fine) return false;
+  const oggi = new Date().toISOString().slice(0, 10);
+  return oggi >= String(stag.data_inizio).slice(0, 10) && oggi <= String(stag.data_fine).slice(0, 10);
+}
+
 function dentro(data: string | null | undefined, stag: Stagione): boolean {
   if (!stag.data_inizio || !stag.data_fine) return true;
   if (!data) return false;
@@ -55,6 +62,8 @@ export interface DatiNarrativi {
   stagione_prec_nome?: string;
   federazione?: string;
   atlete?: number;
+  /** true = numero vivo di oggi (stagione in corso); false = storico della stagione. */
+  atlete_alla_data?: boolean;
   atlete_prec?: number;
   agoniste?: number;
   corsi?: number;
@@ -112,19 +121,35 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
     federazione: federazioneDelClub(club),
   };
 
+  // Il numero delle atlete dipende dalla stagione: quella in corso si conta
+  // viva di oggi, una stagione chiusa si legge dallo storico di quella
+  // stagione. Se lo storico non c'è, il numero non si scrive.
+  const in_corso = stagione_in_corso(stagione);
   try {
-    const { data, error } = await supabase
-      .from("atleti").select("id,agonista").eq("club_id", club_id).eq("attivo", true);
-    if (error) throw error;
-    const atleti = (data ?? []) as any[];
-    if (atleti.length > 0) {
-      d.atlete = atleti.length;
-      const ag = atleti.filter((a) => a.agonista).length;
-      if (ag > 0) d.agoniste = ag;
+    if (in_corso) {
+      const { data, error } = await supabase
+        .from("atleti").select("id,agonista").eq("club_id", club_id).eq("attivo", true);
+      if (error) throw error;
+      const atleti = (data ?? []) as any[];
+      if (atleti.length > 0) {
+        d.atlete = atleti.length;
+        d.atlete_alla_data = true;
+        const ag = atleti.filter((a) => a.agonista).length;
+        if (ag > 0) d.agoniste = ag;
+      }
+    } else {
+      const { data, error } = await supabase
+        .from("atleti_storici_stagioni").select("atleta_id,status")
+        .eq("club_id", club_id).eq("stagione_id", stagione.id).eq("status", "attivo");
+      if (error) throw error;
+      const n = (data ?? []).length;
+      if (n > 0) { d.atlete = n; d.atlete_alla_data = false; }
     }
   } catch { d.letture_fallite = (d.letture_fallite ?? 0) + 1; }
 
-  if (prec) {
+  // La variazione si calcola solo fra due numeri della stessa fonte: se la
+  // stagione scelta è in corso (numero vivo) non si confronta con lo storico.
+  if (prec && d.atlete != null && d.atlete_alla_data === false) {
     try {
       const { data, error } = await supabase
         .from("atleti_storici_stagioni").select("atleta_id,status")
@@ -279,9 +304,21 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
 
   try {
     const { data, error } = await supabase
-      .from("sponsor_attivi").select("nome_sponsor,importo_annuo").eq("club_id", club_id);
+      .from("sponsor_attivi")
+      .select("nome_sponsor,importo_annuo,stagione_inizio,stagione_fine")
+      .eq("club_id", club_id);
     if (error) throw error;
-    const righe = (data ?? []) as any[];
+    // Sponsor della stagione scelta, non tutti quelli mai avuti: vale
+    // l'anno d'inizio della stagione (stagione_fine vuota = ancora attivo).
+    const anno = Number(String(stagione.data_inizio ?? "").slice(0, 4));
+    const righe = ((data ?? []) as any[]).filter((r) => {
+      if (!Number.isFinite(anno)) return true;
+      const da = Number(r.stagione_inizio);
+      const a = r.stagione_fine == null ? null : Number(r.stagione_fine);
+      if (Number.isFinite(da) && da > anno) return false;
+      if (a != null && Number.isFinite(a) && a < anno) return false;
+      return true;
+    });
     if (righe.length > 0) {
       d.sponsor = righe.length;
       d.sponsor_nomi = righe.map((r) => String(r.nome_sponsor)).filter(Boolean).slice(0, 4);
@@ -310,6 +347,7 @@ export function frase_valida(frase: string | null | undefined): boolean {
   if (/(^|\s)[,;:]/.test(s)) return false;     // "a , che"
   if (/[,;:(]\s*[.)]/.test(s)) return false;   // "speciale a ." / "()"
   if (/\(\s*\)/.test(s)) return false;
+  if (/\s[.!?]/.test(s)) return false;         // "nella stagione ."
   if (/\{\{|\}\}|\{\d+\}/.test(s)) return false; // segnaposto non sostituito
   return true;
 }
@@ -335,12 +373,23 @@ export function paragrafiArea(area: AreaId, tono: Tono, d: DatiNarrativi): Array
       apertura = soci
         ? `Il primo capitolo riguarda le nostre atlete: quante sono, come sono distribuite fra i livelli e come è cambiato il gruppo rispetto all'anno scorso.`
         : `La presente sezione rendiconta la consistenza e la composizione del bacino atleti nella stagione ${d.stagione_nome}.`;
+      // La variazione esiste solo fra due numeri della stessa fonte: la
+      // stagione in corso, contata oggi, non si confronta con lo storico.
       const variazione =
-        d.atlete != null && d.atlete_prec != null && d.atlete_prec > 0
-          ? `Nella stagione ${d.stagione_prec_nome} le atlete attive erano ${fmt_n(d.atlete_prec)}: la variazione è del ${fmt_pct(((d.atlete - d.atlete_prec) / d.atlete_prec) * 100)}.`
+        d.atlete != null && d.atlete_alla_data === false && d.atlete_prec != null &&
+        d.atlete_prec > 0 && d.stagione_prec_nome
+          ? tp("atlete_variazione", {
+            stagione: d.stagione_prec_nome,
+            numero: fmt_n(d.atlete_prec),
+            variazione: fmt_pct(((d.atlete - d.atlete_prec) / d.atlete_prec) * 100),
+          })
           : null;
       numeri = unisci([
-        d.atlete != null ? `Le atlete attive sono ${fmt_n(d.atlete)}.` : null,
+        d.atlete != null
+          ? (d.atlete_alla_data
+            ? tp("atlete_oggi", { numero: fmt_n(d.atlete) })
+            : tp("atlete_stagione", { numero: fmt_n(d.atlete), stagione: d.stagione_nome }))
+          : null,
         d.agoniste != null ? `Di queste, ${fmt_n(d.agoniste)} sono registrate come agoniste.` : null,
         variazione,
         d.federazione ? `I tesseramenti fanno capo a ${d.federazione}.` : null,
@@ -458,8 +507,11 @@ export function paragrafiArea(area: AreaId, tono: Tono, d: DatiNarrativi): Array
     }
   }
 
-  const out: Array<{ ordine: number; testo: string }> = [{ ordine: 1, testo: apertura }];
-  if (numeri) out.push({ ordine: 2, testo: numeri });
+  // Il controllo vale su tutti i paragrafi, apertura compresa: un testo che
+  // non passa non esce di qui, quindi non viene né salvato né stampato.
+  const out: Array<{ ordine: number; testo: string }> = [];
+  if (frase_valida(apertura)) out.push({ ordine: 1, testo: apertura.trim() });
+  if (frase_valida(numeri)) out.push({ ordine: 2, testo: numeri.trim() });
   return out;
 }
 
@@ -506,7 +558,9 @@ export async function sincronizzaParagrafi(
       const riga = esistenti.get(`${area}|${ordine}`);
       if (riga?.is_edited) continue;
       const testo = (prodotti.get(ordine) ?? "").trim();
-      if (!testo) { if (riga) da_rimuovere.push({ area, ordine }); continue; }
+      // Nessuna scrittura senza controllo: un testo monco non si salva, e la
+      // riga vecchia che lo conteneva viene tolta.
+      if (!frase_valida(testo)) { if (riga) da_rimuovere.push({ area, ordine }); continue; }
       if (riga && String(riga.contenuto ?? "") === testo) continue;
       da_scrivere.push({
         club_id, stagione_id: stagione.id, area_id: area,
@@ -562,6 +616,8 @@ export async function generateAllParagraphs(
     on_progress?.({ area_idx: i + 1, area_label: AREA_LABELS[area], total: AREE_NARRATIVE.length });
     for (const p of paragrafiArea(area, tono, dati)) {
       if (modificati.has(`${area}|${p.ordine}`)) { saltati++; continue; }
+      // Controllo prima della scrittura: un paragrafo monco non si salva.
+      if (!frase_valida(p.testo)) { saltati++; continue; }
       righe.push({
         club_id, stagione_id: stagione.id, area_id: area,
         paragrafo_ordine: p.ordine, tono,
@@ -588,6 +644,16 @@ export async function regeneraParagrafo(
   const dati = await fetchDatiNarrativi(club_id, stagione);
   const p = paragrafiArea(area, tono, dati).find((x) => x.ordine === ordine);
   const testo = p?.testo ?? "";
+  // Se il testo rigenerato non passa il controllo non si scrive niente e la
+  // riga vecchia, se generata, viene tolta: meglio nessun testo che uno rotto.
+  if (!frase_valida(testo)) {
+    const { error: err_del } = await supabase
+      .from("relazioni_paragrafi_auto" as any).delete()
+      .eq("club_id", club_id).eq("stagione_id", stagione.id).eq("tono", tono)
+      .eq("area_id", area).eq("paragrafo_ordine", ordine).eq("is_edited", false);
+    if (err_del) throw err_del;
+    return "";
+  }
   const { error } = await supabase
     .from("relazioni_paragrafi_auto" as any)
     .upsert(

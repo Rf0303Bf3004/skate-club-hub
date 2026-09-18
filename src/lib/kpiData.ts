@@ -1,9 +1,12 @@
 // KPI della Relazione: solo numeri veri, presi dalle stesse letture dei moduli.
 // Se un numero non c'è, la cella non viene prodotta: nessuna stima, nessun ripiego.
 //
-// Scelta dichiarata una volta per tutto il documento: la misura economica usata
-// è il FATTURATO (somma delle fatture emesse nella stagione, escluse bozze e
-// annullate). Il bilancio di stagione compare solo nel modulo dedicato.
+// Misura economica: una sola fonte per stagione, decisa da fetchFonteEconomica
+// (src/lib/relazione/fonte-economica.ts). Se nella stagione ci sono almeno 10
+// fatture emesse (escluse bozze e annullate) comanda il FATTURATO dal portale;
+// altrimenti comanda il BILANCIO della stagione e le fatture non entrano in
+// nessun totale. Le due fonti non si sommano e non si mescolano mai, e
+// l'etichetta sotto il numero dichiara sempre quale delle due è in uso.
 
 import { supabase } from "@/lib/supabase";
 import type { Stagione } from "@/lib/relazione/moduli";

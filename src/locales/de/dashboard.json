@@ -452,7 +452,10 @@
       "eco_entrate": "Die Einnahmen der Rechnung betragen {{importo}}.",
       "eco_uscite": "Die Ausgaben betragen {{importo}}.",
       "eco_saldo": "Der Saldo der Saison beträgt {{importo}}.",
-      "eco_non_confrontabile": "Nicht vergleichbar: Die vorherige Saison verwendet eine andere Quelle."
+      "eco_non_confrontabile": "Nicht vergleichbar: Die vorherige Saison verwendet eine andere Quelle.",
+      "atlete_oggi": "Zum heutigen Datum sind {{numero}} Läuferinnen aktiv.",
+      "atlete_stagione": "In der Saison {{stagione}} waren {{numero}} Läuferinnen aktiv.",
+      "atlete_variazione": "In der Saison {{stagione}} waren es {{numero}}: die Veränderung beträgt {{variazione}}."
     },
     "economia": {
       "titolo_fatturato_mese": "Fakturiert und eingenommen pro Monat",
@@ -499,7 +502,8 @@
       "avviso_numeri": "Einige Zahlen konnten nicht gelesen werden:",
       "avviso_logo": "Das Clublogo konnte nicht geladen werden: das Deckblatt erscheint ohne Logo.",
       "avviso_atlete": "Die Folien pro Läuferin konnten nicht erstellt werden:",
-      "col_categoria": "Kategorie"
+      "col_categoria": "Kategorie",
+      "legenda_classifica": "Die Läuferinnen des Clubs sind fett gedruckt, mit einem Dreieck vor der Platzierung."
     }
   }
 }

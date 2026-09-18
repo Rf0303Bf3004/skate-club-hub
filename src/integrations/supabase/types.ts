@@ -296,6 +296,7 @@ export type Database = {
           codice_fiscale: string | null
           cognome: string
           compenso_orario_pista: number | null
+          comunicazioni_a: string
           consenso_foto_video: boolean
           consenso_ricontatto: boolean | null
           contatto_emergenza: string | null
@@ -310,6 +311,7 @@ export type Database = {
           disco_url: string | null
           e_aiuto_monitrice: boolean
           e_monitrice: boolean
+          fatture_intestate_a: string
           foto_path: string | null
           foto_url: string | null
           genitore1_cantone: string | null
@@ -334,6 +336,7 @@ export type Database = {
           genitore2_provincia: string | null
           genitore2_regione: string | null
           genitore2_telefono: string | null
+          genitori_separati: boolean
           id: string
           importato_da_excel: boolean
           indirizzo: string | null
@@ -394,6 +397,7 @@ export type Database = {
           codice_fiscale?: string | null
           cognome?: string
           compenso_orario_pista?: number | null
+          comunicazioni_a?: string
           consenso_foto_video?: boolean
           consenso_ricontatto?: boolean | null
           contatto_emergenza?: string | null
@@ -408,6 +412,7 @@ export type Database = {
           disco_url?: string | null
           e_aiuto_monitrice?: boolean
           e_monitrice?: boolean
+          fatture_intestate_a?: string
           foto_path?: string | null
           foto_url?: string | null
           genitore1_cantone?: string | null
@@ -432,6 +437,7 @@ export type Database = {
           genitore2_provincia?: string | null
           genitore2_regione?: string | null
           genitore2_telefono?: string | null
+          genitori_separati?: boolean
           id?: string
           importato_da_excel?: boolean
           indirizzo?: string | null
@@ -492,6 +498,7 @@ export type Database = {
           codice_fiscale?: string | null
           cognome?: string
           compenso_orario_pista?: number | null
+          comunicazioni_a?: string
           consenso_foto_video?: boolean
           consenso_ricontatto?: boolean | null
           contatto_emergenza?: string | null
@@ -506,6 +513,7 @@ export type Database = {
           disco_url?: string | null
           e_aiuto_monitrice?: boolean
           e_monitrice?: boolean
+          fatture_intestate_a?: string
           foto_path?: string | null
           foto_url?: string | null
           genitore1_cantone?: string | null
@@ -530,6 +538,7 @@ export type Database = {
           genitore2_provincia?: string | null
           genitore2_regione?: string | null
           genitore2_telefono?: string | null
+          genitori_separati?: boolean
           id?: string
           importato_da_excel?: boolean
           indirizzo?: string | null
@@ -3218,6 +3227,7 @@ export type Database = {
           motivo_annullamento: string | null
           note: string | null
           numero: string | null
+          pagante: string | null
           pagata: boolean | null
           pdf_url: string | null
           periodo: string | null
@@ -3269,6 +3279,7 @@ export type Database = {
           motivo_annullamento?: string | null
           note?: string | null
           numero?: string | null
+          pagante?: string | null
           pagata?: boolean | null
           pdf_url?: string | null
           periodo?: string | null
@@ -3320,6 +3331,7 @@ export type Database = {
           motivo_annullamento?: string | null
           note?: string | null
           numero?: string | null
+          pagante?: string | null
           pagata?: boolean | null
           pdf_url?: string | null
           periodo?: string | null
@@ -8772,6 +8784,24 @@ export type Database = {
         Args: { p_atleta: string }
         Returns: string
       }
+      anagrafica_fatturazione_mancante_pagante: {
+        Args: { p_atleta: string; p_pagante?: string }
+        Returns: string
+      }
+      anagrafica_fatturazione_pagante: {
+        Args: { p_atleta: string; p_pagante?: string }
+        Returns: {
+          cantone: string
+          cap: string
+          citta: string
+          cognome: string
+          email: string
+          fonte: string
+          indirizzo: string
+          nome: string
+          paese_iso: string
+        }[]
+      }
       annulla_fattura: {
         Args: { p_fattura: string; p_motivo: string }
         Returns: string
@@ -8801,6 +8831,9 @@ export type Database = {
           avviso: string
           gia_fatturata: boolean
           n_righe: number
+          pagante: string
+          pagante_nome: string
+          quota_meta: boolean
           ragione_sociale: string
           ragione_sociale_id: string
           righe: Json
@@ -9424,6 +9457,7 @@ export type Database = {
           stato: string
         }[]
       }
+      quota_righe: { Args: { p_quale: number; p_righe: Json }; Returns: Json }
       ragione_sociale_fatturazione: {
         Args: { p_atleta: string; p_override?: string }
         Returns: string

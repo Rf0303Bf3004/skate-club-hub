@@ -220,6 +220,8 @@ function aggiungiTabella(
     colonna_nome?: number;
     didascalia?: string;
     sottotitolo?: string;
+    /** Riga di legenda ripetuta su ogni slide della tabella. */
+    nota?: string;
   },
 ) {
   if (righe.length === 0) return;
@@ -263,7 +265,10 @@ function aggiungiTabella(
       border: { type: "solid", color: FILO, pt: 0.5 },
       valign: "top", autoPage: false,
     });
-    if (indice === gruppi.length - 1) mazzo.didascalia(slide, opz?.didascalia);
+    const ultima = indice === gruppi.length - 1;
+    const sotto = [ultima ? opz?.didascalia : undefined, opz?.nota]
+      .filter((t) => !!t?.trim()).join("\n");
+    mazzo.didascalia(slide, sotto);
   });
 }
 
@@ -305,13 +310,16 @@ function aggiungiGrafico(mazzo: Mazzo, grafico: GraficoSpec) {
     showLegend: ha_seconda,
     legendPos: "b" as const,
     legendColor: INCHIOSTRO,
-    showValue: dati.length <= 12,
+    // Regola dei 18 punti anche sui grafici: se le etichette si accavallano si
+    // riduce il numero di etichette, mai il corpo del carattere.
+    showValue: dati.length <= 8,
     dataLabelColor: INCHIOSTRO,
-    dataLabelFontSize: CORPO_PT - 6,
+    dataLabelFontSize: CORPO_PT,
     catAxisLabelColor: INCHIOSTRO,
     valAxisLabelColor: INCHIOSTRO,
-    catAxisLabelFontSize: CORPO_PT - 6,
-    valAxisLabelFontSize: CORPO_PT - 6,
+    catAxisLabelFontSize: CORPO_PT,
+    valAxisLabelFontSize: CORPO_PT,
+    catAxisLabelFrequency: Math.max(1, Math.ceil(dati.length / 8)),
     valGridLine: { color: FILO, style: "solid" as const, size: 1 },
   };
 
@@ -345,28 +353,48 @@ function aggiungiResoconto(mazzo: Mazzo, grafico: Extract<GraficoSpec, { tipo: "
       aggiungiTabella(mazzo, `${gara.titolo} — ${tab.titolo}`, tab.colonne, righe, {
         allinea_destra: tab.allinea_destra, prima_stretta: true,
         colonna_nome: tab.colonna_nome, didascalia: tab.sintesi,
-        sottotitolo: gara.sottotitolo,
+        sottotitolo: gara.sottotitolo, nota: ts("legenda_classifica"),
       });
     }
     // Dopo ogni gara, la slide con le sole atlete del club: al posto del club,
     // che qui è sempre lo stesso, si indica la categoria in cui hanno gareggiato.
+    // L'intestazione è l'unione delle colonne di tutte le categorie: se una
+    // categoria non ha un punteggio, quella cella resta vuota invece di
+    // scivolare sotto l'intestazione di un'altra colonna.
+    const colonne_unione: string[] = [];
+    for (const tab of gara.tabelle) {
+      for (const c of tab.colonne) if (!colonne_unione.includes(c)) colonne_unione.push(c);
+    }
+    const i_club = colonne_unione.findIndex((c) => c === tr("col_club"));
+    const destra_unione = colonne_unione
+      .map((c, i) => ({ c, i }))
+      .filter(({ c }) => gara.tabelle.some((t) => {
+        const j = t.colonne.indexOf(c);
+        return j >= 0 && (t.allinea_destra ?? []).includes(j);
+      }))
+      .map(({ i }) => i);
     const prima = gara.tabelle[0];
-    const i_club = prima ? prima.colonne.findIndex((c) => c === tr("col_club")) : -1;
+    const nome_colonna = prima && prima.colonna_nome != null ? prima.colonne[prima.colonna_nome] : undefined;
+    const i_nome = nome_colonna ? colonne_unione.indexOf(nome_colonna) : -1;
     const nostre: RigaTabella[] = [];
     for (const tab of gara.tabelle) {
       for (const r of tab.righe) {
         if (!r.evidenzia) continue;
-        const celle = [...r.celle];
+        const celle = colonne_unione.map((c) => {
+          const j = tab.colonne.indexOf(c);
+          return j >= 0 ? String(r.celle[j] ?? "") : "";
+        });
         if (i_club >= 0) celle[i_club] = tab.titolo;
         nostre.push({ celle, evidenzia: true });
       }
     }
-    if (nostre.length > 0 && prima) {
-      const colonne = [...prima.colonne];
+    if (nostre.length > 0 && colonne_unione.length > 0) {
+      const colonne = [...colonne_unione];
       if (i_club >= 0) colonne[i_club] = ts("col_categoria");
       aggiungiTabella(mazzo, `${gara.titolo} — ${ts("le_nostre")}`, colonne, nostre, {
-        allinea_destra: prima.allinea_destra, prima_stretta: true,
-        colonna_nome: prima.colonna_nome,
+        allinea_destra: destra_unione, prima_stretta: true,
+        colonna_nome: i_nome >= 0 ? i_nome : undefined,
+        nota: ts("legenda_classifica"),
       });
     }
 
