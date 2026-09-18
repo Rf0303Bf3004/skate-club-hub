@@ -22,6 +22,7 @@ import type { Tono } from "@/lib/paragraphGenerator";
 
 export default function PresidentRelazione() {
   const { t } = useTranslation("dashboard");
+  const { i18n } = useTranslation();
   const { session } = useAuth();
   const club_id = session?.club_id ?? undefined;
   const [pannello_aperto, set_pannello_aperto] = useState(false);
@@ -50,7 +51,7 @@ export default function PresidentRelazione() {
   });
 
   const q_moduli = useQuery({
-    queryKey: ["relazione_moduli", club_id, stagione?.id],
+    queryKey: ["relazione_moduli", club_id, stagione?.id, i18n.language],
     enabled: !!club_id && !!stagione?.id && stagioni.length > 0,
     queryFn: () => fetchModuli({ club_id: club_id!, stagione: stagione!, stagioni }),
   });
@@ -95,7 +96,7 @@ export default function PresidentRelazione() {
 
   // Le scritture si fermano se una lettura non è arrivata o è fallita.
   const dati_pronti =
-    q_stagioni.isSuccess && q_moduli.isSuccess && comp.voci.length > 0 &&
+    q_stagioni.isSuccess && q_club.isSuccess && q_moduli.isSuccess && comp.voci.length > 0 &&
     q_blocchi.isSuccess && q_allegati.isSuccess && q_messaggio.isSuccess && !!stagione;
 
   const scarica = async () => {
@@ -154,6 +155,12 @@ export default function PresidentRelazione() {
       {q_stagioni.isSuccess && stagioni.length === 0 && (
         <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
           {t("relazione.nessuna_stagione")}
+        </div>
+      )}
+      {(q_club.isError || q_blocchi.isError || q_allegati.isError || q_messaggio.isError || q_moduli.isError) && (
+        <div className="flex items-center gap-2 border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+          <AlertTriangle className="h-4 w-4" />{t("relazione.errore_dati_documento")}
+          <Button size="sm" variant="outline" className="ml-auto" onClick={() => { q_club.refetch(); q_blocchi.refetch(); q_allegati.refetch(); q_messaggio.refetch(); q_moduli.refetch(); }}>{t("relazione.riprova")}</Button>
         </div>
       )}
 

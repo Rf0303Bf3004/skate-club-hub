@@ -93,6 +93,7 @@ export default function DocumentoRelazione({ club_nome, club_id, stagione, tono,
       const contenuti = attive.filter((v) => v.tipo === "modulo" && moduli[v.riferimento]?.area === sezione.riferimento);
       return <section key={sezione.id} className="mx-auto min-h-[70vh] max-w-4xl border bg-card px-8 py-14 shadow-sm md:px-16"><h2 className="font-serif text-3xl font-semibold">{sezione.titolo}</h2><div className="mt-6"><TestoCapitolo club_id={club_id} stagione={stagione} tono={tono} area={sezione.riferimento} /></div>{contenuti.map((v) => <Modulo key={v.id} risultato={moduli[v.riferimento]} />)}</section>;
     })}
+    {attive.filter((v) => v.tipo === "blocco").map((v) => <section key={v.id} className="mx-auto max-w-4xl border bg-card px-8 py-14 shadow-sm md:px-16"><h2 className="font-serif text-3xl font-semibold">{v.titolo}</h2><p className="mt-6 whitespace-pre-wrap font-serif text-base leading-relaxed">{v.payload?.contenuto}</p></section>)}
     <section className="mx-auto max-w-4xl border bg-card px-6 py-8 shadow-sm"><AllegatiTab club_id={club_id} stagione_id={stagione.id} compatto /></section>
   </div>;
 }

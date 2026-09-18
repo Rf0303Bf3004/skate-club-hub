@@ -6,6 +6,7 @@
 // Nessun valore di ripiego, nessuna stima, nessun dato di esempio.
 
 import { supabase } from "@/lib/supabase";
+import i18n from "@/i18n";
 import type { GraficoSpec } from "./grafici";
 
 export type AreaId =
@@ -81,6 +82,7 @@ export const MODULI_COMITATO = new Set([
 // ────────────────────────────────────────────────────────────────
 
 const MESI = ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"];
+const testo_modulo = (chiave: string) => i18n.t(`relazione.moduli_catalogo.${chiave}`, { ns: "dashboard" }) as string;
 
 function ok(def: ModuloDef, grafico: GraficoSpec): ModuloRisultato {
   return { ...def, stato: "ok", grafico };
@@ -763,11 +765,11 @@ async function modSportivoPodi(ctx: ContestoModuli): Promise<ModuloRisultato> {
 }
 
 async function modSportivoPodioDettaglio(ctx: ContestoModuli): Promise<ModuloRisultato> {
-  const def = def_di("sportivo_podio_dettaglio");
+  const def = { ...def_di("sportivo_podio_dettaglio"), titolo: testo_modulo("podio_titolo") };
   return sicuro(def, async () => {
     const { gare, iscrizioni } = await gareEIscrizioni(ctx);
     const medaglie = iscrizioni.filter((i) => ["oro", "argento", "bronzo"].includes(String(i.medaglia ?? "").toLowerCase()));
-    if (medaglie.length === 0) return vuoto(def, "Nessun podio registrato in questa stagione");
+    if (medaglie.length === 0) return vuoto(def, testo_modulo("podio_vuoto"));
     const nomi = await nomiAtlete(ctx.club_id, medaglie.map((i) => i.atleta_id));
     const gare_per_id = new Map(gare.map((g) => [g.id, g]));
     const righe = medaglie
@@ -788,7 +790,7 @@ async function modSportivoPodioDettaglio(ctx: ContestoModuli): Promise<ModuloRis
       .map((r) => r.celle);
     return ok(def, {
       tipo: "tabella", titolo: def.titolo,
-      colonne: ["Atleta", "Gara", "Data", "Livello", "Medaglia"], righe,
+      colonne: [testo_modulo("atleta"), testo_modulo("gara"), testo_modulo("data"), testo_modulo("livello"), testo_modulo("medaglia")], righe,
     });
   });
 }
@@ -823,20 +825,20 @@ async function modSportivoTest(ctx: ContestoModuli): Promise<ModuloRisultato> {
 }
 
 async function modSportivoTestDettaglio(ctx: ContestoModuli): Promise<ModuloRisultato> {
-  const def = def_di("sportivo_test_dettaglio");
+  const def = { ...def_di("sportivo_test_dettaglio"), titolo: testo_modulo("test_titolo") };
   return sicuro(def, async () => {
     const { data: test, error } = await supabase
       .from("test_livello").select("id,data")
       .eq("club_id", ctx.club_id).eq("stagione_id", ctx.stagione.id);
     if (error) throw error;
     const sessioni = (test ?? []) as any[];
-    if (sessioni.length === 0) return vuoto(def, "Nessun test superato registrato in questa stagione");
+    if (sessioni.length === 0) return vuoto(def, testo_modulo("test_vuoto"));
     const { data, error: err2 } = await supabase
       .from("test_livello_atleti").select("test_id,atleta_id,livello_target,esito")
       .in("test_id", sessioni.map((r) => r.id)).eq("esito", "superato");
     if (err2) throw err2;
     const superati = (data ?? []) as any[];
-    if (superati.length === 0) return vuoto(def, "Nessun test superato registrato in questa stagione");
+    if (superati.length === 0) return vuoto(def, testo_modulo("test_vuoto"));
     const nomi = await nomiAtlete(ctx.club_id, superati.map((r) => r.atleta_id));
     const test_per_id = new Map(sessioni.map((r) => [r.id, r]));
     const righe = superati
@@ -853,7 +855,7 @@ async function modSportivoTestDettaglio(ctx: ContestoModuli): Promise<ModuloRisu
       })
       .sort((a, b) => a.data.localeCompare(b.data) || a.celle[0].localeCompare(b.celle[0]))
       .map((r) => r.celle);
-    return ok(def, { tipo: "tabella", titolo: def.titolo, colonne: ["Atleta", "Livello ottenuto", "Data"], righe });
+    return ok(def, { tipo: "tabella", titolo: def.titolo, colonne: [testo_modulo("atleta"), testo_modulo("livello_ottenuto"), testo_modulo("data")], righe });
   });
 }
 
