@@ -344,30 +344,13 @@ Deno.serve(async (req) => {
       return json({ error: "db_error" }, 500);
     }
 
-    // Rinnovo di stagione: archivio del contratto, conferma e corsi scelti.
+    // Rinnovo di stagione: conferma e corsi scelti. Il contratto è già
+    // archiviato più sopra, prima di qualunque scrittura del consenso.
     const corsi_falliti: { nome: string; motivo: string }[] = [];
     let rinnovo_confermato = false;
 
     if (rinnovo_attivo && stagione?.id) {
-      // Prima il contratto, poi la conferma: un rinnovo senza contratto
-      // archiviato non deve poter esistere.
-      const { error: ctr_err } = await admin.from("contratti_accettati").insert({
-        club_id: atleta.club_id,
-        atleta_id: atleta.id,
-        stagione_id: stagione.id,
-        testo: contratto.testo,
-        accettato_il: new Date().toISOString(),
-        accettato_da: [clean(payload.genitore1_nome, 80), clean(payload.genitore1_cognome, 80)]
-          .filter(Boolean)
-          .join(" "),
-        origine: "rinnovo",
-      });
-      // 23505: contratto già firmato per questa stagione (ricarico della
-      // pagina o doppio invio). Non è un guasto: l'archivio c'è già.
-      if (ctr_err && (ctr_err as any).code !== "23505") {
-        console.error("[iscrizione-atleta] ctr_err", ctr_err);
-        return json({ error: "contratto_non_archiviato" }, 500);
-      }
+
 
       const { error: conf_err } = await admin.rpc("conferma_rinnovo", {
         p_atleta: atleta.id,
