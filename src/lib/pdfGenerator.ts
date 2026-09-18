@@ -333,6 +333,9 @@ export async function generateRelazionePDF(
     for (const v of voci_moduli) {
       const m = moduli[v.riferimento];
       if (!m || m.stato !== "ok" || !m.grafico) continue;
+      // Le tabelle si disegnano native nel PDF (testo che va a capo e continua
+      // nella pagina dopo), non come immagine.
+      if (m.grafico.tipo === "tabella") continue;
       try {
         const { svg, w, h } = renderGraficoSVG(m.grafico, club?.colore_primario ?? "#14b8a6");
         const bytes = await svgToPngBytes(svg, w, h, 2);
@@ -451,6 +454,13 @@ export async function generateRelazionePDF(
         foglio.kpi(kpi[area]);
         if (testi[2]) foglio.paragrafo(testi[2]);
         for (const v of moduli_area) {
+          const m = moduli[v.riferimento];
+          if (m?.stato === "ok" && m.grafico?.tipo === "tabella") {
+            foglio.paragrafo(m.grafico.titolo ?? m.titolo, { size: 12 });
+            foglio.tabella(m.grafico.colonne ?? [], m.grafico.righe ?? []);
+            if (m.grafico.didascalia) foglio.nota(m.grafico.didascalia);
+            continue;
+          }
           const img = immagini.get(v.riferimento);
           if (img) foglio.immagine(img.img, img.w, img.h);
         }
