@@ -873,7 +873,8 @@
       "avviso_testi": "I testi della relazione non si sono aggiornati:",
       "avviso_numeri": "Alcuni numeri non si sono potuti leggere:",
       "avviso_logo": "Il logo del club non si è potuto scaricare: la copertina esce senza logo.",
-      "avviso_atlete": "Le slide per atleta non si sono potute creare:"
+      "avviso_atlete": "Le slide per atleta non si sono potute creare:",
+      "col_categoria": "Categoria"
     }
   },
   "onboarding_banner": {

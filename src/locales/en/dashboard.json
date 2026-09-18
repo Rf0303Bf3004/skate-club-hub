@@ -498,7 +498,8 @@
       "avviso_testi": "The report texts were not refreshed:",
       "avviso_numeri": "Some figures could not be read:",
       "avviso_logo": "The club logo could not be downloaded: the cover comes without a logo.",
-      "avviso_atlete": "The per-skater slides could not be created:"
+      "avviso_atlete": "The per-skater slides could not be created:",
+      "col_categoria": "Category"
     }
   }
 }

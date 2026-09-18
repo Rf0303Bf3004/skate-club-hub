@@ -498,7 +498,8 @@
       "avviso_testi": "Les textes du rapport n'ont pas été mis à jour :",
       "avviso_numeri": "Certains chiffres n'ont pas pu être lus :",
       "avviso_logo": "Le logo du club n'a pas pu être téléchargé : la couverture est sans logo.",
-      "avviso_atlete": "Les diapositives par patineuse n'ont pas pu être créées :"
+      "avviso_atlete": "Les diapositives par patineuse n'ont pas pu être créées :",
+      "col_categoria": "Catégorie"
     }
   }
 }

@@ -498,7 +498,8 @@
       "avviso_testi": "Die Texte des Berichts wurden nicht aktualisiert:",
       "avviso_numeri": "Einige Zahlen konnten nicht gelesen werden:",
       "avviso_logo": "Das Clublogo konnte nicht geladen werden: das Deckblatt erscheint ohne Logo.",
-      "avviso_atlete": "Die Folien pro Läuferin konnten nicht erstellt werden:"
+      "avviso_atlete": "Die Folien pro Läuferin konnten nicht erstellt werden:",
+      "col_categoria": "Kategorie"
     }
   }
 }
