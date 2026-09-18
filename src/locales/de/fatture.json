@@ -61,5 +61,79 @@
       "drafts_tooltip_other": "{{count}} Entwürfe auszustellen",
       "ente_non_attivo": "nicht mehr aktiv"
     }
+  },
+  "esporta": {
+    "titolo": "Export für die Buchhaltung",
+    "sottotitolo": "Bereite die Buchungsdatei für den Import in die Buchhaltungssoftware vor.",
+    "torna_fatture": "Zurück zu den Rechnungen",
+    "periodo": "Zeitraum",
+    "dal": "Von",
+    "al": "Bis",
+    "mese_scorso": "Letzter Monat",
+    "trimestre": "Quartal",
+    "anno": "Jahr",
+    "periodo_non_valido": "Wähle einen gültigen Zeitraum: Das Startdatum darf nicht nach dem Enddatum liegen.",
+    "ente": "Ausstellende Einheit",
+    "ente_tutti": "Alle Einheiten",
+    "incassi": "Zahlungen einbeziehen",
+    "incassi_desc": "Fügt die Buchungen der erhaltenen Zahlungen hinzu.",
+    "formato": "Buchhaltungssoftware",
+    "formati": {
+      "banana": "Banana Buchhaltung",
+      "cresus": "Crésus Comptabilité",
+      "csv": "Generisches CSV (CashCtrl, Infoniqa/Sage 50, Excel)"
+    },
+    "aiuto": {
+      "banana": "In Banana: Daten > In Buchhaltung importieren > Buchungen > Buchungen (generisch).",
+      "cresus": "In Crésus: Datei > Importieren > Buchungen importieren, Tabulatordatei ohne Kopfzeile.",
+      "csv": "CSV-Datei mit Semikolon: öffnet in Excel und lässt sich in CashCtrl, Infoniqa oder Sage 50 importieren."
+    },
+    "anteprima_titolo": "Vorschau",
+    "caricamento": "Buchungen werden gelesen…",
+    "nessuna_riga": "Keine Buchung in diesem Zeitraum.",
+    "righe_totali_one": "{{count}} Buchung",
+    "righe_totali_other": "{{count}} Buchungen",
+    "altre_righe_one": "und eine weitere Buchung in der Datei.",
+    "altre_righe_other": "und {{count}} weitere Buchungen in der Datei.",
+    "scarica": "Datei herunterladen",
+    "riprova": "Erneut versuchen",
+    "errore_lettura": "Die Buchungen konnten nicht gelesen werden.",
+    "errore_download": "Die Datei konnte nicht erstellt werden.",
+    "errore_impostazioni": "Die Buchhaltungseinstellungen konnten nicht gelesen werden: Es gelten die vorgeschlagenen Konten.",
+    "avviso_non_configurato": "Die Buchhaltungseinstellungen sind noch nicht ausgefüllt: Die Datei verwendet die vorgeschlagenen Konten.",
+    "vai_setup": "Zur Club-Einrichtung",
+    "col": {
+      "data": "Datum",
+      "numero": "Nummer",
+      "descrizione": "Beschreibung",
+      "dare": "Soll",
+      "avere": "Haben",
+      "importo": "Betrag",
+      "tipo": "Art"
+    }
+  },
+  "contabilita": {
+    "titolo": "Buchhaltung",
+    "descrizione": "Konten und Codes für die Dateien, die in die Buchhaltungssoftware importiert werden.",
+    "scheda_club": "Der Club",
+    "nota_ente": "Wenn du es leer lässt, gilt die Einstellung des Clubs.",
+    "conti": {
+      "debitori": "Debitorenkonto",
+      "banca": "Bankkonto",
+      "ricavi": "Ertragskonto",
+      "iva": "Konto geschuldete MWST",
+      "sconti": "Konto gewährte Rabatte"
+    },
+    "codice_iva": "MWST-Code",
+    "codice_iva_nota": "Es ist der Code eures Kontenplans, zum Beispiel V81. Frag deinen Treuhänder.",
+    "mappa_titolo": "Konten nach Positionsart",
+    "mappa_nota": "Bleibt ein Feld leer, wird das allgemeine Ertragskonto verwendet.",
+    "formato_preferito": "Bevorzugte Software",
+    "salva": "Buchhaltungseinstellungen speichern",
+    "salvato": "Buchhaltungseinstellungen gespeichert",
+    "caricamento": "Einstellungen werden gelesen…",
+    "errore_lettura": "Die Buchhaltungseinstellungen konnten nicht gelesen werden.",
+    "errore_salvataggio": "Die Buchhaltungseinstellungen konnten nicht gespeichert werden.",
+    "riprova": "Erneut versuchen"
   }
 }
