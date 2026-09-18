@@ -613,7 +613,9 @@
     "card_valid": "Tessera valida",
     "generated_on": "Generato il {{data}} · Ice Arena Manager",
     "whatsapp_message_iscrizione": "Ciao! Ecco il link per completare l'iscrizione di {{nome}} {{cognome}} (codice {{codice}}): {{url}}",
-    "whatsapp_message_foto": "Ciao! Ecco il link per caricare la foto di {{nome}} {{cognome}} (codice {{codice}}): {{url}}"
+    "whatsapp_message_foto": "Ciao! Ecco il link per caricare la foto di {{nome}} {{cognome}} (codice {{codice}}): {{url}}",
+    "contract_loading": "Carico il testo del contratto…",
+    "contract_unavailable": "Testo del contratto non disponibile in questo momento: non stampare la scheda finché non compare."
   },
   "codice_card": {
     "not_assigned": "Codice atleta non ancora assegnato. Salva l'atleta per generarlo automaticamente.",
@@ -771,7 +773,17 @@
       "non_rinnovato_ok": "Segnato come non rinnovato",
       "nessun_atleta": "Nessun atleta con questi filtri.",
       "errore_lettura": "Non è stato possibile leggere la campagna iscrizioni. I numeri qui sotto non sono attendibili.",
-      "nessuna_stagione": "Non c'è una stagione attiva: apri prima la stagione."
+      "nessuna_stagione": "Non c'è una stagione attiva: apri prima la stagione.",
+      "domande_in_attesa": "Domande in attesa",
+      "vai_alle_domande": "Vai alle domande nuove",
+      "apri_conteggio_one": "Verrà invitato 1 atleta.",
+      "apri_conteggio_other": "Verranno invitati {{count}} atleti.",
+      "apri_gia_presenti_one": "1 atleta è già nel registro della stagione.",
+      "apri_gia_presenti_other": "{{count}} atleti sono già nel registro della stagione.",
+      "apri_conteggio_in_corso": "Sto contando gli atleti da invitare…",
+      "apri_conteggio_errore": "Non riesco a leggere quanti atleti verrebbero invitati: non apro la campagna finché il numero non è certo.",
+      "esito_non_registrati_one": "1 messaggio spedito non è finito nel registro comunicazioni.",
+      "esito_non_registrati_other": "{{count}} messaggi spediti non sono finiti nel registro comunicazioni."
     },
     "domande": {
       "link_pubblico": "Link pubblico per le famiglie nuove",
@@ -803,7 +815,12 @@
       "rifiutata_titolo": "Domanda di {{nome}} rifiutata",
       "avvisa_famiglia": "Avvisa la famiglia",
       "avviso_inviato": "Famiglia avvisata",
-      "senza_email": "Nessun indirizzo email: il messaggio non è stato spedito."
+      "senza_email": "Nessun indirizzo email: il messaggio non è stato spedito.",
+      "categoria_obbligatoria": "Scegli la categoria: senza, la scheda nasce con un dato sbagliato.",
+      "rigenera_link": "Rigenera link",
+      "rigenera_titolo": "Rigenerare il link pubblico?",
+      "rigenera_testo": "Il link di prima smette di funzionare. Chi lo ha ricevuto o lo ha stampato dovrà averne uno nuovo.",
+      "rigenera_ok": "Nuovo link pubblico creato"
     }
   }
 }
