@@ -827,7 +827,10 @@
       "eco_entrate": "Le entrate del bilancio sono di {{importo}}.",
       "eco_uscite": "Le uscite sono di {{importo}}.",
       "eco_saldo": "Il saldo della stagione è di {{importo}}.",
-      "eco_non_confrontabile": "Non confrontabile: la stagione precedente usa un'altra fonte."
+      "eco_non_confrontabile": "Non confrontabile: la stagione precedente usa un'altra fonte.",
+      "atlete_oggi": "Alla data di oggi le atlete attive sono {{numero}}.",
+      "atlete_stagione": "Nella stagione {{stagione}} le atlete attive sono state {{numero}}.",
+      "atlete_variazione": "Nella stagione {{stagione}} erano {{numero}}: la variazione è del {{variazione}}."
     },
     "economia": {
       "titolo_fatturato_mese": "Fatturato e incassato per mese",
@@ -874,7 +877,8 @@
       "avviso_numeri": "Alcuni numeri non si sono potuti leggere:",
       "avviso_logo": "Il logo del club non si è potuto scaricare: la copertina esce senza logo.",
       "avviso_atlete": "Le slide per atleta non si sono potute creare:",
-      "col_categoria": "Categoria"
+      "col_categoria": "Categoria",
+      "legenda_classifica": "Le atlete del club sono in grassetto, con il triangolo prima della posizione."
     }
   },
   "onboarding_banner": {

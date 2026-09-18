@@ -452,7 +452,10 @@
       "eco_entrate": "Income in the accounts is {{importo}}.",
       "eco_uscite": "Expenses are {{importo}}.",
       "eco_saldo": "The season balance is {{importo}}.",
-      "eco_non_confrontabile": "Not comparable: the previous season uses a different source."
+      "eco_non_confrontabile": "Not comparable: the previous season uses a different source.",
+      "atlete_oggi": "As of today there are {{numero}} active skaters.",
+      "atlete_stagione": "In the {{stagione}} season there were {{numero}} active skaters.",
+      "atlete_variazione": "In the {{stagione}} season there were {{numero}}: the change is {{variazione}}."
     },
     "economia": {
       "titolo_fatturato_mese": "Invoiced and collected by month",
@@ -499,7 +502,8 @@
       "avviso_numeri": "Some figures could not be read:",
       "avviso_logo": "The club logo could not be downloaded: the cover comes without a logo.",
       "avviso_atlete": "The per-skater slides could not be created:",
-      "col_categoria": "Category"
+      "col_categoria": "Category",
+      "legenda_classifica": "Club skaters are shown in bold, with a triangle before the position."
     }
   }
 }

@@ -452,7 +452,10 @@
       "eco_entrate": "Les recettes des comptes s'élèvent à {{importo}}.",
       "eco_uscite": "Les dépenses s'élèvent à {{importo}}.",
       "eco_saldo": "Le solde de la saison est de {{importo}}.",
-      "eco_non_confrontabile": "Non comparable : la saison précédente utilise une autre source."
+      "eco_non_confrontabile": "Non comparable : la saison précédente utilise une autre source.",
+      "atlete_oggi": "À ce jour, les patineuses actives sont au nombre de {{numero}}.",
+      "atlete_stagione": "Lors de la saison {{stagione}}, les patineuses actives étaient {{numero}}.",
+      "atlete_variazione": "Lors de la saison {{stagione}}, elles étaient {{numero}} : la variation est de {{variazione}}."
     },
     "economia": {
       "titolo_fatturato_mese": "Facturé et encaissé par mois",
@@ -499,7 +502,8 @@
       "avviso_numeri": "Certains chiffres n'ont pas pu être lus :",
       "avviso_logo": "Le logo du club n'a pas pu être téléchargé : la couverture est sans logo.",
       "avviso_atlete": "Les diapositives par patineuse n'ont pas pu être créées :",
-      "col_categoria": "Catégorie"
+      "col_categoria": "Catégorie",
+      "legenda_classifica": "Les patineuses du club sont en gras, avec un triangle devant la position."
     }
   }
 }
