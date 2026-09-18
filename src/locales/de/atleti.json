@@ -40,6 +40,7 @@
     "flag_ospite": "Camp-Gast — {{club}}",
     "ospite_scade": "Datensatz gelöscht am {{data}}",
     "country_iso": "Land (ISO)",
+    "fattura_scelta_title": "Auf wen soll diese Rechnung ausgestellt werden?",
     "separati": {
       "switch": "Getrennte Eltern",
       "fatture_label": "Rechnungen lautend auf",

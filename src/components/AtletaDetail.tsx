@@ -392,6 +392,43 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     livello: "monitrice" | "aiuto_monitrice";
     rollback_field: "e_aiuto_monitrice" | "e_monitrice";
   }>(null);
+
+  // Nuova fattura a mano: pagante letto da "Fatture intestate a" della scheda.
+  // Con "meta" si chiede a chi intestare questa singola fattura (senza dividere a metà).
+  // L'intestatario lo riempie il trigger del database in base a `pagante`: qui resta vuoto.
+  const [scelta_pagante_aperta, set_scelta_pagante_aperta] = useState(false);
+  const crea_bozza_fattura = async (pagante: "genitore1" | "genitore2" | null) => {
+    try {
+      const club_id = await get_current_club_id();
+      if (!club_id) throw new Error(td("detail.club_not_identified"));
+      const oggi = new Date().toISOString().slice(0, 10);
+      const scad = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from("fatture")
+        .insert({
+          club_id,
+          atleta_id: a.id,
+          stato: "bozza",
+          data_emissione: oggi,
+          data_scadenza: scad,
+          importo: 0,
+          righe: [],
+          descrizione: td("detail.new_invoice_desc"),
+          pagante,
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      navigate(`/segreteria/fatture/${data.id}`);
+    } catch (e: any) {
+      toast({ title: td("detail.toast_error"), description: e?.message, variant: "destructive" });
+    }
+  };
+  const nuova_fattura = () => {
+    if (form.fatture_intestate_a === "genitore2") crea_bozza_fattura("genitore2");
+    else if (form.fatture_intestate_a === "meta") set_scelta_pagante_aperta(true);
+    else crea_bozza_fattura(null);
+  };
   const eta_atleta = useMemo(() => calculate_age(a.data_nascita), [a.data_nascita]);
   const staff_disabled = eta_atleta < 12;
 
@@ -1638,39 +1675,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               <Button
                 size="sm"
                 className="bg-sky-600 hover:bg-sky-700"
-                onClick={async () => {
-                  try {
-                    const club_id = await get_current_club_id();
-                    if (!club_id) throw new Error(td("detail.club_not_identified"));
-                    const oggi = new Date().toISOString().slice(0, 10);
-                    const scad = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
-                    const { data, error } = await supabase
-                      .from("fatture")
-                      .insert({
-                        club_id,
-                        atleta_id: a.id,
-                        stato: "bozza",
-                        data_emissione: oggi,
-                        data_scadenza: scad,
-                        importo: 0,
-                        righe: [],
-                        descrizione: td("detail.new_invoice_desc"),
-                        intestatario_nome: form.genitore1_nome || a.nome || null,
-                        intestatario_cognome: (form as any).genitore1_cognome || a.cognome || null,
-                        intestatario_email: form.genitore1_email || null,
-                        intestatario_indirizzo: form.genitore1_indirizzo || null,
-                        intestatario_cap: (form as any).genitore1_cap || null,
-                        intestatario_citta: (form as any).genitore1_citta || null,
-                        intestatario_cantone: (form as any).genitore1_cantone || null,
-                      })
-                      .select("id")
-                      .single();
-                    if (error) throw error;
-                    navigate(`/segreteria/fatture/${data.id}`);
-                  } catch (e: any) {
-                    toast({ title: td("detail.toast_error"), description: e?.message, variant: "destructive" });
-                  }
-                }}
+                onClick={nuova_fattura}
               >
                 {td("detail.new_invoice")}
               </Button>
@@ -1824,6 +1829,40 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
             </Button>
             <Button size="sm" onClick={() => set_show_qr_portal(false)}>{td("detail.close")}</Button>
           </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={scelta_pagante_aperta} onOpenChange={set_scelta_pagante_aperta}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{td("detail.fattura_scelta_title")}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                set_scelta_pagante_aperta(false);
+                crea_bozza_fattura("genitore1");
+              }}
+            >
+              {form.genitore1_nome
+                ? `${form.genitore1_nome}${form.genitore1_cognome ? ` ${form.genitore1_cognome}` : ""}`
+                : td("detail.separati.fatture_genitore1")}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                set_scelta_pagante_aperta(false);
+                crea_bozza_fattura("genitore2");
+              }}
+            >
+              {form.genitore2_nome
+                ? `${form.genitore2_nome}${form.genitore2_cognome ? ` ${form.genitore2_cognome}` : ""}`
+                : td("detail.separati.fatture_genitore2")}
+            </Button>
+          </div>
+          <Button variant="ghost" onClick={() => set_scelta_pagante_aperta(false)}>
+            {td("detail.cancel")}
+          </Button>
         </DialogContent>
       </Dialog>
     </>

@@ -40,6 +40,7 @@
     "flag_ospite": "Invité du camp — {{club}}",
     "ospite_scade": "fiche supprimée le {{data}}",
     "country_iso": "Pays (ISO)",
+    "fattura_scelta_title": "À qui établir cette facture ?",
     "separati": {
       "switch": "Parents séparés",
       "fatture_label": "Factures au nom de",

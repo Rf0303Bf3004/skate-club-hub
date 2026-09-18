@@ -40,6 +40,7 @@
     "flag_ospite": "Camp guest — {{club}}",
     "ospite_scade": "record deleted on {{data}}",
     "country_iso": "Country (ISO)",
+    "fattura_scelta_title": "Who should this invoice be made out to?",
     "separati": {
       "switch": "Separated parents",
       "fatture_label": "Invoices made out to",
