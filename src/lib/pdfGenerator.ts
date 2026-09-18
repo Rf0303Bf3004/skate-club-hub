@@ -42,14 +42,35 @@ function sanitize(s: string): string {
     .replace(/[^\x00-\xff]/g, "?");
 }
 
+/**
+ * Manda a capo sulle parole dentro la larghezza data. Una parola più lunga
+ * della riga viene spezzata carattere per carattere: mai fuori dal margine,
+ * mai troncata, mai con i puntini.
+ */
 function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
   const parole = sanitize(text).split(/\s+/).filter(Boolean);
   const righe: string[] = [];
   let cur = "";
+  const spezzaParola = (p: string): string => {
+    let resto = p;
+    while (font.widthOfTextAtSize(resto, size) > maxWidth && resto.length > 1) {
+      let taglio = 1;
+      while (taglio < resto.length && font.widthOfTextAtSize(resto.slice(0, taglio + 1), size) <= maxWidth) taglio++;
+      righe.push(resto.slice(0, taglio));
+      resto = resto.slice(taglio);
+    }
+    return resto;
+  };
   for (const p of parole) {
     const prova = cur ? cur + " " + p : p;
-    if (font.widthOfTextAtSize(prova, size) > maxWidth && cur) { righe.push(cur); cur = p; }
-    else cur = prova;
+    if (font.widthOfTextAtSize(prova, size) > maxWidth && cur) {
+      righe.push(cur);
+      cur = font.widthOfTextAtSize(p, size) > maxWidth ? spezzaParola(p) : p;
+    } else if (font.widthOfTextAtSize(prova, size) > maxWidth) {
+      cur = spezzaParola(prova);
+    } else {
+      cur = prova;
+    }
   }
   if (cur) righe.push(cur);
   return righe;
@@ -112,7 +133,8 @@ class Foglio {
       thickness: 0.7, color: this.colore,
     });
     this.y -= 30;
-    for (const ln of wrapText(titolo, this.fonts.serifBold, 26, CONTENT_W).slice(0, 2)) {
+    for (const ln of wrapText(titolo, this.fonts.serifBold, 26, CONTENT_W)) {
+      this.spazio(30);
       this.page.drawText(ln, { x: M_LEFT, y: this.y, size: 26, font: this.fonts.serifBold, color: INCHIOSTRO });
       this.y -= 30;
     }
@@ -173,8 +195,66 @@ class Foglio {
     this.y = top - 16;
   }
 
+  /**
+   * Tabella disegnata direttamente nel PDF: le celle vanno a capo su più righe,
+   * la riga cresce di conseguenza e la tabella continua nella pagina seguente
+   * ripetendo l'intestazione. Nessuna cella viene tagliata.
+   */
+  tabella(colonne: string[], righe: string[][], allinea_destra: number[] = []) {
+    const ncol = Math.max(1, colonne.length);
+    const prima = ncol > 1 ? CONTENT_W * 0.36 : CONTENT_W;
+    const altre = ncol > 1 ? (CONTENT_W - prima) / (ncol - 1) : 0;
+    const xdi = (i: number) => (i === 0 ? M_LEFT : M_LEFT + prima + (i - 1) * altre);
+    const wdi = (i: number) => (i === 0 ? prima : altre);
+    const corpo = 9.5;
+    const passo = corpo + 3;
+
+    const intestazione = () => {
+      this.spazio(40);
+      const alt = 16;
+      this.page.drawRectangle({
+        x: M_LEFT, y: this.y - alt + 4, width: CONTENT_W, height: alt, color: FILO,
+      });
+      colonne.forEach((c, i) => {
+        const destra = allinea_destra.includes(i);
+        const testo = sanitize(c);
+        const w = this.fonts.sansBold.widthOfTextAtSize(testo, 8.5);
+        const x = destra ? xdi(i) + wdi(i) - 4 - w : xdi(i) + 4;
+        this.page.drawText(testo, { x, y: this.y, size: 8.5, font: this.fonts.sansBold, color: INCHIOSTRO });
+      });
+      this.y -= alt + 4;
+    };
+
+    intestazione();
+    for (const riga of righe) {
+      const celle = riga.map((c, i) => wrapText(String(c ?? ""), this.fonts.serif, corpo, wdi(i) - 8));
+      const alt_riga = Math.max(...celle.map((c) => c.length)) * passo + 4;
+      if (this.y - alt_riga < M_BOTTOM + 20) {
+        this.nuova();
+        intestazione();
+      }
+      const y_riga = this.y;
+      celle.forEach((linee, i) => {
+        const destra = allinea_destra.includes(i);
+        linee.forEach((ln, j) => {
+          const w = this.fonts.serif.widthOfTextAtSize(ln, corpo);
+          const x = destra ? xdi(i) + wdi(i) - 4 - w : xdi(i) + 4;
+          this.page.drawText(ln, { x, y: y_riga - j * passo, size: corpo, font: this.fonts.serif, color: INCHIOSTRO });
+        });
+      });
+      this.y -= alt_riga;
+      this.page.drawLine({
+        start: { x: M_LEFT, y: this.y + passo - 4 }, end: { x: M_LEFT + CONTENT_W, y: this.y + passo - 4 },
+        thickness: 0.4, color: FILO,
+      });
+    }
+    this.y -= 12;
+  }
+
   immagine(img: PDFImage, w: number, h: number) {
-    const scala = Math.min(1, CONTENT_W / w);
+    // Il grafico non deve mai debordare: si riduce anche in altezza.
+    const altezza_utile = PAGE_H - M_TOP - M_BOTTOM - 40;
+    const scala = Math.min(1, CONTENT_W / w, altezza_utile / h);
     const fw = w * scala, fh = h * scala;
     this.spazio(fh + 20);
     const x = M_LEFT + (CONTENT_W - fw) / 2;
@@ -281,11 +361,19 @@ export async function generateRelazionePDF(
       const kicker = sanitize(`RELAZIONE DI FINE STAGIONE - ${stagione.nome}`).toUpperCase();
       page.drawText(kicker, { x: M_LEFT, y: PAGE_H - 40, size: 9, font: fonts.sansBold, color: BIANCO });
       const nome = sanitize(club?.nome ?? "Club");
-      let ny = PAGE_H - banda / 2 + 20;
-      for (const ln of wrapText(nome, fonts.serifBold, 42, PAGE_W - 120).slice(0, 2)) {
-        const w = fonts.serifBold.widthOfTextAtSize(ln, 42);
-        page.drawText(ln, { x: (PAGE_W - w) / 2, y: ny, size: 42, font: fonts.serifBold, color: BIANCO });
-        ny -= 48;
+      // Il nome del club non viene mai tagliato: se è lungo si rimpicciolisce
+      // e va a capo, restando dentro la banda della copertina.
+      let corpo_nome = 42;
+      let righe_nome = wrapText(nome, fonts.serifBold, corpo_nome, PAGE_W - 120);
+      while (righe_nome.length > 3 && corpo_nome > 20) {
+        corpo_nome -= 4;
+        righe_nome = wrapText(nome, fonts.serifBold, corpo_nome, PAGE_W - 120);
+      }
+      let ny = PAGE_H - banda / 2 + 20 + (righe_nome.length - 1) * (corpo_nome * 0.6);
+      for (const ln of righe_nome) {
+        const w = fonts.serifBold.widthOfTextAtSize(ln, corpo_nome);
+        page.drawText(ln, { x: (PAGE_W - w) / 2, y: ny, size: corpo_nome, font: fonts.serifBold, color: BIANCO });
+        ny -= corpo_nome * 1.15;
       }
       const citta = sanitize(String(club?.citta ?? "").toUpperCase());
       if (citta) {
