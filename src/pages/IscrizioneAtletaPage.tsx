@@ -150,6 +150,11 @@ const IscrizioneAtletaPage: React.FC = () => {
         });
         set_stagione(((data as any).stagione ?? null) as Stagione | null);
         set_corsi_ammessi((((data as any).corsi_ammessi ?? []) as Corso[]));
+        const ctr = (data as any).contratto;
+        set_articoli(((ctr?.articoli ?? []) as ArticoloContratto[]));
+        set_contratto_impronta(ctr?.impronta ?? null);
+        set_registro(((data as any).registro ?? null));
+
       }
       set_is_loading(false);
     };
