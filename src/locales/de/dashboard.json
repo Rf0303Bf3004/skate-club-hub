@@ -483,6 +483,22 @@
       "kpi_entrate": "Einnahmen (Saisonrechnung)",
       "kpi_uscite": "Ausgaben (Saisonrechnung)",
       "kpi_saldo": "Saldo (Saisonrechnung)"
+    },
+    "slide": {
+      "scarica_slide": "Folien herunterladen",
+      "scarica_errore": "Die Folien konnten nicht erstellt werden.",
+      "continua": "(Fortsetzung)",
+      "le_nostre": "Unsere Läuferinnen",
+      "chiusura_titolo": "Die Saison in Zahlen",
+      "chiusura_senza_numeri": "Für diese Saison sind keine Zahlen verfügbar.",
+      "generato_il": "Erstellt am {{data}}",
+      "foto_switch": "Eine Folie pro Läuferin mit Foto hinzufügen",
+      "foto_nota": "Die Läuferinnen sind minderjährig: nur aktivieren, wenn der Club die Einwilligung der Eltern zur Bildnutzung hat.",
+      "gia_in_corso": "Die Folien werden bereits vorbereitet.",
+      "avviso_testi": "Die Texte des Berichts wurden nicht aktualisiert:",
+      "avviso_numeri": "Einige Zahlen konnten nicht gelesen werden:",
+      "avviso_logo": "Das Clublogo konnte nicht geladen werden: das Deckblatt erscheint ohne Logo.",
+      "avviso_atlete": "Die Folien pro Läuferin konnten nicht erstellt werden:"
     }
   }
 }

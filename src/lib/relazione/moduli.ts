@@ -974,74 +974,99 @@ async function modResocontoGare(ctx: ContestoModuli): Promise<ModuloRisultato> {
   });
 }
 
-/** Il cammino delle atlete: gare, miglior piazzamento, test e livello. */
+/** Una agonista con il suo cammino nella stagione. */
+export interface CamminoAtleta {
+  atleta_id: string;
+  nome: string;
+  foto_path: string | null;
+  gare_disputate: number;
+  miglior_piazzamento: string;
+  test_superati: number;
+  livello: string;
+}
+
+/**
+ * Il cammino delle agoniste: gare, miglior piazzamento, test e livello.
+ * Unica lettura, usata sia dal modulo della relazione sia dalle slide per
+ * atleta: i due formati non devono mai contare in modo diverso.
+ */
+export async function fetchCamminoAtlete(
+  ctx: Pick<ContestoModuli, "club_id" | "stagione"> & Partial<ContestoModuli>,
+): Promise<CamminoAtleta[]> {
+  const contesto = { stagioni: [], ...ctx } as ContestoModuli;
+  const { data: atlete, error } = await supabase
+    .from("atleti").select("id,nome,cognome,livello_attuale,categoria,foto_path")
+    .eq("club_id", contesto.club_id).eq("attivo", true).eq("agonista", true);
+  if (error) throw error;
+  const lista = (atlete ?? []) as any[];
+  if (lista.length === 0) return [];
+
+  const gare = await gareStagione(contesto);
+  const risultati = await risultatiDelleGare(gare.map((g) => g.id));
+  const { iscrizioni } = await gareEIscrizioni(contesto);
+
+  const { data: sessioni, error: err2 } = await supabase
+    .from("test_livello").select("id")
+    .eq("club_id", contesto.club_id).eq("stagione_id", contesto.stagione.id);
+  if (err2) throw err2;
+  const sessione_ids = ((sessioni ?? []) as any[]).map((s) => s.id);
+  let test_righe: any[] = [];
+  if (sessione_ids.length > 0) {
+    const { data, error: err3 } = await supabase
+      .from("test_livello_atleti").select("atleta_id,esito,livello_target")
+      .in("test_id", sessione_ids);
+    if (err3) throw err3;
+    test_righe = (data ?? []) as any[];
+  }
+
+  return lista
+    .map((a): CamminoAtleta => {
+      const sue_righe = risultati.filter((r) => r.atleta_id === a.id);
+      const sue_iscrizioni = iscrizioni.filter((i) => i.atleta_id === a.id);
+      const gare_disputate = new Set([
+        ...sue_righe.map((r) => r.gara_id),
+        ...sue_iscrizioni.map((i) => i.gara_id),
+      ]).size;
+      const piazzamenti = [
+        ...sue_righe.map((r) => Number(r.rank)),
+        ...sue_iscrizioni.map((i) => Number(i.posizione)),
+      ].filter((n) => Number.isFinite(n) && n > 0);
+      const test_superati = test_righe.filter(
+        (t) => t.atleta_id === a.id && String(t.esito ?? "").toLowerCase() === "superato",
+      ).length;
+      return {
+        atleta_id: String(a.id),
+        nome: `${a.cognome ?? ""} ${a.nome ?? ""}`.trim() || "—",
+        foto_path: a.foto_path ?? null,
+        gare_disputate,
+        miglior_piazzamento: piazzamenti.length > 0 ? ordinale(Math.min(...piazzamenti)) : "—",
+        test_superati,
+        livello: String(a.livello_attuale ?? a.categoria ?? "—"),
+      };
+    })
+    .sort((a, b) => a.nome.localeCompare(b.nome));
+}
+
 async function modCamminoAtlete(ctx: ContestoModuli): Promise<ModuloRisultato> {
   const def = { ...def_di("sportivo_cammino"), titolo: testo_resoconto("titolo_cammino") };
   return sicuro(def, async () => {
-    const { data: atlete, error } = await supabase
-      .from("atleti").select("id,nome,cognome,livello_attuale,categoria")
-      .eq("club_id", ctx.club_id).eq("attivo", true).eq("agonista", true);
-    if (error) throw error;
-    const lista = (atlete ?? []) as any[];
-    if (lista.length === 0) return vuoto(def, testo_resoconto("vuoto_agoniste"));
-
-    const gare = await gareStagione(ctx);
-    const risultati = await risultatiDelleGare(gare.map((g) => g.id));
-    const { iscrizioni } = await gareEIscrizioni(ctx);
-
-    const { data: sessioni, error: err2 } = await supabase
-      .from("test_livello").select("id")
-      .eq("club_id", ctx.club_id).eq("stagione_id", ctx.stagione.id);
-    if (err2) throw err2;
-    const sessione_ids = ((sessioni ?? []) as any[]).map((s) => s.id);
-    let test_righe: any[] = [];
-    if (sessione_ids.length > 0) {
-      const { data, error: err3 } = await supabase
-        .from("test_livello_atleti").select("atleta_id,esito,livello_target")
-        .in("test_id", sessione_ids);
-      if (err3) throw err3;
-      test_righe = (data ?? []) as any[];
-    }
-
-    const righe = lista
-      .map((a) => {
-        const sue_righe = risultati.filter((r) => r.atleta_id === a.id);
-        const sue_iscrizioni = iscrizioni.filter((i) => i.atleta_id === a.id);
-        const gare_disputate = new Set([
-          ...sue_righe.map((r) => r.gara_id),
-          ...sue_iscrizioni.map((i) => i.gara_id),
-        ]).size;
-        const piazzamenti = [
-          ...sue_righe.map((r) => Number(r.rank)),
-          ...sue_iscrizioni.map((i) => Number(i.posizione)),
-        ].filter((n) => Number.isFinite(n) && n > 0);
-        const test_superati = test_righe.filter(
-          (t) => t.atleta_id === a.id && String(t.esito ?? "").toLowerCase() === "superato",
-        ).length;
-        return {
-          nome: `${a.cognome ?? ""} ${a.nome ?? ""}`.trim() || "—",
-          celle: [
-            `${a.cognome ?? ""} ${a.nome ?? ""}`.trim() || "—",
-            String(gare_disputate),
-            piazzamenti.length > 0 ? ordinale(Math.min(...piazzamenti)) : "—",
-            String(test_superati),
-            String(a.livello_attuale ?? a.categoria ?? "—"),
-          ],
-        };
-      })
-      .sort((a, b) => a.nome.localeCompare(b.nome))
-      .map((r) => r.celle);
-
+    const atlete = await fetchCamminoAtlete(ctx);
+    if (atlete.length === 0) return vuoto(def, testo_resoconto("vuoto_agoniste"));
     return ok(def, {
       tipo: "tabella", titolo: def.titolo, sottotitolo: testo_resoconto("sottotitolo_cammino"),
       colonne: [
         testo_resoconto("col_atleta"), testo_resoconto("col_gare_disputate"),
         testo_resoconto("col_miglior"), testo_resoconto("col_test_superati"), testo_resoconto("col_livello"),
       ],
-      righe, allinea_destra: [1, 3],
+      righe: atlete.map((a) => [
+        a.nome, String(a.gare_disputate), a.miglior_piazzamento,
+        String(a.test_superati), a.livello,
+      ]),
+      allinea_destra: [1, 3],
     });
   });
 }
+
 
 
 async function gareEIscrizioni(ctx: ContestoModuli) {
