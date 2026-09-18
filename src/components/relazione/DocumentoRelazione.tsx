@@ -66,7 +66,7 @@ function TestoCapitolo({ club_id, stagione, tono, area }: { club_id: string; sta
   }, [bozze, modificati, q.isSuccess, salva]);
   if (q.isPending) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
   if (q.isError) return <div className="flex items-center gap-2 text-sm text-destructive"><AlertTriangle className="h-4 w-4" />{t("relazione.paragrafi.errore_lettura")}<Button size="sm" variant="outline" onClick={() => q.refetch()}>{t("relazione.riprova")}</Button></div>;
-  return <div className="space-y-4">{q.data.map((p) => <Textarea key={p.paragrafo_ordine} value={bozze[p.paragrafo_ordine] ?? ""} onChange={(e) => { set_bozze((v) => ({ ...v, [p.paragrafo_ordine]: e.target.value })); set_modificati((v) => new Set(v).add(p.paragrafo_ordine)); }} className="min-h-24 resize-none border-transparent bg-transparent px-0 font-serif text-base leading-relaxed shadow-none focus-visible:border-border focus-visible:px-3" title={t("relazione.paragrafi.clicca_per_correggere")} /></div>;
+  return <div className="space-y-4">{q.data.map((p) => <Textarea key={p.paragrafo_ordine} value={bozze[p.paragrafo_ordine] ?? ""} onChange={(e) => { set_bozze((v) => ({ ...v, [p.paragrafo_ordine]: e.target.value })); set_modificati((v) => new Set(v).add(p.paragrafo_ordine)); }} className="min-h-24 resize-none border-transparent bg-transparent px-0 font-serif text-base leading-relaxed shadow-none focus-visible:border-border focus-visible:px-3" title={t("relazione.paragrafi.clicca_per_correggere")} />)}</div>;
 }
 
 function Modulo({ risultato }: { risultato: ModuloRisultato }) {
