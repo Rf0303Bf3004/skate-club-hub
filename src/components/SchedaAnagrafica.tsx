@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
 import { use_club, use_setup_club, use_stagioni } from '@/hooks/use-supabase-data';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Printer, QrCode, Copy, Check, Send } from 'lucide-react';
-import { build_contratto } from '@/lib/contratto-adesione';
 import { use_app_store_links } from '@/hooks/use-app-store-links';
 import { use_qr_data_url } from '@/hooks/use-qr-data-url';
 import FotoAtleta from "@/components/common/FotoAtleta";
@@ -34,16 +35,23 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back, modo = 'foto
   const qr_store = use_qr_data_url(url_app_store, 200);
   const [copiato, set_copiato] = useState(false);
 
-  const articoli = useMemo(() => build_contratto({
-    club_nome: (club as any)?.nome,
-    club_citta: (club as any)?.citta,
-    club_cantone: (club as any)?.cantone,
-    club_paese: (club as any)?.paese,
-    stagione_nome: stagione_attiva?.nome,
-    stagione_data_inizio: stagione_attiva?.data_inizio,
-    stagione_data_fine: stagione_attiva?.data_fine,
-    clausole_contratto: (setup as any)?.clausole_contratto,
-  }), [club, setup, stagione_attiva]);
+  // Il contratto ha una sola sorgente: quella del server (supabase/functions/
+  // _shared/contratto.ts), la stessa che viene archiviata alla firma. Qui non
+  // se ne ricostruisce nessuna copia.
+  const contratto = useQuery({
+    queryKey: ['contratto_atleta', codice],
+    enabled: e_iscrizione && !!codice,
+    queryFn: async (): Promise<{ numero: number; titolo: string; testo: string }[]> => {
+      const { data, error } = await supabase.functions.invoke('iscrizione-atleta', {
+        body: { azione: 'contratto', codice_atleta: codice },
+      });
+      if (error) throw error;
+      const d = (data ?? {}) as any;
+      if (!d?.contratto?.articoli) throw new Error(d?.error ?? 'contratto_non_disponibile');
+      return d.contratto.articoli;
+    },
+  });
+  const articoli = contratto.data ?? [];
 
   const copia_link = async () => {
     try {
@@ -197,6 +205,12 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back, modo = 'foto
         {e_iscrizione && (
           <div className='px-6 py-4 border-t border-gray-100 space-y-2'>
             <p className='text-xs font-bold text-gray-500 uppercase tracking-widest'>{t('anagrafica.contract_title')}</p>
+            {contratto.isLoading && (
+              <p className='text-[10px] text-gray-400'>{t('anagrafica.contract_loading')}</p>
+            )}
+            {contratto.isError && (
+              <p className='text-[10px] text-red-600'>{t('anagrafica.contract_unavailable')}</p>
+            )}
             <div className='space-y-1.5'>
               {articoli.map((a) => (
                 <div key={a.numero}>
