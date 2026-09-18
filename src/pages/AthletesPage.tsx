@@ -651,6 +651,9 @@ const AthletesPage: React.FC = () => {
   const query_client = useQueryClient();
   const { session } = useAuth();
   const { puo_gestire_sportivo } = usePermessiAzione();
+  // La pagina di import è protetta dalla sezione `import_dati`: senza quel permesso
+  // il pulsante rimbalzerebbe in home, quindi non si mostra.
+  const puo_importare = puo_gestire_sportivo && useHasPermesso("import_dati");
   const params = useParams<{ id?: string }>();
   const { data: atleti = [], isLoading } = use_atleti();
   const upsert = use_upsert_atleta();
