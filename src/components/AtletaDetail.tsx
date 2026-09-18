@@ -1611,48 +1611,11 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                     </Select>
                   </div>
 
-                  <div className="space-y-3 border-t border-border pt-4">
-                    <h5 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      {td("detail.separati.indirizzo_g2")}
-                    </h5>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm text-muted-foreground">{td("detail.address")}</Label>
-                      <Input value={form.genitore2_indirizzo || ""} onChange={(e) => upd("genitore2_indirizzo", e.target.value)} className="h-9" placeholder={td("detail.address_placeholder")} />
-                    </div>
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-sm text-muted-foreground">{td("detail.zip")}</Label>
-                        <Input value={form.genitore2_cap || ""} onChange={(e) => upd("genitore2_cap", e.target.value)} maxLength={4} className="h-9" />
-                      </div>
-                      <div className="col-span-2 space-y-1.5">
-                        <Label className="text-sm text-muted-foreground">{td("detail.city")}</Label>
-                        <Input value={form.genitore2_citta || ""} onChange={(e) => upd("genitore2_citta", e.target.value)} className="h-9" />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-sm text-muted-foreground">{td("detail.canton")}</Label>
-                        <Select value={form.genitore2_cantone || ""} onValueChange={(v) => upd("genitore2_cantone", v)}>
-                          <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
-                          <SelectContent>
-                            {CANTONI_CH.map(([code, nome]) => (
-                              <SelectItem key={code} value={code}>{code} — {nome}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-sm text-muted-foreground">{td("detail.country_iso")}</Label>
-                        <Input
-                          value={form.genitore2_paese_iso || ""}
-                          onChange={(e) => upd("genitore2_paese_iso", e.target.value.toUpperCase().slice(0, 2))}
-                          maxLength={2}
-                          className="h-9 w-24 uppercase"
-                          placeholder="CH"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  {/* L'indirizzo del secondo genitore si modifica nella scheda "Genitore 2" qui sopra,
+                      che resta aperta quando i genitori sono separati: un solo punto di modifica. */}
+                  <p className="text-sm text-muted-foreground border-t border-border pt-4">
+                    {td("detail.separati.indirizzo_g2")}
+                  </p>
 
                   {form.fatture_intestate_a === "meta" && !String(form.genitore2_indirizzo || "").trim() && (
                     <div className="flex items-start gap-2 rounded-lg border border-orange-300 bg-orange-50 p-3 text-sm text-orange-900">
