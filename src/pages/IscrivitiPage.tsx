@@ -1,7 +1,7 @@
 // Pagina pubblica /iscriviti/:token — domanda di iscrizione delle famiglie nuove.
 // Una sola schermata scorrevole; l'atleta non viene creato qui: la domanda
 // finisce in domande_iscrizione e la esamina la segreteria.
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -51,7 +51,6 @@ const IscrivitiPage: React.FC = () => {
 
   const [club, set_club] = useState<{ nome: string; logo_url: string | null } | null>(null);
   const [stagione, set_stagione] = useState<{ nome: string; iscrizioni_aperte: boolean; iscrizioni_scadenza: string | null } | null>(null);
-  const [contesto, set_contesto] = useState<DatiContratto>({});
   const [livelli, set_livelli] = useState<string[]>([]);
 
   const [form, set_form] = useState<Record<string, any>>({
@@ -83,7 +82,6 @@ const IscrivitiPage: React.FC = () => {
       } else {
         set_club((data as any).club ?? null);
         set_stagione((data as any).stagione ?? null);
-        set_contesto((data as any).contesto ?? {});
         set_livelli(((data as any).livelli ?? []) as string[]);
         const ctr = (data as any).contratto;
         set_articoli(((ctr?.articoli ?? []) as ArticoloContratto[]));
