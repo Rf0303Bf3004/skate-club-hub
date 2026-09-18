@@ -310,23 +310,24 @@ Deno.serve(async (req) => {
     let rinnovo_confermato = false;
 
     if (rinnovo_attivo && stagione?.id) {
-      const testo = clean(payload.contratto_testo, 60000);
-      if (testo) {
-        const { error: ctr_err } = await admin.from("contratti_accettati").insert({
-          club_id: atleta.club_id,
-          atleta_id: atleta.id,
-          stagione_id: stagione.id,
-          testo,
-          accettato_il: new Date().toISOString(),
-          accettato_da: [clean(payload.genitore1_nome, 80), clean(payload.genitore1_cognome, 80)]
-            .filter(Boolean)
-            .join(" "),
-          origine: "rinnovo",
-        });
-        if (ctr_err) {
-          console.error("[iscrizione-atleta] ctr_err", ctr_err);
-          return json({ error: "db_error" }, 500);
-        }
+      // Prima il contratto, poi la conferma: un rinnovo senza contratto
+      // archiviato non deve poter esistere.
+      const { error: ctr_err } = await admin.from("contratti_accettati").insert({
+        club_id: atleta.club_id,
+        atleta_id: atleta.id,
+        stagione_id: stagione.id,
+        testo: contratto.testo,
+        accettato_il: new Date().toISOString(),
+        accettato_da: [clean(payload.genitore1_nome, 80), clean(payload.genitore1_cognome, 80)]
+          .filter(Boolean)
+          .join(" "),
+        origine: "rinnovo",
+      });
+      // 23505: contratto già firmato per questa stagione (ricarico della
+      // pagina o doppio invio). Non è un guasto: l'archivio c'è già.
+      if (ctr_err && (ctr_err as any).code !== "23505") {
+        console.error("[iscrizione-atleta] ctr_err", ctr_err);
+        return json({ error: "contratto_non_archiviato" }, 500);
       }
 
       const { error: conf_err } = await admin.rpc("conferma_rinnovo", {
@@ -339,6 +340,7 @@ Deno.serve(async (req) => {
         return json({ error: "db_error" }, 500);
       }
       rinnovo_confermato = true;
+
 
       const scelti = Array.isArray(payload.corsi_scelti) ? payload.corsi_scelti : [];
       for (const raw_id of scelti) {
