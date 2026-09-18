@@ -135,5 +135,9 @@
     "errore_lettura": "Die Buchhaltungseinstellungen konnten nicht gelesen werden.",
     "errore_salvataggio": "Die Buchhaltungseinstellungen konnten nicht gespeichert werden.",
     "riprova": "Erneut versuchen"
+  },
+  "anteprima": {
+    "intestata_a": "Lautend auf {{nome}}",
+    "badge_meta": "Hälfte"
   }
 }

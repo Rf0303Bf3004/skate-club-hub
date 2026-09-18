@@ -135,5 +135,9 @@
     "errore_lettura": "The accounting settings could not be read.",
     "errore_salvataggio": "The accounting settings could not be saved.",
     "riprova": "Try again"
+  },
+  "anteprima": {
+    "intestata_a": "Made out to {{nome}}",
+    "badge_meta": "half"
   }
 }
