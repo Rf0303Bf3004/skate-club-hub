@@ -1,5 +1,7 @@
 // KPI della Relazione: solo numeri veri, presi dalle stesse letture dei moduli.
 // Se un numero non c'è, la cella non viene prodotta: nessuna stima, nessun ripiego.
+// Il numero delle atlete è della stagione scelta: in corso = anagrafico vivo,
+// chiusa = storico di quella stagione (src/lib/relazione/atleti-stagione.ts).
 //
 // Misura economica: una sola fonte per stagione, decisa da fetchFonteEconomica
 // (src/lib/relazione/fonte-economica.ts). Se nella stagione ci sono almeno 10
@@ -11,6 +13,7 @@
 import { supabase } from "@/lib/supabase";
 import type { Stagione } from "@/lib/relazione/moduli";
 import { fetchFonteEconomica, testo_economia } from "@/lib/relazione/fonte-economica";
+import { fetchAtletiDellaStagione } from "@/lib/relazione/atleti-stagione";
 
 export interface KpiCell {
   value: string;
