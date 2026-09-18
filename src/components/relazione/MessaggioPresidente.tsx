@@ -3,8 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Loader2, Save, AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
+import { Loader2, AlertTriangle } from "lucide-react";
 import { segnala_errore } from "@/lib/errori";
 import { useTranslation } from "react-i18next";
 
@@ -65,10 +64,15 @@ export default function MessaggioPresidente({ club_id, stagione_id }: Props) {
     onError: (e) => segnala_errore("Relazione", t("relazione.messaggio.salvataggio"), e),
     onSuccess: () => {
       set_toccato(false);
-      toast.success(t("relazione.messaggio.salvato"));
       qc.invalidateQueries({ queryKey: ["relazione_messaggio", club_id, stagione_id] });
     },
   });
+
+  useEffect(() => {
+    if (!toccato || isLoading || isError || m_salva.isPending) return;
+    const timer = window.setTimeout(() => m_salva.mutate(), 700);
+    return () => window.clearTimeout(timer);
+  }, [testo, toccato, isLoading, isError, m_salva]);
 
   if (isError) {
     return (
@@ -87,24 +91,15 @@ export default function MessaggioPresidente({ club_id, stagione_id }: Props) {
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">{t("relazione.messaggio.spiegazione")}</p>
       <Textarea
         value={testo}
         onChange={(e) => { set_testo(e.target.value); set_toccato(true); }}
-        rows={8}
+        rows={12}
         disabled={isLoading}
         placeholder={t("relazione.messaggio.placeholder")}
-        className="font-serif text-sm leading-relaxed"
+        className="resize-none border-transparent bg-transparent px-0 font-serif text-base leading-relaxed shadow-none focus-visible:border-border focus-visible:px-3"
       />
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
-          {isLoading ? t("relazione.caricamento") : t("relazione.messaggio.parole", { count: testo.trim().split(/\s+/).filter(Boolean).length })}
-        </span>
-        <Button size="sm" onClick={() => m_salva.mutate()} disabled={m_salva.isPending || !toccato} className="gap-2">
-          {m_salva.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {t("relazione.messaggio.salva")}
-        </Button>
-      </div>
+      <span className="text-xs text-muted-foreground">{isLoading || m_salva.isPending ? t("relazione.caricamento") : t("relazione.messaggio.salvataggio_automatico")}</span>
     </div>
   );
 }
