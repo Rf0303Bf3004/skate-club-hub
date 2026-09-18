@@ -344,6 +344,40 @@ const IscrizioneAtletaPage: React.FC = () => {
           </label>
         </section>
 
+        {/* Corsi della nuova stagione */}
+        {rinnovo_aperto && (
+          <section className="bg-card border rounded-2xl p-5 space-y-3">
+            <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Corsi</h2>
+            {corsi_ammessi.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Il club ti assegnerà il corso dopo il rinnovo.</p>
+            ) : (
+              corsi_ammessi.map((c) => {
+                const attivo = corsi_scelti.includes(c.id);
+                return (
+                  <label key={c.id} className="flex items-start gap-3 rounded-xl border p-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-5 w-5"
+                      checked={attivo}
+                      onChange={(e) =>
+                        set_corsi_scelti((p) => (e.target.checked ? [...p, c.id] : p.filter((x) => x !== c.id)))
+                      }
+                    />
+                    <span className="text-sm">
+                      <span className="font-medium">{c.nome}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        {[c.giorno, orario(c), costo(c)].filter(Boolean).join(" · ") || "Orario da definire"}
+                      </span>
+                    </span>
+                  </label>
+                );
+              })
+            )}
+          </section>
+        )}
+
+
+
         {errore && (
           <div className="flex items-start gap-2 rounded-xl bg-destructive/10 border border-destructive/20 p-3">
             <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
