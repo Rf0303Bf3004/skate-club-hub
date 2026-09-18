@@ -148,13 +148,22 @@ Deno.serve(async (req) => {
     }
 
     if (action === "fatture") {
-      const { data: f } = await admin
+      let q = admin
         .from("fatture")
-        .select("id, numero, descrizione, tipo, importo, pagata, stato, data_emissione, data_scadenza, data_pagamento, periodo")
-        .eq("atleta_id", atleta_id)
-        .order("data_emissione", { ascending: false });
+        .select("id, numero, descrizione, tipo, importo, pagata, stato, data_emissione, data_scadenza, data_pagamento, periodo, pagante")
+        .eq("atleta_id", atleta_id);
+      // Con i genitori separati ogni genitore vede solo le proprie fatture
+      // (pagante nullo = prima intestazione, cioè genitore1).
+      if (separati) {
+        q = genitore === "genitore1"
+          ? q.or("pagante.is.null,pagante.eq.genitore1")
+          : q.eq("pagante", "genitore2");
+      }
+      const { data: f, error: f_err } = await q.order("data_emissione", { ascending: false });
+      if (f_err) { console.error("[portale-atleta] fatture err", f_err); return json({ error: "db_error" }, 500); }
       return json({ fatture: f ?? [] });
     }
+
 
     if (action === "corsi") {
       const { data: corsi } = await admin
