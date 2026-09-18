@@ -67,7 +67,7 @@ export interface DatiNarrativi {
   gare?: number;
   podi?: number;
   ori?: number;
-  atleta_top?: { nome: string; podi: number };
+  podi_atlete?: Array<{ nome: string; medaglia: string; gara: string }>;
   test_superati?: number;
   presenza_media?: number;
   messaggi_inviati?: number;
@@ -191,7 +191,7 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
 
   try {
     const { data: gare, error } = await supabase
-      .from("gare_calendario").select("id").eq("club_id", club_id).eq("stagione_id", stagione.id);
+      .from("gare_calendario").select("id,nome,data").eq("club_id", club_id).eq("stagione_id", stagione.id);
     if (error) throw error;
     const ids = ((gare ?? []) as any[]).map((g) => g.id);
     if (ids.length > 0) {
@@ -200,27 +200,26 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
         .from("iscrizioni_gare").select("atleta_id,posizione,medaglia,gara_id").in("gara_id", ids);
       if (err2) throw err2;
       const righe = (iscr ?? []) as any[];
-      const podio = (i: any) => {
-        const m = String(i.medaglia ?? "").toLowerCase();
-        return m.includes("oro") || m.includes("argent") || m.includes("bronz") || (i.posizione && i.posizione <= 3);
-      };
+       const podio = (i: any) => ["oro", "argento", "bronzo"].includes(String(i.medaglia ?? "").toLowerCase());
       const con_podio = righe.filter(podio);
       if (con_podio.length > 0) {
         d.podi = con_podio.length;
-        d.ori = righe.filter((i) => String(i.medaglia ?? "").toLowerCase().includes("oro") || i.posizione === 1).length;
-        // Nome dell'atleta con più podi: la query seleziona davvero nome e cognome.
-        const per_atleta = new Map<string, number>();
-        for (const i of con_podio) {
-          if (!i.atleta_id) continue;
-          per_atleta.set(i.atleta_id, (per_atleta.get(i.atleta_id) ?? 0) + 1);
-        }
-        const migliore = Array.from(per_atleta.entries()).sort((a, b) => b[1] - a[1])[0];
-        if (migliore) {
-          const { data: atl } = await supabase
-            .from("atleti").select("nome,cognome").eq("id", migliore[0]).maybeSingle();
-          const nome = `${(atl as any)?.nome ?? ""} ${(atl as any)?.cognome ?? ""}`.trim();
-          if (nome) d.atleta_top = { nome, podi: migliore[1] };
-        }
+         d.ori = righe.filter((i) => String(i.medaglia ?? "").toLowerCase() === "oro").length;
+         const atleta_ids = Array.from(new Set(con_podio.map((i) => i.atleta_id).filter(Boolean)));
+         const { data: atlete, error: err3 } = await supabase
+           .from("atleti").select("id,nome,cognome").eq("club_id", club_id).in("id", atleta_ids);
+         if (err3) throw err3;
+         const nomi = new Map(((atlete ?? []) as any[]).map((a) => [a.id, `${a.nome ?? ""} ${a.cognome ?? ""}`.trim()]));
+         const gare_per_id = new Map(((gare ?? []) as any[]).map((g) => [g.id, g]));
+         d.podi_atlete = con_podio
+           .map((i) => ({
+             nome: nomi.get(i.atleta_id) ?? String(i.atleta_id).slice(0, 8),
+             medaglia: String(i.medaglia).toLowerCase(),
+             gara: String(gare_per_id.get(i.gara_id)?.nome ?? "—"),
+             data: String(gare_per_id.get(i.gara_id)?.data ?? ""),
+           }))
+           .sort((a, b) => a.data.localeCompare(b.data) || a.nome.localeCompare(b.nome))
+           .map(({ nome, medaglia, gara }) => ({ nome, medaglia, gara }));
       }
     }
   } catch { /* dato assente */ }
@@ -340,7 +339,9 @@ export function paragrafiArea(area: AreaId, tono: Tono, d: DatiNarrativi): Array
       numeri = unisci([
         d.gare != null ? `Le gare in calendario sono state ${fmt_n(d.gare)}.` : null,
         d.podi != null ? `I podi conquistati sono ${fmt_n(d.podi)}${d.ori != null ? `, di cui ${fmt_n(d.ori)} primi posti` : ""}.` : null,
-        d.atleta_top ? `Un riconoscimento a ${d.atleta_top.nome}, con ${fmt_n(d.atleta_top.podi)} podi in stagione.` : null,
+         d.podi_atlete && d.podi_atlete.length > 0
+           ? `Sul podio in questa stagione: ${d.podi_atlete.map((p) => `${p.nome} (${p.medaglia}, ${p.gara})`).join(", ")}.`
+           : null,
         d.test_superati != null ? `I test di livello superati sono ${fmt_n(d.test_superati)}.` : null,
       ]);
       break;
