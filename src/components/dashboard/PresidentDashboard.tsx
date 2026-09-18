@@ -1296,7 +1296,7 @@ const PresidentDashboard: React.FC = () => {
     },
     {
       id: "sportivo",
-      title: t("president_home.areas.sport.title"),
+      title: t("president_home.areas.sportivo.title"),
       icon: <Trophy className="h-4 w-4" />,
       main_kpi: fmt_int(podi),
       sub_label: t("president_home.cards.podiums_in_competitions", { podi, gare: gare_curr.length }),
@@ -1310,7 +1310,7 @@ const PresidentDashboard: React.FC = () => {
     },
     {
       id: "catalogo",
-      title: t("president_home.areas.catalog.title"),
+      title: t("president_home.areas.catalogo.title"),
       icon: <Megaphone className="h-4 w-4" />,
       main_kpi: fmt_int(sponsor_attivi.length),
       sub_label: t("president_home.cards.sponsor_value", { importo: fmt_chf(sponsor_totale) }),
