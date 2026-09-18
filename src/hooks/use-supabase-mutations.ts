@@ -939,6 +939,10 @@ export type AnteprimaFattura = {
   righe: AnteprimaFatturaRiga[];
   gia_fatturata: boolean;
   avviso: string | null;
+  // Genitori separati: con 'meta' la stessa atleta torna in due righe, una per genitore.
+  pagante: string | null;
+  pagante_nome: string | null;
+  quota_meta: boolean;
 };
 
 export type EsitoGenerazione = {
