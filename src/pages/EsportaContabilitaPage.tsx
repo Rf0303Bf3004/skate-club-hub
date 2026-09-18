@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Download, FileSpreadsheet, AlertTriangle, Loader2, ArrowLeft } from "lucide-react";
+import { Download, AlertTriangle, Loader2, ArrowLeft } from "lucide-react";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { use_club } from "@/hooks/use-supabase-data";
 import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
