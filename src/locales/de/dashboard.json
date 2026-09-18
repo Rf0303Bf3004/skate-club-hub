@@ -436,7 +436,11 @@
       "bronzi_other": "{{count}} Mal Bronze",
       "podio_elenco": "Auf dem Podest in dieser Saison: {{elenco}}.",
       "test_one": "1 Niveautest wurde bestanden.",
-      "test_other": "{{count}} Niveautests wurden bestanden."
+      "test_other": "{{count}} Niveautests wurden bestanden.",
+      "lezioni_one": "Es wurde 1 Privatstunde erteilt.",
+      "lezioni_other": "Es wurden {{count}} Privatstunden erteilt.",
+      "ore_one": "Das entspricht 1 Stunde.",
+      "ore_other": "Das entspricht {{count}} Stunden."
     }
   }
 }

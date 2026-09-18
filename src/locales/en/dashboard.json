@@ -436,7 +436,11 @@
       "bronzi_other": "{{count}} bronzes",
       "podio_elenco": "On the podium this season: {{elenco}}.",
       "test_one": "1 level test was passed.",
-      "test_other": "{{count}} level tests were passed."
+      "test_other": "{{count}} level tests were passed.",
+      "lezioni_one": "1 private lesson was held.",
+      "lezioni_other": "{{count}} private lessons were held.",
+      "ore_one": "That is 1 hour.",
+      "ore_other": "That is {{count}} hours."
     }
   }
 }

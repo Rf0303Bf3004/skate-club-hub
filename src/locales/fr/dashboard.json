@@ -436,7 +436,11 @@
       "bronzi_other": "{{count}} bronzes",
       "podio_elenco": "Sur le podium cette saison : {{elenco}}.",
       "test_one": "1 test de niveau a été réussi.",
-      "test_other": "{{count}} tests de niveau ont été réussis."
+      "test_other": "{{count}} tests de niveau ont été réussis.",
+      "lezioni_one": "1 leçon privée a été donnée.",
+      "lezioni_other": "{{count}} leçons privées ont été données.",
+      "ore_one": "Cela représente 1 heure.",
+      "ore_other": "Cela représente {{count}} heures."
     }
   }
 }
