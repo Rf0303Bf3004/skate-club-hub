@@ -94,8 +94,10 @@ export async function portale_login(codice_raw: string): Promise<PortaleSession>
     access_token: data.access_token,
     refresh_token: data.refresh_token,
     atleta: data.atleta,
+    genitore: data.genitore === "genitore2" ? "genitore2" : "genitore1",
     club: data.club ?? null,
   };
+
 
   const lista = read_profili().filter((p) => p.atleta.id !== session.atleta.id);
   lista.push(session);
