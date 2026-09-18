@@ -69,7 +69,7 @@ function schiarisci(hex: string, quota = 0.45): string {
 /** Righe stimate di un testo dentro una larghezza, al corpo indicato. */
 function righe_stimate(testo: string, larghezza_in: number, corpo_pt: number): number {
   const utile = Math.max(0.4, larghezza_in - 0.22);   // margini interni della cella
-  const per_riga = Math.max(6, Math.floor((utile * 96) / (corpo_pt * 0.64)));
+  const per_riga = Math.max(6, Math.floor((utile * 96) / (corpo_pt * 0.72)));
   return (testo ?? "").split("\n").reduce(
     (tot, riga) => tot + Math.max(1, Math.ceil(riga.length / per_riga)), 0,
   );
