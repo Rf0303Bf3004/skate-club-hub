@@ -59,6 +59,15 @@ const IscrizioneAtletaPage: React.FC = () => {
   const [file, set_file] = useState<File | null>(null);
   const [anteprima, set_anteprima] = useState<string | null>(null);
 
+  // Rinnovo di stagione
+  const [stagione, set_stagione] = useState<Stagione | null>(null);
+  const [corsi_ammessi, set_corsi_ammessi] = useState<Corso[]>([]);
+  const [scelta, set_scelta] = useState<"confermo" | "rinuncia" | null>(null);
+  const [motivo, set_motivo] = useState("");
+  const [corsi_scelti, set_corsi_scelti] = useState<string[]>([]);
+  const [corsi_falliti, set_corsi_falliti] = useState<{ nome: string; motivo: string }[]>([]);
+  const [rinuncia_fatta, set_rinuncia_fatta] = useState(false);
+
   const set_val = (k: string, v: any) => set_form((p) => ({ ...p, [k]: v }));
 
   useEffect(() => {
