@@ -26,7 +26,7 @@ const PortaleProfiloPage: React.FC = () => {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("atleti").select("*").eq("id", session.atleta.id).maybeSingle();
+      const { data } = await supabase.from("atleti_famiglia").select("*").eq("id", session.atleta.id).maybeSingle();
       set_atleta(data);
     })();
   }, [session.atleta.id]);
