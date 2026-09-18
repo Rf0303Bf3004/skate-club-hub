@@ -39,7 +39,8 @@ const fmt_chf = (n: number) =>
 const fmt_pct = (n: number) => (n >= 0 ? "+" : "") + n.toFixed(1).replace(".", ",") + "%";
 
 /** La stagione è quella in corso se oggi cade fra le sue date. */
-export { stagione_in_corso } from "@/lib/relazione/atleti-stagione";
+import { stagione_in_corso, fetchAtletiDellaStagione } from "@/lib/relazione/atleti-stagione";
+export { stagione_in_corso };
 
 function dentro(data: string | null | undefined, stag: Stagione): boolean {
   if (!stag.data_inizio || !stag.data_fine) return true;
