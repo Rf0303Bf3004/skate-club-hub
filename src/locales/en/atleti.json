@@ -180,7 +180,17 @@
       "non_rinnovato_ok": "Marked as not renewed",
       "nessun_atleta": "No athletes with these filters.",
       "errore_lettura": "The registration campaign could not be read. The numbers below are not reliable.",
-      "nessuna_stagione": "There is no active season: open a season first."
+      "nessuna_stagione": "There is no active season: open a season first.",
+      "domande_in_attesa": "Pending applications",
+      "vai_alle_domande": "Go to new applications",
+      "apri_conteggio_one": "1 athlete will be invited.",
+      "apri_conteggio_other": "{{count}} athletes will be invited.",
+      "apri_gia_presenti_one": "1 athlete is already in the season register.",
+      "apri_gia_presenti_other": "{{count}} athletes are already in the season register.",
+      "apri_conteggio_in_corso": "Counting the athletes to invite…",
+      "apri_conteggio_errore": "We cannot read how many athletes would be invited: the campaign stays closed until the number is certain.",
+      "esito_non_registrati_one": "1 sent message was not recorded in the communications log.",
+      "esito_non_registrati_other": "{{count}} sent messages were not recorded in the communications log."
     },
     "domande": {
       "link_pubblico": "Public link for new families",
@@ -212,7 +222,16 @@
       "rifiutata_titolo": "Application from {{nome}} rejected",
       "avvisa_famiglia": "Notify the family",
       "avviso_inviato": "Family notified",
-      "senza_email": "No email address: the message was not sent."
+      "senza_email": "No email address: the message was not sent.",
+      "categoria_obbligatoria": "Choose the category: without it the record starts with wrong data.",
+      "rigenera_link": "Regenerate link",
+      "rigenera_titolo": "Regenerate the public link?",
+      "rigenera_testo": "The previous link stops working. Anyone who received or printed it will need a new one.",
+      "rigenera_ok": "New public link created"
     }
+  },
+  "anagrafica": {
+    "contract_loading": "Loading the contract text…",
+    "contract_unavailable": "Contract text unavailable right now: do not print the card until it appears."
   }
 }

@@ -180,7 +180,17 @@
       "non_rinnovato_ok": "Marqué non renouvelé",
       "nessun_atleta": "Aucun athlète avec ces filtres.",
       "errore_lettura": "Impossible de lire la campagne d'inscriptions. Les chiffres ci-dessous ne sont pas fiables.",
-      "nessuna_stagione": "Aucune saison active : ouvrez d'abord une saison."
+      "nessuna_stagione": "Aucune saison active : ouvrez d'abord une saison.",
+      "domande_in_attesa": "Demandes en attente",
+      "vai_alle_domande": "Aller aux nouvelles demandes",
+      "apri_conteggio_one": "1 athlète sera invité.",
+      "apri_conteggio_other": "{{count}} athlètes seront invités.",
+      "apri_gia_presenti_one": "1 athlète est déjà dans le registre de la saison.",
+      "apri_gia_presenti_other": "{{count}} athlètes sont déjà dans le registre de la saison.",
+      "apri_conteggio_in_corso": "Comptage des athlètes à inviter…",
+      "apri_conteggio_errore": "Impossible de lire combien d'athlètes seraient invités : la campagne reste fermée tant que le nombre n'est pas sûr.",
+      "esito_non_registrati_one": "1 message envoyé n'a pas été enregistré dans le journal des communications.",
+      "esito_non_registrati_other": "{{count}} messages envoyés n'ont pas été enregistrés dans le journal des communications."
     },
     "domande": {
       "link_pubblico": "Lien public pour les nouvelles familles",
@@ -212,7 +222,16 @@
       "rifiutata_titolo": "Demande de {{nome}} refusée",
       "avvisa_famiglia": "Prévenir la famille",
       "avviso_inviato": "Famille prévenue",
-      "senza_email": "Aucune adresse e-mail : le message n'a pas été envoyé."
+      "senza_email": "Aucune adresse e-mail : le message n'a pas été envoyé.",
+      "categoria_obbligatoria": "Choisissez la catégorie : sans elle, la fiche démarre avec une donnée fausse.",
+      "rigenera_link": "Régénérer le lien",
+      "rigenera_titolo": "Régénérer le lien public ?",
+      "rigenera_testo": "L'ancien lien cesse de fonctionner. Ceux qui l'ont reçu ou imprimé devront en recevoir un nouveau.",
+      "rigenera_ok": "Nouveau lien public créé"
     }
+  },
+  "anagrafica": {
+    "contract_loading": "Chargement du texte du contrat…",
+    "contract_unavailable": "Texte du contrat indisponible pour l'instant : n'imprimez pas la fiche tant qu'il n'apparaît pas."
   }
 }
