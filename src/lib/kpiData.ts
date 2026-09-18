@@ -13,7 +13,7 @@
 import { supabase } from "@/lib/supabase";
 import type { Stagione } from "@/lib/relazione/moduli";
 import { fetchFonteEconomica, testo_economia } from "@/lib/relazione/fonte-economica";
-import { fetchAtletiDellaStagione } from "@/lib/relazione/atleti-stagione";
+import { stagione_in_corso, fetchAtletiDellaStagione } from "@/lib/relazione/atleti-stagione";
 
 export interface KpiCell {
   value: string;
@@ -45,10 +45,15 @@ export async function fetchKpiData(club_id: string, stagione: Stagione): Promise
   // chiusa = storico di quella stagione), stessa logica di paragraphGenerator.
   try {
     const atleti = await fetchAtletiDellaStagione(club_id, stagione, "id,agonista");
-    if (atleti && atleti.length > 0) {
+    if (atleti.length > 0) {
       aggiungi("atleti", { value: fmt_n(atleti.length), label: "Atlete attive" });
-      const agoniste = atleti.filter((a) => a.agonista).length;
-      if (agoniste > 0) aggiungi("atleti", { value: fmt_n(agoniste), label: "Agoniste" });
+      // Agoniste solo a stagione in corso: atleti_storici_stagioni conserva
+      // solo l'atleta, non se allora era agonista, quindi su una stagione
+      // chiusa quel numero sarebbe quello di oggi spacciato per quello di allora.
+      if (stagione_in_corso(stagione)) {
+        const agoniste = atleti.filter((a) => a.agonista).length;
+        if (agoniste > 0) aggiungi("atleti", { value: fmt_n(agoniste), label: "Agoniste" });
+      }
     }
   } catch { /* nessuna cella: il KPI resta assente, non finto */ }
 

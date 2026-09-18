@@ -125,7 +125,7 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
   try {
     // Un solo punto di lettura: src/lib/relazione/atleti-stagione.ts.
     const atleti = await fetchAtletiDellaStagione(club_id, stagione, "id,agonista");
-    if (atleti && atleti.length > 0) {
+    if (atleti.length > 0) {
       d.atlete = atleti.length;
       d.atlete_alla_data = in_corso;
       const ag = atleti.filter((a) => a.agonista).length;
