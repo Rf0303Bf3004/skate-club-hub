@@ -236,6 +236,14 @@ Deno.serve(async (req) => {
 
     if (!payload?.contratto_accettato) return json({ error: "contratto_non_accettato" }, 400);
 
+    // L'impronta ricevuta deve corrispondere al testo appena ricostruito:
+    // se il club ha cambiato le clausole mentre la pagina era aperta non si
+    // archivia un consenso su un testo diverso da quello letto.
+    if (clean(payload.contratto_impronta, 100) !== contratto.impronta) {
+      return json({ error: "contratto_cambiato" }, 409);
+    }
+
+
     const update: Record<string, unknown> = {};
 
     // Nome/cognome/data nascita: modificabili solo se mancanti a DB
