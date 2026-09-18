@@ -5,6 +5,7 @@
 // precedente per data e solo se quella stagione ha dati.
 
 import { supabase } from "@/lib/supabase";
+import i18n from "@/i18n";
 import {
   AREE_ORDINATE, type AreaId, type Stagione,
   fetchStagioniOrdinate, stagionePrecedente,
@@ -75,6 +76,10 @@ export interface DatiNarrativi {
   sponsor?: number;
   sponsor_valore?: number;
   sponsor_nomi?: string[];
+  argenti?: number;
+  bronzi?: number;
+  /** Quante letture non sono riuscite: se > 0 i testi non si riscrivono. */
+  letture_fallite?: number;
 }
 
 /** Swiss Ice Skating per i club svizzeri, FISG per quelli italiani, nessuna se il paese non è impostato. */
@@ -109,7 +114,7 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
       const ag = atleti.filter((a) => a.agonista).length;
       if (ag > 0) d.agoniste = ag;
     }
-  } catch { /* dato assente: nessuna frase */ }
+  } catch { d.letture_fallite = (d.letture_fallite ?? 0) + 1; }
 
   if (prec) {
     try {
@@ -119,7 +124,7 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
       if (error) throw error;
       const n = (data ?? []).length;
       if (n > 0) { d.atlete_prec = n; d.stagione_prec_nome = prec.nome; }
-    } catch { /* niente confronto */ }
+    } catch { d.letture_fallite = (d.letture_fallite ?? 0) + 1; }
   }
 
   try {
@@ -143,7 +148,7 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
       const n = ((iscr ?? []) as any[]).filter((i) => i.attiva !== false).length;
       if (n > 0) d.iscrizioni = n;
     }
-  } catch { /* dato assente */ }
+  } catch { d.letture_fallite = (d.letture_fallite ?? 0) + 1; }
 
   try {
     const { data, error } = await supabase
@@ -160,7 +165,7 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
       }, 0);
       if (ore > 0) d.ore_ghiaccio_disponibili = Math.round(ore);
     }
-  } catch { /* dato assente */ }
+  } catch { d.letture_fallite = (d.letture_fallite ?? 0) + 1; }
 
   try {
     const { data, error } = await supabase
@@ -173,7 +178,7 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
       d.fatturato = fatture.reduce((s, f) => s + (Number(f.importo) || 0), 0);
       d.incassato = fatture.filter((f) => f.data_pagamento).reduce((s, f) => s + (Number(f.importo) || 0), 0);
     }
-  } catch { /* dato assente */ }
+  } catch { d.letture_fallite = (d.letture_fallite ?? 0) + 1; }
 
   try {
     const { data, error } = await supabase
@@ -187,7 +192,7 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
       const inc = lez.reduce((s, l) => s + (Number(l.costo_totale) || 0), 0);
       if (inc > 0) d.lezioni_incasso = inc;
     }
-  } catch { /* dato assente */ }
+  } catch { d.letture_fallite = (d.letture_fallite ?? 0) + 1; }
 
   try {
     const { data: gare, error } = await supabase
@@ -204,7 +209,10 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
       const con_podio = righe.filter(podio);
       if (con_podio.length > 0) {
         d.podi = con_podio.length;
-         d.ori = righe.filter((i) => String(i.medaglia ?? "").toLowerCase() === "oro").length;
+         const quante = (m: string) => righe.filter((i) => String(i.medaglia ?? "").toLowerCase() === m).length;
+         d.ori = quante("oro");
+         d.argenti = quante("argento");
+         d.bronzi = quante("bronzo");
          const atleta_ids = Array.from(new Set(con_podio.map((i) => i.atleta_id).filter(Boolean)));
          const { data: atlete, error: err3 } = await supabase
            .from("atleti").select("id,nome,cognome").eq("club_id", club_id).in("id", atleta_ids);
@@ -223,7 +231,7 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
            .map(({ nome, medaglia, gara }) => ({ nome, medaglia, gara }));
       }
     }
-  } catch { /* dato assente */ }
+  } catch { d.letture_fallite = (d.letture_fallite ?? 0) + 1; }
 
   try {
     const { data: test, error } = await supabase
@@ -239,7 +247,7 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
       ).length;
       if (superati > 0) d.test_superati = superati;
     }
-  } catch { /* dato assente */ }
+  } catch { d.letture_fallite = (d.letture_fallite ?? 0) + 1; }
 
   try {
     const { data, error } = await supabase
@@ -251,7 +259,7 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
       d.messaggi_inviati = inviati;
       d.messaggi_letti = righe.filter((c) => c.inviata_at && c.letta).length;
     }
-  } catch { /* dato assente */ }
+  } catch { d.letture_fallite = (d.letture_fallite ?? 0) + 1; }
 
   try {
     const { data, error } = await supabase
@@ -264,7 +272,7 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
       const tot = righe.reduce((s, r) => s + (Number(r.importo_annuo) || 0), 0);
       if (tot > 0) d.sponsor_valore = tot;
     }
-  } catch { /* dato assente */ }
+  } catch { d.letture_fallite = (d.letture_fallite ?? 0) + 1; }
 
   return d;
 }
@@ -273,7 +281,33 @@ export async function fetchDatiNarrativi(club_id: string, stagione: Stagione): P
 // Testi
 // ────────────────────────────────────────────────────────────────
 
-const unisci = (frasi: (string | null | undefined)[]) => frasi.filter(Boolean).join(" ").trim();
+/**
+ * Una frase generata non esce mai monca. Se contiene un buco — due spazi di
+ * fila, una virgola senza nulla davanti, parentesi vuote, un segnaposto non
+ * sostituito — la frase non si scrive affatto: meglio una frase in meno.
+ */
+export function frase_valida(frase: string | null | undefined): boolean {
+  if (!frase) return false;
+  const s = String(frase).trim();
+  if (s.length === 0) return false;
+  if (/\s{2,}/.test(s)) return false;          // "a  che"
+  if (/(^|\s)[,;:]/.test(s)) return false;     // "a , che"
+  if (/[,;:(]\s*[.)]/.test(s)) return false;   // "speciale a ." / "()"
+  if (/\(\s*\)/.test(s)) return false;
+  if (/\{\{|\}\}|\{\d+\}/.test(s)) return false; // segnaposto non sostituito
+  return true;
+}
+
+const unisci = (frasi: (string | null | undefined)[]) =>
+  frasi.filter((f) => frase_valida(f)).join(" ").trim();
+
+/** Testo tradotto del generatore di paragrafi. */
+const tp = (chiave: string, opzioni: Record<string, any> = {}): string =>
+  i18n.t(`relazione.paragrafi_auto.${chiave}`, { ns: "dashboard", ...opzioni }) as string;
+
+/** Plurale corretto anche per lo zero, che l'italiano non ha come regola. */
+const conteggio = (base: string, n: number): string =>
+  n === 0 ? tp(`${base}_nessuno`) : tp(base, { count: n });
 
 export function paragrafiArea(area: AreaId, tono: Tono, d: DatiNarrativi): Array<{ ordine: number; testo: string }> {
   const soci = tono === "soci";
@@ -337,13 +371,28 @@ export function paragrafiArea(area: AreaId, tono: Tono, d: DatiNarrativi): Array
       apertura = soci
         ? `Le gare e i test di livello sono il momento in cui il lavoro dell'anno si misura fuori casa.`
         : `La sezione espone i risultati dell'attività agonistica e dei test tecnici della stagione.`;
+      // Le atlete del podio entrano nella frase solo se hanno davvero un nome.
+      const podio_nominato = (d.podi_atlete ?? []).filter(
+        (p) => p.nome.trim().length > 0 && p.gara.trim().length > 0 && p.medaglia.trim().length > 0,
+      );
+      const medaglie =
+        d.ori != null && d.argenti != null && d.bronzi != null
+          ? tp("medaglie", {
+              ori: conteggio("ori", d.ori),
+              argenti: conteggio("argenti", d.argenti),
+              bronzi: conteggio("bronzi", d.bronzi),
+            })
+          : null;
       numeri = unisci([
-        d.gare != null ? `Le gare in calendario sono state ${fmt_n(d.gare)}.` : null,
-        d.podi != null ? `I podi conquistati sono ${fmt_n(d.podi)}${d.ori != null ? `, di cui ${fmt_n(d.ori)} primi posti` : ""}.` : null,
-         d.podi_atlete && d.podi_atlete.length > 0
-           ? `Sul podio in questa stagione: ${d.podi_atlete.map((p) => `${p.nome} (${p.medaglia}, ${p.gara})`).join(", ")}.`
-           : null,
-        d.test_superati != null ? `I test di livello superati sono ${fmt_n(d.test_superati)}.` : null,
+        d.gare != null ? tp("gare", { count: d.gare }) : null,
+        d.podi != null ? tp("podi", { count: d.podi }) : null,
+        medaglie,
+        podio_nominato.length > 0
+          ? tp("podio_elenco", {
+              elenco: podio_nominato.map((p) => `${p.nome} (${p.medaglia}, ${p.gara})`).join(", "),
+            })
+          : null,
+        d.test_superati != null ? tp("test", { count: d.test_superati }) : null,
       ]);
       break;
     }
@@ -387,6 +436,71 @@ export function paragrafiArea(area: AreaId, tono: Tono, d: DatiNarrativi): Array
 // ────────────────────────────────────────────────────────────────
 // Scrittura su database
 // ────────────────────────────────────────────────────────────────
+
+/**
+ * Allinea i testi generati ai dati e al codice di oggi.
+ *
+ * Il testo salvato è esso stesso la firma: si rigenera il paragrafo dai dati
+ * correnti e lo si confronta con quello in tabella. Se cambia il dato o
+ * cambia il generatore, il testo cambia e viene riscritto; se un paragrafo
+ * non ha più nulla da dire, la riga vecchia viene tolta invece di restare lì
+ * monca. I paragrafi con `is_edited = true` non si toccano mai.
+ *
+ * Se una delle letture dei dati è fallita non si riscrive nulla: un testo non
+ * si sostituisce sulla base di numeri che non sappiamo.
+ */
+export async function sincronizzaParagrafi(
+  club_id: string, stagione: Stagione, tono: Tono,
+): Promise<{ aggiornati: number; rimossi: number }> {
+  const dati = await fetchDatiNarrativi(club_id, stagione);
+  if ((dati.letture_fallite ?? 0) > 0) {
+    throw new Error(i18n.t("relazione.paragrafi.errore_dati_incompleti", { ns: "dashboard" }) as string);
+  }
+
+  const { data, error } = await supabase
+    .from("relazioni_paragrafi_auto" as any)
+    .select("area_id,paragrafo_ordine,contenuto,is_edited")
+    .eq("club_id", club_id).eq("stagione_id", stagione.id).eq("tono", tono);
+  if (error) throw error;
+  const esistenti = new Map(
+    ((data ?? []) as any[]).map((r) => [`${r.area_id}|${r.paragrafo_ordine}`, r]),
+  );
+
+  const da_scrivere: any[] = [];
+  const da_rimuovere: Array<{ area: AreaId; ordine: number }> = [];
+
+  for (const area of AREE_NARRATIVE) {
+    const prodotti = new Map(paragrafiArea(area, tono, dati).map((p) => [p.ordine, p.testo]));
+    const ordini = new Set<number>([...prodotti.keys(), ...Object.keys(ORDINE_LABELS).map(Number)]);
+    for (const ordine of ordini) {
+      const riga = esistenti.get(`${area}|${ordine}`);
+      if (riga?.is_edited) continue;
+      const testo = (prodotti.get(ordine) ?? "").trim();
+      if (!testo) { if (riga) da_rimuovere.push({ area, ordine }); continue; }
+      if (riga && String(riga.contenuto ?? "") === testo) continue;
+      da_scrivere.push({
+        club_id, stagione_id: stagione.id, area_id: area,
+        paragrafo_ordine: ordine, tono, contenuto: testo,
+        is_edited: false, generated_at: new Date().toISOString(),
+      });
+    }
+  }
+
+  if (da_scrivere.length > 0) {
+    const { error: err2 } = await supabase
+      .from("relazioni_paragrafi_auto" as any)
+      .upsert(da_scrivere, { onConflict: "club_id,stagione_id,area_id,paragrafo_ordine,tono" });
+    if (err2) throw err2;
+  }
+  for (const r of da_rimuovere) {
+    const { error: err3 } = await supabase
+      .from("relazioni_paragrafi_auto" as any).delete()
+      .eq("club_id", club_id).eq("stagione_id", stagione.id).eq("tono", tono)
+      .eq("area_id", r.area).eq("paragrafo_ordine", r.ordine).eq("is_edited", false);
+    if (err3) throw err3;
+  }
+  return { aggiornati: da_scrivere.length, rimossi: da_rimuovere.length };
+}
 
 export interface GenerateProgress {
   area_idx: number;
