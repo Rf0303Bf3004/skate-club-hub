@@ -204,6 +204,7 @@ const IscrizioneAtletaPage: React.FC = () => {
 
   const on_submit = async () => {
     if (!contratto_ok) { set_errore(messaggi_errore.contratto_non_accettato); return; }
+    if (!contratto_impronta) { set_errore(messaggi_errore.contratto_cambiato); return; }
     if (!nome_bloccato && !form.nome?.trim()) { set_errore("Inserisci il nome dell'atleta."); return; }
     if (!cognome_bloccato && !form.cognome?.trim()) { set_errore("Inserisci il cognome dell'atleta."); return; }
     if (!form.genitore1_nome?.trim() || !form.genitore1_cognome?.trim()) { set_errore("Inserisci nome e cognome del genitore/tutore."); return; }
@@ -214,9 +215,10 @@ const IscrizioneAtletaPage: React.FC = () => {
     const dati = {
       ...form,
       contratto_accettato: true,
-      contratto_testo,
+      contratto_impronta,
       corsi_scelti: rinnovo_aperto ? corsi_scelti : [],
     };
+
     const body = new FormData();
     body.append("codice_atleta", codice_atleta ?? "");
     body.append("azione", "salva");
