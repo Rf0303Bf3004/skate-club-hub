@@ -12,11 +12,14 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import CodiceAtletaInput from "@/components/portale/CodiceAtletaInput";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 import {
   portale_logout, portale_restore_session, portale_get_profili_collegati,
   portale_switch_profilo, portale_remove_profilo, portale_login,
   type PortaleSession,
 } from "@/lib/portale-auth";
+
 
 const PortaleLayout: React.FC = () => {
   const navigate = useNavigate();
