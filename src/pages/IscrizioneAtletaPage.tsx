@@ -44,6 +44,12 @@ interface Corso {
 }
 
 
+const orario = (c: Corso) =>
+  c.ora_inizio && c.ora_fine ? `${c.ora_inizio.slice(0, 5)}–${c.ora_fine.slice(0, 5)}` : null;
+
+const costo = (c: Corso) =>
+  c.costo_mensile != null ? `CHF ${Number(c.costo_mensile).toFixed(2)}/mese` : null;
+
 const Campo: React.FC<{ label: string; required?: boolean; children: React.ReactNode }> = ({ label, required, children }) => (
   <div className="space-y-1.5">
     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
