@@ -8,6 +8,9 @@
 import { supabase } from "@/lib/supabase";
 import i18n from "@/i18n";
 import { formatta, type GraficoSpec, type PuntoSerie } from "./grafici";
+import {
+  fetchFonteEconomica, testo_economia, SOGLIA_FATTURE, type EsitoFonte,
+} from "./fonte-economica";
 
 // Il tono è definito qui per non creare una dipendenza circolare con paragraphGenerator.
 export type TonoModuli = "soci" | "formale";
@@ -495,35 +498,43 @@ async function modGhiaccioOre(ctx: ContestoModuli): Promise<ModuloRisultato> {
 }
 
 // ── Economia ────────────────────────────────────────────────────
+//
+// Una sola fonte per stagione (vedi fonte-economica.ts): o le fatture del
+// portale, o il bilancio di stagione. Mai i due numeri affiancati come se
+// fossero la stessa cosa, mai un totale che li somma.
 
-async function fattureStagione(ctx: ContestoModuli) {
-  const { data, error } = await supabase
-    .from("fatture")
-    .select("id,importo,data_emissione,data_pagamento,pagata,stato,tipo,ragione_sociale_id")
-    .eq("club_id", ctx.club_id);
-  if (error) throw error;
-  return ((data ?? []) as any[]).filter(
-    (f) => f.stato !== "bozza" && f.stato !== "annullata" && dentro(f.data_emissione, ctx.stagione),
-  );
+/** La fonte si legge una volta sola per costruzione del documento. */
+async function fonteDi(ctx: ContestoModuli): Promise<EsitoFonte> {
+  const c = ctx as ContestoModuli & { __fonte?: Promise<EsitoFonte> };
+  if (!c.__fonte) c.__fonte = fetchFonteEconomica(ctx.club_id, ctx.stagione);
+  return c.__fonte;
+}
+
+/** Motivo per cui un modulo basato sulle fatture non si stampa in questa stagione. */
+function motivo_non_fatture(f: EsitoFonte): string {
+  return f.fonte === "bilancio"
+    ? testo_economia("solo_bilancio", { soglia: SOGLIA_FATTURE })
+    : testo_economia("senza_dati");
 }
 
 async function modEconomiaMensile(ctx: ContestoModuli): Promise<ModuloRisultato> {
   const def = def_di("economia_mensile");
   return sicuro(def, async () => {
-    const fatture = await fattureStagione(ctx);
-    if (fatture.length === 0) return vuoto(def, "Non ci sono fatture emesse in questa stagione.");
+    const f = await fonteDi(ctx);
+    if (f.fonte !== "fatture") return vuoto(def, motivo_non_fatture(f));
+    const fatture = f.fatture;
     const mesi = new Map<string, { fatturato: number; incassato: number }>();
     const chiave = (d: string) => String(d).slice(0, 7);
-    for (const f of fatture) {
-      if (!f.data_emissione) continue;
-      const k = chiave(f.data_emissione);
+    for (const fa of fatture) {
+      if (!fa.data_emissione) continue;
+      const k = chiave(fa.data_emissione);
       const v = mesi.get(k) ?? { fatturato: 0, incassato: 0 };
-      v.fatturato += Number(f.importo) || 0;
+      v.fatturato += fa.importo;
       mesi.set(k, v);
-      if (f.data_pagamento) {
-        const kp = chiave(f.data_pagamento);
+      if (fa.data_pagamento) {
+        const kp = chiave(fa.data_pagamento);
         const vp = mesi.get(kp) ?? { fatturato: 0, incassato: 0 };
-        vp.incassato += Number(f.importo) || 0;
+        vp.incassato += fa.importo;
         mesi.set(kp, vp);
       }
     }
@@ -534,9 +545,11 @@ async function modEconomiaMensile(ctx: ContestoModuli): Promise<ModuloRisultato>
         valore: v.fatturato,
         valore2: v.incassato,
       }));
+    if (dati.length === 0) return vuoto(def, testo_economia("senza_dati"));
     return ok(def, {
-      tipo: "barre", titolo: def.titolo, sottotitolo: "fatture emesse nella stagione", formato: "chf",
-      dati, etichetta_serie1: "Fatturato", etichetta_serie2: "Incassato",
+      tipo: "barre", titolo: testo_economia("titolo_fatturato_mese"),
+      sottotitolo: testo_economia("etichetta_fatture"), formato: "chf",
+      dati, etichetta_serie1: testo_economia("serie_fatturato"), etichetta_serie2: testo_economia("serie_incassato"),
     });
   });
 }
@@ -544,60 +557,82 @@ async function modEconomiaMensile(ctx: ContestoModuli): Promise<ModuloRisultato>
 async function modEconomiaEnti(ctx: ContestoModuli): Promise<ModuloRisultato> {
   const def = def_di("economia_enti");
   return sicuro(def, async () => {
-    const fatture = await fattureStagione(ctx);
-    if (fatture.length === 0) return vuoto(def, "Non ci sono fatture emesse in questa stagione.");
+    const f = await fonteDi(ctx);
+    if (f.fonte !== "fatture") return vuoto(def, motivo_non_fatture(f));
     const { data: enti, error } = await supabase
       .from("ragioni_sociali").select("id,nome").eq("club_id", ctx.club_id);
     if (error) throw error;
     const nomi = new Map(((enti ?? []) as any[]).map((r) => [r.id, r.nome]));
-    if (nomi.size === 0) return vuoto(def, "Il club non ha ragioni sociali separate.");
+    if (nomi.size === 0) return vuoto(def, testo_economia("senza_enti"));
     const per_ente = new Map<string, number>();
-    for (const f of fatture) {
-      const k = f.ragione_sociale_id ? (nomi.get(f.ragione_sociale_id) ?? "Ente non trovato") : "Club";
-      per_ente.set(k, (per_ente.get(k) ?? 0) + (Number(f.importo) || 0));
+    for (const fa of f.fatture) {
+      const k = fa.ragione_sociale_id
+        ? (nomi.get(fa.ragione_sociale_id) ?? testo_economia("ente_non_trovato"))
+        : testo_economia("ente_club");
+      per_ente.set(k, (per_ente.get(k) ?? 0) + fa.importo);
     }
     const dati = Array.from(per_ente.entries()).map(([etichetta, valore]) => ({ etichetta, valore }));
-    return ok(def, { tipo: "donut", titolo: def.titolo, sottotitolo: "fatturato per ente", formato: "chf", dati });
+    return ok(def, {
+      tipo: "donut", titolo: def.titolo,
+      sottotitolo: testo_economia("etichetta_fatture"), formato: "chf", dati,
+    });
   });
+}
+
+/** Etichetta leggibile di una fonte di ricavo salvata a codice (quote_corsi -> Quote corsi). */
+function nome_fonte_ricavo(valore: string): string {
+  const pulito = String(valore ?? "").trim().replace(/_/g, " ");
+  if (!pulito) return testo_modulo("altro");
+  return pulito.charAt(0).toUpperCase() + pulito.slice(1);
 }
 
 async function modEconomiaFonti(ctx: ContestoModuli): Promise<ModuloRisultato> {
   const def = def_di("economia_fonti");
   return sicuro(def, async () => {
-    // La ripartizione per fonte sta nelle righe della fattura: fatture.tipo è quasi sempre "Mensile".
-    const { data, error } = await supabase
-      .from("fatture")
-      .select("id,importo,data_emissione,stato,righe")
-      .eq("club_id", ctx.club_id);
-    if (error) throw error;
-    const fatture = ((data ?? []) as any[]).filter(
-      (f) => f.stato !== "bozza" && f.stato !== "annullata" && dentro(f.data_emissione, ctx.stagione),
-    );
-    if (fatture.length === 0) return vuoto(def, "Non ci sono fatture emesse in questa stagione.");
+    const f = await fonteDi(ctx);
+    if (f.fonte === "nessuna") return vuoto(def, testo_economia("senza_dati"));
 
+    // Comanda il bilancio: la ripartizione arriva da ricavi_per_fonte, mai dalle fatture.
+    if (f.fonte === "bilancio") {
+      const { data, error } = await supabase
+        .from("ricavi_per_fonte").select("fonte,importo")
+        .eq("club_id", ctx.club_id).eq("stagione_id", ctx.stagione.id);
+      if (error) throw error;
+      const dati = ((data ?? []) as any[])
+        .map((r) => ({ etichetta: nome_fonte_ricavo(r.fonte), valore: Number(r.importo) || 0 }))
+        .filter((r) => r.valore > 0)
+        .sort((a, b) => b.valore - a.valore);
+      if (dati.length === 0) return vuoto(def, testo_economia("fonti_bilancio_vuoto"));
+      return ok(def, {
+        tipo: "barre", orientamento: "orizzontale", titolo: def.titolo,
+        sottotitolo: testo_economia("etichetta_bilancio"), formato: "chf", dati: limita_voci(dati),
+      });
+    }
+
+    // Comandano le fatture: la ripartizione sta nelle righe della fattura.
     const per_tipo = new Map<string, number>();
     const aggiungi = (etichetta: string, importo: number) => {
       if (!(importo > 0)) return;
       per_tipo.set(etichetta, (per_tipo.get(etichetta) ?? 0) + importo);
     };
-    for (const f of fatture) {
-      const righe = Array.isArray(f.righe) ? (f.righe as any[]) : [];
+    for (const fa of f.fatture) {
+      const righe = Array.isArray(fa.righe) ? (fa.righe as any[]) : [];
       if (righe.length === 0) {
-        aggiungi("Altro", Number(f.importo) || 0);
+        aggiungi(testo_modulo("altro"), fa.importo);
         continue;
       }
       for (const r of righe) {
-        const etichetta = String(r?.tipo ?? "").trim() || "Altro";
+        const etichetta = String(r?.tipo ?? "").trim() || testo_modulo("altro");
         aggiungi(etichetta, Number(r?.importo) || 0);
       }
     }
     const dati = Array.from(per_tipo.entries())
       .map(([etichetta, valore]) => ({ etichetta, valore }))
       .sort((a, b) => b.valore - a.valore);
-    if (dati.length === 0) return vuoto(def, "Le fatture di questa stagione non hanno righe con un importo.");
+    if (dati.length === 0) return vuoto(def, testo_economia("fonti_fatture_vuoto"));
     return ok(def, {
       tipo: "barre", orientamento: "orizzontale", titolo: def.titolo,
-      sottotitolo: "fatturato per fonte", formato: "chf", dati: limita_voci(dati),
+      sottotitolo: testo_economia("etichetta_fatture"), formato: "chf", dati: limita_voci(dati),
     });
   });
 }
@@ -605,24 +640,25 @@ async function modEconomiaFonti(ctx: ContestoModuli): Promise<ModuloRisultato> {
 async function modEconomiaBilancio(ctx: ContestoModuli): Promise<ModuloRisultato> {
   const def = def_di("economia_bilancio");
   return sicuro(def, async () => {
-    const { data, error } = await supabase
-      .from("bilancio_stagione").select("totale_entrate,totale_uscite,saldo,cassa_iniziale,cassa_finale")
-      .eq("club_id", ctx.club_id).eq("stagione_id", ctx.stagione.id).maybeSingle();
-    if (error) throw error;
-    if (!data) return vuoto(def, "Il bilancio di questa stagione non è stato compilato.");
-    const b = data as any;
-    const chf = (v: any) => "CHF " + Math.round(Number(v) || 0).toLocaleString("de-CH").replace(/,/g, "'");
+    const f = await fonteDi(ctx);
+    if (!f.bilancio) return vuoto(def, testo_economia("bilancio_mancante"));
+    const b = f.bilancio;
+    const chf = (v: number) => "CHF " + Math.round(v).toLocaleString("de-CH").replace(/,/g, "'");
+    const righe: string[][] = [
+      [testo_economia("voce_entrate"), chf(b.totale_entrate)],
+      [testo_economia("voce_uscite"), chf(b.totale_uscite)],
+      [testo_economia("voce_saldo"), chf(b.saldo)],
+    ];
+    if (b.cassa_iniziale != null) righe.push([testo_economia("voce_cassa_iniziale"), chf(b.cassa_iniziale)]);
+    if (b.cassa_finale != null) righe.push([testo_economia("voce_cassa_finale"), chf(b.cassa_finale)]);
     return ok(def, {
-      tipo: "tabella", titolo: def.titolo, sottotitolo: "dal bilancio di stagione",
-      colonne: ["Voce", "Importo"],
-      righe: [
-        ["Totale entrate", chf(b.totale_entrate)],
-        ["Totale uscite", chf(b.totale_uscite)],
-        ["Saldo", chf(b.saldo ?? (Number(b.totale_entrate) || 0) - (Number(b.totale_uscite) || 0))],
-        ["Cassa iniziale", chf(b.cassa_iniziale)],
-        ["Cassa finale", chf(b.cassa_finale)],
-      ],
+      tipo: "tabella", titolo: testo_economia("titolo_bilancio"),
+      sottotitolo: testo_economia("etichetta_bilancio"),
+      colonne: [testo_economia("col_voce"), testo_economia("col_importo")],
+      righe,
       allinea_destra: [1],
+      // Con entrambe le fonti si dice perché i due numeri non coincidono.
+      didascalia: f.due_blocchi ? testo_economia("nota_due_fonti") : undefined,
     });
   });
 }
