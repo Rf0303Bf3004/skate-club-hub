@@ -116,6 +116,7 @@ Deno.serve(async (req) => {
         inviata_at: new Date().toISOString(),
         ...payload,
       });
+      // Il registro mancato non resta un silenzio: viene contato e riportato.
       if (error) console.error("[invia-email-iscrizioni] registro comunicazione", error);
       return !error;
     };
@@ -151,6 +152,7 @@ Deno.serve(async (req) => {
       let inviati = 0;
       let senza_email = 0;
       let senza_codice = 0;
+      let non_registrati = 0;
       const falliti: { atleta: string; motivo: string }[] = [];
 
       for (const riga of righe ?? []) {
@@ -195,15 +197,16 @@ Deno.serve(async (req) => {
           continue;
         }
         inviati++;
-        await registra({
+        const registrato = await registra({
           titolo: oggetto,
           testo: `Invito al rinnovo per la stagione ${stagione.nome ?? ""}. Inviato a: ${destinatari.join(", ")}`,
           tipo: "invito_rinnovo",
           atleta_id: a.id,
         });
+        if (!registrato) non_registrati++;
       }
 
-      return json({ ok: true, inviati, senza_email, senza_codice, falliti });
+      return json({ ok: true, inviati, senza_email, senza_codice, non_registrati, falliti });
     }
 
     // ── Benvenuto dopo l'approvazione ────────────────────────────────────
@@ -245,13 +248,13 @@ Deno.serve(async (req) => {
       } catch (err) {
         return json({ error: "invio_fallito", dettaglio: (err as Error).message }, 502);
       }
-      await registra({
+      const registrato = await registra({
         titolo: oggetto,
         testo: `Benvenuto e codice di accesso. Inviato a: ${destinatari.join(", ")}`,
         tipo: "benvenuto_iscrizione",
         atleta_id: a.id,
       });
-      return json({ ok: true, inviati: 1, senza_email: 0 });
+      return json({ ok: true, inviati: 1, senza_email: 0, non_registrati: registrato ? 0 : 1 });
     }
 
     // ── Domanda rifiutata ────────────────────────────────────────────────
@@ -281,13 +284,13 @@ Deno.serve(async (req) => {
     } catch (err) {
       return json({ error: "invio_fallito", dettaglio: (err as Error).message }, 502);
     }
-    await registra({
+    const registrato = await registra({
       titolo: oggetto,
       testo: `Risposta a una domanda di iscrizione. Inviata a: ${destinatario}`,
       tipo: "domanda_rifiutata",
       tipo_destinatari: "singolo",
     });
-    return json({ ok: true, inviati: 1, senza_email: 0 });
+    return json({ ok: true, inviati: 1, senza_email: 0, non_registrati: registrato ? 0 : 1 });
   } catch (e) {
     console.error("[invia-email-iscrizioni] fatal", e);
     return json({ error: (e as Error).message }, 500);
