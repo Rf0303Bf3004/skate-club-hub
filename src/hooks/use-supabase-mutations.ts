@@ -966,6 +966,9 @@ export function use_anteprima_fatture_periodo() {
         ...r,
         totale: Number(r.totale ?? 0),
         righe: Array.isArray(r.righe) ? (r.righe as AnteprimaFatturaRiga[]) : [],
+        pagante: r.pagante ?? null,
+        pagante_nome: r.pagante_nome ?? null,
+        quota_meta: !!r.quota_meta,
       }));
     },
   });
