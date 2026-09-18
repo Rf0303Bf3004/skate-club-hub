@@ -289,7 +289,10 @@ const IscrizioneAtletaPage: React.FC = () => {
                 Il rinnovo è registrato, ma questi corsi non sono stati accettati:
               </p>
               {corsi_falliti.map((c, i) => (
-                <p key={i} className="text-xs text-amber-900">• {c.nome}: {testo_motivo(c.motivo)}</p>
+                <p key={i} className="text-xs text-amber-900">
+                  • {c.nome ? `${c.nome}: ` : ""}
+                  {testo_motivo(c.motivo)}
+                </p>
               ))}
               <p className="text-xs text-amber-900">Il club ti ricontatterà per sistemarli.</p>
             </div>
