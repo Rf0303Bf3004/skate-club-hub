@@ -119,6 +119,8 @@ const IscrizioneAtletaPage: React.FC = () => {
           intende_test_livello: !!a.intende_test_livello,
           consenso_foto_video: !!a.consenso_foto_video,
         });
+        set_stagione(((data as any).stagione ?? null) as Stagione | null);
+        set_corsi_ammessi((((data as any).corsi_ammessi ?? []) as Corso[]));
       }
       set_is_loading(false);
     };
