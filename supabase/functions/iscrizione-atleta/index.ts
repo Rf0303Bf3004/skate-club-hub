@@ -172,6 +172,14 @@ Deno.serve(async (req) => {
 
     const rinnovo_attivo = !!stagione?.iscrizioni_aperte;
 
+    // Solo il testo del contratto: lo chiede il portale (scheda anagrafica
+    // stampabile) per non ricostruirne una copia nel browser.
+    if (azione === "contratto") {
+      return json({ ok: true, contratto: { articoli: contratto.articoli, impronta: contratto.impronta } });
+    }
+
+
+
 
     if (azione === "lookup") {
       let registro: { status: string; confermato_il: string | null } | null = null;
@@ -262,6 +270,26 @@ Deno.serve(async (req) => {
       return json({ error: "contratto_cambiato" }, 409);
     }
 
+    // Il contratto si archivia SEMPRE, dentro o fuori campagna: senza il testo
+    // archiviato non si scrive nessun consenso sull'atleta. Fuori stagione la
+    // riga va con stagione_id nullo, come previsto dall'indice unico.
+    const { error: ctr_err } = await admin.from("contratti_accettati").insert({
+      club_id: atleta.club_id,
+      atleta_id: atleta.id,
+      stagione_id: stagione?.id ?? null,
+      testo: contratto.testo,
+      accettato_il: new Date().toISOString(),
+      accettato_da: [clean(payload.genitore1_nome, 80), clean(payload.genitore1_cognome, 80)]
+        .filter(Boolean)
+        .join(" "),
+      origine: rinnovo_attivo ? "rinnovo" : "iscrizione",
+    });
+    // 23505: contratto già firmato (ricarico della pagina o doppio invio).
+    // Non è un guasto: l'archivio c'è già.
+    if (ctr_err && (ctr_err as any).code !== "23505") {
+      console.error("[iscrizione-atleta] ctr_err", ctr_err);
+      return json({ error: "contratto_non_archiviato" }, 500);
+    }
 
     const update: Record<string, unknown> = {};
 
@@ -324,30 +352,13 @@ Deno.serve(async (req) => {
       return json({ error: "db_error" }, 500);
     }
 
-    // Rinnovo di stagione: archivio del contratto, conferma e corsi scelti.
+    // Rinnovo di stagione: conferma e corsi scelti. Il contratto è già
+    // archiviato più sopra, prima di qualunque scrittura del consenso.
     const corsi_falliti: { nome: string; motivo: string }[] = [];
     let rinnovo_confermato = false;
 
     if (rinnovo_attivo && stagione?.id) {
-      // Prima il contratto, poi la conferma: un rinnovo senza contratto
-      // archiviato non deve poter esistere.
-      const { error: ctr_err } = await admin.from("contratti_accettati").insert({
-        club_id: atleta.club_id,
-        atleta_id: atleta.id,
-        stagione_id: stagione.id,
-        testo: contratto.testo,
-        accettato_il: new Date().toISOString(),
-        accettato_da: [clean(payload.genitore1_nome, 80), clean(payload.genitore1_cognome, 80)]
-          .filter(Boolean)
-          .join(" "),
-        origine: "rinnovo",
-      });
-      // 23505: contratto già firmato per questa stagione (ricarico della
-      // pagina o doppio invio). Non è un guasto: l'archivio c'è già.
-      if (ctr_err && (ctr_err as any).code !== "23505") {
-        console.error("[iscrizione-atleta] ctr_err", ctr_err);
-        return json({ error: "contratto_non_archiviato" }, 500);
-      }
+
 
       const { error: conf_err } = await admin.rpc("conferma_rinnovo", {
         p_atleta: atleta.id,
@@ -374,7 +385,18 @@ Deno.serve(async (req) => {
           .eq("attivo", true)
           .maybeSingle();
         if (!corso) {
-          corsi_falliti.push({ nome: corso_id, motivo: "corso_non_disponibile" });
+          // Alla famiglia si mostra il nome, mai l'identificativo interno: se
+          // il corso non esiste più non si scrive nessun codice.
+          const { data: corso_noto } = await admin
+            .from("corsi")
+            .select("nome")
+            .eq("id", corso_id)
+            .eq("club_id", atleta.club_id)
+            .maybeSingle();
+          corsi_falliti.push({
+            nome: clean(corso_noto?.nome, 120) ?? "",
+            motivo: "corso_non_disponibile",
+          });
           continue;
         }
         const errore_ins = corso.richiede_approvazione

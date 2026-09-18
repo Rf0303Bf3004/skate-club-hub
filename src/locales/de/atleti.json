@@ -180,7 +180,17 @@
       "non_rinnovato_ok": "Als nicht verlängert markiert",
       "nessun_atleta": "Keine Athletinnen mit diesen Filtern.",
       "errore_lettura": "Die Anmeldekampagne konnte nicht gelesen werden. Die Zahlen unten sind nicht verlässlich.",
-      "nessuna_stagione": "Es gibt keine aktive Saison: öffnen Sie zuerst eine Saison."
+      "nessuna_stagione": "Es gibt keine aktive Saison: öffnen Sie zuerst eine Saison.",
+      "domande_in_attesa": "Offene Anfragen",
+      "vai_alle_domande": "Zu den neuen Anfragen",
+      "apri_conteggio_one": "1 Athletin wird eingeladen.",
+      "apri_conteggio_other": "{{count}} Athletinnen werden eingeladen.",
+      "apri_gia_presenti_one": "1 Athletin ist bereits im Saisonregister.",
+      "apri_gia_presenti_other": "{{count}} Athletinnen sind bereits im Saisonregister.",
+      "apri_conteggio_in_corso": "Die einzuladenden Athletinnen werden gezählt…",
+      "apri_conteggio_errore": "Wir können nicht lesen, wie viele Athletinnen eingeladen würden: Die Kampagne bleibt geschlossen, bis die Zahl sicher ist.",
+      "esito_non_registrati_one": "1 gesendete Nachricht wurde nicht im Kommunikationsjournal erfasst.",
+      "esito_non_registrati_other": "{{count}} gesendete Nachrichten wurden nicht im Kommunikationsjournal erfasst."
     },
     "domande": {
       "link_pubblico": "Öffentlicher Link für neue Familien",
@@ -212,7 +222,16 @@
       "rifiutata_titolo": "Anmeldung von {{nome}} abgelehnt",
       "avvisa_famiglia": "Familie benachrichtigen",
       "avviso_inviato": "Familie benachrichtigt",
-      "senza_email": "Keine E-Mail-Adresse: die Nachricht wurde nicht gesendet."
+      "senza_email": "Keine E-Mail-Adresse: die Nachricht wurde nicht gesendet.",
+      "categoria_obbligatoria": "Kategorie wählen: ohne sie startet das Profil mit einem falschen Wert.",
+      "rigenera_link": "Link neu erzeugen",
+      "rigenera_titolo": "Öffentlichen Link neu erzeugen?",
+      "rigenera_testo": "Der bisherige Link funktioniert nicht mehr. Wer ihn erhalten oder ausgedruckt hat, braucht einen neuen.",
+      "rigenera_ok": "Neuer öffentlicher Link erstellt"
     }
+  },
+  "anagrafica": {
+    "contract_loading": "Vertragstext wird geladen…",
+    "contract_unavailable": "Vertragstext momentan nicht verfügbar: Karte erst drucken, wenn er erscheint."
   }
 }

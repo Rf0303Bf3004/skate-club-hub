@@ -153,6 +153,62 @@ function use_invalida() {
   };
 }
 
+/**
+ * Quanti atleti verrebbero invitati aprendo la campagna: stessa selezione della
+ * funzione apri_campagna_iscrizioni (attivi, non esterni, non anonimizzati, non
+ * già presenti nel registro della stagione). Serve a mostrare il numero vero
+ * PRIMA di eseguire: se la lettura fallisce non si mostra nessun numero.
+ */
+export function use_anteprima_apertura(stagione_id?: string | null) {
+  const club_id = get_current_club_id();
+  return useQuery({
+    queryKey: ["anteprima_apertura_campagna", club_id, stagione_id],
+    enabled: !!club_id && !!stagione_id,
+    staleTime: 0,
+    queryFn: async (): Promise<{ da_invitare: number; gia_presenti: number }> => {
+      const { data: atleti, error } = await supabase
+        .from("atleti")
+        .select("id, attivo, atleta_esterno, anonimizzato_il")
+        .eq("club_id", club_id);
+      if (error) throw error;
+
+      const { data: registro, error: err_registro } = await supabase
+        .from("atleti_storici_stagioni")
+        .select("atleta_id")
+        .eq("club_id", club_id)
+        .eq("stagione_id", stagione_id);
+      if (err_registro) throw err_registro;
+
+      const presenti = new Set(((registro ?? []) as any[]).map((r) => r.atleta_id));
+      const idonei = ((atleti ?? []) as any[]).filter(
+        (a) => (a.attivo ?? true) && !a.atleta_esterno && !a.anonimizzato_il,
+      );
+      return {
+        da_invitare: idonei.filter((a) => !presenti.has(a.id)).length,
+        gia_presenti: presenti.size,
+      };
+    },
+  });
+}
+
+/** Nuovo link pubblico del club: quello di prima smette di funzionare. */
+export function use_rigenera_token_iscrizioni() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (): Promise<string> => {
+      const club_id = get_current_club_id();
+      if (!club_id) throw new Error("club_mancante");
+      const token = crypto.randomUUID().replace(/-/g, "");
+      const { error } = await supabase.from("clubs").update({ iscrizioni_token: token }).eq("id", club_id);
+      if (error) throw error;
+      return token;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["club"] });
+    },
+  });
+}
+
 export function use_apri_campagna() {
   const invalida = use_invalida();
   return useMutation({
@@ -261,6 +317,8 @@ export interface EsitoInvio {
   inviati: number;
   senza_email: number;
   senza_codice?: number;
+  /** Messaggi spediti ma non finiti nel registro comunicazioni. */
+  non_registrati?: number;
   falliti?: { atleta: string; motivo: string }[];
 }
 
@@ -277,6 +335,7 @@ export function use_invia_email_iscrizioni() {
         inviati: Number(d.inviati ?? 0),
         senza_email: Number(d.senza_email ?? 0),
         senza_codice: Number(d.senza_codice ?? 0),
+        non_registrati: Number(d.non_registrati ?? 0),
         falliti: (d.falliti ?? []) as { atleta: string; motivo: string }[],
       };
     },

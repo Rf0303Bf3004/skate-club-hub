@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TabRinnovi from "@/components/iscrizioni/TabRinnovi";
 import TabDomandeNuove from "@/components/iscrizioni/TabDomandeNuove";
 import TabRichiesteCorsi from "@/components/iscrizioni/TabRichiesteCorsi";
+import { use_richieste_iscrizione } from "@/hooks/use-supabase-data";
+import { use_domande_iscrizione } from "@/hooks/use-iscrizioni-stagione";
 
 /**
  * Una pagina sola per tutto quello che la segreteria deve decidere:
@@ -21,6 +23,22 @@ const RichiesteIscrizionePage: React.FC = () => {
   const { visibile_set, is_admin_like, is_loading: is_loading_permessi } = usePermessiSezioniMatrix();
   const allowed = is_admin_like || visibile_set.has("richieste_iscrizione");
   const [scheda, set_scheda] = useState("rinnovi");
+
+  // Bollini sulle schede: si mostrano solo su letture riuscite, mai un numero
+  // più basso del vero.
+  const richieste_corsi = use_richieste_iscrizione();
+  const domande = use_domande_iscrizione();
+  const corsi_in_attesa = richieste_corsi.isSuccess
+    ? ((richieste_corsi.data ?? []) as any[]).filter((r) => r.stato === "in_attesa").length
+    : null;
+  const domande_in_attesa = domande.isSuccess ? (domande.data ?? []).length : null;
+
+  const Bollino: React.FC<{ n: number | null }> = ({ n }) =>
+    n && n > 0 ? (
+      <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold tabular-nums">
+        {n}
+      </span>
+    ) : null;
 
   if (is_loading_permessi) {
     return (
@@ -51,12 +69,18 @@ const RichiesteIscrizionePage: React.FC = () => {
       <Tabs value={scheda} onValueChange={set_scheda}>
         <TabsList>
           <TabsTrigger value="rinnovi">{k("tabs.rinnovi")}</TabsTrigger>
-          <TabsTrigger value="domande">{k("tabs.domande")}</TabsTrigger>
-          <TabsTrigger value="corsi">{k("tabs.corsi")}</TabsTrigger>
+          <TabsTrigger value="domande">
+            {k("tabs.domande")}
+            <Bollino n={domande_in_attesa} />
+          </TabsTrigger>
+          <TabsTrigger value="corsi">
+            {k("tabs.corsi")}
+            <Bollino n={corsi_in_attesa} />
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="rinnovi" className="mt-5">
-          <TabRinnovi puo_gestire={puo_gestire_sportivo} />
+          <TabRinnovi puo_gestire={puo_gestire_sportivo} vai_a_domande={() => set_scheda("domande")} />
         </TabsContent>
         <TabsContent value="domande" className="mt-5">
           <TabDomandeNuove puo_gestire={puo_gestire_sportivo} />

@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { codice_errore_edge } from "@/lib/errore-edge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -125,7 +126,7 @@ const IscrizioneAtletaPage: React.FC = () => {
         body: { codice_atleta: codice_atleta ?? "", azione: "lookup" },
       });
       if (!vivo) return;
-      const codice_errore = (data as any)?.error;
+      const codice_errore = await codice_errore_edge(data, error);
       if (error || codice_errore) {
         set_fatale(messaggi_errore[codice_errore] ?? "Codice non trovato, verifica con il tuo club.");
       } else {
@@ -193,7 +194,7 @@ const IscrizioneAtletaPage: React.FC = () => {
     const { data, error } = await supabase.functions.invoke("iscrizione-atleta", {
       body: { codice_atleta: codice_atleta ?? "", azione: "rinuncia", dati: { motivo } },
     });
-    const codice_errore = (data as any)?.error;
+    const codice_errore = await codice_errore_edge(data, error);
     if (error || codice_errore) {
       set_errore(messaggi_errore[codice_errore] ?? "Invio non riuscito, riprova.");
     } else {
@@ -226,7 +227,7 @@ const IscrizioneAtletaPage: React.FC = () => {
     if (file) body.append("file", file);
 
     const { data, error } = await supabase.functions.invoke("iscrizione-atleta", { body });
-    const codice_errore = (data as any)?.error;
+    const codice_errore = await codice_errore_edge(data, error);
     if (error || codice_errore) {
       set_errore(messaggi_errore[codice_errore] ?? "Invio non riuscito, riprova.");
     } else {
@@ -289,7 +290,10 @@ const IscrizioneAtletaPage: React.FC = () => {
                 Il rinnovo è registrato, ma questi corsi non sono stati accettati:
               </p>
               {corsi_falliti.map((c, i) => (
-                <p key={i} className="text-xs text-amber-900">• {c.nome}: {testo_motivo(c.motivo)}</p>
+                <p key={i} className="text-xs text-amber-900">
+                  • {c.nome ? `${c.nome}: ` : ""}
+                  {testo_motivo(c.motivo)}
+                </p>
               ))}
               <p className="text-xs text-amber-900">Il club ti ricontatterà per sistemarli.</p>
             </div>

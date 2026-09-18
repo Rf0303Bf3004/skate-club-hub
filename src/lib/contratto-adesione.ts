@@ -1,3 +1,9 @@
+// ATTENZIONE — la versione buona di questo contratto è quella del server, in
+// `supabase/functions/_shared/contratto.ts`: è il testo che viene mostrato alla
+// famiglia e archiviato alla firma. Questo file resta solo per i punti che non
+// possono chiederlo al server: se cambi una clausola qui devi cambiarla anche
+// là, nello stesso momento, altrimenti quello che si mostra e quello che si
+// archivia divergono in silenzio.
 // Testo del contratto di adesione mostrato nella pagina pubblica /iscrizione/:codice_atleta
 // e in calce alla scheda anagrafica stampabile. I placeholder sono interpolati con i dati
 // reali del club quando disponibili, altrimenti si usa un testo generico ragionevole.
