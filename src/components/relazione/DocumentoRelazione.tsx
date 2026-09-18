@@ -21,9 +21,11 @@ interface Props {
   voci: VocePannello[];
   moduli: Record<string, ModuloRisultato>;
   colore_primario?: string | null;
+  /** Aree il cui testo si può correggere; assente = tutte. */
+  aree_modificabili?: string[];
 }
 
-function TestoCapitolo({ club_id, stagione, tono, area }: { club_id: string; stagione: Stagione; tono: Tono; area: string }) {
+function TestoCapitolo({ club_id, stagione, tono, area, modificabile = true }: { club_id: string; stagione: Stagione; tono: Tono; area: string; modificabile?: boolean }) {
   const { t } = useTranslation("dashboard");
   const qc = useQueryClient();
   const chiave = ["relazione_paragrafi", club_id, stagione.id, tono, area];
@@ -68,12 +70,37 @@ function TestoCapitolo({ club_id, stagione, tono, area }: { club_id: string; sta
   }, [bozze, modificati, q.isSuccess, salva]);
   if (q.isPending) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
   if (q.isError) return <div className="flex items-center gap-2 text-sm text-destructive"><AlertTriangle className="h-4 w-4" />{t("relazione.paragrafi.errore_lettura")}<Button size="sm" variant="outline" onClick={() => q.refetch()}>{t("relazione.riprova")}</Button></div>;
+  // Chi non può correggere questo capitolo lo legge e basta.
+  if (!modificabile) {
+    return <div className="space-y-4">{q.data.map((p) => <p key={p.paragrafo_ordine} className="whitespace-pre-wrap break-words font-serif text-base leading-relaxed">{p.contenuto ?? ""}</p>)}</div>;
+  }
   return <div className="space-y-4">{q.data.map((p) => <TextareaCrescente key={p.paragrafo_ordine} value={bozze[p.paragrafo_ordine] ?? ""} onChange={(e) => { set_bozze((v) => ({ ...v, [p.paragrafo_ordine]: e.target.value })); set_modificati((v) => new Set(v).add(p.paragrafo_ordine)); }} className="min-h-24 border-transparent bg-transparent px-0 font-serif text-base leading-relaxed shadow-none focus-visible:border-border focus-visible:px-3" title={t("relazione.paragrafi.clicca_per_correggere")} />)}</div>;
 }
 
 function Modulo({ risultato, colore }: { risultato: ModuloRisultato; colore: string }) {
   const grafico = risultato.grafico;
   if (!grafico) return null;
+  if (grafico.tipo === "resoconto") {
+    return <section className="mt-6 border-t pt-5">
+      <h3 className="font-serif text-xl font-semibold break-words">{grafico.titolo}</h3>
+      {grafico.sottotitolo && <p className="mt-1 text-xs text-muted-foreground break-words">{grafico.sottotitolo}</p>}
+      {grafico.gare.map((gara, ig) => <div key={ig} className="mt-8 break-before-page">
+        <h4 className="font-serif text-lg font-semibold break-words">{gara.titolo}</h4>
+        {gara.sottotitolo && <p className="text-xs text-muted-foreground break-words">{gara.sottotitolo}</p>}
+        <div className="mt-2 h-px w-full" style={{ backgroundColor: colore }} />
+        {gara.tabelle.map((tab, it) => <div key={it} className="mt-5">
+          <p className="font-serif text-base font-semibold break-words">{tab.titolo}</p>
+          <table className="mt-2 w-full table-auto border-collapse text-sm">
+            <thead><tr>{tab.colonne.map((c, j) => <th key={j} className={`border-b p-2 align-top font-medium ${j === 0 ? "w-14 whitespace-nowrap" : "break-words"} ${(tab.allinea_destra ?? []).includes(j) ? "text-right" : "text-left"}`}>{c}</th>)}</tr></thead>
+            <tbody>{tab.righe.map((r, i) => <tr key={i} className="border-b border-border/60">{r.celle.map((c, j) => <td key={j} className={`p-2 align-top whitespace-pre-wrap break-words ${j === 0 ? "whitespace-nowrap" : ""} ${(tab.allinea_destra ?? []).includes(j) ? "text-right" : ""} ${r.evidenzia ? "font-bold" : ""}`} style={r.evidenzia && j === tab.colonna_nome ? { color: colore } : undefined}>{r.evidenzia && j === 0 ? <span aria-hidden className="mr-1" style={{ color: colore }}>▲</span> : null}{c}</td>)}</tr>)}</tbody>
+          </table>
+          {tab.sintesi && <p className="mt-2 text-xs text-muted-foreground break-words">{tab.sintesi}</p>}
+        </div>)}
+        {gara.nota && <p className="mt-3 text-xs text-muted-foreground break-words">{gara.nota}</p>}
+      </div>)}
+      {grafico.didascalia && <p className="mt-3 text-xs text-muted-foreground break-words">{grafico.didascalia}</p>}
+    </section>;
+  }
   if (grafico.tipo === "tabella") {
     return <section className="mt-6 border-t pt-5">
       <h3 className="font-serif text-xl font-semibold break-words">{grafico.titolo}</h3>
@@ -92,7 +119,7 @@ function Modulo({ risultato, colore }: { risultato: ModuloRisultato; colore: str
   </section>;
 }
 
-export default function DocumentoRelazione({ club_nome, club_id, stagione, tono, voci, moduli, colore_primario }: Props) {
+export default function DocumentoRelazione({ club_nome, club_id, stagione, tono, voci, moduli, colore_primario, aree_modificabili }: Props) {
   const { t } = useTranslation("dashboard");
   const attive = voci.filter((v) => v.attivo);
   return <div className="space-y-5">
@@ -104,7 +131,7 @@ export default function DocumentoRelazione({ club_nome, club_id, stagione, tono,
     {attive.some((v) => v.tipo === "messaggio") && <section className="mx-auto min-h-[70vh] max-w-4xl border bg-card px-8 py-14 shadow-sm md:px-16"><h2 className="font-serif text-3xl font-semibold">{t("relazione.documento.messaggio_titolo")}</h2><div className="mt-8"><MessaggioPresidente club_id={club_id} stagione_id={stagione.id} /></div></section>}
     {attive.filter((v) => v.tipo === "sezione").map((sezione) => {
       const contenuti = attive.filter((v) => v.tipo === "modulo" && moduli[v.riferimento]?.area === sezione.riferimento);
-      return <section key={sezione.id} className="mx-auto min-h-[70vh] max-w-4xl border bg-card px-8 py-14 shadow-sm md:px-16"><h2 className="font-serif text-3xl font-semibold">{sezione.titolo}</h2><div className="mt-6"><TestoCapitolo club_id={club_id} stagione={stagione} tono={tono} area={sezione.riferimento} /></div>{contenuti.map((v) => <Modulo key={v.id} risultato={moduli[v.riferimento]} colore={colore_primario ?? "#14b8a6"} />)}</section>;
+      return <section key={sezione.id} className="mx-auto min-h-[70vh] max-w-4xl border bg-card px-8 py-14 shadow-sm md:px-16"><h2 className="font-serif text-3xl font-semibold">{sezione.titolo}</h2><div className="mt-6"><TestoCapitolo club_id={club_id} stagione={stagione} tono={tono} area={sezione.riferimento} modificabile={!aree_modificabili || aree_modificabili.includes(sezione.riferimento)} /></div>{contenuti.map((v) => <Modulo key={v.id} risultato={moduli[v.riferimento]} colore={colore_primario ?? "#14b8a6"} />)}</section>;
     })}
     {attive.filter((v) => v.tipo === "blocco").map((v) => <section key={v.id} className="mx-auto max-w-4xl border bg-card px-8 py-14 shadow-sm md:px-16"><h2 className="font-serif text-3xl font-semibold">{v.titolo}</h2><p className="mt-6 whitespace-pre-wrap font-serif text-base leading-relaxed">{v.payload?.contenuto}</p></section>)}
     <section className="mx-auto max-w-4xl border bg-card px-6 py-8 shadow-sm"><AllegatiTab club_id={club_id} stagione_id={stagione.id} compatto /></section>
