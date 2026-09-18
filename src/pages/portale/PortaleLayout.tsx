@@ -157,6 +157,15 @@ const PortaleLayout: React.FC = () => {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold truncate">{session.atleta.nome} {session.atleta.cognome}</p>
             <p className="text-xs text-slate-500 truncate">{session.club?.nome ?? ""}</p>
+            {nome_accesso && (
+              <p className="text-[11px] text-slate-400 truncate" title={t("accesso.riga", { nome: nome_accesso })}>
+                {t("accesso.riga", { nome: nome_accesso })}
+              </p>
+            )}
+            {famiglia.isError && (
+              <p className="text-[11px] text-amber-600 truncate">{t("accesso.errore")}</p>
+            )}
+
           </div>
           <button className="lg:hidden" onClick={() => set_open(false)} aria-label="Chiudi menu"><X className="w-5 h-5" /></button>
         </div>
