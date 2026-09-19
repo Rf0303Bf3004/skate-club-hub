@@ -125,7 +125,9 @@ const RigaProva: React.FC<{ r: RichiestaProva; puo_gestire: boolean; on_salvata:
           )}
         </div>
         <span className="text-xs text-muted-foreground whitespace-nowrap">
-          {t("iscrizioni_stagione.prove.arrivata_da", { count: giorni })}
+          {giorni === 0
+            ? t("iscrizioni_stagione.prove.arrivata_da_zero")
+            : t("iscrizioni_stagione.prove.arrivata_da", { count: giorni })}
         </span>
       </div>
 
