@@ -19,7 +19,16 @@ import {
   get_istruttore_name_from_list,
   use_livelli,
 } from "@/hooks/use-supabase-data";
-import { SelectLivello } from "@/components/ui/select-livello";
+import { SelectLivelli } from "@/components/ui/select-livelli";
+import {
+  formatta_livelli_corso,
+  is_apertura_totale,
+  livello_atleta_compatibile,
+  livello_dichiarato,
+  livello_da_sistemare,
+  messaggio_livello_obbligatorio,
+  parse_livelli_corso,
+} from "@/lib/livelli-corso";
 import { use_upsert_corso, use_elimina_corso, use_upsert_presenza_corso } from "@/hooks/use-supabase-mutations";
 import { istruttore_disponibile, calcola_status_istruttori_per_slot } from "@/lib/availability";
 import { Button } from "@/components/ui/button";
@@ -121,11 +130,10 @@ function normalize_livello(l: string): string {
   return map[l.toLowerCase()] ?? l;
 }
 
+// Filtro dell'elenco proposto a chi compila. La decisione vera sull'iscrizione
+// resta della funzione SQL `valuta_iscrizione` (trigger su iscrizioni_corsi).
 function is_livello_compatibile(atleta: any, livello_richiesto: string): boolean {
-  if (!livello_richiesto || livello_richiesto === "tutti") return true;
-  const livello_atleta = normalize_livello(get_atleta_livello(atleta));
-  const livello_corso = normalize_livello(livello_richiesto);
-  return livello_atleta === livello_corso;
+  return livello_atleta_compatibile(get_atleta_livello(atleta), livello_richiesto);
 }
 
 function time_to_min(t: string): number {
