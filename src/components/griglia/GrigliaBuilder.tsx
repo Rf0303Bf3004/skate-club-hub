@@ -2002,8 +2002,11 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
 
         {/* Fascia inferiore: sotto-sessioni a tab */}
         <div className="mt-4">
+          {/* Il contenitore del blocco è sempre un bersaglio di rilascio: con
+              sotto-sessioni presenti serve per spiegare l'errore di mira,
+              senza sotto-sessioni propone di crearne una. */}
+          <BloccoDropZone blocco_id={blocco.id} compatto={sessioni.length > 0}>
           {sessioni.length === 0 ? (
-            <BloccoDropZone blocco_id={blocco.id}>
               <div className="space-y-3 text-center">
                 <p className="text-sm font-medium">Questo blocco non ha ancora nessuna sotto-sessione.</p>
                 <p className="text-xs text-muted-foreground">
