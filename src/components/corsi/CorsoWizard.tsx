@@ -554,7 +554,8 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
         percorso: is_carriera ? form.percorso : null,
       });
     } catch (e: any) {
-      const msg = e?.message || String(e) || t("corso_wizard.err_sconosciuto");
+      const msg =
+        messaggio_livello_obbligatorio(e, t) || e?.message || String(e) || t("corso_wizard.err_sconosciuto");
       set_error_db(msg);
     }
   };
@@ -664,17 +665,16 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                 </div>
               )}
 
-              {form.tipo === "Ghiaccio" && (
+              {/* Il livello va dichiarato per ogni tipo di corso, non solo per il ghiaccio. */}
+              {(form.tipo === "Ghiaccio" || form.tipo === "Off-Ice") && (
                 <div className="space-y-3">
                   <div>
                     <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("corso_wizard.livello_richiesto")}</Label>
                     <div className="mt-1.5">
-                      <SelectLivello
+                      <SelectLivelli
                         value={form.livello_richiesto}
                         onChange={(v) => set_val("livello_richiesto", v)}
-                        fase="qualsiasi"
-                        allowNull={true}
-                        nullLabel={t("corso_wizard.livello_null")}
+                        errore={form.attivo && !livello_dichiarato(form.livello_richiesto) ? t("livelli.obbligatorio") : null}
                       />
                     </div>
                   </div>
