@@ -594,7 +594,65 @@ const AtletaModal: React.FC<{
             )}
           </div>
 
+          {/* Genitori separati — stesso blocco e stesse regole della scheda atleta */}
+          <div className="pt-2 border-t border-border space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <Label htmlFor="modal_genitori_separati" className="text-sm font-medium">
+                {t("detail.separati.switch")}
+              </Label>
+              <Switch
+                id="modal_genitori_separati"
+                checked={!!form.genitori_separati}
+                onCheckedChange={(v) => {
+                  set_val("genitori_separati", v);
+                  if (v) set_show_g2(true);
+                }}
+              />
+            </div>
 
+            {form.genitori_separati && (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-sm text-muted-foreground">{t("detail.separati.fatture_label")}</Label>
+                  <Select
+                    value={form.fatture_intestate_a || "genitore1"}
+                    onValueChange={(v) => set_val("fatture_intestate_a", v)}
+                  >
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="genitore1">{t("detail.separati.fatture_genitore1")}</SelectItem>
+                      <SelectItem value="genitore2">{t("detail.separati.fatture_genitore2")}</SelectItem>
+                      <SelectItem value="meta">{t("detail.separati.fatture_meta")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-sm text-muted-foreground">{t("detail.separati.comunicazioni_label")}</Label>
+                  <Select
+                    value={form.comunicazioni_a || "entrambi"}
+                    onValueChange={(v) => set_val("comunicazioni_a", v)}
+                  >
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="entrambi">{t("detail.separati.comunicazioni_entrambi")}</SelectItem>
+                      <SelectItem value="genitore1">{t("detail.separati.comunicazioni_genitore1")}</SelectItem>
+                      <SelectItem value="genitore2">{t("detail.separati.comunicazioni_genitore2")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {form.fatture_intestate_a === "meta" && !String(form.genitore2_indirizzo || "").trim() && (
+                  <div className="flex items-start gap-2 rounded-lg border border-orange-300 bg-orange-50 p-3 text-sm text-orange-900">
+                    <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                    {t("detail.separati.avviso_indirizzo")}
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground">{t("detail.separati.nota")}</p>
+              </div>
+            )}
+          </div>
 
           <Field label={t("modal.notes")}>
             <textarea
