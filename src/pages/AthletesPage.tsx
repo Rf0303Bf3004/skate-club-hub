@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Shield, X, Trash2, Upload, ArrowLeft, Printer, Mail, AlertCircle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import AtletaDetail from "@/components/AtletaDetail";
 import SchedaAnagrafica from "@/components/SchedaAnagrafica";
 import AthleteBadges from "@/components/AthleteBadges";
@@ -180,6 +181,9 @@ const AtletaModal: React.FC<{
     genitore2_cap: atleta?.genitore2_cap || "",
     genitore2_citta: atleta?.genitore2_citta || "",
     genitore2_cantone: atleta?.genitore2_cantone || "",
+    genitori_separati: !!atleta?.genitori_separati,
+    fatture_intestate_a: atleta?.fatture_intestate_a || "genitore1",
+    comunicazioni_a: atleta?.comunicazioni_a || "entrambi",
   });
   const [show_g2, set_show_g2] = useState(!!(atleta?.genitore2_nome || atleta?.genitore2_email));
   const [confirm_delete, set_confirm_delete] = useState(false);
@@ -590,7 +594,65 @@ const AtletaModal: React.FC<{
             )}
           </div>
 
+          {/* Genitori separati — stesso blocco e stesse regole della scheda atleta */}
+          <div className="pt-2 border-t border-border space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <Label htmlFor="modal_genitori_separati" className="text-sm font-medium">
+                {t("detail.separati.switch")}
+              </Label>
+              <Switch
+                id="modal_genitori_separati"
+                checked={!!form.genitori_separati}
+                onCheckedChange={(v) => {
+                  set_val("genitori_separati", v);
+                  if (v) set_show_g2(true);
+                }}
+              />
+            </div>
 
+            {form.genitori_separati && (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-sm text-muted-foreground">{t("detail.separati.fatture_label")}</Label>
+                  <Select
+                    value={form.fatture_intestate_a || "genitore1"}
+                    onValueChange={(v) => set_val("fatture_intestate_a", v)}
+                  >
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="genitore1">{t("detail.separati.fatture_genitore1")}</SelectItem>
+                      <SelectItem value="genitore2">{t("detail.separati.fatture_genitore2")}</SelectItem>
+                      <SelectItem value="meta">{t("detail.separati.fatture_meta")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-sm text-muted-foreground">{t("detail.separati.comunicazioni_label")}</Label>
+                  <Select
+                    value={form.comunicazioni_a || "entrambi"}
+                    onValueChange={(v) => set_val("comunicazioni_a", v)}
+                  >
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="entrambi">{t("detail.separati.comunicazioni_entrambi")}</SelectItem>
+                      <SelectItem value="genitore1">{t("detail.separati.comunicazioni_genitore1")}</SelectItem>
+                      <SelectItem value="genitore2">{t("detail.separati.comunicazioni_genitore2")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {form.fatture_intestate_a === "meta" && !String(form.genitore2_indirizzo || "").trim() && (
+                  <div className="flex items-start gap-2 rounded-lg border border-orange-300 bg-orange-50 p-3 text-sm text-orange-900">
+                    <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                    {t("detail.separati.avviso_indirizzo")}
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground">{t("detail.separati.nota")}</p>
+              </div>
+            )}
+          </div>
 
           <Field label={t("modal.notes")}>
             <textarea
@@ -608,7 +670,16 @@ const AtletaModal: React.FC<{
               {t("modal.cancel")}
             </Button>
             <Button
-              onClick={() => on_save({ ...form, id: atleta?.id })}
+              onClick={() =>
+                on_save({
+                  ...form,
+                  id: atleta?.id,
+                  // Stessa regola della scheda atleta: a interruttore spento
+                  // i valori tornano a quelli normali.
+                  fatture_intestate_a: form.genitori_separati ? (form.fatture_intestate_a || "genitore1") : "genitore1",
+                  comunicazioni_a: form.genitori_separati ? (form.comunicazioni_a || "entrambi") : "entrambi",
+                })
+              }
               disabled={saving}
               className="flex-1 bg-primary hover:bg-primary/90"
             >
@@ -1096,19 +1167,19 @@ const AthletesPage: React.FC = () => {
               <p className="text-sm text-muted-foreground mt-1">{t2("quick.description")}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Field label={t("modal.name")} required>
+              <Field label={t2("modal.name")} required>
                 <Input value={quick_form.nome} onChange={(e) => set_quick_form((p) => ({ ...p, nome: e.target.value }))} onBlur={() => set_quick_form((p) => ({ ...p, nome: capitalizza_nome(p.nome) }))} />
               </Field>
-              <Field label={t("modal.surname")} required>
+              <Field label={t2("modal.surname")} required>
                 <Input value={quick_form.cognome} onChange={(e) => set_quick_form((p) => ({ ...p, cognome: e.target.value }))} onBlur={() => set_quick_form((p) => ({ ...p, cognome: capitalizza_nome(p.cognome) }))} />
               </Field>
-              <Field label={t("quick.parent_email")}>
+              <Field label={t2("quick.parent_email")}>
                 <Input type="email" value={quick_form.genitore1_email} onChange={(e) => set_quick_form((p) => ({ ...p, genitore1_email: e.target.value }))} onBlur={() => set_quick_form((p) => ({ ...p, genitore1_email: normalizza_email(p.genitore1_email) }))} />
               </Field>
-              <Field label={t("quick.parent_phone")}>
+              <Field label={t2("quick.parent_phone")}>
                 <Input type="tel" value={quick_form.genitore1_telefono} onChange={(e) => set_quick_form((p) => ({ ...p, genitore1_telefono: e.target.value }))} />
               </Field>
-              <Field label={t("quick.initial_level")} required>
+              <Field label={t2("quick.initial_level")} required>
                 <Select value={quick_form.livello || undefined} onValueChange={(v) => set_quick_form((p) => ({ ...p, livello: v }))}>
                   <SelectTrigger><SelectValue placeholder={t2("quick.select_level")} /></SelectTrigger>
                   <SelectContent>
@@ -1116,7 +1187,7 @@ const AthletesPage: React.FC = () => {
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label={t("quick.in_preparation")}>
+              <Field label={t2("quick.in_preparation")}>
                 <Select value={quick_form.livello_prep || undefined} onValueChange={(v) => set_quick_form((p) => ({ ...p, livello_prep: v }))}>
                   <SelectTrigger><SelectValue placeholder={t2("quick.optional")} /></SelectTrigger>
                   <SelectContent>
@@ -1139,7 +1210,7 @@ const AthletesPage: React.FC = () => {
               >
                 {t2("quick.full_form_button")}
               </Button>
-              <Button variant="ghost" onClick={() => set_quick_open(false)} disabled={quick_saving}>{t("quick.cancel")}</Button>
+              <Button variant="ghost" onClick={() => set_quick_open(false)} disabled={quick_saving}>{t2("quick.cancel")}</Button>
               <Button onClick={crea_atleta_rapido} disabled={quick_saving}>
                 {quick_saving ? t2("quick.creating") : t2("quick.create_print")}
               </Button>

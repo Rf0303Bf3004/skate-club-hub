@@ -50,6 +50,11 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const t = useCallback((key: string, ...args: string[]) => {
     // Cerca prima nel namespace di default (common), con fallback al key stesso
     let text = i18nT(key, { defaultValue: key }) as string;
+    if (text === key) {
+      // Chiave mancante: in sviluppo e in produzione lasciamo traccia in console
+      // così il difetto si vede prima di arrivare all'utente.
+      console.warn(`[i18n] chiave mancante nel namespace "common": "${key}"`);
+    }
     // Interpolazione legacy {0}, {1}, ...
     args.forEach((arg, i) => {
       text = text.replace(`{${i}}`, String(arg ?? ''));
