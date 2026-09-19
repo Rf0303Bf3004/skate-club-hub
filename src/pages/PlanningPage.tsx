@@ -3269,13 +3269,7 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti, 
           {tipo !== "privata" && (
             <div>
               <Label className="text-xs">{t('new_corso_modal.level')}</Label>
-              <Select value={livello} onValueChange={set_livello}>
-                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="tutti">{t('new_corso_modal.level_all')}</SelectItem>
-                  {LIVELLI.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SelectLivelli value={livello} onChange={(v) => set_livello(v ?? "")} />
             </div>
           )}
           <div className="flex gap-3">
@@ -3425,13 +3419,7 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
           </div>
           <div>
             <Label className="text-xs">{t('edit_corso_modal.level')}</Label>
-            <Select value={livello} onValueChange={set_livello}>
-              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tutti">{t('edit_corso_modal.level_all')}</SelectItem>
-                {LIVELLI.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <SelectLivelli value={livello} onChange={(v) => set_livello(v ?? "")} />
           </div>
           <div className="flex gap-3">
             <div className="flex-1">
