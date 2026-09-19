@@ -380,8 +380,10 @@ const PortaleAtletaPage: React.FC = () => {
                           {corso.ora_inizio && ` · ${corso.ora_inizio.slice(0, 5)}`}
                           {corso.ora_fine && ` - ${corso.ora_fine.slice(0, 5)}`}
                         </p>
-                        {corso.livello_richiesto && corso.livello_richiesto !== "tutti" && (
-                          <Badge variant="outline" className="mt-2 text-[10px]">{t("atleta_page.livello_label")}: {corso.livello_richiesto}</Badge>
+                        {livello_dichiarato(corso.livello_richiesto) && !is_apertura_totale(corso.livello_richiesto) && (
+                          <Badge variant="outline" className="mt-2 text-[10px]">
+                            {t("atleta_page.livello_label")}: {formatta_livelli_corso(corso.livello_richiesto, t_corsi)}
+                          </Badge>
                         )}
                       </div>
                       <div className="text-right">
