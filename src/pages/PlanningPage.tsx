@@ -1825,9 +1825,9 @@ function PlanningPageInner() {
                                     {first_istr.nome} {first_istr.cognome}
                                   </span>
                                 )}
-                                {w_px > 90 && c.livello_richiesto && (
+                                {w_px > 90 && livello_dichiarato(c.livello_richiesto) && (
                                   <span className="truncate rounded text-[9px] font-medium leading-tight" style={{ background: "rgba(255,255,255,0.92)", color: "#555", padding: "1px 4px", position: "relative", zIndex: 1, marginTop: 1 }}>
-                                    {c.livello_richiesto}
+                                    {formatta_livelli_corso(c.livello_richiesto, t_corsi)}
                                   </span>
                                 )}
                               </div>
@@ -1837,8 +1837,8 @@ function PlanningPageInner() {
                                 {w_px > 70 && first_istr && (
                                   <span className="truncate px-1 leading-tight" style={{ fontSize: 10, opacity: 0.85, color: "#fff" }}>{first_istr.nome} {first_istr.cognome}</span>
                                 )}
-                                {w_px > 90 && c.livello_richiesto && (
-                                  <span className="truncate px-1" style={{ fontSize: 9, opacity: 0.7, color: "#fff" }}>{c.livello_richiesto}</span>
+                                {w_px > 90 && livello_dichiarato(c.livello_richiesto) && (
+                                  <span className="truncate px-1" style={{ fontSize: 9, opacity: 0.7, color: "#fff" }}>{formatta_livelli_corso(c.livello_richiesto, t_corsi)}</span>
                                 )}
                               </>
                             )}
@@ -2422,7 +2422,9 @@ function PlanningPageInner() {
                             ? `inset 0 0 0 1px #fff, 0 0 0 2px ${alarm_color}, 0 0 0 3px #fff`
                             : (is_private ? `inset 0 0 0 1px ${colore}` : undefined);
                           const pulse = is_conflict || w.hard;
-                          const livello = c.livello_richiesto && c.livello_richiesto !== "tutti" ? c.livello_richiesto : null;
+                          const livello = livello_dichiarato(c.livello_richiesto) && !is_apertura_totale(c.livello_richiesto)
+                            ? formatta_livelli_corso(c.livello_richiesto, t_corsi)
+                            : null;
                           const n_atlete = is_private ? (c.atleti_ids?.length ?? 0) : 0;
                           const is_shared = n_atlete > 1;
                           const exc = exceptions_by_id[c.id];
