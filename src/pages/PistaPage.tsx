@@ -917,45 +917,57 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
   const mostra_barra = in_tutto ? sessioni.length > 0 : !!sessione_id;
 
   return (
-    <div className={schermo_intero ? "fixed inset-0 z-50 overflow-y-auto bg-background px-4" : "relative min-h-[70vh] px-4"}>
+    <div className={schermo_intero ? "fixed inset-0 z-50 overflow-x-hidden overflow-y-auto bg-background px-4" : "relative min-h-[70vh] overflow-x-hidden px-4"}>
       {/* Intestazione fissa: a schermo intero non deve scorrere via con
-          l'elenco, altrimenti l'uscita del tablet diventa introvabile. */}
-      <header className="sticky top-0 z-10 flex items-start justify-between gap-4 bg-background py-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold capitalize">{data_estesa}</h1>
+          l'elenco, altrimenti l'uscita del tablet diventa introvabile.
+          Va a capo invece di debordare: il titolo si restringe e i bottoni
+          passano alla riga sotto quando la larghezza non basta. */}
+      <header className="sticky top-0 z-10 flex flex-wrap items-start justify-between gap-x-4 gap-y-2 bg-background py-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="min-w-0 break-words text-2xl md:text-3xl font-bold capitalize">{data_estesa}</h1>
           <p className="text-4xl font-bold tabular-nums">{ora_corrente}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+
           {/* Selettore del momento: solo presidenza, direzione tecnica e superadmin. */}
           {puo_scegliere_momento && (
             <Button
               variant={momento_simulato ? "default" : "ghost"}
               size="lg"
+              aria-label={momento_simulato ? t("pista.momento_attivo") : t("pista.momento_scegli")}
               onClick={() => {
                 set_bozza_data(giorno);
                 set_bozza_ora(da_minuti(minuti_riferimento));
                 set_pannello_momento((v) => !v);
               }}
             >
-              <Clock className="mr-2 h-5 w-5" />
-              {momento_simulato ? t("pista.momento_attivo") : t("pista.momento_scegli")}
+              <Clock className="mr-2 h-5 w-5 shrink-0" />
+              <span className="hidden sm:inline">
+                {momento_simulato ? t("pista.momento_attivo") : t("pista.momento_scegli")}
+              </span>
             </Button>
           )}
           <Button
             variant={schermo_intero ? "default" : "outline"}
             size="lg"
+            aria-label={schermo_intero ? t("pista.esci_schermo_intero") : t("pista.schermo_intero")}
             onClick={() => set_schermo_intero((v) => !v)}
           >
-            {schermo_intero ? <Minimize2 className="mr-2 h-5 w-5" /> : <Maximize2 className="mr-2 h-5 w-5" />}
-            {schermo_intero ? t("pista.esci_schermo_intero") : t("pista.schermo_intero")}
+            {schermo_intero ? <Minimize2 className="mr-2 h-5 w-5 shrink-0" /> : <Maximize2 className="mr-2 h-5 w-5 shrink-0" />}
+            <span className="hidden sm:inline">
+              {schermo_intero ? t("pista.esci_schermo_intero") : t("pista.schermo_intero")}
+            </span>
           </Button>
+
           {/* Uscita definitiva del tablet, dietro un menu discreto: dimentica il codice
-              conservato ed è rara, non deve stare accanto a bottoni toccati di continuo. */}
+              conservato ed è rara, non deve stare accanto a bottoni toccati di continuo.
+              È l'unico comando che non si stringe mai: resta in testo intero e
+              va a capo dentro il bottone se la larghezza manca. */}
           {sessione_pista && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="lg" aria-label={t("pista.scollega")}>
-                  <MoreVertical className="mr-2 h-5 w-5" />
+                <Button variant="outline" size="lg" className="whitespace-normal" aria-label={t("pista.scollega")}>
+                  <MoreVertical className="mr-2 h-5 w-5 shrink-0" />
                   {t("pista.scollega")}
                 </Button>
               </DropdownMenuTrigger>
@@ -969,6 +981,7 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
           )}
         </div>
       </header>
+
 
       {puo_scegliere_momento && pannello_momento && (
         <div className="mb-3 rounded-xl border-2 border-border bg-card px-4 py-3">
@@ -1100,6 +1113,19 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
           </div>
         </div>
       )}
+
+      {/* Seconda via d'uscita, fuori dall'intestazione: raggiungibile scorrendo
+          in fondo anche quando i comandi in alto si stringono. A schermo intero
+          lascia lo spazio della barra dell'appello, che sta sopra in assoluto. */}
+      {sessione_pista && (
+        <div className={`mt-6 flex justify-center ${schermo_intero ? "pb-44" : "pb-8"}`}>
+          <Button variant="outline" size="lg" className="whitespace-normal" onClick={() => set_scollega_aperto(true)}>
+            <LogOut className="mr-2 h-5 w-5 shrink-0" />
+            {t("pista.scollega")}
+          </Button>
+        </div>
+      )}
+
 
       <AlertDialog open={!!in_attesa} onOpenChange={(aperto) => !aperto && set_in_attesa(null)}>
         <AlertDialogContent>
