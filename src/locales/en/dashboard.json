@@ -56,6 +56,7 @@
     "open_link": "Open →",
     "close": "Close",
     "compare_last_year_short": "Compare last year",
+    "compare_too_early": "Season just started: the comparison with last year will come later.",
     "disclaimer": "The values shown come from recorded data. A dash means missing data, not zero.",
     "no_club": {
       "title": "Access not linked to a club",
@@ -84,7 +85,8 @@
       "positivo": "recorded",
       "neutro": "stable",
       "attenzione": "to watch",
-      "mancante": "missing data"
+      "mancante": "missing data",
+      "senza_dati": "no data"
     },
     "greet": {
       "morning": "Good morning",

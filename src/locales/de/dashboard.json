@@ -56,6 +56,7 @@
     "open_link": "Öffnen →",
     "close": "Schliessen",
     "compare_last_year_short": "Vorjahr vergleichen",
+    "compare_too_early": "Saison gerade erst begonnen: der Vergleich mit dem Vorjahr kommt später.",
     "disclaimer": "Die angezeigten Werte stammen aus erfassten Daten. Ein Strich bedeutet fehlende Daten, nicht null.",
     "no_club": {
       "title": "Zugang keinem Club zugeordnet",
@@ -84,7 +85,8 @@
       "positivo": "erfasst",
       "neutro": "stabil",
       "attenzione": "beobachten",
-      "mancante": "fehlende Daten"
+      "mancante": "fehlende Daten",
+      "senza_dati": "keine Daten"
     },
     "greet": {
       "morning": "Guten Morgen",

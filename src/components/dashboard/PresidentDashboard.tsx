@@ -46,7 +46,7 @@ import { supabase } from "@/lib/supabase";
 type Riga = Record<string, unknown>;
 type Stagione = { id: string; nome: string; data_inizio: string; data_fine: string; attiva: boolean };
 type AreaId = "domanda" | "atleti" | "ricavi" | "costi" | "lezioni" | "sportivo" | "catalogo";
-type StatoArea = "positivo" | "neutro" | "attenzione" | "mancante";
+type StatoArea = "positivo" | "neutro" | "attenzione" | "mancante" | "senza_dati";
 
 type DashboardData = {
   atleti: Riga[];
@@ -404,10 +404,11 @@ const DeltaPill: React.FC<{ value: number; suffix?: string }> = ({ value, suffix
   );
 };
 
-const ValoreGrande: React.FC<{ value: string; label: string; delta?: number; tono?: "base" | "positivo" | "attenzione" | "pericolo" }> = ({
+const ValoreGrande: React.FC<{ value: string; label: string; delta?: number; nota?: string; tono?: "base" | "positivo" | "attenzione" | "pericolo" }> = ({
   value,
   label,
   delta,
+  nota,
   tono = "base",
 }) => {
   const colore = tono === "positivo" ? "text-emerald-700" : tono === "attenzione" ? "text-amber-700" : tono === "pericolo" ? "text-rose-700" : "text-foreground";
@@ -415,7 +416,7 @@ const ValoreGrande: React.FC<{ value: string; label: string; delta?: number; ton
     <div className="rounded-lg border bg-card p-5 shadow-sm">
       <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className={`mt-2 text-3xl font-semibold tabular-nums ${colore}`}>{value}</div>
-      {delta !== undefined ? <div className="mt-2"><DeltaPill value={delta} /></div> : null}
+      {delta !== undefined ? <div className="mt-2"><DeltaPill value={delta} /></div> : nota ? <div className="mt-2 text-xs text-muted-foreground">{nota}</div> : null}
     </div>
   );
 };
@@ -675,20 +676,23 @@ const AreaGhiaccio: React.FC<{ d: DashboardData; stagione_id: string; t: (key: s
   );
 };
 
-const AreaAtleti: React.FC<{ d: DashboardData; stagioni: Stagione[]; stagione_id: string; prev_stagione_id: string | null; confronta: boolean; t: (key: string, opts?: Record<string, unknown>) => string }> = ({ d, stagioni, stagione_id, prev_stagione_id, confronta, t }) => {
-  const attivi = d.atleti.filter((a) => booleano(a.attivo));
+const AreaAtleti: React.FC<{ d: DashboardData; stagioni: Stagione[]; stagione_id: string; prev_stagione_id: string | null; confronta: boolean; nota_confronto?: string; t: (key: string, opts?: Record<string, unknown>) => string }> = ({ d, stagioni, stagione_id, prev_stagione_id, confronta, nota_confronto, t }) => {
   const storici_curr = d.storici.filter((s) => testo(s.stagione_id) === stagione_id);
+  // Conteggio e livelli della stagione selezionata: dallo storico, non dall'anagrafica intera.
+  const attivi = storici_curr.filter((s) => testo(s.status) === "attivo");
   const storici_prev = prev_stagione_id ? d.storici.filter((s) => testo(s.stagione_id) === prev_stagione_id) : [];
   const prev_tot = storici_prev.length;
   const yoy = prev_tot ? ((attivi.length - prev_tot) / prev_tot) * 100 : undefined;
   const abbandoni = storici_curr.filter((s) => testo(s.status) === "abbandonato").length;
-  const eta_valide = attivi
+  // L'età media resta sull'anagrafica: lo storico non ha la data di nascita.
+  const attivi_anagrafica = d.atleti.filter((a) => booleano(a.attivo));
+  const eta_valide = attivi_anagrafica
     .map((a) => testo(a.data_nascita))
     .filter(Boolean)
     .map((data) => (Date.now() - new Date(`${data}T00:00:00`).getTime()) / (365.25 * 24 * 3600 * 1000))
     .filter((eta) => Number.isFinite(eta));
   const eta_media = eta_valide.length ? eta_valide.reduce((s, eta) => s + eta, 0) / eta_valide.length : null;
-  const livelli = riepilogo_livelli(attivi);
+  const livelli = riepilogo_livelli(attivi.map((s) => ({ livello_attuale: s.livello })));
   const livelli_prev = riepilogo_livelli(storici_prev.map((s) => ({ livello_attuale: s.livello })));
   const prev_has_levels = Object.values(livelli_prev).some((v) => v > 0);
   const max_livelli = Math.max(1, ...Object.values(livelli), ...Object.values(livelli_prev));
@@ -706,7 +710,7 @@ const AreaAtleti: React.FC<{ d: DashboardData; stagioni: Stagione[]; stagione_id
   return (
     <div className="space-y-8">
       <div className="grid gap-4 md:grid-cols-4">
-        <ValoreGrande label={t("president_home.athletes.active_athletes")} value={fmt_int(attivi.length)} delta={confronta ? yoy : undefined} />
+        <ValoreGrande label={t("president_home.athletes.active_athletes")} value={fmt_int(attivi.length)} delta={confronta && !nota_confronto ? yoy : undefined} nota={nota_confronto} />
         <ValoreGrande label={t("president_home.athletes.dropouts")} value={fmt_int(abbandoni)} tono={abbandoni > 0 ? "attenzione" : "base"} />
         <ValoreGrande label={t("president_home.athletes.avg_age")} value={eta_media === null ? "—" : t("president_home.athletes.years_short", { value: eta_media.toFixed(1) })} />
         <ValoreGrande label={t("president_home.athletes.levels_count")} value={fmt_int(Object.values(livelli).filter((v) => v > 0).length)} />
@@ -753,7 +757,7 @@ const AreaAtleti: React.FC<{ d: DashboardData; stagioni: Stagione[]; stagione_id
   );
 };
 
-const AreaRicavi: React.FC<{ d: DashboardData; stagione_id: string; prev_stagione_id: string | null; confronta: boolean; t: (key: string, opts?: Record<string, unknown>) => string }> = ({ d, stagione_id, prev_stagione_id, confronta, t }) => {
+const AreaRicavi: React.FC<{ d: DashboardData; stagione_id: string; prev_stagione_id: string | null; confronta: boolean; nota_confronto?: string; t: (key: string, opts?: Record<string, unknown>) => string }> = ({ d, stagione_id, prev_stagione_id, confronta, nota_confronto, t }) => {
   const curr = d.ricavi.filter((r) => testo(r.stagione_id) === stagione_id);
   const prev = prev_stagione_id ? d.ricavi.filter((r) => testo(r.stagione_id) === prev_stagione_id) : [];
   const totale = curr.reduce((s, r) => s + numero(r.importo), 0);
@@ -785,7 +789,7 @@ const AreaRicavi: React.FC<{ d: DashboardData; stagione_id: string; prev_stagion
     <div className="space-y-8">
       {curr.length === 0 ? <StatoDati titolo={t("president_home.missing.title")} testo={t("president_home.revenue.missing")} /> : null}
       <div className="grid gap-4 md:grid-cols-3">
-        <ValoreGrande label={t("president_home.revenue.season_revenue")} value={curr.length === 0 ? "—" : fmt_chf(totale)} delta={confronta ? yoy : undefined} />
+        <ValoreGrande label={t("president_home.revenue.season_revenue")} value={curr.length === 0 ? "—" : fmt_chf(totale)} delta={confronta && !nota_confronto ? yoy : undefined} nota={nota_confronto} />
         <ValoreGrande label={t("president_home.revenue.sources")} value={fmt_int(curr.length)} />
         <ValoreGrande label={t("president_home.revenue.packages_used")} value={fmt_int(pacchetti_usati.length)} />
       </div>
@@ -1183,8 +1187,13 @@ const PresidentDashboard: React.FC = () => {
 
   const d = dashboard_query.data;
   const club_nome = session?.club_nome || t("president_home.club_fallback");
-  const atleti_attivi = d.atleti.filter((a) => booleano(a.attivo));
-  const livelli = riepilogo_livelli(atleti_attivi);
+  // Atleti attivi della stagione selezionata: dallo storico stagioni, non dall'anagrafica intera.
+  const atleti_attivi = d.storici.filter((s) => testo(s.stagione_id) === stagione_id && testo(s.status) === "attivo");
+  const livelli = riepilogo_livelli(atleti_attivi.map((s) => ({ livello_attuale: s.livello })));
+  // Stagione cominciata da meno di 60 giorni: il confronto con l'anno prima non ha senso ancora.
+  const giorni_stagione = Math.floor((Date.now() - new Date(`${stagione.data_inizio}T00:00:00`).getTime()) / (24 * 3600 * 1000));
+  const stagione_recente = giorni_stagione >= 0 && giorni_stagione < 60;
+  const nota_confronto = confronta && stagione_recente ? t("president_home.compare_too_early") : undefined;
   const top_livelli = Object.entries(livelli).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([label, value]) => ({ label, value }));
   const ricavi_curr = d.ricavi.filter((r) => testo(r.stagione_id) === stagione_id);
   const ricavi_prev = prev_stagione_id ? d.ricavi.filter((r) => testo(r.stagione_id) === prev_stagione_id) : [];
@@ -1254,9 +1263,9 @@ const PresidentDashboard: React.FC = () => {
       icon: <Users className="h-4 w-4" />,
       main_kpi: fmt_int(atleti_attivi.length),
       sub_label: t("president_home.cards.active_athletes"),
-      stato: atleti_attivi.length > 0 ? "positivo" : "neutro",
+      stato: atleti_attivi.length > 0 ? "positivo" : "senza_dati",
       mini: <MiniPyramid items={top_livelli} empty_label={t("president_home.empty.short")} />,
-      drawer_content: <AreaAtleti d={d} stagioni={stagioni_ord} stagione_id={stagione_id} prev_stagione_id={prev_stagione_id} confronta={confronta} t={t} />,
+      drawer_content: <AreaAtleti d={d} stagioni={stagioni_ord} stagione_id={stagione_id} prev_stagione_id={prev_stagione_id} confronta={confronta} nota_confronto={nota_confronto} t={t} />,
     },
     {
       id: "ricavi",
@@ -1266,7 +1275,7 @@ const PresidentDashboard: React.FC = () => {
       sub_label: ricavi_curr.length === 0 ? t("president_home.missing.short") : t("president_home.cards.total_season_revenue"),
       stato: ricavi_curr.length === 0 ? "mancante" : "neutro",
       mini: <MiniDonut data={donut_data} empty_label={t("president_home.missing.short")} />,
-      drawer_content: <AreaRicavi d={d} stagione_id={stagione_id} prev_stagione_id={prev_stagione_id} confronta={confronta} t={t} />,
+      drawer_content: <AreaRicavi d={d} stagione_id={stagione_id} prev_stagione_id={prev_stagione_id} confronta={confronta} nota_confronto={nota_confronto} t={t} />,
     },
     {
       id: "costi",
@@ -1287,8 +1296,8 @@ const PresidentDashboard: React.FC = () => {
       icon: <Clock className="h-4 w-4" />,
       main_kpi: d.lezioni_private.length === 0 ? "—" : fmt_chf(lezioni_fatturato),
       sub_label: d.lezioni_private.length === 0 ? t("president_home.empty.short") : t("president_home.cards.private_hours", { count: fmt_int(lezioni_ore) }),
-      stato: d.lezioni_private.length === 0 ? "neutro" : "positivo",
-      mini: <MiniBarsHoriz empty_label={t("president_home.empty.short")} items={[
+      stato: d.lezioni_private.length === 0 ? "senza_dati" : "positivo",
+      mini: d.lezioni_private.length === 0 ? null : <MiniBarsHoriz empty_label={t("president_home.empty.short")} items={[
         { label: t("president_home.private.lessons_sold"), value: d.lezioni_private.length, color: AREA_STROKES.lezioni },
         { label: t("president_home.private.hours_sold_label"), value: lezioni_ore, color: "hsl(var(--chart-4, var(--primary)))" },
       ]} />,
@@ -1300,7 +1309,7 @@ const PresidentDashboard: React.FC = () => {
       icon: <Trophy className="h-4 w-4" />,
       main_kpi: fmt_int(podi),
       sub_label: t("president_home.cards.podiums_in_competitions", { podi, gare: gare_curr.length }),
-      stato: gare_curr.length === 0 ? "neutro" : "positivo",
+      stato: gare_curr.length === 0 ? "senza_dati" : "positivo",
       mini: <MiniBarsHoriz empty_label={t("president_home.empty.short")} items={[
         { label: t("president_home.sport.competitions"), value: gare_curr.length, color: AREA_STROKES.sportivo },
         { label: t("president_home.sport.entries"), value: iscrizioni_gare_curr.length, color: "hsl(var(--chart-3, var(--primary)))" },
@@ -1314,7 +1323,7 @@ const PresidentDashboard: React.FC = () => {
       icon: <Megaphone className="h-4 w-4" />,
       main_kpi: fmt_int(sponsor_attivi.length),
       sub_label: t("president_home.cards.sponsor_value", { importo: fmt_chf(sponsor_totale) }),
-      stato: sponsor_attivi.length === 0 ? "neutro" : "positivo",
+      stato: sponsor_attivi.length === 0 ? "senza_dati" : "positivo",
       mini: <MiniBarsHoriz empty_label={t("president_home.empty.short")} items={[
         { label: t("president_home.catalog.active_sponsors"), value: sponsor_attivi.length, color: AREA_STROKES.catalogo },
         { label: t("president_home.catalog.open_events"), value: d.eventi.length, color: "hsl(var(--chart-2, var(--primary)))" },
@@ -1373,8 +1382,8 @@ const PresidentDashboard: React.FC = () => {
             </Button>
           </div>
           <div className="mt-8 grid gap-4 md:grid-cols-4">
-            <ValoreGrande label={t("president_home.stats.total_athletes")} value={fmt_int(atleti_attivi.length)} delta={confronta ? atleti_yoy : undefined} />
-            <ValoreGrande label={t("president_home.stats.revenue")} value={ricavi_curr.length === 0 ? "—" : fmt_chf(totale_ricavi)} delta={confronta ? ricavi_yoy : undefined} />
+            <ValoreGrande label={t("president_home.stats.total_athletes")} value={fmt_int(atleti_attivi.length)} delta={confronta && !nota_confronto ? atleti_yoy : undefined} nota={nota_confronto} />
+            <ValoreGrande label={t("president_home.stats.revenue")} value={ricavi_curr.length === 0 ? "—" : fmt_chf(totale_ricavi)} delta={confronta && !nota_confronto ? ricavi_yoy : undefined} nota={nota_confronto} />
             <ValoreGrande label={t("president_home.stats.cash_balance")} value={cassa === null ? "—" : fmt_chf(cassa)} tono={cassa === null ? "base" : cassa >= 0 ? "positivo" : "pericolo"} />
             <ValoreGrande label={t("president_home.stats.waiting_list")} value={fmt_int(lista_attesa)} tono={lista_attesa > 0 ? "attenzione" : "base"} />
           </div>
