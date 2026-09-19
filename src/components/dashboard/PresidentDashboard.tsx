@@ -676,20 +676,23 @@ const AreaGhiaccio: React.FC<{ d: DashboardData; stagione_id: string; t: (key: s
   );
 };
 
-const AreaAtleti: React.FC<{ d: DashboardData; stagioni: Stagione[]; stagione_id: string; prev_stagione_id: string | null; confronta: boolean; t: (key: string, opts?: Record<string, unknown>) => string }> = ({ d, stagioni, stagione_id, prev_stagione_id, confronta, t }) => {
-  const attivi = d.atleti.filter((a) => booleano(a.attivo));
+const AreaAtleti: React.FC<{ d: DashboardData; stagioni: Stagione[]; stagione_id: string; prev_stagione_id: string | null; confronta: boolean; nota_confronto?: string; t: (key: string, opts?: Record<string, unknown>) => string }> = ({ d, stagioni, stagione_id, prev_stagione_id, confronta, nota_confronto, t }) => {
   const storici_curr = d.storici.filter((s) => testo(s.stagione_id) === stagione_id);
+  // Conteggio e livelli della stagione selezionata: dallo storico, non dall'anagrafica intera.
+  const attivi = storici_curr.filter((s) => testo(s.status) === "attivo");
   const storici_prev = prev_stagione_id ? d.storici.filter((s) => testo(s.stagione_id) === prev_stagione_id) : [];
   const prev_tot = storici_prev.length;
   const yoy = prev_tot ? ((attivi.length - prev_tot) / prev_tot) * 100 : undefined;
   const abbandoni = storici_curr.filter((s) => testo(s.status) === "abbandonato").length;
-  const eta_valide = attivi
+  // L'età media resta sull'anagrafica: lo storico non ha la data di nascita.
+  const attivi_anagrafica = d.atleti.filter((a) => booleano(a.attivo));
+  const eta_valide = attivi_anagrafica
     .map((a) => testo(a.data_nascita))
     .filter(Boolean)
     .map((data) => (Date.now() - new Date(`${data}T00:00:00`).getTime()) / (365.25 * 24 * 3600 * 1000))
     .filter((eta) => Number.isFinite(eta));
   const eta_media = eta_valide.length ? eta_valide.reduce((s, eta) => s + eta, 0) / eta_valide.length : null;
-  const livelli = riepilogo_livelli(attivi);
+  const livelli = riepilogo_livelli(attivi.map((s) => ({ livello_attuale: s.livello })));
   const livelli_prev = riepilogo_livelli(storici_prev.map((s) => ({ livello_attuale: s.livello })));
   const prev_has_levels = Object.values(livelli_prev).some((v) => v > 0);
   const max_livelli = Math.max(1, ...Object.values(livelli), ...Object.values(livelli_prev));
@@ -707,7 +710,7 @@ const AreaAtleti: React.FC<{ d: DashboardData; stagioni: Stagione[]; stagione_id
   return (
     <div className="space-y-8">
       <div className="grid gap-4 md:grid-cols-4">
-        <ValoreGrande label={t("president_home.athletes.active_athletes")} value={fmt_int(attivi.length)} delta={confronta ? yoy : undefined} />
+        <ValoreGrande label={t("president_home.athletes.active_athletes")} value={fmt_int(attivi.length)} delta={confronta && !nota_confronto ? yoy : undefined} nota={nota_confronto} />
         <ValoreGrande label={t("president_home.athletes.dropouts")} value={fmt_int(abbandoni)} tono={abbandoni > 0 ? "attenzione" : "base"} />
         <ValoreGrande label={t("president_home.athletes.avg_age")} value={eta_media === null ? "—" : t("president_home.athletes.years_short", { value: eta_media.toFixed(1) })} />
         <ValoreGrande label={t("president_home.athletes.levels_count")} value={fmt_int(Object.values(livelli).filter((v) => v > 0).length)} />
