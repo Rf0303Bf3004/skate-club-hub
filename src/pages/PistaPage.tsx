@@ -759,19 +759,7 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
                   {t("pista.nota_rapida")}
                 </Button>
 
-                {suoi.length > 0 ? (
-                  <Button
-                    size="lg"
-                    className="h-12 min-w-[120px]"
-                    onClick={() => {
-                      if (suoi.length === 1) apri_lettore(suoi[0], titolo);
-                      else set_scelta_disco({ titolo, programmi: suoi });
-                    }}
-                  >
-                    <Music className="mr-2 h-5 w-5" />
-                    {t("musica.disco")}
-                  </Button>
-                ) : (
+                {disco ?? (
                   // Chi non ha programmi caricati mostra il posto vuoto, non un errore.
                   <span className="inline-block h-12 min-w-[120px]" aria-hidden="true" />
                 )}
