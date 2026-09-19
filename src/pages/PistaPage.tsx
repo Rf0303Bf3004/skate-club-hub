@@ -1162,6 +1162,54 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Impostazioni del tablet: le due vie (accesso staff, scollega) una
+          sotto l'altra come bottoni larghi, ognuna con la spiegazione di cosa
+          comporta. Chiude con «Annulla». */}
+      <Dialog open={impostazioni_aperte} onOpenChange={(aperto) => !aperto && set_impostazioni_aperte(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("pista.tablet_titolo")}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-14 w-full justify-center"
+                onClick={() => {
+                  window.location.href = "/staff";
+                }}
+              >
+                {t("pista.accesso_staff")}
+              </Button>
+              <p className="text-sm text-muted-foreground">{t("pista.accesso_staff_descrizione")}</p>
+            </div>
+            <div className="flex flex-col gap-1">
+              <Button
+                variant="destructive"
+                size="lg"
+                className="h-14 w-full justify-center"
+                onClick={() => {
+                  set_impostazioni_aperte(false);
+                  set_scollega_aperto(true);
+                }}
+              >
+                {t("pista.scollega")}
+              </Button>
+              <p className="text-sm text-muted-foreground">{t("pista.esci_testo")}</p>
+            </div>
+            <Button
+              variant="outline"
+              size="lg"
+              className="h-12 w-full"
+              onClick={() => set_impostazioni_aperte(false)}
+            >
+              {t("annulla", { defaultValue: "Annulla" })}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Nota rapida: scrittura */}
       <Dialog
         open={!!nota_target}
