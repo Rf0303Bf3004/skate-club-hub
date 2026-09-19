@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import LettoreDisco from "@/components/musica/LettoreDisco";
-import { use_programmi_atleti, type ProgrammaMusicale } from "@/hooks/use-programmi-musicali";
+import { type ProgrammaMusicale } from "@/hooks/use-programmi-musicali";
 import {
   AlertDialog,
   AlertDialogAction,
