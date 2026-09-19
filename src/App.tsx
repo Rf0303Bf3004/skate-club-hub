@@ -47,6 +47,7 @@ import NotFound from "@/pages/NotFound";
 import RuoliPermessiPage from "@/pages/RuoliPermessiPage";
 import UtentiPage from "@/pages/UtentiPage";
 import RichiesteIscrizionePage from "@/pages/RichiesteIscrizionePage";
+import ProvaGratuitaPage from "@/pages/ProvaGratuitaPage";
 import NuovaStagionePage from "@/pages/NuovaStagionePage";
 import TestLivelloPage from "@/pages/TestLivelloPage";
 import PortaleAtletaPage from "@/pages/PortaleAtletaPage";
@@ -207,6 +208,15 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
       <BrowserRouter>
         <Routes>
           <Route path="/iscriviti/:token" element={<IscrivitiPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+  if (path.startsWith("/prova/")) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/prova/:slug" element={<ProvaGratuitaPage />} />
         </Routes>
       </BrowserRouter>
     );
