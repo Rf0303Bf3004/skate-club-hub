@@ -1179,7 +1179,8 @@ const CommunicationsPage: React.FC = () => {
                       crea.isPending ||
                       !titolo_preview.trim() ||
                       !testo_preview.trim() ||
-                      (tipo_destinatari === 'atleti' && atleti_specifici_ids.length === 0)
+                      (tipo_destinatari === 'atleti' && atleti_specifici_ids.length === 0) ||
+                      (tipo_destinatari === 'per_livello' && level_count === 0)
                     }
                   >
                     {crea.isPending ? '...' : t('dialog.send')}
