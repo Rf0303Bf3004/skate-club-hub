@@ -1248,7 +1248,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                         <SelectTrigger><SelectValue placeholder={td("detail.none")} /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__none__">{td("detail.none_option")}</SelectItem>
-                          {opzioni_in_preparazione_con_salvato(form, form.livello_amatori).map((l) => (
+                          {opzioni_lista_con_salvato(LIVELLI_AMATORI, form.livello_amatori).map((l) => (
                             <SelectItem key={l} value={l}>{l}</SelectItem>
                           ))}
                         </SelectContent>
