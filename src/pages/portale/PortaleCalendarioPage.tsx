@@ -372,6 +372,54 @@ const PortaleCalendarioPage: React.FC = () => {
                   </div>
                 )}
               </div>
+
+              {/* Annunciare un'assenza: solo sugli allenamenti futuri con una sessione del planning. */}
+              {(() => {
+                const planning_id = planning_id_di(selected);
+                if (!planning_id || !e_futuro(selected)) {
+                  return errore_assenze && selected.tipo === "corso" && e_futuro(selected) ? (
+                    <div className="mt-5 flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <div className="flex-1">
+                        <p>{t("assenze.errore_lettura")}</p>
+                        <Button variant="outline" size="sm" className="mt-2" onClick={carica_assenze}>
+                          {t("assenze.riprova")}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null;
+                }
+                const gia_assente = assenze.has(planning_id);
+                return (
+                  <div className="mt-5 border-t border-slate-100 pt-4">
+                    {gia_assente ? (
+                      <div className="space-y-2">
+                        <p className="text-sm font-semibold text-rose-600">{t("assenze.avvisato")}</p>
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          disabled={busy_assenza}
+                          onClick={() => cambia_assenza(planning_id, false)}
+                        >
+                          {t("assenze.invece_ci_saro")}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-sm text-slate-600">{t("assenze.attesa")}</p>
+                        <Button
+                          variant="outline"
+                          className="w-full border-rose-300 text-rose-600 hover:bg-rose-50"
+                          disabled={busy_assenza}
+                          onClick={() => cambia_assenza(planning_id, true)}
+                        >
+                          {t("assenze.non_posso")}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
