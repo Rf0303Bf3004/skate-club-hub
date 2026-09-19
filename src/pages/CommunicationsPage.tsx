@@ -128,7 +128,7 @@ const CommunicationsPage: React.FC = () => {
   const [testo, set_testo] = useState('');
   const [tipo_destinatari, set_tipo_destinatari] = useState('tutti');
   const [corsi_ids, set_corsi_ids] = useState<string[]>([]);
-  const [livello_categoria, set_livello_categoria] = useState('stellina_1_plus');
+  const [livelli_selezionati, set_livelli_selezionati] = useState<string | null>(null);
   const [giorno_data, set_giorno_data] = useState('');
   const [istruttore_id, set_istruttore_id] = useState('');
   const [istruttore_data, set_istruttore_data] = useState('');
