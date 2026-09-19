@@ -597,7 +597,16 @@
     "errore_turni": "Non è stato possibile leggere i tuoi turni di oggi. Riprova fra poco.",
     "errore_prossimo": "Non è stato possibile leggere il tuo prossimo turno.",
     "errore_atlete": "Non è stato possibile leggere l'elenco completo delle atlete.",
-    "errore_messaggi": "Non è stato possibile leggere i tuoi messaggi. Riprova fra poco."
+    "errore_messaggi": "Non è stato possibile leggere i tuoi messaggi. Riprova fra poco.",
+    "assenza_non_posso": "Non posso esserci",
+    "assenza_conferma_titolo": "Avvisi che non ci sarai?",
+    "assenza_conferma_testo": "Il club riceve subito l'avviso e potrà organizzare la sostituzione.",
+    "assenza_conferma_ok": "Sì, avvisa il club",
+    "assenza_annulla": "Annulla",
+    "assenza_fatta": "Hai avvisato che non ci sarai",
+    "assenza_inviata": "Avviso inviato al club",
+    "assenza_errore": "Non è stato possibile inviare l'avviso. Riprova fra poco.",
+    "errore_reminder": "Non è stato possibile leggere i promemoria dei tuoi turni: il comando per avvisare un'assenza può mancare."
   },
   "pista_login": {
     "titolo": "Accesso bordo pista",
