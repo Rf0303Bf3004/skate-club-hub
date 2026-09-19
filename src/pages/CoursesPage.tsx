@@ -2146,7 +2146,7 @@ const CorsoModal: React.FC<{
               {corso?.id && (
                 <TabIscrizioni
                   corso_id={corso.id}
-                  livello_richiesto={corso.livello_richiesto || "tutti"}
+                  livello_richiesto={corso.livello_richiesto ?? ""}
                   atleti_iscritti_ids={corso.atleti_ids || []}
                   tutti_atleti={atleti}
                   on_refresh={() => qc.invalidateQueries({ queryKey: ["corsi"] })}
@@ -2615,7 +2615,12 @@ const CoursesPage: React.FC = () => {
         }
       }
     } catch (err: any) {
-      toast({ title: t("page.toast_save_error"), description: err?.message, variant: "destructive" });
+      const livello_ko = messaggio_livello_obbligatorio(err, t);
+      toast({
+        title: livello_ko ?? t("page.toast_save_error"),
+        description: livello_ko ? undefined : err?.message,
+        variant: "destructive",
+      });
     }
   };
 
