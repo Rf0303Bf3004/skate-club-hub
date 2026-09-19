@@ -264,6 +264,20 @@ export function opzioni_in_preparazione_con_salvato(
 }
 
 /**
+ * Stessa salvaguardia di opzioni_in_preparazione_con_salvato, ma su una
+ * lista già pronta (per esempio LIVELLI_AMATORI): se il valore già salvato
+ * non è fra le opzioni, compare in cima, così la tendina non lo perde in
+ * silenzio.
+ */
+export function opzioni_lista_con_salvato(
+  lista: string[],
+  salvato: string | null | undefined,
+): string[] {
+  const cur = (salvato || "").trim();
+  return cur && !lista.includes(cur) ? [cur, ...lista] : lista;
+}
+
+/**
  * Propaga gli esiti all'interno di una catena multitest per una singola atleta.
  *
  * Regole:
