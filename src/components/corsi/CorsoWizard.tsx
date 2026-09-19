@@ -13,7 +13,13 @@ import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import ConfirmButton from "@/components/common/ConfirmButton";
 import { calcola_status_istruttori_per_slot, norm_giorno, time_to_min as tmin } from "@/lib/availability";
-import { SelectLivello } from "@/components/ui/select-livello";
+import { SelectLivelli } from "@/components/ui/select-livelli";
+import {
+  is_apertura_totale,
+  livello_dichiarato,
+  messaggio_livello_obbligatorio,
+  parse_livelli_corso,
+} from "@/lib/livelli-corso";
 import { use_livelli, use_disponibilita_ghiaccio } from "@/hooks/use-supabase-data";
 import { useTranslation } from "react-i18next";
 
@@ -508,6 +514,13 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
   const [error_db, set_error_db] = useState<string | null>(null);
   const handle_submit = async () => {
     set_error_db(null);
+    // Un corso pubblicato deve dire per chi è (stesso vincolo del database).
+    if (form.attivo && !livello_dichiarato(form.livello_richiesto)) {
+      const msg = t("livelli.obbligatorio");
+      set_error_db(msg);
+      toast({ title: msg, variant: "destructive" });
+      return;
+    }
     if (istruttori_ko_selezionati.length > 0) {
       set_error_db(
         t("corso_wizard.err_istruttori_ko", {
