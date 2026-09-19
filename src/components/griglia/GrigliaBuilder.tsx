@@ -1,6 +1,29 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { get_current_club_id } from "@/lib/supabase";
-import { DndContext, useDraggable, useDroppable, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import {
+  DndContext,
+  useDraggable,
+  useDroppable,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  pointerWithin,
+  rectIntersection,
+  type CollisionDetection,
+} from "@dnd-kit/core";
+
+/**
+ * Il contenitore del blocco (`blocco:`) è sempre montato e racchiude le
+ * sotto-sessioni (`sessione:`). Il rilascio dentro una sessione interseca
+ * entrambi: vince sempre il bersaglio più interno, altrimenti il messaggio
+ * "rilascia sulla sessione" apparirebbe anche a chi ha mirato bene.
+ */
+const collision_preferisci_interno: CollisionDetection = (args) => {
+  const dentro = pointerWithin(args);
+  const base = dentro.length > 0 ? dentro : rectIntersection(args);
+  const sessioni = base.filter((c) => String(c.id).startsWith("sessione:"));
+  return sessioni.length > 0 ? sessioni : base;
+};
 import { use_atleti, use_istruttori } from "@/hooks/use-supabase-data";
 import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
 import { useModalitaArea } from "@/hooks/useModalitaArea";
@@ -295,7 +318,9 @@ const PoolBox: React.FC<{
     if (prefisso !== "atleta") return [];
     const map = new Map<string, typeof filtrati>();
     for (const i of filtrati) {
-      const liv = (i.livello_attuale || "Senza livello") as string;
+      // Stesso ripiego di `risolvi_membri_gruppo` (use-griglia-ghiaccio):
+      // se divergono, il gruppo trascinato non corrisponde a quello mostrato.
+      const liv = (i.livello_attuale || "Pulcini") as string;
       map.set(liv, [...(map.get(liv) ?? []), i]);
     }
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0], "it"));
