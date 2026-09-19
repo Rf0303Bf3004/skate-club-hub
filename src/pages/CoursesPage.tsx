@@ -1597,11 +1597,14 @@ const CorsoModal: React.FC<{
   };
 
   const { data: livelli_master_modal = [] } = use_livelli();
+  // Il percorso (artistica/stile) ha senso solo con UN livello di carriera dichiarato.
   const fase_livello_modal = useMemo(() => {
-    if (!form.livello_richiesto) return null;
-    return livelli_master_modal.find((l: any) => l.nome === form.livello_richiesto)?.fase ?? null;
+    const scelti = parse_livelli_corso(form.livello_richiesto);
+    if (scelti.length !== 1 || is_apertura_totale(form.livello_richiesto)) return null;
+    return livelli_master_modal.find((l: any) => l.nome === scelti[0])?.fase ?? null;
   }, [form.livello_richiesto, livelli_master_modal]);
   const is_carriera_modal = fase_livello_modal === "carriera";
+  const [errore_livello, set_errore_livello] = useState<string | null>(null);
   const percorso_invalido_modal = !!form.percorso && !is_carriera_modal;
   useEffect(() => {
     if (!is_carriera_modal && form.percorso !== null) {
