@@ -92,28 +92,6 @@ function build_placeholder_labels(t: (key: string) => string): Record<string, st
   };
 }
 
-const LIVELLI_ORDER: Record<string, number> = {
-  Pulcini: 0,
-  'Stellina 1': 1,
-  'Stellina 2': 2,
-  'Stellina 3': 3,
-  'Stellina 4': 4,
-  Interbronzo: 5,
-  Bronzo: 6,
-  Interargento: 7,
-  Argento: 8,
-  Interoro: 9,
-  Oro: 10,
-};
-
-const SOGLIE_LIVELLO: Record<string, number> = {
-  pulcini_only: 0,
-  stellina_1_plus: 1,
-  bronzo_plus: 6,
-  argento_plus: 8,
-  oro_plus: 10,
-};
-
 function format_date_label(value: string) {
   if (!value) return '';
   return new Date(`${value}T00:00:00`).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -121,10 +99,6 @@ function format_date_label(value: string) {
 
 function get_atleta_livello_label(atleta: any) {
   return atleta?.carriera_artistica || atleta?.carriera_stile || atleta?.percorso_amatori || 'Pulcini';
-}
-
-function get_atleta_livello_rank(atleta: any) {
-  return LIVELLI_ORDER[get_atleta_livello_label(atleta)] ?? 0;
 }
 
 type RecipientPreviewRow = {
