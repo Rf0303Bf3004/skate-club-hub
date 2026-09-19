@@ -441,6 +441,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/avvio" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
                 <Rocket className="w-4 h-4 shrink-0" /><span>Avvio del club</span>
               </NavLink>
+              <NavLink to="/esportazioni" onClick={() => set_sidebar_open(false)}
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/esportazioni" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
+                <FileSpreadsheet className="w-4 h-4 shrink-0" /><span>Esportazioni</span>
+              </NavLink>
               <NavLink to="/superadmin/app-mobile" onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin/app-mobile" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
                 <Smartphone className="w-4 h-4 shrink-0" /><span>App Mobile</span>
