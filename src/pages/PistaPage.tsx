@@ -381,7 +381,40 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
     [atleti, assenti],
   );
   const ids_presenti = React.useMemo(() => presenti.map((a) => a.atleta_id), [presenti]);
-  const programmi_query = use_programmi_atleti(momento === "in_pista" ? ids_presenti : []);
+  // Musica: come tutto il resto della pagina passa da una RPC `pista_*`.
+  // Il tablet non ha una riga in utenti_club, quindi get_current_club_id() è vuoto
+  // e una lettura diretta della tabella non partirebbe mai (difetto invisibile).
+  // I dischi sono disponibili già in fase di appello: mettere un brano non dipende
+  // dall'aver registrato le presenze né dall'orario.
+  const programmi_query = useQuery({
+    queryKey: ["pista_programmi", sessione_id],
+    enabled: !!sessione_id,
+    refetchOnWindowFocus: false,
+    queryFn: async (): Promise<ProgrammaMusicale[]> => {
+      const { data, error } = await supabase.rpc("pista_programmi", {
+        p_sessione_id: sessione_id as string,
+      });
+      if (error) throw new Error(error.message);
+      return ((data ?? []) as any[]).map((p) => ({
+        id: p.id,
+        atleta_id: p.atleta_id,
+        club_id: "",
+        tipo: p.tipo,
+        titolo_brano: p.titolo_brano ?? null,
+        file_path: p.file_path ?? null,
+        durata_sec: p.durata_sec ?? null,
+        in_preparazione: !!p.in_preparazione,
+        attivo: true,
+      }));
+    },
+  });
+
+  React.useEffect(() => {
+    if (programmi_query.isError) {
+      segnala_errore("PistaPage", "lettura programmi musicali", programmi_query.error);
+    }
+  }, [programmi_query.isError, programmi_query.error]);
+
   const programmi_per_atleta = React.useMemo(() => {
     const mappa = new Map<string, ProgrammaMusicale[]>();
     for (const p of programmi_query.data ?? []) {
@@ -391,6 +424,26 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
     }
     return mappa;
   }, [programmi_query.data]);
+
+  /** Bottone del disco di un'atleta: lo stesso in appello e in pista. */
+  const bottone_disco = (atleta_id: string, titolo: string) => {
+    const suoi = programmi_per_atleta.get(atleta_id) ?? [];
+    if (suoi.length === 0) return null;
+    return (
+      <Button
+        size="lg"
+        className="h-12 min-w-[120px]"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (suoi.length === 1) apri_lettore(suoi[0], titolo);
+          else set_scelta_disco({ titolo, programmi: suoi });
+        }}
+      >
+        <Music className="mr-2 h-5 w-5" />
+        {t("musica.disco")}
+      </Button>
+    );
+  };
 
   // ---- Note rapide: sole RPC pista_note / pista_nota_salva / pista_nota_elimina ----
   type NotaPista = {
