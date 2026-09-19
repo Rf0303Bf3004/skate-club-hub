@@ -391,6 +391,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <span>Convenzioni</span>
             </NavLink>
           )}
+          {!is_superadmin && session && !is_nuovo_ruolo && puo_vedere_avvio && (
+            <NavLink to="/avvio" onClick={() => set_sidebar_open(false)}
+              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/avvio" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+              <Rocket className="w-4 h-4 shrink-0" />
+              <span>Avvio del club</span>
+            </NavLink>
+          )}
 
           {is_superadmin && (
             <>
@@ -420,6 +427,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <NavLink to="/superadmin/convenzioni" onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin/convenzioni" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
                 <BadgePercent className="w-4 h-4 shrink-0" /><span>Convenzioni</span>
+              </NavLink>
+              <NavLink to="/avvio" onClick={() => set_sidebar_open(false)}
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/avvio" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
+                <Rocket className="w-4 h-4 shrink-0" /><span>Avvio del club</span>
               </NavLink>
               <NavLink to="/superadmin/app-mobile" onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin/app-mobile" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
