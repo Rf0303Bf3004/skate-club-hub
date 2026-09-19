@@ -2335,8 +2335,9 @@ const CorsoCard: React.FC<{
     .map((id: string) => istruttori.find((i: any) => i.id === id))
     .filter(Boolean);
 
-  const livello = corso.livello_richiesto || "tutti";
-  const livello_label = LIVELLO_LABELS[livello] || livello;
+  const livello = corso.livello_richiesto ?? "";
+  const livello_label = formatta_livelli_corso(livello, t);
+  const livello_mancante = livello_da_sistemare(corso);
   const num_iscritti = (corso.atleti_ids || []).length;
 
   return (
