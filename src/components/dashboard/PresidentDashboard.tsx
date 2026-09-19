@@ -1263,9 +1263,9 @@ const PresidentDashboard: React.FC = () => {
       icon: <Users className="h-4 w-4" />,
       main_kpi: fmt_int(atleti_attivi.length),
       sub_label: t("president_home.cards.active_athletes"),
-      stato: atleti_attivi.length > 0 ? "positivo" : "neutro",
+      stato: atleti_attivi.length > 0 ? "positivo" : "senza_dati",
       mini: <MiniPyramid items={top_livelli} empty_label={t("president_home.empty.short")} />,
-      drawer_content: <AreaAtleti d={d} stagioni={stagioni_ord} stagione_id={stagione_id} prev_stagione_id={prev_stagione_id} confronta={confronta} t={t} />,
+      drawer_content: <AreaAtleti d={d} stagioni={stagioni_ord} stagione_id={stagione_id} prev_stagione_id={prev_stagione_id} confronta={confronta} nota_confronto={nota_confronto} t={t} />,
     },
     {
       id: "ricavi",
@@ -1275,7 +1275,7 @@ const PresidentDashboard: React.FC = () => {
       sub_label: ricavi_curr.length === 0 ? t("president_home.missing.short") : t("president_home.cards.total_season_revenue"),
       stato: ricavi_curr.length === 0 ? "mancante" : "neutro",
       mini: <MiniDonut data={donut_data} empty_label={t("president_home.missing.short")} />,
-      drawer_content: <AreaRicavi d={d} stagione_id={stagione_id} prev_stagione_id={prev_stagione_id} confronta={confronta} t={t} />,
+      drawer_content: <AreaRicavi d={d} stagione_id={stagione_id} prev_stagione_id={prev_stagione_id} confronta={confronta} nota_confronto={nota_confronto} t={t} />,
     },
     {
       id: "costi",
@@ -1296,8 +1296,8 @@ const PresidentDashboard: React.FC = () => {
       icon: <Clock className="h-4 w-4" />,
       main_kpi: d.lezioni_private.length === 0 ? "—" : fmt_chf(lezioni_fatturato),
       sub_label: d.lezioni_private.length === 0 ? t("president_home.empty.short") : t("president_home.cards.private_hours", { count: fmt_int(lezioni_ore) }),
-      stato: d.lezioni_private.length === 0 ? "neutro" : "positivo",
-      mini: <MiniBarsHoriz empty_label={t("president_home.empty.short")} items={[
+      stato: d.lezioni_private.length === 0 ? "senza_dati" : "positivo",
+      mini: d.lezioni_private.length === 0 ? null : <MiniBarsHoriz empty_label={t("president_home.empty.short")} items={[
         { label: t("president_home.private.lessons_sold"), value: d.lezioni_private.length, color: AREA_STROKES.lezioni },
         { label: t("president_home.private.hours_sold_label"), value: lezioni_ore, color: "hsl(var(--chart-4, var(--primary)))" },
       ]} />,
@@ -1309,7 +1309,7 @@ const PresidentDashboard: React.FC = () => {
       icon: <Trophy className="h-4 w-4" />,
       main_kpi: fmt_int(podi),
       sub_label: t("president_home.cards.podiums_in_competitions", { podi, gare: gare_curr.length }),
-      stato: gare_curr.length === 0 ? "neutro" : "positivo",
+      stato: gare_curr.length === 0 ? "senza_dati" : "positivo",
       mini: <MiniBarsHoriz empty_label={t("president_home.empty.short")} items={[
         { label: t("president_home.sport.competitions"), value: gare_curr.length, color: AREA_STROKES.sportivo },
         { label: t("president_home.sport.entries"), value: iscrizioni_gare_curr.length, color: "hsl(var(--chart-3, var(--primary)))" },
@@ -1323,7 +1323,7 @@ const PresidentDashboard: React.FC = () => {
       icon: <Megaphone className="h-4 w-4" />,
       main_kpi: fmt_int(sponsor_attivi.length),
       sub_label: t("president_home.cards.sponsor_value", { importo: fmt_chf(sponsor_totale) }),
-      stato: sponsor_attivi.length === 0 ? "neutro" : "positivo",
+      stato: sponsor_attivi.length === 0 ? "senza_dati" : "positivo",
       mini: <MiniBarsHoriz empty_label={t("president_home.empty.short")} items={[
         { label: t("president_home.catalog.active_sponsors"), value: sponsor_attivi.length, color: AREA_STROKES.catalogo },
         { label: t("president_home.catalog.open_events"), value: d.eventi.length, color: "hsl(var(--chart-2, var(--primary)))" },
@@ -1382,8 +1382,8 @@ const PresidentDashboard: React.FC = () => {
             </Button>
           </div>
           <div className="mt-8 grid gap-4 md:grid-cols-4">
-            <ValoreGrande label={t("president_home.stats.total_athletes")} value={fmt_int(atleti_attivi.length)} delta={confronta ? atleti_yoy : undefined} />
-            <ValoreGrande label={t("president_home.stats.revenue")} value={ricavi_curr.length === 0 ? "—" : fmt_chf(totale_ricavi)} delta={confronta ? ricavi_yoy : undefined} />
+            <ValoreGrande label={t("president_home.stats.total_athletes")} value={fmt_int(atleti_attivi.length)} delta={confronta && !nota_confronto ? atleti_yoy : undefined} nota={nota_confronto} />
+            <ValoreGrande label={t("president_home.stats.revenue")} value={ricavi_curr.length === 0 ? "—" : fmt_chf(totale_ricavi)} delta={confronta && !nota_confronto ? ricavi_yoy : undefined} nota={nota_confronto} />
             <ValoreGrande label={t("president_home.stats.cash_balance")} value={cassa === null ? "—" : fmt_chf(cassa)} tono={cassa === null ? "base" : cassa >= 0 ? "positivo" : "pericolo"} />
             <ValoreGrande label={t("president_home.stats.waiting_list")} value={fmt_int(lista_attesa)} tono={lista_attesa > 0 ? "attenzione" : "base"} />
           </div>
