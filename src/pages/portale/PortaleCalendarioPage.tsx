@@ -312,6 +312,12 @@ const PortaleCalendarioPage: React.FC = () => {
                                 <span className={`inline-block w-1.5 h-1.5 rounded-full ${meta.bg} mr-1 align-middle`} />
                                 {meta.label}{ev.luogo ? ` · ${ev.luogo}` : ""}
                               </p>
+                              {(() => {
+                                const pid = planning_id_di(ev);
+                                return pid && assenze.has(pid) ? (
+                                  <p className="text-[11px] font-semibold text-rose-600">{t("assenze.avvisato")}</p>
+                                ) : null;
+                              })()}
                             </div>
                           </button>
                         </li>
