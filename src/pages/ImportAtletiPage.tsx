@@ -42,42 +42,6 @@ const SYNONYMS: Record<TargetKey, string[]> = {
   genitore1_cantone:   ["cantone", "canton", "ct", "kanton"],
 };
 
-/** Campi che il modello scaricabile propone, nell'ordine dell'intestazione. */
-const TEMPLATE_HEADERS: Record<TargetKey, string> = {
-  nome: "nome",
-  cognome: "cognome",
-  data_nascita: "data_nascita",
-  sesso: "sesso",
-  telefono: "telefono",
-  livello: "livello",
-  categoria: "categoria",
-  email: "email genitore",
-  genitore1_telefono: "telefono genitore",
-  genitore1_nome: "nome genitore",
-  genitore1_cognome: "cognome genitore",
-  genitore1_indirizzo: "indirizzo",
-  genitore1_cap: "cap",
-  genitore1_citta: "localita",
-  genitore1_cantone: "cantone",
-};
-
-const TEMPLATE_ESEMPIO: Record<TargetKey, string> = {
-  nome: "Mario",
-  cognome: "Rossi",
-  data_nascita: "12.05.2010",
-  sesso: "M",
-  telefono: "+41791234567",
-  livello: "Stellina 2",
-  categoria: "amatori",
-  email: "famiglia.rossi@example.com",
-  genitore1_telefono: "+41791112233",
-  genitore1_nome: "Anna",
-  genitore1_cognome: "Rossi",
-  genitore1_indirizzo: "Via del Ghiaccio 12",
-  genitore1_cap: "6900",
-  genitore1_citta: "Lugano",
-  genitore1_cantone: "TI",
-};
 
 /** Oltre questa soglia l'anteprima non disegna tutte le righe. */
 const SOGLIA_RIGHE = 500;
