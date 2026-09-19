@@ -1305,6 +1305,14 @@ const AthletesPage: React.FC = () => {
                 <Upload className="w-4 h-4 mr-2" /> {t2('header.import_excel')}
               </Button>
             )}
+            <Button
+              variant="outline"
+              onClick={esporta_excel}
+              disabled={filtered.length === 0}
+              title={filtered.length === 0 ? t2('header.export_empty') : undefined}
+            >
+              <Download className="w-4 h-4 mr-2" /> {t2('header.export_excel')}
+            </Button>
             {puo_gestire_sportivo && (
               <Button
                 className="bg-primary hover:bg-primary/90"
