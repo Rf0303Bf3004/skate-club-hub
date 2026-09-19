@@ -1,4 +1,7 @@
 {
+  "home": {
+    "errore_prossimi": "We could not read the upcoming activities. This does not mean there are none."
+  },
   "rinnovo": {
     "titolo": "Registration for the {{stagione}} season",
     "scadenza": "Reply by {{data}}",

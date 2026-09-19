@@ -1149,7 +1149,7 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
               {t("pista.esci_testo")}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="gap-3 sm:space-x-0">
+          <AlertDialogFooter className="flex-col gap-3 sm:flex-row sm:space-x-0">
             <AlertDialogCancel autoFocus className="h-14 w-full text-base font-semibold">
               {t("annulla", { defaultValue: "Annulla" })}
             </AlertDialogCancel>

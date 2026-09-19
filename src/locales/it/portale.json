@@ -25,7 +25,8 @@
     "benvenuto": "Benvenuto",
     "rapido": "Accesso rapido",
     "in_evidenza": "In evidenza",
-    "nessuna_news": "Nessuna notizia in evidenza"
+    "nessuna_news": "Nessuna notizia in evidenza",
+    "errore_prossimi": "Non è stato possibile leggere i prossimi impegni. Non significa che non ce ne siano."
   },
   "rinnovo": {
     "titolo": "Iscrizione stagione {{stagione}}",

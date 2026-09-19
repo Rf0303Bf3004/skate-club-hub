@@ -1,4 +1,7 @@
 {
+  "home": {
+    "errore_prossimi": "Impossible de lire les prochains rendez-vous. Cela ne signifie pas qu'il n'y en a pas."
+  },
   "rinnovo": {
     "titolo": "Inscription saison {{stagione}}",
     "scadenza": "Répondez avant le {{data}}",

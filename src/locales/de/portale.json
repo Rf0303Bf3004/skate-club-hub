@@ -1,4 +1,7 @@
 {
+  "home": {
+    "errore_prossimi": "Die nächsten Termine konnten nicht gelesen werden. Das bedeutet nicht, dass es keine gibt."
+  },
   "rinnovo": {
     "titolo": "Anmeldung für die Saison {{stagione}}",
     "scadenza": "Bitte bis {{data}} antworten",

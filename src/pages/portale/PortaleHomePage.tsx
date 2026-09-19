@@ -49,6 +49,7 @@ const PortaleHomePage: React.FC = () => {
   const { session } = useOutletContext<{ session: PortaleSession }>();
   const [prossimi, set_prossimi] = useState<EventoProssimo[]>([]);
   const [loading, set_loading] = useState(true);
+  const [errore_prossimi, set_errore_prossimi] = useState(false);
   const [scelta, set_scelta] = useState<"conferma" | "rifiuta" | null>(null);
   const [esito_rinnovo, set_esito_rinnovo] = useState<"attivo" | "non_rinnovato" | null>(null);
 
@@ -96,21 +97,36 @@ const PortaleHomePage: React.FC = () => {
   });
 
   useEffect(() => {
+    if (rinnovo.isError) {
+      void segnala_errore("PortaleHomePage", "lettura rinnovo", rinnovo.error, {}, "avviso");
+    }
+  }, [rinnovo.isError, rinnovo.error]);
+
+  useEffect(() => {
     (async () => {
-      const oggi = new Date().toISOString().slice(0, 10);
-      const fra14 = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
-      const { data } = await supabase
-        .from("eventi_calendario" as any)
-        .select("id, tipo, data, ora_inizio, ora_fine, nome_evento, luogo")
-        .eq("atleta_id", session.atleta.id)
-        .gte("data", oggi)
-        .lte("data", fra14)
-        .neq("stato", "annullato")
-        .order("data", { ascending: true })
-        .order("ora_inizio", { ascending: true })
-        .limit(3);
-      set_prossimi(((data as any) ?? []) as EventoProssimo[]);
-      set_loading(false);
+      try {
+        set_loading(true);
+        set_errore_prossimi(false);
+        const oggi = new Date().toISOString().slice(0, 10);
+        const fra14 = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+        const { data, error } = await supabase
+          .from("eventi_calendario" as any)
+          .select("id, tipo, data, ora_inizio, ora_fine, nome_evento, luogo")
+          .eq("atleta_id", session.atleta.id)
+          .gte("data", oggi)
+          .lte("data", fra14)
+          .neq("stato", "annullato")
+          .order("data", { ascending: true })
+          .order("ora_inizio", { ascending: true })
+          .limit(3);
+        if (error) throw error;
+        set_prossimi(((data as any) ?? []) as EventoProssimo[]);
+      } catch (error) {
+        set_errore_prossimi(true);
+        void segnala_errore("PortaleHomePage", "lettura prossimi impegni", error, {}, "avviso");
+      } finally {
+        set_loading(false);
+      }
     })();
   }, [session.atleta.id]);
 
@@ -191,6 +207,10 @@ const PortaleHomePage: React.FC = () => {
             {[0, 1, 2].map((i) => (
               <div key={i} className="h-40 rounded-2xl bg-slate-100 animate-pulse" />
             ))}
+          </div>
+        ) : errore_prossimi ? (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-900">
+            <p className="font-semibold">{t("home.errore_prossimi")}</p>
           </div>
         ) : prossimi.length === 0 ? (
           <div className="rounded-3xl bg-gradient-to-br from-slate-50 to-sky-50 border border-slate-200 p-10 text-center">
