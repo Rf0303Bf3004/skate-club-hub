@@ -19,7 +19,8 @@ export const TIPI_PROGRAMMA: TipoProgramma[] = ["corto", "libero", "esibizione",
 export interface ProgrammaMusicale {
   id: string;
   atleta_id: string;
-  club_id: string;
+  /** Nullo quando il dato arriva da una RPC che non lo restituisce (bordo pista). */
+  club_id: string | null;
   tipo: string;
   titolo_brano: string | null;
   file_path: string | null;
