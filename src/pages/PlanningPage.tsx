@@ -486,6 +486,7 @@ function SidebarCostruzione({
 // ══════════════════════════════════════════════════════════════
 function PlanningPageInner() {
   const { t } = useTranslation('planning');
+  const { t: t_corsi } = useTranslation('corsi');
   const { puo_pianificare } = usePermessiAzione();
   const queryClient = useQueryClient();
   const configQuery = use_config_ghiaccio();
