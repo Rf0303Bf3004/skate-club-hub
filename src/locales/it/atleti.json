@@ -749,7 +749,8 @@
     "tabs": {
       "rinnovi": "Rinnovi",
       "domande": "Domande nuove",
-      "corsi": "Richieste corsi"
+      "corsi": "Richieste corsi",
+      "prove": "Prove gratuite"
     },
     "comune": {
       "conferma": "Conferma",
@@ -854,6 +855,28 @@
       "rigenera_titolo": "Rigenerare il link pubblico?",
       "rigenera_testo": "Il link di prima smette di funzionare. Chi lo ha ricevuto o lo ha stampato dovrà averne uno nuovo.",
       "rigenera_ok": "Nuovo link pubblico creato"
+    },
+    "prove": {
+      "sottotitolo": "Le famiglie che hanno chiesto di venire a provare dalla pagina pubblica.",
+      "mostra_chiuse": "Mostra anche chiuse e iscritte",
+      "accompagna": "Accompagna: {{nome}}",
+      "eta_one": "{{count}} anno",
+      "eta_other": "{{count}} anni",
+      "arrivata_da_zero": "arrivata oggi",
+      "arrivata_da_one": "arrivata da {{count}} giorno",
+      "arrivata_da_other": "arrivata da {{count}} giorni",
+      "stato_nuova": "Nuova",
+      "stato_contattata": "Contattata",
+      "stato_venuta": "Venuta alla prova",
+      "stato_iscritta": "Iscritta",
+      "stato_chiusa": "Chiusa",
+      "note_club_placeholder": "Note interne del club…",
+      "salva": "Salva",
+      "salvataggio": "Salvataggio…",
+      "errore_salvataggio": "Salvataggio non riuscito: riprova, i dati non sono stati persi.",
+      "errore_lettura": "L'elenco delle prove non è disponibile in questo momento: non significa che non ce ne siano. Riprova.",
+      "nessuna_aperta": "Nessuna richiesta di prova in attesa.",
+      "nessuna": "Nessuna richiesta di prova."
     }
   }
 }

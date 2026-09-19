@@ -678,5 +678,24 @@
     "ok_richieste": "Nessuna iscrizione in attesa",
     "ok_bozze": "Nessuna fattura da inviare",
     "ok_anagrafiche": "Anagrafiche complete"
+  },
+  "prova_gratuita": {
+    "titolo": "Vieni a provare con {{club}}",
+    "intro": "Porta il tuo bambino a provare il pattinaggio: i pattini e l'accompagnamento in pista li mettiamo noi, non serve saper pattinare. Lasciaci i tuoi recapiti: ti chiamiamo noi per fissare il giorno, senza decidere niente adesso.",
+    "campo_nome": "Nome del bambino",
+    "campo_cognome": "Cognome del bambino",
+    "campo_nascita": "Data di nascita del bambino",
+    "campo_accompagnatore": "Nome di chi accompagna",
+    "campo_telefono": "Telefono",
+    "campo_email": "Email",
+    "almeno_un_recapito": "Serve almeno un recapito: telefono o email.",
+    "campo_note": "Note (facoltativo)",
+    "invia": "Vogliamo venire a provare",
+    "invio_in_corso": "Sto inviando…",
+    "conferma_titolo": "Richiesta ricevuta",
+    "conferma_testo": "Grazie! {{club}} ti richiamerà presto per fissare il giorno della prova. Se preferisci, puoi contattare direttamente il club:",
+    "club_non_trovato_titolo": "Indirizzo non riconosciuto",
+    "club_non_trovato_testo": "Questo indirizzo non corrisponde a nessun club. Controlla il link sul volantino o contatta direttamente il club.",
+    "errore_generico": "Invio non riuscito, riprova."
   }
 }
