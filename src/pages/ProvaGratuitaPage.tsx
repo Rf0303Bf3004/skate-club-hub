@@ -25,10 +25,10 @@ interface ClubPubblico {
 }
 
 const Campo: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <div className="space-y-1.5">
-    <label className="block text-base font-semibold text-foreground">{label}</label>
+  <label className="block space-y-1.5">
+    <span className="block text-base font-semibold text-foreground">{label}</span>
     {children}
-  </div>
+  </label>
 );
 
 const ProvaGratuitaPage: React.FC = () => {
