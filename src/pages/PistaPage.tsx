@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Clock, LogOut, Maximize2, Minimize2, Music, StickyNote, Trash2 } from "lucide-react";
+import { Check, Clock, Maximize2, Minimize2, Music, Settings, StickyNote, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import DateInput from "@/components/forms/DateInput";
 import { Button } from "@/components/ui/button";
@@ -138,6 +138,7 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
   const [note_aperte, set_note_aperte] = React.useState<{ atleta_id: string; titolo: string } | null>(null);
   const [nota_in_eliminazione, set_nota_in_eliminazione] = React.useState<string | null>(null);
   const [scollega_aperto, set_scollega_aperto] = React.useState(false);
+  const [impostazioni_aperte, set_impostazioni_aperte] = React.useState(false);
 
 
 
@@ -918,7 +919,7 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
   return (
     <div className={schermo_intero ? "fixed inset-0 z-50 overflow-x-hidden overflow-y-auto bg-background px-4" : "relative min-h-[70vh] overflow-x-hidden px-4"}>
       {/* Intestazione fissa: a schermo intero non deve scorrere via con
-          l'elenco, altrimenti l'uscita del tablet diventa introvabile.
+          l'elenco, altrimenti i comandi del tablet diventano introvabili.
           Va a capo invece di debordare: il titolo si restringe e i bottoni
           passano alla riga sotto quando la larghezza non basta. */}
       <header className="sticky top-0 z-10 flex flex-wrap items-start justify-between gap-x-4 gap-y-2 bg-background py-4">
@@ -958,21 +959,18 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
             </span>
           </Button>
 
-          {/* Uscita definitiva del tablet: dimentica il codice conservato ed è rara.
-              Un tocco apre la conferma, nessun menu in mezzo: su touch un menu è
-              il punto più fragile della catena di uscita.
-              È l'unico comando che non si stringe mai: resta in testo intero e
-              va a capo dentro il bottone se la larghezza manca. */}
+          {/* Impostazioni del tablet: di sola icona, senza scritte che
+              invitino a premere. Dentro il dialog servono tre passaggi
+              intenzionali per scollegare: icona, voce rossa, conferma. */}
           {sessione_pista && (
             <Button
-              variant="outline"
+              variant="ghost"
               size="lg"
-              className="whitespace-normal"
-              aria-label={t("pista.scollega")}
-              onClick={() => set_scollega_aperto(true)}
+              aria-label={t("pista.impostazioni")}
+              title={t("pista.impostazioni")}
+              onClick={() => set_impostazioni_aperte(true)}
             >
-              <LogOut className="mr-2 h-5 w-5 shrink-0" />
-              {t("pista.scollega")}
+              <Settings className="h-5 w-5" />
             </Button>
           )}
         </div>
@@ -1066,7 +1064,7 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
       {contenuto()}
 
       {/* La barra in fondo resta per l'appello, anche a schermo intero:
-          non contiene più l'uscita del tablet, che sta nel menu dell'intestazione. */}
+          non contiene l'uscita del tablet, che sta nell'intestazione. */}
       {mostra_barra && !senza_club && (
         <div
           className={`${schermo_intero ? "absolute" : "sticky"} inset-x-0 bottom-0 z-20 border-t border-border bg-background p-3`}
@@ -1110,17 +1108,6 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
         </div>
       )}
 
-      {/* Seconda via d'uscita, fuori dall'intestazione: raggiungibile scorrendo
-          in fondo anche quando i comandi in alto si stringono. A schermo intero
-          lascia lo spazio della barra dell'appello, che sta sopra in assoluto. */}
-      {sessione_pista && (
-        <div className={`mt-6 flex justify-center ${schermo_intero ? "pb-44" : "pb-8"}`}>
-          <Button variant="outline" size="lg" className="whitespace-normal" onClick={() => set_scollega_aperto(true)}>
-            <LogOut className="mr-2 h-5 w-5 shrink-0" />
-            {t("pista.scollega")}
-          </Button>
-        </div>
-      )}
 
 
       <AlertDialog open={!!in_attesa} onOpenChange={(aperto) => !aperto && set_in_attesa(null)}>
