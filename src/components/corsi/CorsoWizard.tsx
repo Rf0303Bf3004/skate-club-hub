@@ -247,9 +247,11 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
   const set_val = (k: keyof typeof form, v: any) => set_form((p) => ({ ...p, [k]: v }));
 
   const { data: livelli_master = [] } = use_livelli();
+  // Il percorso (artistica/stile) ha senso solo con UN livello di carriera dichiarato.
   const fase_livello_selezionato = useMemo(() => {
-    if (!form.livello_richiesto) return null;
-    return livelli_master.find((l) => l.nome === form.livello_richiesto)?.fase ?? null;
+    const scelti = parse_livelli_corso(form.livello_richiesto);
+    if (scelti.length !== 1 || is_apertura_totale(form.livello_richiesto)) return null;
+    return livelli_master.find((l) => l.nome === scelti[0])?.fase ?? null;
   }, [form.livello_richiesto, livelli_master]);
   const is_carriera = fase_livello_selezionato === "carriera";
 
