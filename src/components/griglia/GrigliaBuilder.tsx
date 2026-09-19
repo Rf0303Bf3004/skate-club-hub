@@ -1015,6 +1015,10 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   /** Fonte dei pool laterali, per singola sotto-sessione (tab). */
   const [fonte_pool, set_fonte_pool] = useState<Record<string, "livello" | "proposta">>({});
   const [sync_gruppo_ids, set_sync_gruppo_ids] = useState<string[]>([]);
+  /** Rilascio su un blocco senza sotto-sessioni, in attesa di conferma. */
+  const [drop_blocco_vuoto, set_drop_blocco_vuoto] = useState<
+    { active_id: string; data: any; chi: string } | null
+  >(null);
   const [conflitto_gruppo, set_conflitto_gruppo] = useState<
     { livello: string; conflitto: ConflittoGruppo } | null
   >(null);
@@ -1315,8 +1319,16 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   };
 
   /** Esegue davvero il rilascio su una sotto-sessione esistente. */
-  const esegui_drop = async (sessione_id: string, active_id: string, data: any) => {
-    const dest = sessioni.find((s) => s.id === sessione_id);
+  const esegui_drop = async (
+    sessione_id: string,
+    active_id: string,
+    data: any,
+    /** Sessione appena creata: non è ancora nell'elenco letto dal server. */
+    appena_creata = false,
+  ) => {
+    const dest =
+      sessioni.find((s) => s.id === sessione_id) ??
+      (appena_creata ? ({ id: sessione_id, gruppi: [] } as unknown as GrigliaSessione) : undefined);
     if (!dest) {
       toast({
         title: "⚠️ Sessione non trovata",
