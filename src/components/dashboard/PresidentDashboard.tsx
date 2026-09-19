@@ -757,7 +757,7 @@ const AreaAtleti: React.FC<{ d: DashboardData; stagioni: Stagione[]; stagione_id
   );
 };
 
-const AreaRicavi: React.FC<{ d: DashboardData; stagione_id: string; prev_stagione_id: string | null; confronta: boolean; t: (key: string, opts?: Record<string, unknown>) => string }> = ({ d, stagione_id, prev_stagione_id, confronta, t }) => {
+const AreaRicavi: React.FC<{ d: DashboardData; stagione_id: string; prev_stagione_id: string | null; confronta: boolean; nota_confronto?: string; t: (key: string, opts?: Record<string, unknown>) => string }> = ({ d, stagione_id, prev_stagione_id, confronta, nota_confronto, t }) => {
   const curr = d.ricavi.filter((r) => testo(r.stagione_id) === stagione_id);
   const prev = prev_stagione_id ? d.ricavi.filter((r) => testo(r.stagione_id) === prev_stagione_id) : [];
   const totale = curr.reduce((s, r) => s + numero(r.importo), 0);
@@ -789,7 +789,7 @@ const AreaRicavi: React.FC<{ d: DashboardData; stagione_id: string; prev_stagion
     <div className="space-y-8">
       {curr.length === 0 ? <StatoDati titolo={t("president_home.missing.title")} testo={t("president_home.revenue.missing")} /> : null}
       <div className="grid gap-4 md:grid-cols-3">
-        <ValoreGrande label={t("president_home.revenue.season_revenue")} value={curr.length === 0 ? "—" : fmt_chf(totale)} delta={confronta ? yoy : undefined} />
+        <ValoreGrande label={t("president_home.revenue.season_revenue")} value={curr.length === 0 ? "—" : fmt_chf(totale)} delta={confronta && !nota_confronto ? yoy : undefined} nota={nota_confronto} />
         <ValoreGrande label={t("president_home.revenue.sources")} value={fmt_int(curr.length)} />
         <ValoreGrande label={t("president_home.revenue.packages_used")} value={fmt_int(pacchetti_usati.length)} />
       </div>
@@ -1187,8 +1187,13 @@ const PresidentDashboard: React.FC = () => {
 
   const d = dashboard_query.data;
   const club_nome = session?.club_nome || t("president_home.club_fallback");
-  const atleti_attivi = d.atleti.filter((a) => booleano(a.attivo));
-  const livelli = riepilogo_livelli(atleti_attivi);
+  // Atleti attivi della stagione selezionata: dallo storico stagioni, non dall'anagrafica intera.
+  const atleti_attivi = d.storici.filter((s) => testo(s.stagione_id) === stagione_id && testo(s.status) === "attivo");
+  const livelli = riepilogo_livelli(atleti_attivi.map((s) => ({ livello_attuale: s.livello })));
+  // Stagione cominciata da meno di 60 giorni: il confronto con l'anno prima non ha senso ancora.
+  const giorni_stagione = Math.floor((Date.now() - new Date(`${stagione.data_inizio}T00:00:00`).getTime()) / (24 * 3600 * 1000));
+  const stagione_recente = giorni_stagione >= 0 && giorni_stagione < 60;
+  const nota_confronto = confronta && stagione_recente ? t("president_home.compare_too_early") : undefined;
   const top_livelli = Object.entries(livelli).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([label, value]) => ({ label, value }));
   const ricavi_curr = d.ricavi.filter((r) => testo(r.stagione_id) === stagione_id);
   const ricavi_prev = prev_stagione_id ? d.ricavi.filter((r) => testo(r.stagione_id) === prev_stagione_id) : [];
