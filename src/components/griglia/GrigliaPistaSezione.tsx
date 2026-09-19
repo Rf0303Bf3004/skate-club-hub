@@ -201,6 +201,22 @@ const GrigliaPistaSezione: React.FC<Props> = ({ risorsa, data_sel, is_editor }) 
     }
   };
 
+  /** Blocco senza sotto-sessioni: si crea la sessione per tutta la sua durata. */
+  const crea_prima_sessione = async (b: GrigliaBlocco) => {
+    try {
+      await upsert_sessione.mutateAsync({
+        blocco_id: b.id,
+        ordine: 1,
+        ora_inizio: hhmm(b.ora_inizio),
+        ora_fine: hhmm(b.ora_fine),
+      });
+      set_espansi((prev) => (prev.includes(b.id) ? prev : [...prev, b.id]));
+      toast({ title: "Sessione creata" });
+    } catch (e: any) {
+      toast({ title: "Errore", description: e.message, variant: "destructive" });
+    }
+  };
+
   const render_lettura = (b: GrigliaBlocco) => (
     <div className="space-y-2">
       {(b.sessioni ?? []).length === 0 && (
@@ -320,6 +336,23 @@ const GrigliaPistaSezione: React.FC<Props> = ({ risorsa, data_sel, is_editor }) 
                           {hhmm(b.ora_inizio)}–{hhmm(b.ora_fine)}
                         </span>
                       </button>
+                      {(b.sessioni ?? []).length === 0 && (
+                        <>
+                          <Badge className="bg-amber-100 text-amber-800 border-amber-300 gap-1">
+                            <AlertTriangle className="w-3 h-3" /> Nessuna sessione
+                          </Badge>
+                          {is_editor && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => crea_prima_sessione(b)}
+                              disabled={upsert_sessione.isPending}
+                            >
+                              <Plus className="w-4 h-4 mr-1" /> Crea la prima sessione
+                            </Button>
+                          )}
+                        </>
+                      )}
                       <Badge
                         className={
                           b.stato === "pubblicato"

@@ -972,6 +972,25 @@ const SessioneBox: React.FC<{
   );
 };
 
+// ─── Bersaglio di rilascio del blocco (per i blocchi senza sotto-sessioni) ───
+const BloccoDropZone: React.FC<{ blocco_id: string; children: React.ReactNode }> = ({
+  blocco_id,
+  children,
+}) => {
+  const { setNodeRef, isOver } = useDroppable({ id: `blocco:${blocco_id}` });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "rounded-xl border-2 border-dashed p-6 transition-colors",
+        isOver ? "border-primary bg-primary/10" : "border-muted-foreground/30 bg-muted/30",
+      )}
+    >
+      {children}
+    </div>
+  );
+};
+
 // ─── Builder ───────────────────────────────────────────────
 interface Props {
   blocco: GrigliaBlocco;
@@ -1015,6 +1034,10 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   /** Fonte dei pool laterali, per singola sotto-sessione (tab). */
   const [fonte_pool, set_fonte_pool] = useState<Record<string, "livello" | "proposta">>({});
   const [sync_gruppo_ids, set_sync_gruppo_ids] = useState<string[]>([]);
+  /** Rilascio su un blocco senza sotto-sessioni, in attesa di conferma. */
+  const [drop_blocco_vuoto, set_drop_blocco_vuoto] = useState<
+    { active_id: string; data: any; chi: string } | null
+  >(null);
   const [conflitto_gruppo, set_conflitto_gruppo] = useState<
     { livello: string; conflitto: ConflittoGruppo } | null
   >(null);
@@ -1232,10 +1255,24 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     etichetta?: string;
   }) => {
     const ids = Array.from(new Set(input.atleta_ids.filter(Boolean)));
-    if (ids.length === 0) return;
+    if (ids.length === 0) {
+      toast({
+        title: "⚠️ Nessun atleta da assegnare",
+        description: "Il contenitore trascinato non contiene nessun atleta.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const esegui = async (lista: string[], forzatura: { motivo: string } | null) => {
-      if (lista.length === 0) return;
+      if (lista.length === 0) {
+        toast({
+          title: "⚠️ Nessun atleta da assegnare",
+          description: "Erano tutti in conflitto orario.",
+          variant: "destructive",
+        });
+        return;
+      }
       const res = await assegna_atleti.mutateAsync({
         sessione_id: input.sessione_id,
         atleta_ids: lista,
@@ -1243,9 +1280,26 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         origine_corso_id: input.origine_corso_id ?? null,
         forzatura: forzatura ? { motivo: forzatura.motivo } : null,
       });
+      const inseriti = (res as any).inseriti ?? 0;
+      const gia = (res as any).gia_presenti ?? 0;
+      if (inseriti === 0) {
+        // Mai una spunta verde su una scrittura che non è avvenuta.
+        toast({
+          title: "⚠️ Nessun atleta aggiunto",
+          description:
+            gia > 0
+              ? gia === 1
+                ? "L'atleta era già in questa sessione."
+                : `Tutti e ${gia} erano già in questa sessione.`
+              : "Il database non ha accettato la scrittura: controlla i tuoi permessi e riprova.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const parti = [input.etichetta, gia > 0 ? `${gia} erano già in questa sessione` : null].filter(Boolean);
       toast({
-        title: `✅ ${(res as any).inseriti ?? lista.length} atleti assegnati alla sessione`,
-        description: input.etichetta,
+        title: `✅ ${inseriti} ${inseriti === 1 ? "atleta assegnato" : "atleti assegnati"} alla sessione`,
+        description: parti.length > 0 ? parti.join(" · ") : undefined,
       });
     };
 
@@ -1264,35 +1318,65 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     });
   };
 
-  const handle_drag_end = async (event: any) => {
-    const { active, over } = event;
-    if (!over) return;
-    const over_id = String(over.id);
-    if (!over_id.startsWith("sessione:")) return;
-    const sessione_id = over_id.slice("sessione:".length);
-    const dest = sessioni.find((s) => s.id === sessione_id);
-    if (!dest) return;
+  /** Etichetta leggibile di ciò che si sta trascinando (per i messaggi di conferma). */
+  const descrizione_trascinato = (active_id: string, data: any): string => {
+    const [tipo, persona_id] = active_id.split(":");
+    if (tipo === "gruppo") {
+      const n = (data?.atleta_ids ?? []).length;
+      const nome = data?.etichetta ?? data?.livello ?? "gruppo";
+      return `il gruppo «${nome}» (${n} ${n === 1 ? "atleta" : "atleti"})`;
+    }
+    if (tipo === "atleta") {
+      const a = (atleti as any[]).find((x) => x.id === persona_id);
+      return a ? `${a.nome} ${a.cognome}` : "l'atleta";
+    }
+    if (tipo === "istruttore") {
+      const i = (istruttori as any[]).find((x) => x.id === persona_id);
+      return i ? `${i.nome} ${i.cognome}` : "l'istruttore";
+    }
+    return "la selezione";
+  };
 
-    const [tipo, persona_id] = String(active.id).split(":");
+  /** Esegue davvero il rilascio su una sotto-sessione esistente. */
+  const esegui_drop = async (
+    sessione_id: string,
+    active_id: string,
+    data: any,
+    /** Sessione appena creata: non è ancora nell'elenco letto dal server. */
+    appena_creata = false,
+  ) => {
+    const dest =
+      sessioni.find((s) => s.id === sessione_id) ??
+      (appena_creata ? ({ id: sessione_id, gruppi: [] } as unknown as GrigliaSessione) : undefined);
+    if (!dest) {
+      toast({
+        title: "⚠️ Sessione non trovata",
+        description: "La sotto-sessione è stata modificata da un'altra persona: ricarica la pagina.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const [tipo, persona_id] = active_id.split(":");
     try {
       if (tipo === "gruppo") {
-        const ids: string[] = active.data?.current?.atleta_ids ?? [];
-        const livello_gruppo: string | undefined = active.data?.current?.livello;
+        const ids: string[] = data?.atleta_ids ?? [];
+        const livello_gruppo: string | undefined = data?.livello;
         // Contenitore "per proposta": assegnazione individuale degli iscritti,
         // nessun gruppo dinamico per livello.
-        if (active.data?.current?.individuale) {
+        if (data?.individuale) {
           await assegna_batch({
             sessione_id,
             atleta_ids: ids,
             origine: "proposta",
-            origine_corso_id: active.data?.current?.corso_id ?? null,
-            etichetta: active.data?.current?.etichetta ?? undefined,
+            origine_corso_id: data?.corso_id ?? null,
+            etichetta: data?.etichetta ?? undefined,
           });
           return;
         }
         if (livello_gruppo && livello_gruppo !== LIVELLO_NON_DEFINITO) {
           // Collegamento dinamico: nuova riga in griglia_sessioni_gruppi + atleti taggati.
-          const { gruppo_scope, gruppo_ragione_sociale_id } = scope_da_box_id(active.data?.current?.box_id);
+          const { gruppo_scope, gruppo_ragione_sociale_id } = scope_da_box_id(data?.box_id);
 
           const scope_norm = (gruppo_scope ?? "club") as GruppoScope;
 
@@ -1320,27 +1404,56 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
             }
           }
 
-          // ⛔ Blocco duro atomico: nessun collegamento se anche un solo atleta
-          // del gruppo è già in un'altra sotto-sessione sovrapposta.
+          const esito_gruppo = (res_f: any, esclusi: number) => {
+            const aggiunti = res_f?.aggiunti ?? 0;
+            const gia = res_f?.gia_presenti ?? 0;
+            if (aggiunti === 0) {
+              toast({
+                title: "⚠️ Nessun atleta aggiunto",
+                description:
+                  gia > 0
+                    ? `Erano già tutti in questa sessione (${gia}).`
+                    : esclusi > 0
+                      ? "Gli atleti selezionati erano tutti in conflitto orario."
+                      : "Il database non ha accettato la scrittura: controlla i tuoi permessi e riprova.",
+                variant: "destructive",
+              });
+              return;
+            }
+            const note = [
+              gia > 0 ? `${gia} erano già presenti` : null,
+              esclusi > 0 ? `${esclusi} esclusi per conflitto orario` : null,
+            ].filter(Boolean);
+            toast({
+              title: `🔗 Gruppo «${livello_gruppo}» collegato`,
+              description: `${aggiunti} ${aggiunti === 1 ? "atleta aggiunto" : "atleti aggiunti"}${
+                note.length > 0 ? ` · ${note.join(" · ")}` : ""
+              }.`,
+            });
+          };
+
+          // ⛔ Blocco duro: se qualche atleta del gruppo è già in un'altra
+          // sotto-sessione sovrapposta, si può comunque procedere con i liberi.
           const conflitti_atleti = await verifica_conflitti_atleti(sessione_id, ids);
           if (conflitti_atleti.length > 0) {
-            const esegui = async (forzatura: { motivo: string } | null) => {
+            const in_conflitto = conflitti_atleti.map((c) => c.atleta_id);
+            const liberi = ids.filter((id) => !in_conflitto.includes(id));
+            const esegui = async (forzatura: { motivo: string } | null, escludi: string[]) => {
               const res_f = await assegna_gruppo.mutateAsync({
                 sessione_id,
                 gruppo_livello: livello_gruppo,
                 gruppo_scope: scope_norm,
                 gruppo_ragione_sociale_id,
                 forzatura: forzatura ? { motivo: forzatura.motivo } : null,
+                escludi_atleta_ids: escludi,
               } as any);
-              toast({
-                title: `🔗 Gruppo «${livello_gruppo}» collegato`,
-                description: `${(res_f as any).aggiunti ?? 0} atleti aggiunti.`,
-              });
+              esito_gruppo(res_f, escludi.length);
             };
             set_conflitto_batch({
               conflitti: conflitti_atleti,
-              assegnabili: 0,
-              esegui_forza: async (motivo) => esegui({ motivo }),
+              assegnabili: liberi.length,
+              esegui_liberi: liberi.length > 0 ? async () => esegui(null, in_conflitto) : undefined,
+              esegui_forza: async (motivo) => esegui({ motivo }, []),
             });
             return;
           }
@@ -1354,18 +1467,15 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           if (gia_collegato || (res as any).gia_presente) {
             toast({
               title: `ℹ️ Il gruppo «${livello_gruppo}» è già collegato a questa sessione`,
-              description: "Membership risincronizzata.",
+              description: `Membership risincronizzata: ${(res as any).aggiunti ?? 0} aggiunti.`,
             });
           } else {
-            toast({ title: `🔗 Gruppo «${livello_gruppo}» collegato`, description: `${res.aggiunti} atleti aggiunti.` });
+            esito_gruppo(res, 0);
           }
-
         } else {
           // Livello non definito: nessun gruppo dinamico, assegnazione individuale.
           await assegna_batch({ sessione_id, atleta_ids: ids, origine: "manuale" });
         }
-
-
       } else if (tipo === "atleta") {
         await assegna_batch({ sessione_id, atleta_ids: [persona_id], origine: "manuale" });
       } else if (tipo === "istruttore") {
@@ -1378,10 +1488,82 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           return;
         }
         await esegui_assegna_istruttore({ sessione_id, istruttore_id: persona_id, nome });
+      } else {
+        toast({
+          title: "⚠️ Elemento non riconosciuto",
+          description: "Trascina un atleta, un gruppo o un istruttore.",
+          variant: "destructive",
+        });
       }
-
     } catch (e: any) {
       toast({ title: "Errore assegnazione", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handle_drag_end = async (event: any) => {
+    const { active, over } = event;
+    const active_id = String(active?.id ?? "");
+    const data = active?.data?.current ?? null;
+
+    if (!over) {
+      toast({
+        title: "⚠️ Rilasciato fuori dalla griglia",
+        description: "Trascina sopra una sotto-sessione del blocco per assegnare.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const over_id = String(over.id);
+
+    if (over_id.startsWith("sessione:")) {
+      await esegui_drop(over_id.slice("sessione:".length), active_id, data);
+      return;
+    }
+
+    if (over_id.startsWith("blocco:")) {
+      if (sessioni.length > 0) {
+        toast({
+          title: "⚠️ Rilascia sulla sessione, non sul riquadro esterno",
+          description: "Apri la sotto-sessione giusta e rilascia dentro quella.",
+          variant: "destructive",
+        });
+        return;
+      }
+      set_drop_blocco_vuoto({ active_id, data, chi: descrizione_trascinato(active_id, data) });
+      return;
+    }
+
+    toast({
+      title: "⚠️ Qui non si può rilasciare",
+      description: "Trascina sopra una sotto-sessione del blocco.",
+      variant: "destructive",
+    });
+  };
+
+  /** Crea al volo la sotto-sessione per tutta la durata del blocco ed esegue il rilascio. */
+  const conferma_drop_blocco_vuoto = async () => {
+    const pending = drop_blocco_vuoto;
+    if (!pending) return;
+    set_drop_blocco_vuoto(null);
+    try {
+      const nuovo_id = await upsert_sessione.mutateAsync({
+        blocco_id: blocco.id,
+        ordine: 1,
+        ora_inizio: hhmm(blocco.ora_inizio),
+        ora_fine: hhmm(blocco.ora_fine),
+      });
+      if (!nuovo_id) {
+        toast({
+          title: "⚠️ Sessione non creata",
+          description: "Non è stato possibile creare la sotto-sessione: riprova.",
+          variant: "destructive",
+        });
+        return;
+      }
+      set_tab_attivo(nuovo_id);
+      await esegui_drop(nuovo_id, pending.active_id, pending.data, true);
+    } catch (e: any) {
+      toast({ title: "Errore creazione sessione", description: e.message, variant: "destructive" });
     }
   };
 
@@ -1796,12 +1978,18 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         {/* Fascia inferiore: sotto-sessioni a tab */}
         <div className="mt-4">
           {sessioni.length === 0 ? (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">Nessuna sotto-sessione. Aggiungine una per iniziare.</p>
-              <Button variant="outline" size="sm" onClick={aggiungi_sessione}>
-                <Plus className="w-4 h-4 mr-1" /> Aggiungi sotto-sessione
-              </Button>
-            </div>
+            <BloccoDropZone blocco_id={blocco.id}>
+              <div className="space-y-3 text-center">
+                <p className="text-sm font-medium">Questo blocco non ha ancora nessuna sotto-sessione.</p>
+                <p className="text-xs text-muted-foreground">
+                  Trascina qui un atleta, un gruppo o un istruttore: creo io la sessione{" "}
+                  {hhmm(blocco.ora_inizio)}–{hhmm(blocco.ora_fine)} dopo la tua conferma.
+                </p>
+                <Button variant="outline" size="sm" onClick={aggiungi_sessione}>
+                  <Plus className="w-4 h-4 mr-1" /> Aggiungi sotto-sessione
+                </Button>
+              </div>
+            </BloccoDropZone>
           ) : (
             <Tabs value={tab_attivo ?? sessioni[0].id} onValueChange={set_tab_attivo} className="w-full">
               <div className="flex items-center gap-2">
@@ -1882,6 +2070,28 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           )}
         </div>
       </DndContext>
+
+      <AlertDialog
+        open={!!drop_blocco_vuoto}
+        onOpenChange={(v) => {
+          if (!v) set_drop_blocco_vuoto(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Questo spazio non ha ancora una sessione</AlertDialogTitle>
+            <AlertDialogDescription>
+              La creo dalle {hhmm(blocco.ora_inizio)} alle {hhmm(blocco.ora_fine)} e ci metto{" "}
+              {drop_blocco_vuoto?.chi}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={conferma_drop_blocco_vuoto}>Crea e assegna</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       <ConfermaForzaturaDisponibilita
         open={forzatura_open}

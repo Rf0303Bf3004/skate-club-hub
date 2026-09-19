@@ -36,7 +36,11 @@ export async function risolvi_membri_gruppo(
   gruppo_livello: string | null | undefined,
   gruppo_ragione_sociale_id?: string | null,
 ): Promise<string[]> {
-  if (!club_id || !gruppo_livello) return [];
+  // Club non ancora disponibile ≠ gruppo senza membri: senza club non si può
+  // decidere nulla, quindi si ferma invece di restituire una lista vuota che
+  // porterebbe a creare un gruppo senza nessun atleta.
+  if (!club_id) throw new Error("Club non disponibile: ricarica la pagina e riprova.");
+  if (!gruppo_livello) return [];
   const { data, error } = await supabase
     .from("atleti")
     .select("id,livello_attuale,ragione_sociale_id,atleta_esterno")
@@ -689,7 +693,10 @@ export interface AssegnaAtletaInput {
 }
 
 function _payload_assegnazione(input: AssegnaAtletaInput) {
+  const club_id = get_current_club_id();
+  if (!club_id) throw new Error("Club non disponibile: ricarica la pagina e riprova.");
   return {
+    club_id,
     sessione_id: input.sessione_id,
     atleta_id: input.atleta_id,
     provenienza: input.origine ?? "manuale",
@@ -723,7 +730,12 @@ export function use_assegna_atleta_sessione() {
       const { error } = await supabase
         .from("griglia_sessioni_atleti" as any)
         .insert(_payload_assegnazione({ ...input, forzatura }) as any);
-      if (error && !`${error.message}`.includes("duplicate")) throw error;
+      if (error) {
+        if (!`${error.message}`.includes("duplicate")) throw error;
+        // Doppione vero: non è un guasto, ma non è nemmeno un inserimento.
+        return { inseriti: 0, gia_presenti: 1 };
+      }
+      return { inseriti: 1, gia_presenti: 0 };
     },
     onSuccess: invalidate,
   });
@@ -745,16 +757,18 @@ export function use_assegna_atleti_sessione() {
       gruppo_sessione_id?: string | null;
       forzatura?: ForzaturaConflitto | null;
     }) => {
-      if (input.atleta_ids.length === 0) return { inseriti: 0 };
+      const ids = Array.from(new Set(input.atleta_ids.filter(Boolean)));
+      if (ids.length === 0) return { inseriti: 0, gia_presenti: 0 };
       if (!input.forzatura) {
-        const conflitti = await verifica_conflitti_atleti(input.sessione_id, input.atleta_ids);
+        const conflitti = await verifica_conflitti_atleti(input.sessione_id, ids);
         if (conflitti.length > 0) {
           throw new Error(`${conflitti.length} atleti sono già in una sessione sovrapposta.`);
         }
       }
       const presenti = await atleti_presenti_sessione(input.sessione_id);
-      const da_inserire = input.atleta_ids.filter((id) => !presenti.has(id));
-      if (da_inserire.length === 0) return { inseriti: 0 };
+      const da_inserire = ids.filter((id) => !presenti.has(id));
+      const gia_presenti = ids.length - da_inserire.length;
+      if (da_inserire.length === 0) return { inseriti: 0, gia_presenti };
       const forzatura = input.forzatura
         ? { motivo: input.forzatura.motivo, forzato_da: input.forzatura.forzato_da ?? session?.user_id ?? null }
         : null;
@@ -770,8 +784,15 @@ export function use_assegna_atleti_sessione() {
           }),
         ) as any,
       );
-      if (error && !`${error.message}`.includes("duplicate")) throw error;
-      return { inseriti: da_inserire.length };
+      if (error) {
+        if (!`${error.message}`.includes("duplicate")) throw error;
+        // Il vincolo unico fa fallire l'intero blocco: si rilegge lo stato vero
+        // invece di dichiarare inserimenti mai avvenuti.
+        const dopo = await atleti_presenti_sessione(input.sessione_id);
+        const inseriti = da_inserire.filter((id) => dopo.has(id)).length;
+        return { inseriti, gia_presenti: ids.length - inseriti };
+      }
+      return { inseriti: da_inserire.length, gia_presenti };
     },
     onSuccess: invalidate,
   });
@@ -1303,6 +1324,13 @@ export function use_assegna_gruppo_sessione() {
         input.gruppo_livello,
         input.gruppo_ragione_sociale_id ?? null,
       );
+      // Mai creare un gruppo senza nessun atleta: resterebbe un contenitore vuoto
+      // e l'utente vedrebbe un collegamento riuscito senza nessun effetto.
+      if (membri.length === 0) {
+        throw new Error(
+          `Il gruppo «${input.gruppo_livello}» non ha nessun atleta: nulla da collegare alla sessione.`,
+        );
+      }
 
       // Guardia bloccante per singolo atleta (motore unificato): se non è stata
       // autorizzata una forzatura, nessuna scrittura con atleti in conflitto.
@@ -1319,6 +1347,10 @@ export function use_assegna_gruppo_sessione() {
         }
       }
 
+      const presenti_prima = await atleti_presenti_sessione(input.sessione_id);
+      const mancanti = membri.filter((id) => !presenti_prima.has(id) && !esclusi.has(id));
+      const gia_presenti = membri.filter((id) => presenti_prima.has(id)).length;
+
       const { data: gruppo, error: err_g } = await supabase
         .from("griglia_sessioni_gruppi" as any)
         .insert({
@@ -1332,8 +1364,7 @@ export function use_assegna_gruppo_sessione() {
       if (err_g) throw err_g;
       const gruppo_sessione_id = (gruppo as any).id as string;
 
-      const presenti = await atleti_presenti_sessione(input.sessione_id);
-      const mancanti = membri.filter((id) => !presenti.has(id) && !esclusi.has(id));
+      let aggiunti = 0;
       if (mancanti.length > 0) {
         const forzatura = input.forzatura
           ? { motivo: input.forzatura.motivo, forzato_da: input.forzatura.forzato_da ?? session?.user_id ?? null }
@@ -1349,12 +1380,20 @@ export function use_assegna_gruppo_sessione() {
             }),
           ) as any,
         );
-        if (error && !`${error.message}`.includes("duplicate")) throw error;
+        if (error && !`${error.message}`.includes("duplicate")) {
+          // Senza transazione: si annulla il gruppo appena creato, altrimenti
+          // resterebbe un gruppo vuoto senza che nessuno lo sappia.
+          await supabase.from("griglia_sessioni_gruppi" as any).delete().eq("id", gruppo_sessione_id);
+          throw error;
+        }
+        const dopo = await atleti_presenti_sessione(input.sessione_id);
+        aggiunti = mancanti.filter((id) => dopo.has(id)).length;
       }
       return {
         gruppo_sessione_id,
-        aggiunti: mancanti.length,
+        aggiunti,
         membri: membri.length,
+        gia_presenti,
         esclusi: esclusi.size,
       };
     },
@@ -1411,12 +1450,14 @@ export async function sync_gruppo_sessione(input: {
     const { error } = await supabase
       .from("griglia_sessioni_atleti" as any)
       .insert(
-        da_aggiungere.map((atleta_id) => ({
-          sessione_id: input.sessione_id,
-          atleta_id,
-          provenienza: "gruppo",
-          gruppo_sessione_id: input.gruppo_sessione_id,
-        })) as any,
+        da_aggiungere.map((atleta_id) =>
+          _payload_assegnazione({
+            sessione_id: input.sessione_id,
+            atleta_id,
+            origine: "gruppo",
+            gruppo_sessione_id: input.gruppo_sessione_id,
+          }),
+        ) as any,
       );
     if (error && !`${error.message}`.includes("duplicate")) throw error;
   }
