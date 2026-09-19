@@ -1354,6 +1354,7 @@ export type Database = {
           setup_fatturato: boolean
           sigla: string | null
           sito_web: string | null
+          slug_pubblico: string | null
           soggetto_iva: boolean
           telefono: string | null
           twint_qr_url: string | null
@@ -1415,6 +1416,7 @@ export type Database = {
           setup_fatturato?: boolean
           sigla?: string | null
           sito_web?: string | null
+          slug_pubblico?: string | null
           soggetto_iva?: boolean
           telefono?: string | null
           twint_qr_url?: string | null
@@ -1476,6 +1478,7 @@ export type Database = {
           setup_fatturato?: boolean
           sigla?: string | null
           sito_web?: string | null
+          slug_pubblico?: string | null
           soggetto_iva?: boolean
           telefono?: string | null
           twint_qr_url?: string | null
