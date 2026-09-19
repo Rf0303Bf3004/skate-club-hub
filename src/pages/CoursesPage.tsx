@@ -364,7 +364,7 @@ const TabIscrizioni: React.FC<{
   const { modalita: modalita_fatturazione } = useModalitaArea("fatturazione");
   const multi_rs = modalita_fatturazione === "multi_ragione_sociale";
 
-  const ha_filtro_livello = !!livello_richiesto && livello_richiesto !== "tutti";
+  const ha_filtro_livello = livello_dichiarato(livello_richiesto) && !is_apertura_totale(livello_richiesto);
 
   // Unione tra iscritti dal DB e quelli appena aggiunti localmente
   const ids_esclusi = useMemo(
@@ -483,7 +483,7 @@ const TabIscrizioni: React.FC<{
     }
   };
 
-  const livello_label = LIVELLO_LABELS[livello_richiesto] || livello_richiesto || "Tutti";
+  const livello_label = formatta_livelli_corso(livello_richiesto, t);
 
   return (
     <div className="space-y-4">
