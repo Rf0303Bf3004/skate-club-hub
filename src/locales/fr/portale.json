@@ -1,0 +1,24 @@
+{
+  "rinnovo": {
+    "titolo": "Inscription saison {{stagione}}",
+    "scadenza": "Répondez avant le {{data}}",
+    "domanda": "Souhaitez-vous confirmer l'inscription pour la nouvelle saison ?",
+    "si": "Oui, nous confirmons",
+    "no": "Nous ne renouvelons pas",
+    "conferma_si_titolo": "Confirmer l'inscription ?",
+    "conferma_si_testo": "Votre confirmation sera enregistrée immédiatement pour cette saison.",
+    "conferma_no_titolo": "Vous ne souhaitez pas renouveler ?",
+    "conferma_no_testo": "Votre choix sera enregistré immédiatement. L'athlète restera dans les archives du club.",
+    "annulla": "Annuler",
+    "confermato": "Inscription confirmée",
+    "rifiutato": "Choix enregistré",
+    "esito_confermato": "Vous avez confirmé l'inscription pour la nouvelle saison.",
+    "esito_rifiutato": "Vous avez indiqué que vous ne renouvellerez pas l'inscription.",
+    "motivo_portale": "Choix communiqué par la famille dans le portail",
+    "caricamento": "Vérification de l'inscription",
+    "errore_lettura": "Impossible de vérifier si une inscription doit être confirmée. Cela ne signifie pas qu'il n'y en a pas.",
+    "errore_salvataggio": "Impossible d'enregistrer votre réponse. Réessayez.",
+    "dati_non_pronti": "Attendez la vérification de l'inscription avant de répondre.",
+    "riprova": "Réessayer"
+  }
+}

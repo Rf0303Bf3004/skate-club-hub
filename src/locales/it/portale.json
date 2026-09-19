@@ -27,6 +27,28 @@
     "in_evidenza": "In evidenza",
     "nessuna_news": "Nessuna notizia in evidenza"
   },
+  "rinnovo": {
+    "titolo": "Iscrizione stagione {{stagione}}",
+    "scadenza": "Rispondi entro il {{data}}",
+    "domanda": "Volete confermare l'iscrizione per la nuova stagione?",
+    "si": "Sì, confermiamo",
+    "no": "Non rinnoviamo",
+    "conferma_si_titolo": "Confermate l'iscrizione?",
+    "conferma_si_testo": "La conferma verrà registrata subito per questa stagione.",
+    "conferma_no_titolo": "Non volete rinnovare?",
+    "conferma_no_testo": "La scelta verrà registrata subito. L'atleta resterà nell'archivio del club.",
+    "annulla": "Annulla",
+    "confermato": "Iscrizione confermata",
+    "rifiutato": "Scelta registrata",
+    "esito_confermato": "Avete confermato l'iscrizione per la nuova stagione.",
+    "esito_rifiutato": "Avete comunicato che non rinnoverete l'iscrizione.",
+    "motivo_portale": "Scelta comunicata dalla famiglia nel portale",
+    "caricamento": "Controllo dell'iscrizione in corso",
+    "errore_lettura": "Non è stato possibile controllare se c'è un'iscrizione da confermare. Non significa che non ci sia.",
+    "errore_salvataggio": "Non è stato possibile registrare la risposta. Riprova.",
+    "dati_non_pronti": "Attendi il controllo dell'iscrizione prima di rispondere.",
+    "riprova": "Riprova"
+  },
   "calendario": {
     "titolo": "Il tuo calendario",
     "settimana_corrente": "Settimana",

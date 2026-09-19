@@ -31,6 +31,7 @@ import fr_events from '@/locales/fr/events.json';
 import fr_mobile from '@/locales/fr/mobile.json';
 import fr_validation from '@/locales/fr/validation.json';
 import fr_errors from '@/locales/fr/errors.json';
+import fr_portale from '@/locales/fr/portale.json';
 
 import de_common from '@/locales/de/common.json';
 import de_atleti from '@/locales/de/atleti.json';
@@ -43,6 +44,7 @@ import de_events from '@/locales/de/events.json';
 import de_mobile from '@/locales/de/mobile.json';
 import de_validation from '@/locales/de/validation.json';
 import de_errors from '@/locales/de/errors.json';
+import de_portale from '@/locales/de/portale.json';
 
 import en_common from '@/locales/en/common.json';
 import en_atleti from '@/locales/en/atleti.json';
@@ -55,6 +57,7 @@ import en_events from '@/locales/en/events.json';
 import en_mobile from '@/locales/en/mobile.json';
 import en_validation from '@/locales/en/validation.json';
 import en_errors from '@/locales/en/errors.json';
+import en_portale from '@/locales/en/portale.json';
 
 export const NAMESPACES = [
   'common',
@@ -91,16 +94,19 @@ const resources = {
     common: fr_common, atleti: fr_atleti, fatture: fr_fatture, dashboard: fr_dashboard,
     onboarding: fr_onboarding, settings: fr_settings, communications: fr_communications,
     events: fr_events, mobile: fr_mobile, validation: fr_validation, errors: fr_errors,
+    portale: fr_portale,
   },
   de: {
     common: de_common, atleti: de_atleti, fatture: de_fatture, dashboard: de_dashboard,
     onboarding: de_onboarding, settings: de_settings, communications: de_communications,
     events: de_events, mobile: de_mobile, validation: de_validation, errors: de_errors,
+    portale: de_portale,
   },
   en: {
     common: en_common, atleti: en_atleti, fatture: en_fatture, dashboard: en_dashboard,
     onboarding: en_onboarding, settings: en_settings, communications: en_communications,
     events: en_events, mobile: en_mobile, validation: en_validation, errors: en_errors,
+    portale: en_portale,
   },
   // RM mantenuto come slot per retrocompatibilità; fallback a IT finché non popolato.
   rm: {},
