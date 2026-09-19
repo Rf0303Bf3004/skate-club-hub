@@ -103,6 +103,11 @@ const PortaleHomePage: React.FC = () => {
   }, [rinnovo.isError, rinnovo.error]);
 
   useEffect(() => {
+    set_esito_rinnovo(null);
+    set_scelta(null);
+  }, [session.atleta.id]);
+
+  useEffect(() => {
     (async () => {
       try {
         set_loading(true);
@@ -135,6 +140,10 @@ const PortaleHomePage: React.FC = () => {
   const campagna = rinnovo.isSuccess && rinnovo.data && !["attivo", "non_rinnovato"].includes(rinnovo.data.status)
     ? rinnovo.data
     : null;
+  const esito_registrato = esito_rinnovo
+    ?? (rinnovo.isSuccess && rinnovo.data && ["attivo", "non_rinnovato"].includes(rinnovo.data.status)
+      ? rinnovo.data.status as "attivo" | "non_rinnovato"
+      : null);
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -149,7 +158,7 @@ const PortaleHomePage: React.FC = () => {
           </Button>
         </section>
       )}
-      {campagna && !esito_rinnovo && (
+      {campagna && !esito_registrato && (
         <section className="rounded-2xl border-2 border-sky-300 bg-white p-6 shadow-sm">
           <h2 className="text-2xl font-bold text-slate-900">
             {t("rinnovo.titolo", { stagione: campagna.stagione_nome })}
@@ -172,9 +181,9 @@ const PortaleHomePage: React.FC = () => {
           </div>
         </section>
       )}
-      {esito_rinnovo && (
+      {esito_registrato && (
         <p className="rounded-lg border border-slate-200 bg-white px-4 py-3 font-medium text-slate-700">
-          {t(esito_rinnovo === "attivo" ? "rinnovo.esito_confermato" : "rinnovo.esito_rifiutato")}
+          {t(esito_registrato === "attivo" ? "rinnovo.esito_confermato" : "rinnovo.esito_rifiutato")}
         </p>
       )}
 
