@@ -319,6 +319,14 @@ const PistaLoginPage: React.FC = () => {
         </div>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">{t("pista_login.aiuto")}</p>
+
+        {/* Via d'uscita per chi non è il tablet: la rotta esiste già ma oggi
+            la trova solo chi conosce l'indirizzo a memoria. */}
+        <p className="mt-2 text-center">
+          <a href="/staff" className="text-sm text-muted-foreground underline underline-offset-4">
+            {t("pista_login.accesso_staff")}
+          </a>
+        </p>
       </div>
     </div>
   );

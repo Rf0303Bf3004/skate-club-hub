@@ -918,7 +918,9 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
 
   return (
     <div className={schermo_intero ? "fixed inset-0 z-50 overflow-y-auto bg-background px-4" : "relative min-h-[70vh] px-4"}>
-      <header className="flex items-start justify-between gap-4 py-4">
+      {/* Intestazione fissa: a schermo intero non deve scorrere via con
+          l'elenco, altrimenti l'uscita del tablet diventa introvabile. */}
+      <header className="sticky top-0 z-10 flex items-start justify-between gap-4 bg-background py-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold capitalize">{data_estesa}</h1>
           <p className="text-4xl font-bold tabular-nums">{ora_corrente}</p>
@@ -953,7 +955,8 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="lg" aria-label={t("pista.scollega")}>
-                  <MoreVertical className="h-5 w-5" />
+                  <MoreVertical className="mr-2 h-5 w-5" />
+                  {t("pista.scollega")}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -1139,7 +1142,9 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
                 set_scollega_aperto(false);
-                void esci_dalla_pista().then(() => window.location.replace("/pista-login"));
+                // Il cambio pagina sta dentro esci_dalla_pista: anche a rete
+                // morta l'uscita si completa, senza dipendere da una promessa.
+                void esci_dalla_pista();
               }}
             >
               {t("pista.scollega")}
