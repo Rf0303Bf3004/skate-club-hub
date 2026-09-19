@@ -43,6 +43,7 @@ import {
   get_categoria_label,
   get_livello_display,
   get_pillole_discipline,
+  opzioni_in_preparazione_con_salvato,
   type Categoria,
 } from "@/lib/atleta-livello";
 import { SelectLivello } from "@/components/ui/select-livello";
@@ -196,6 +197,18 @@ const AtletaModal: React.FC<{
     set_form((p) => ({ ...p, [k]: v }));
   }, []);
 
+  // Opzioni "livello in preparazione": dalla progressione (atleta-livello.ts),
+  // non dalla fase della tabella livelli. Il valore salvato resta in cima se
+  // non compare nell'elenco calcolato.
+  const opzioni_in_preparazione = useMemo(
+    () =>
+      opzioni_in_preparazione_con_salvato(
+        { ...atleta, livello_attuale: form.livello_attuale },
+        form.livello_in_preparazione,
+      ),
+    [atleta, form.livello_attuale, form.livello_in_preparazione],
+  );
+
   // Regola di formattazione: ogni parola con iniziale maiuscola, resto minuscolo
   const normalizza_campo = useCallback((k: string, tipo: "nome" | "indirizzo" | "email" = "nome") => {
     set_form((p) => {
@@ -303,13 +316,18 @@ const AtletaModal: React.FC<{
               />
             </Field>
             <Field label={t("modal.level_in_preparation")}>
-              <SelectLivello
-                value={form.livello_in_preparazione || null}
-                onChange={(v) => set_val("livello_in_preparazione", v ?? "")}
-                fase="comune"
-                allowNull={true}
-                nullLabel={t("modal.none_option")}
-              />
+              <Select
+                value={form.livello_in_preparazione || "__none__"}
+                onValueChange={(v) => set_val("livello_in_preparazione", v === "__none__" ? "" : v)}
+              >
+                <SelectTrigger><SelectValue placeholder={t("modal.none_option")} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">{t("modal.none_option")}</SelectItem>
+                  {opzioni_in_preparazione.map((l) => (
+                    <SelectItem key={l} value={l}>{l}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
           </div>
 

@@ -227,6 +227,43 @@ export function get_passaggio_dopo(accesso: string): Passaggio | null {
 }
 
 /**
+ * Opzioni del campo "livello in preparazione": i target dei passaggi che
+ * l'atleta può affrontare a partire dal suo livello attuale, in ordine e
+ * senza duplicati. La fonte è la progressione (TEST_BASE_PASSAGGI e
+ * TEST_CARRIERA_PASSAGGI), non la colonna fase della tabella livelli.
+ *
+ * Ripiego obbligatorio: se per l'atleta non si ricava nessun passaggio
+ * (manca la categoria o il livello, caso frequente in archivio), ritorna
+ * l'intera progressione, così il campo resta utilizzabile.
+ */
+export function get_livelli_in_preparazione(
+  a: AtletaLivelloInput,
+  disciplina: Disciplina = "artistica",
+): string[] {
+  const da_atleta = get_passaggi_validi_per_atleta(a, disciplina).map((p) => p.target);
+  const lista =
+    da_atleta.length > 0
+      ? da_atleta
+      : [...TEST_BASE_PASSAGGI, ...TEST_CARRIERA_PASSAGGI].map((p) => p.target);
+  return Array.from(new Set(lista));
+}
+
+/**
+ * Elenco pronto per una tendina: le opzioni di get_livelli_in_preparazione
+ * più, se serve, il valore già salvato messo in cima. Aprire una scheda non
+ * deve mai svuotare in silenzio un campo che aveva un valore.
+ */
+export function opzioni_in_preparazione_con_salvato(
+  a: AtletaLivelloInput,
+  salvato: string | null | undefined,
+  disciplina: Disciplina = "artistica",
+): string[] {
+  const lista = get_livelli_in_preparazione(a, disciplina);
+  const cur = (salvato || "").trim();
+  return cur && !lista.includes(cur) ? [cur, ...lista] : lista;
+}
+
+/**
  * Propaga gli esiti all'interno di una catena multitest per una singola atleta.
  *
  * Regole:
