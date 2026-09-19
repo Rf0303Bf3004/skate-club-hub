@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, Send, Check, X, RefreshCw, CalendarDays } from "lucide-react";
+import { Search, Send, Check, X, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { segnala_errore } from "@/lib/errori";
@@ -21,8 +21,6 @@ import {
   type EsitoInvio,
 } from "@/hooks/use-iscrizioni-stagione";
 import { get_livello_display } from "@/lib/atleta-livello";
-
-type FiltroStato = "tutti" | "invitato" | "attivo" | "non_rinnovato";
 
 const data_breve = (v: string | null, lingua: string) =>
   v ? new Date(v).toLocaleDateString(lingua, { day: "numeric", month: "short", year: "numeric" }) : "";
@@ -46,7 +44,6 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean; vai_a_domande: () => void }> 
   const rifiuta = use_rifiuta_rinnovo_segreteria();
   const email = use_invia_email_iscrizioni();
 
-  const [filtro, set_filtro] = useState<FiltroStato>("tutti");
   const [query, set_query] = useState("");
   const [dialog_apri, set_dialog_apri] = useState(false);
   const [dialog_chiudi, set_dialog_chiudi] = useState(false);
@@ -57,7 +54,7 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean; vai_a_domande: () => void }> 
   const lista = useMemo(() => {
     const q = query.trim().toLowerCase();
     return (registro.data ?? [])
-      .filter((r) => filtro === "tutti" || r.status === filtro)
+      .filter((r) => r.status === "invitato")
       .filter((r) => {
         if (!q) return true;
         const nome = `${r.atleta?.cognome ?? ""} ${r.atleta?.nome ?? ""}`.toLowerCase();
@@ -68,7 +65,7 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean; vai_a_domande: () => void }> 
           `${b.atleta?.cognome ?? ""}${b.atleta?.nome ?? ""}`,
         ),
       );
-  }, [registro.data, filtro, query]);
+  }, [registro.data, query]);
 
   const mostra_esito = (e: EsitoInvio) => {
     const parti = [k("rinnovi.esito_invio", { count: e.inviati })];
@@ -127,14 +124,40 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean; vai_a_domande: () => void }> 
 
   const s = stato.data!;
   const invitati_ids = (registro.data ?? []).filter((r) => r.status === "invitato").map((r) => r.atleta_id);
+  const totale_risposte = s.confermati + s.non_rinnovati;
+  const totale_campagna = totale_risposte + s.invitati;
+  const avanzamento = totale_campagna > 0 ? Math.round((totale_risposte / totale_campagna) * 100) : 0;
 
   return (
     <div className="space-y-5">
+      <div className="flex flex-col gap-4 border-b border-border pb-5 lg:flex-row lg:items-start lg:justify-between">
+        <div className="max-w-2xl space-y-1">
+          <h2 className="text-lg font-semibold text-foreground">{k("rinnovi.tabellone_titolo")}</h2>
+          <p className="text-sm text-muted-foreground">{k("rinnovi.tabellone_spiegazione")}</p>
+        </div>
+        {puo_gestire && s.aperta && (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              variant="outline"
+              className="h-11"
+              disabled={email.isPending || invitati_ids.length === 0}
+              onClick={() => invia_inviti(invitati_ids)}
+            >
+              <Send className="w-4 h-4 mr-2" />
+              {k("rinnovi.sollecita")}
+            </Button>
+            <Button variant="destructive" className="h-11" onClick={() => set_dialog_chiudi(true)}>
+              {k("rinnovi.chiudi_bottone")}
+            </Button>
+          </div>
+        )}
+      </div>
+
       {/* I numeri della campagna */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: k("rinnovi.invitati"), valore: String(s.invitati) },
           { label: k("rinnovi.confermati"), valore: String(s.confermati) },
+          { label: k("rinnovi.in_attesa"), valore: String(s.invitati) },
           { label: k("rinnovi.non_rinnovati"), valore: String(s.non_rinnovati) },
           {
             label: k("rinnovi.scadenza"),
@@ -146,59 +169,35 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean; vai_a_domande: () => void }> 
             <p className="text-2xl font-bold text-foreground mt-1 break-words">{c.valore}</p>
           </div>
         ))}
-        <button
-          type="button"
-          onClick={vai_a_domande}
-          className="rounded-xl border border-border bg-card p-4 text-left transition-colors hover:bg-muted/40"
-        >
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">{k("rinnovi.domande_in_attesa")}</p>
-          <p className="text-2xl font-bold text-foreground mt-1">{s.domande_in_attesa}</p>
-          <p className="text-xs text-primary mt-1">{k("rinnovi.vai_alle_domande")}</p>
+      </div>
+      <div className="space-y-2" aria-label={k("rinnovi.avanzamento_label", { percentuale: avanzamento })}>
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium text-foreground">{k("rinnovi.avanzamento")}</span>
+          <span className="tabular-nums text-muted-foreground">{avanzamento}%</span>
+        </div>
+        <Progress value={avanzamento} className="h-3" />
+        <button type="button" onClick={vai_a_domande} className="text-sm font-medium text-primary hover:underline">
+          {k("rinnovi.domande_collegamento", { count: s.domande_in_attesa })}
         </button>
       </div>
 
-      {/* Apertura / chiusura */}
-      {puo_gestire && (
+      {/* Apertura della campagna */}
+      {puo_gestire && !s.aperta && (
         <div className="flex flex-wrap items-center gap-3">
-          {!s.aperta ? (
             <Button className="h-10" onClick={() => set_dialog_apri(true)}>
               <CalendarDays className="w-4 h-4 mr-2" />
               {k("rinnovi.apri_bottone", { stagione: stagione.nome })}
             </Button>
-          ) : (
-            <>
-              <Button variant="destructive" className="h-10" onClick={() => set_dialog_chiudi(true)}>
-                {k("rinnovi.chiudi_bottone")}
-              </Button>
-              <Button
-                variant="outline"
-                className="h-10"
-                disabled={email.isPending || invitati_ids.length === 0}
-                onClick={() => invia_inviti()}
-              >
-                <Send className="w-4 h-4 mr-2" />
-                {k("rinnovi.invia_inviti")}
-              </Button>
-            </>
-          )}
         </div>
       )}
 
-      {/* Filtri */}
+      <div className="space-y-1 pt-2">
+        <h3 className="text-base font-semibold text-foreground">{k("rinnovi.in_attesa_titolo")}</h3>
+        <p className="text-sm text-muted-foreground">{k("rinnovi.azioni_eccezione")}</p>
+      </div>
+
+      {/* Ricerca fra chi non ha ancora risposto */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex gap-1 bg-muted/40 p-1 rounded-xl flex-wrap">
-          {(["tutti", "invitato", "attivo", "non_rinnovato"] as FiltroStato[]).map((f) => (
-            <button
-              key={f}
-              onClick={() => set_filtro(f)}
-              className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                filtro === f ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {k(`rinnovi.filtro_${f}`)}
-            </button>
-          ))}
-        </div>
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -222,8 +221,6 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean; vai_a_domande: () => void }> 
               <tr>
                 <th className="p-3 text-left font-medium">{k("rinnovi.col_atleta")}</th>
                 <th className="p-3 text-left font-medium">{k("rinnovi.col_livello")}</th>
-                <th className="p-3 text-left font-medium">{k("rinnovi.col_stato")}</th>
-                <th className="p-3 text-left font-medium">{k("rinnovi.col_conferma")}</th>
                 <th className="p-3" />
               </tr>
             </thead>
@@ -236,20 +233,8 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean; vai_a_domande: () => void }> 
                   <td className="p-3 text-muted-foreground">
                     {r.livello || (r.atleta ? get_livello_display(r.atleta as any) : "—")}
                   </td>
-                  <td className="p-3">
-                    <Badge variant={r.status === "attivo" ? "default" : r.status === "invitato" ? "outline" : "destructive"}>
-                      {k(`rinnovi.stato_${r.status}`, { defaultValue: r.status } as any)}
-                    </Badge>
-                  </td>
-                  <td className="p-3 text-xs text-muted-foreground">
-                    {r.confermato_da
-                      ? `${k(`rinnovi.confermato_da_${r.confermato_da}`, { defaultValue: r.confermato_da } as any)}${
-                          r.confermato_il ? ` · ${data_breve(r.confermato_il, i18n.language)}` : ""
-                        }`
-                      : "—"}
-                  </td>
                   <td className="p-3 text-right whitespace-nowrap">
-                    {puo_gestire && r.status !== "attivo" && (
+                    {puo_gestire && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -268,7 +253,7 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean; vai_a_domande: () => void }> 
                         {k("rinnovi.azione_conferma")}
                       </Button>
                     )}
-                    {puo_gestire && r.status !== "non_rinnovato" && (
+                    {puo_gestire && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -280,18 +265,6 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean; vai_a_domande: () => void }> 
                       >
                         <X className="w-4 h-4 mr-1" />
                         {k("rinnovi.azione_non_rinnovato")}
-                      </Button>
-                    )}
-                    {puo_gestire && r.status === "invitato" && s.aperta && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-9"
-                        disabled={email.isPending}
-                        onClick={() => invia_inviti([r.atleta_id])}
-                      >
-                        <RefreshCw className="w-4 h-4 mr-1" />
-                        {k("rinnovi.azione_rimanda")}
                       </Button>
                     )}
                   </td>

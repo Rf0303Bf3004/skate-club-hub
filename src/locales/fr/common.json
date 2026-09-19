@@ -297,6 +297,7 @@
     "momento_appello_aperto": "Un appel n’est pas encore enregistré : enregistrez-le ou changez d’onglet avant de changer de moment.",
     "esci": "Dissocier cette tablette",
     "esci_titolo": "Dissocier cette tablette ?",
+    "esci_domanda": "VOULEZ-VOUS VRAIMENT CONTINUER ?",
     "scollega": "Dissocier cette tablette",
     "esci_testo": "Le code conservé sur cet appareil sera supprimé : pour revenir, il faudra le code du club ou son QR."
   },

@@ -1140,15 +1140,21 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
       {/* Uscita definitiva del tablet: la conferma dice chiaramente che per
           rientrare servirà il codice del club o il suo QR. */}
       <AlertDialog open={scollega_aperto} onOpenChange={(aperto) => !aperto && set_scollega_aperto(false)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("pista.esci_titolo")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("pista.esci_testo")}</AlertDialogDescription>
+        <AlertDialogContent className="sm:max-w-xl gap-8 p-8 sm:p-10">
+          <AlertDialogHeader className="space-y-5 text-center sm:text-center">
+            <AlertDialogTitle className="text-3xl font-bold leading-tight text-center">
+              {t("pista.esci_domanda")}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-lg leading-relaxed text-center">
+              {t("pista.esci_testo")}
+            </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("annulla", { defaultValue: "Annulla" })}</AlertDialogCancel>
+          <AlertDialogFooter className="flex-col gap-3 sm:flex-row sm:space-x-0">
+            <AlertDialogCancel autoFocus className="h-14 w-full text-base font-semibold">
+              {t("annulla", { defaultValue: "Annulla" })}
+            </AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-14 w-full bg-destructive text-base font-semibold text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
                 set_scollega_aperto(false);
                 // Il cambio pagina sta dentro esci_dalla_pista: anche a rete

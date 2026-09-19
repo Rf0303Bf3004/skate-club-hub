@@ -1,8 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { Calendar, Sparkles, CreditCard, Newspaper, ArrowRight, Clock, MapPin } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import type { PortaleSession } from "@/lib/portale-auth";
+import { segnala_errore } from "@/lib/errori";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface EventoProssimo {
   id: string;
@@ -14,6 +29,13 @@ interface EventoProssimo {
   luogo: string | null;
 }
 
+interface RinnovoDaConfermare {
+  stagione_id: string;
+  stagione_nome: string;
+  scadenza: string | null;
+  status: string;
+}
+
 const TIPO_META: Record<string, { label: string; gradient: string; icon: typeof Calendar }> = {
   corso: { label: "Corso", gradient: "from-sky-500 to-indigo-500", icon: Calendar },
   lezione_privata: { label: "Lezione privata", gradient: "from-violet-500 to-purple-600", icon: Sparkles },
@@ -23,34 +45,148 @@ const TIPO_META: Record<string, { label: string; gradient: string; icon: typeof 
 };
 
 const PortaleHomePage: React.FC = () => {
+  const { t, i18n } = useTranslation("portale");
   const { session } = useOutletContext<{ session: PortaleSession }>();
   const [prossimi, set_prossimi] = useState<EventoProssimo[]>([]);
   const [loading, set_loading] = useState(true);
+  const [errore_prossimi, set_errore_prossimi] = useState(false);
+  const [scelta, set_scelta] = useState<"conferma" | "rifiuta" | null>(null);
+  const [esito_rinnovo, set_esito_rinnovo] = useState<"attivo" | "non_rinnovato" | null>(null);
+
+  const rinnovo = useQuery({
+    queryKey: ["portale_rinnovo_da_confermare", session.atleta.id],
+    staleTime: 0,
+    queryFn: async (): Promise<RinnovoDaConfermare | null> => {
+      const { data, error } = await supabase.rpc("rinnovo_da_confermare" as any);
+      if (error) throw error;
+      const riga = (Array.isArray(data) ? data[0] : data) as RinnovoDaConfermare | undefined;
+      return riga ?? null;
+    },
+  });
+
+  const salva_rinnovo = useMutation({
+    mutationFn: async (azione: "conferma" | "rifiuta") => {
+      if (!rinnovo.isSuccess || !rinnovo.data) throw new Error(t("rinnovo.dati_non_pronti"));
+      const parametri = {
+        p_atleta: session.atleta.id,
+        p_stagione: rinnovo.data.stagione_id,
+        p_da: "famiglia",
+      };
+      if (azione === "conferma") {
+        const { error } = await supabase.rpc("conferma_rinnovo" as any, parametri);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.rpc("rifiuta_rinnovo" as any, {
+          ...parametri,
+          p_motivo: t("rinnovo.motivo_portale"),
+        });
+        if (error) throw error;
+      }
+      return azione;
+    },
+    onSuccess: async (azione) => {
+      set_esito_rinnovo(azione === "conferma" ? "attivo" : "non_rinnovato");
+      set_scelta(null);
+      toast.success(t(azione === "conferma" ? "rinnovo.confermato" : "rinnovo.rifiutato"));
+      await rinnovo.refetch();
+    },
+    onError: (error) => {
+      segnala_errore("PortaleHomePage", "salva_rinnovo", error, {}, "avviso");
+      toast.error(t("rinnovo.errore_salvataggio"));
+    },
+  });
+
+  useEffect(() => {
+    if (rinnovo.isError) {
+      void segnala_errore("PortaleHomePage", "lettura rinnovo", rinnovo.error, {}, "avviso");
+    }
+  }, [rinnovo.isError, rinnovo.error]);
+
+  useEffect(() => {
+    set_esito_rinnovo(null);
+    set_scelta(null);
+  }, [session.atleta.id]);
 
   useEffect(() => {
     (async () => {
-      const oggi = new Date().toISOString().slice(0, 10);
-      const fra14 = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
-      const { data } = await supabase
-        .from("eventi_calendario" as any)
-        .select("id, tipo, data, ora_inizio, ora_fine, nome_evento, luogo")
-        .eq("atleta_id", session.atleta.id)
-        .gte("data", oggi)
-        .lte("data", fra14)
-        .neq("stato", "annullato")
-        .order("data", { ascending: true })
-        .order("ora_inizio", { ascending: true })
-        .limit(3);
-      set_prossimi(((data as any) ?? []) as EventoProssimo[]);
-      set_loading(false);
+      try {
+        set_loading(true);
+        set_errore_prossimi(false);
+        const oggi = new Date().toISOString().slice(0, 10);
+        const fra14 = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+        const { data, error } = await supabase
+          .from("eventi_calendario" as any)
+          .select("id, tipo, data, ora_inizio, ora_fine, nome_evento, luogo")
+          .eq("atleta_id", session.atleta.id)
+          .gte("data", oggi)
+          .lte("data", fra14)
+          .neq("stato", "annullato")
+          .order("data", { ascending: true })
+          .order("ora_inizio", { ascending: true })
+          .limit(3);
+        if (error) throw error;
+        set_prossimi(((data as any) ?? []) as EventoProssimo[]);
+      } catch (error) {
+        set_errore_prossimi(true);
+        void segnala_errore("PortaleHomePage", "lettura prossimi impegni", error, {}, "avviso");
+      } finally {
+        set_loading(false);
+      }
     })();
   }, [session.atleta.id]);
 
   const oggi = new Date();
   const giorno_sett = oggi.toLocaleDateString("it-CH", { weekday: "long" });
+  const campagna = rinnovo.isSuccess && rinnovo.data && !["attivo", "non_rinnovato"].includes(rinnovo.data.status)
+    ? rinnovo.data
+    : null;
+  const esito_registrato = esito_rinnovo
+    ?? (rinnovo.isSuccess && rinnovo.data && ["attivo", "non_rinnovato"].includes(rinnovo.data.status)
+      ? rinnovo.data.status as "attivo" | "non_rinnovato"
+      : null);
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
+      {rinnovo.isPending && (
+        <div className="h-40 animate-pulse rounded-2xl bg-slate-100" aria-label={t("rinnovo.caricamento")} />
+      )}
+      {rinnovo.isError && (
+        <section className="rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-900">
+          <p className="font-semibold">{t("rinnovo.errore_lettura")}</p>
+          <Button variant="outline" className="mt-3" onClick={() => rinnovo.refetch()}>
+            {t("rinnovo.riprova")}
+          </Button>
+        </section>
+      )}
+      {campagna && !esito_registrato && (
+        <section className="rounded-2xl border-2 border-sky-300 bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-slate-900">
+            {t("rinnovo.titolo", { stagione: campagna.stagione_nome })}
+          </h2>
+          {campagna.scadenza && (
+            <p className="mt-2 text-sm font-medium text-slate-600">
+              {t("rinnovo.scadenza", {
+                data: new Date(`${campagna.scadenza}T00:00:00`).toLocaleDateString(i18n.language),
+              })}
+            </p>
+          )}
+          <p className="mt-3 text-slate-700">{t("rinnovo.domanda")}</p>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+            <Button className="h-12 flex-1" onClick={() => set_scelta("conferma")}>
+              {t("rinnovo.si")}
+            </Button>
+            <Button variant="outline" className="h-12 flex-1" onClick={() => set_scelta("rifiuta")}>
+              {t("rinnovo.no")}
+            </Button>
+          </div>
+        </section>
+      )}
+      {esito_registrato && (
+        <p className="rounded-lg border border-slate-200 bg-white px-4 py-3 font-medium text-slate-700">
+          {t(esito_registrato === "attivo" ? "rinnovo.esito_confermato" : "rinnovo.esito_rifiutato")}
+        </p>
+      )}
+
       {/* Hero saluto */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-sky-500 via-indigo-500 to-violet-600 text-white p-8 lg:p-10 shadow-xl">
         <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
@@ -80,6 +216,10 @@ const PortaleHomePage: React.FC = () => {
             {[0, 1, 2].map((i) => (
               <div key={i} className="h-40 rounded-2xl bg-slate-100 animate-pulse" />
             ))}
+          </div>
+        ) : errore_prossimi ? (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-900">
+            <p className="font-semibold">{t("home.errore_prossimi")}</p>
           </div>
         ) : prossimi.length === 0 ? (
           <div className="rounded-3xl bg-gradient-to-br from-slate-50 to-sky-50 border border-slate-200 p-10 text-center">
@@ -159,6 +299,32 @@ const PortaleHomePage: React.FC = () => {
           ))}
         </div>
       </section>
+
+      <AlertDialog open={scelta !== null} onOpenChange={(aperto) => !aperto && set_scelta(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t(scelta === "rifiuta" ? "rinnovo.conferma_no_titolo" : "rinnovo.conferma_si_titolo")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(scelta === "rifiuta" ? "rinnovo.conferma_no_testo" : "rinnovo.conferma_si_testo")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={salva_rinnovo.isPending}>{t("rinnovo.annulla")}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={salva_rinnovo.isPending || !rinnovo.isSuccess}
+              className={scelta === "rifiuta" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+              onClick={(evento) => {
+                evento.preventDefault();
+                if (scelta) salva_rinnovo.mutate(scelta);
+              }}
+            >
+              {t(scelta === "rifiuta" ? "rinnovo.no" : "rinnovo.si")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

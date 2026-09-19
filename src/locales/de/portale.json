@@ -1,0 +1,27 @@
+{
+  "home": {
+    "errore_prossimi": "Die nächsten Termine konnten nicht gelesen werden. Das bedeutet nicht, dass es keine gibt."
+  },
+  "rinnovo": {
+    "titolo": "Anmeldung für die Saison {{stagione}}",
+    "scadenza": "Bitte bis {{data}} antworten",
+    "domanda": "Möchten Sie die Anmeldung für die neue Saison bestätigen?",
+    "si": "Ja, wir bestätigen",
+    "no": "Wir verlängern nicht",
+    "conferma_si_titolo": "Anmeldung bestätigen?",
+    "conferma_si_testo": "Ihre Bestätigung wird sofort für diese Saison gespeichert.",
+    "conferma_no_titolo": "Möchten Sie nicht verlängern?",
+    "conferma_no_testo": "Ihre Wahl wird sofort gespeichert. Die Athletin bleibt im Clubarchiv.",
+    "annulla": "Abbrechen",
+    "confermato": "Anmeldung bestätigt",
+    "rifiutato": "Wahl gespeichert",
+    "esito_confermato": "Sie haben die Anmeldung für die neue Saison bestätigt.",
+    "esito_rifiutato": "Sie haben mitgeteilt, dass Sie die Anmeldung nicht verlängern.",
+    "motivo_portale": "Von der Familie im Portal mitgeteilte Wahl",
+    "caricamento": "Anmeldung wird geprüft",
+    "errore_lettura": "Es konnte nicht geprüft werden, ob eine Anmeldung bestätigt werden muss. Das bedeutet nicht, dass keine vorliegt.",
+    "errore_salvataggio": "Ihre Antwort konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+    "dati_non_pronti": "Warten Sie vor der Antwort, bis die Anmeldung geprüft wurde.",
+    "riprova": "Erneut versuchen"
+  }
+}

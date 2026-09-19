@@ -1,0 +1,27 @@
+{
+  "home": {
+    "errore_prossimi": "We could not read the upcoming activities. This does not mean there are none."
+  },
+  "rinnovo": {
+    "titolo": "Registration for the {{stagione}} season",
+    "scadenza": "Reply by {{data}}",
+    "domanda": "Would you like to confirm registration for the new season?",
+    "si": "Yes, we confirm",
+    "no": "We will not renew",
+    "conferma_si_titolo": "Confirm the registration?",
+    "conferma_si_testo": "Your confirmation will be recorded immediately for this season.",
+    "conferma_no_titolo": "Do you not want to renew?",
+    "conferma_no_testo": "Your choice will be recorded immediately. The athlete will remain in the club archive.",
+    "annulla": "Cancel",
+    "confermato": "Registration confirmed",
+    "rifiutato": "Choice recorded",
+    "esito_confermato": "You confirmed registration for the new season.",
+    "esito_rifiutato": "You told the club that you will not renew the registration.",
+    "motivo_portale": "Choice submitted by the family in the portal",
+    "caricamento": "Checking registration",
+    "errore_lettura": "We could not check whether a registration needs confirmation. This does not mean there is none.",
+    "errore_salvataggio": "We could not record your answer. Please try again.",
+    "dati_non_pronti": "Wait for the registration check before answering.",
+    "riprova": "Try again"
+  }
+}
