@@ -422,12 +422,34 @@ const CommunicationsPage: React.FC = () => {
     const final_titolo = fill_placeholders(titolo, placeholders);
     const final_testo = fill_placeholders(testo, placeholders);
     const evt_id = tipo_evento_collegato !== 'nessuno' && evento_collegato_id ? evento_collegato_id : null;
+
+    // Per livello: i destinatari sono risolti qui, con lo stesso filtro del conteggio,
+    // e inviati come elenco esplicito. Selezione vuota = zero destinatari = non si invia.
+    if (tipo_destinatari === 'per_livello') {
+      const ids = atleti.filter((a: any) => atleta_in_livelli_scelti(a)).map((a: any) => a.id);
+      if (ids.length === 0) return;
+      await crea.mutateAsync({
+        titolo: final_titolo,
+        testo: final_testo,
+        tipo_destinatari: 'atleti',
+        corso_id: null,
+        livello_categoria: null,
+        atleta_ids_manuali: ids,
+        gara_id: tipo_evento_collegato === 'gara' ? evt_id : null,
+        evento_straordinario_id: tipo_evento_collegato === 'gala' ? evt_id : null,
+        test_livello_id: tipo_evento_collegato === 'test' ? evt_id : null,
+        urgente,
+      });
+      set_modal_open(false);
+      return;
+    }
+
     await crea.mutateAsync({
       titolo: final_titolo,
       testo: final_testo,
       tipo_destinatari,
       corso_id: null,
-      livello_categoria: tipo_destinatari === 'per_livello' ? livello_categoria : null,
+      livello_categoria: null,
       atleta_ids_manuali: tipo_destinatari === 'atleti'
         ? atleti_specifici_ids
         : (['per_corsi', 'per_giorno', 'per_istruttore'].includes(tipo_destinatari) ? selected_recipient_ids : null),
