@@ -915,6 +915,7 @@
     "open_link": "Apri →",
     "close": "Chiudi",
     "compare_last_year_short": "Confronta anno scorso",
+    "compare_too_early": "Stagione appena cominciata: il confronto con l'anno scorso arriva più avanti.",
     "disclaimer": "I valori mostrati arrivano dai dati registrati. Il trattino indica dato mancante, non zero.",
     "no_club": {
       "title": "Accesso non collegato a un club",
@@ -943,7 +944,8 @@
       "positivo": "registrato",
       "neutro": "stabile",
       "attenzione": "da seguire",
-      "mancante": "dato mancante"
+      "mancante": "dato mancante",
+      "senza_dati": "senza dati"
     },
     "greet": {
       "morning": "Buongiorno",
