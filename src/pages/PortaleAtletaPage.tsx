@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { use_contenuti_traduzioni } from "@/hooks/use-contenuti-traduzioni";
+import { formatta_livelli_corso, is_apertura_totale, livello_dichiarato } from "@/lib/livelli-corso";
 
 // Portale pubblico mobile-first: l'identificativo è il `codice_atleta` (AT-XXXX-XXXX),
 // lo stesso usato dall'app mobile genitori. Tutte le query passano dall'edge function `portale-atleta`.
@@ -29,6 +30,7 @@ async function call_portale(token: string, action: string, extra: Record<string,
 
 const PortaleAtletaPage: React.FC = () => {
   const { t } = useTranslation("portale");
+  const { t: t_corsi } = useTranslation("corsi");
   const { token: token_param } = useParams<{ token: string }>();
   const [search_params] = useSearchParams();
   const token = token_param || search_params.get("token") || "";
