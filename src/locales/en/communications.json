@@ -47,5 +47,9 @@
     "confirmed_on": "✓ attendance confirmed on {{data}}",
     "refused_on": "❌ absence reported on {{data}}",
     "waiting": "expected present"
+  },
+  "dialog": {
+    "level_filter_hint": "Tick one or more levels: only athletes at the chosen levels receive the message. With nothing ticked it goes to no one.",
+    "level_nessuno_selezionato": "No level selected: zero recipients, sending stays disabled."
   }
 }
