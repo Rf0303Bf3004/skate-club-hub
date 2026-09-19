@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import LettoreDisco from "@/components/musica/LettoreDisco";
-import { use_programmi_atleti, type ProgrammaMusicale } from "@/hooks/use-programmi-musicali";
+import { type ProgrammaMusicale } from "@/hooks/use-programmi-musicali";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -280,9 +280,12 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
     if (sessioni.length === 0) return;
     if (modificato) return;
     if (scelta_manuale && sessione_id && sessioni.some((s) => s.sessione_id === sessione_id)) return;
+    // Prima la sessione in corso. Se non ce n'è nessuna, l'ultima già cominciata
+    // oggi (non la prossima, che è ancora bloccata); in mancanza, la prima del giorno.
     const in_corso = sessioni.find((s) => e_in_corso(s));
-    const prossima = sessioni.find((s) => (minuti_da_ora(s.ora_inizio) ?? 0) >= minuti_riferimento);
-    const scelta = (in_corso ?? prossima ?? sessioni[sessioni.length - 1]).sessione_id;
+    const gia_cominciate = sessioni.filter((s) => (minuti_da_ora(s.ora_inizio) ?? -1) <= minuti_riferimento);
+    const ultima_cominciata = gia_cominciate[gia_cominciate.length - 1];
+    const scelta = (in_corso ?? ultima_cominciata ?? sessioni[0]).sessione_id;
     if (scelta !== sessione_id) {
       // Cambio automatico di sessione: si riparte dall'appello della nuova
       // sessione, mai restando nell'elenco della precedente.
@@ -380,8 +383,40 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
     () => atleti.filter((a) => !assenti.has(a.atleta_id)),
     [atleti, assenti],
   );
-  const ids_presenti = React.useMemo(() => presenti.map((a) => a.atleta_id), [presenti]);
-  const programmi_query = use_programmi_atleti(momento === "in_pista" ? ids_presenti : []);
+  // Musica: come tutto il resto della pagina passa da una RPC `pista_*`.
+  // Il tablet non ha una riga in utenti_club, quindi get_current_club_id() è vuoto
+  // e una lettura diretta della tabella non partirebbe mai (difetto invisibile).
+  // I dischi sono disponibili già in fase di appello: mettere un brano non dipende
+  // dall'aver registrato le presenze né dall'orario.
+  const programmi_query = useQuery({
+    queryKey: ["pista_programmi", sessione_id],
+    enabled: !!sessione_id,
+    refetchOnWindowFocus: false,
+    queryFn: async (): Promise<ProgrammaMusicale[]> => {
+      const { data, error } = await supabase.rpc("pista_programmi", {
+        p_sessione_id: sessione_id as string,
+      });
+      if (error) throw new Error(error.message);
+      return ((data ?? []) as any[]).map((p) => ({
+        id: p.id,
+        atleta_id: p.atleta_id,
+        club_id: "",
+        tipo: p.tipo,
+        titolo_brano: p.titolo_brano ?? null,
+        file_path: p.file_path ?? null,
+        durata_sec: p.durata_sec ?? null,
+        in_preparazione: !!p.in_preparazione,
+        attivo: true,
+      }));
+    },
+  });
+
+  React.useEffect(() => {
+    if (programmi_query.isError) {
+      segnala_errore("PistaPage", "lettura programmi musicali", programmi_query.error);
+    }
+  }, [programmi_query.isError, programmi_query.error]);
+
   const programmi_per_atleta = React.useMemo(() => {
     const mappa = new Map<string, ProgrammaMusicale[]>();
     for (const p of programmi_query.data ?? []) {
@@ -391,6 +426,26 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
     }
     return mappa;
   }, [programmi_query.data]);
+
+  /** Bottone del disco di un'atleta: lo stesso in appello e in pista. */
+  const bottone_disco = (atleta_id: string, titolo: string) => {
+    const suoi = programmi_per_atleta.get(atleta_id) ?? [];
+    if (suoi.length === 0) return null;
+    return (
+      <Button
+        size="lg"
+        className="h-12 min-w-[120px]"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (suoi.length === 1) apri_lettore(suoi[0], titolo);
+          else set_scelta_disco({ titolo, programmi: suoi });
+        }}
+      >
+        <Music className="mr-2 h-5 w-5" />
+        {t("musica.disco")}
+      </Button>
+    );
+  };
 
   // ---- Note rapide: sole RPC pista_note / pista_nota_salva / pista_nota_elimina ----
   type NotaPista = {
@@ -592,6 +647,11 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
       <p className="rounded-xl border-2 border-warning-border bg-warning px-4 py-3 text-xl font-bold text-warning-foreground sm:text-2xl">
         {t("pista.istruzione_appello")}
       </p>
+      {programmi_query.isError && (
+        <p className="rounded-lg border border-destructive bg-destructive/10 px-4 py-2 text-base text-destructive">
+          {t("musica.errore_programmi")}
+        </p>
+      )}
       {gruppi.map((gruppo) => (
         <div key={gruppo.chiave}>
           {gruppo.titolo && (
@@ -600,42 +660,49 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {gruppo.atleti.map((atleta) => {
               const assente = assenti.has(atleta.atleta_id);
+              const titolo_atleta = `${atleta.cognome} ${atleta.nome}`;
               return (
-                <button
+                <div
                   key={atleta.atleta_id}
-                  onClick={() => alterna(atleta.atleta_id)}
                   className={`flex min-h-[56px] w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left text-base transition-colors ${
                     assente
                       ? "border-destructive bg-destructive/15 text-muted-foreground"
-                      : "border-border bg-card text-foreground hover:bg-muted"
+                      : "border-border bg-card text-foreground"
                   }`}
                 >
-                  <span className="flex min-w-0 items-center gap-2">
-                    {!assente && <Check className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />}
-                    <span className="min-w-0">
-                      <span className={`block text-lg font-semibold ${assente ? "line-through" : ""}`}>
-                        {atleta.cognome} {atleta.nome}
+                  <button
+                    type="button"
+                    onClick={() => alterna(atleta.atleta_id)}
+                    className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      {!assente && <Check className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />}
+                      <span className="min-w-0">
+                        <span className={`block text-lg font-semibold ${assente ? "line-through" : ""}`}>
+                          {titolo_atleta}
+                        </span>
+                        {assente && (
+                          <span className="block text-xs font-medium text-muted-foreground">
+                            {t("pista.tocca_per_annullare")}
+                          </span>
+                        )}
                       </span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2">
                       {assente && (
-                        <span className="block text-xs font-medium text-muted-foreground">
-                          {t("pista.tocca_per_annullare")}
+                        <span className="rounded-md bg-destructive px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-destructive-foreground">
+                          {t("pista.assente_etichetta")}
+                        </span>
+                      )}
+                      {atleta.stato === "avvisato" && (
+                        <span className="rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                          {t("pista.avvisato")}
                         </span>
                       )}
                     </span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-2">
-                    {assente && (
-                      <span className="rounded-md bg-destructive px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-destructive-foreground">
-                        {t("pista.assente_etichetta")}
-                      </span>
-                    )}
-                    {atleta.stato === "avvisato" && (
-                      <span className="rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                        {t("pista.avvisato")}
-                      </span>
-                    )}
-                  </span>
-                </button>
+                  </button>
+                  {bottone_disco(atleta.atleta_id, titolo_atleta)}
+                </div>
               );
             })}
           </div>
@@ -660,7 +727,7 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
         )}
         {presenti.map((atleta) => {
           const titolo = `${atleta.cognome} ${atleta.nome}`;
-          const suoi = programmi_per_atleta.get(atleta.atleta_id) ?? [];
+          const disco = bottone_disco(atleta.atleta_id, titolo);
           const sue_note = note_per_atleta.get(atleta.atleta_id) ?? [];
           return (
             <div
@@ -694,19 +761,7 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
                   {t("pista.nota_rapida")}
                 </Button>
 
-                {suoi.length > 0 ? (
-                  <Button
-                    size="lg"
-                    className="h-12 min-w-[120px]"
-                    onClick={() => {
-                      if (suoi.length === 1) apri_lettore(suoi[0], titolo);
-                      else set_scelta_disco({ titolo, programmi: suoi });
-                    }}
-                  >
-                    <Music className="mr-2 h-5 w-5" />
-                    {t("musica.disco")}
-                  </Button>
-                ) : (
+                {disco ?? (
                   // Chi non ha programmi caricati mostra il posto vuoto, non un errore.
                   <span className="inline-block h-12 min-w-[120px]" aria-hidden="true" />
                 )}
@@ -1196,7 +1251,7 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
               >
                 <Music className="mr-2 h-5 w-5" />
                 {t(`musica.tipo_${p.tipo}`, { defaultValue: p.tipo })}
-                {p.titolo_brano ? ` · ${p.titolo_brano}` : ""}
+                {` · ${p.titolo_brano || t("musica.senza_titolo")}`}
               </Button>
             ))}
           </div>
