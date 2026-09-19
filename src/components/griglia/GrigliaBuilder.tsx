@@ -2017,7 +2017,6 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                   <Plus className="w-4 h-4 mr-1" /> Aggiungi sotto-sessione
                 </Button>
               </div>
-            </BloccoDropZone>
           ) : (
             <Tabs value={tab_attivo ?? sessioni[0].id} onValueChange={set_tab_attivo} className="w-full">
               <div className="flex items-center gap-2">
