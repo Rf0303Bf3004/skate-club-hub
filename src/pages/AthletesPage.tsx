@@ -670,7 +670,16 @@ const AtletaModal: React.FC<{
               {t("modal.cancel")}
             </Button>
             <Button
-              onClick={() => on_save({ ...form, id: atleta?.id })}
+              onClick={() =>
+                on_save({
+                  ...form,
+                  id: atleta?.id,
+                  // Stessa regola della scheda atleta: a interruttore spento
+                  // i valori tornano a quelli normali.
+                  fatture_intestate_a: form.genitori_separati ? (form.fatture_intestate_a || "genitore1") : "genitore1",
+                  comunicazioni_a: form.genitori_separati ? (form.comunicazioni_a || "entrambi") : "entrambi",
+                })
+              }
               disabled={saving}
               className="flex-1 bg-primary hover:bg-primary/90"
             >
