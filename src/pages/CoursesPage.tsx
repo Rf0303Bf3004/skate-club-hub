@@ -96,23 +96,6 @@ function prezzo_non_impostato(corso: any): boolean {
   return v === 0 || Number.isNaN(v);
 }
 
-function normalize_livello(l: string): string {
-  if (!l) return "pulcini";
-  const map: Record<string, string> = {
-    "pulcini": "pulcini",
-    "stellina 1": "stellina1", "stellina1": "stellina1", "stelline 1": "stellina1",
-    "stellina 2": "stellina2", "stellina2": "stellina2", "stelline 2": "stellina2",
-    "stellina 3": "stellina3", "stellina3": "stellina3", "stelline 3": "stellina3",
-    "stellina 4": "stellina4", "stellina4": "stellina4", "stelline 4": "stellina4",
-    "interbronzo": "Interbronzo",
-    "bronzo": "Bronzo",
-    "interargento": "Interargento",
-    "argento": "Argento",
-    "interoro": "Interoro",
-    "oro": "Oro",
-  };
-  return map[l.toLowerCase()] ?? l;
-}
 
 // Filtro dell'elenco proposto a chi compila. La decisione vera sull'iscrizione
 // resta della funzione SQL `valuta_iscrizione` (trigger su iscrizioni_corsi).
