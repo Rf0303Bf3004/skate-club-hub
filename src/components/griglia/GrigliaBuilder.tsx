@@ -1542,7 +1542,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         return;
       }
       set_tab_attivo(nuovo_id);
-      await esegui_drop_su_nuova(nuovo_id, pending.active_id, pending.data);
+      await esegui_drop(nuovo_id, pending.active_id, pending.data, true);
     } catch (e: any) {
       toast({ title: "Errore creazione sessione", description: e.message, variant: "destructive" });
     }
