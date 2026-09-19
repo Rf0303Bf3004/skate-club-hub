@@ -1114,6 +1114,19 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
         </div>
       )}
 
+      {/* Seconda via d'uscita, fuori dall'intestazione: raggiungibile scorrendo
+          in fondo anche quando i comandi in alto si stringono. A schermo intero
+          lascia lo spazio della barra dell'appello, che sta sopra in assoluto. */}
+      {sessione_pista && (
+        <div className={`mt-6 flex justify-center ${schermo_intero ? "pb-44" : "pb-8"}`}>
+          <Button variant="outline" size="lg" className="whitespace-normal" onClick={() => set_scollega_aperto(true)}>
+            <LogOut className="mr-2 h-5 w-5 shrink-0" />
+            {t("pista.scollega")}
+          </Button>
+        </div>
+      )}
+
+
       <AlertDialog open={!!in_attesa} onOpenChange={(aperto) => !aperto && set_in_attesa(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
