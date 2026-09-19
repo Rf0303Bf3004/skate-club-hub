@@ -52,11 +52,17 @@ function ora_to_min(s: string | null): number { if (!s) return 0; const [h, m] =
 
 const PortaleCalendarioPage: React.FC = () => {
   const { session } = useOutletContext<{ session: PortaleSession }>();
+  const { t } = useTranslation("portale");
   const [oggi_ref] = useState(() => new Date());
   const [week_start, set_week_start] = useState<Date>(() => lunedi_di(new Date()));
   const [eventi, set_eventi] = useState<Evento[]>([]);
   const [loading, set_loading] = useState(true);
   const [selected, set_selected] = useState<Evento | null>(null);
+  // Sessioni del planning della settimana: chiave corso|data|ora → planning_corsi_settimana.id
+  const [planning_map, set_planning_map] = useState<Map<string, string>>(new Map());
+  const [assenze, set_assenze] = useState<Set<string>>(new Set());
+  const [errore_assenze, set_errore_assenze] = useState(false);
+  const [busy_assenza, set_busy_assenza] = useState(false);
 
   const week_end = useMemo(() => add_days(week_start, 6), [week_start]);
 
@@ -66,7 +72,7 @@ const PortaleCalendarioPage: React.FC = () => {
     (async () => {
       const { data } = await supabase
         .from("eventi_calendario" as any)
-        .select("id, tipo, data, ora_inizio, ora_fine, nome_evento, luogo, stato")
+        .select("id, tipo, data, ora_inizio, ora_fine, nome_evento, luogo, stato, riferimento_id")
         .eq("atleta_id", session.atleta.id)
         .gte("data", format_iso(week_start))
         .lte("data", format_iso(week_end))
@@ -79,6 +85,71 @@ const PortaleCalendarioPage: React.FC = () => {
     })();
     return () => { active = false; };
   }, [session.atleta.id, week_start, week_end]);
+
+  // Sessioni del planning + assenze già annunciate, sullo stesso intervallo mostrato.
+  const carica_assenze = React.useCallback(async () => {
+    const dal = format_iso(week_start);
+    const al = format_iso(week_end);
+    set_errore_assenze(false);
+    const [plan_res, ass_res] = await Promise.all([
+      supabase
+        .from("planning_corsi_settimana")
+        .select("id, corso_id, data, ora_inizio, annullato")
+        .gte("data", dal)
+        .lte("data", al),
+      supabase.rpc("assenze_dichiarate", { p_dal: dal, p_al: al }),
+    ]);
+    if (plan_res.error || ass_res.error) {
+      segnala_errore(
+        "PortaleCalendarioPage",
+        "assenze_dichiarate",
+        plan_res.error ?? ass_res.error,
+        undefined,
+        "avviso",
+      );
+      set_errore_assenze(true);
+      set_planning_map(new Map());
+      set_assenze(new Set());
+      return;
+    }
+    const mappa = new Map<string, string>();
+    ((plan_res.data ?? []) as any[]).forEach((p) => {
+      if (p.annullato) return;
+      mappa.set(chiave_sessione(p.corso_id, p.data, p.ora_inizio), p.id as string);
+    });
+    set_planning_map(mappa);
+    set_assenze(new Set(((ass_res.data ?? []) as any[]).map((r) => r.planning_id as string)));
+  }, [week_start, week_end]);
+
+  useEffect(() => { carica_assenze(); }, [carica_assenze]);
+
+  const planning_id_di = (ev: Evento | null): string | null => {
+    if (!ev || ev.tipo !== "corso" || !ev.riferimento_id) return null;
+    return planning_map.get(chiave_sessione(ev.riferimento_id, ev.data, ev.ora_inizio)) ?? null;
+  };
+
+  const e_futuro = (ev: Evento) =>
+    new Date(`${ev.data}T${(ev.ora_inizio ?? "00:00").slice(0, 8)}`).getTime() > Date.now();
+
+  const cambia_assenza = async (planning_id: string, assente: boolean) => {
+    set_busy_assenza(true);
+    const { error } = await supabase.rpc("dichiara_assenza", {
+      p_planning_id: planning_id,
+      p_assente: assente,
+    });
+    set_busy_assenza(false);
+    if (error) {
+      segnala_errore("PortaleCalendarioPage", "dichiara_assenza", error);
+      toast.error(t("assenze.errore"));
+      return;
+    }
+    set_assenze((prec) => {
+      const copia = new Set(prec);
+      if (assente) copia.add(planning_id); else copia.delete(planning_id);
+      return copia;
+    });
+    toast.success(assente ? t("assenze.salvato") : t("assenze.ritirato"));
+  };
 
   const giorni = useMemo(() => Array.from({ length: 7 }, (_, i) => add_days(week_start, i)), [week_start]);
   const today_iso = format_iso(oggi_ref);
