@@ -28,6 +28,9 @@ import { usePermessiAzione } from '@/hooks/use-permessi-azione';
 import NotaPermesso from '@/components/common/NotaPermesso';
 import { conta_gruppi, is_automatica } from '@/lib/raggruppa-comunicazioni';
 import { AutomaticheTab } from '@/components/comunicazioni/AutomaticheTab';
+import { SelectLivelli } from '@/components/ui/select-livelli';
+import { is_apertura_totale, parse_livelli_corso } from '@/lib/livelli-corso';
+import { get_livello_display } from '@/lib/atleta-livello';
 
 
 function build_templates(t: (key: string) => string) {
