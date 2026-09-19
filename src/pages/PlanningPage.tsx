@@ -371,7 +371,7 @@ function private_lesson_has_ice(lesson: any, ghiaccio_slots: any[]) {
 }
 
 // ── Livelli ──
-const LIVELLI = ["pulcini","stellina1","stellina2","stellina3","stellina4","Interbronzo","Bronzo","Interargento","Argento","Interoro","Oro"];
+// Elenco dei livelli: arriva dalla tabella `livelli` tramite <SelectLivelli>.
 
 // ══════════════════════════════════════════════════════════════
 // SIDEBAR CARD (reusable for both views)

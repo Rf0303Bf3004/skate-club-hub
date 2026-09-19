@@ -34,16 +34,7 @@ const GIORNO_TO_WEEKDAY: Record<string, number> = {
   "Domenica": 0,
 };
 
-const LIVELLI_CORSO = [
-  "tutti", "pulcini", "stellina1", "stellina2", "stellina3", "stellina4",
-  "Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro",
-];
-const LIVELLO_LABELS: Record<string, string> = {
-  tutti: "Tutti i livelli", pulcini: "Pulcini",
-  stellina1: "Stellina 1", stellina2: "Stellina 2", stellina3: "Stellina 3", stellina4: "Stellina 4",
-  Interbronzo: "Interbronzo", Bronzo: "Bronzo", Interargento: "Interargento",
-  Argento: "Argento", Interoro: "Interoro", Oro: "Oro",
-};
+// Etichette e confronti dei livelli: `src/lib/livelli-corso.ts` (unica fonte).
 
 const CATEGORIE_OFFICE_SUGGERIMENTI = [
   "Danza", "Stretching", "Pilates", "Preparazione atletica", "Yoga", "Fitness",
