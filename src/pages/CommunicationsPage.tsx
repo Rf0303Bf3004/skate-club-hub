@@ -1047,22 +1047,16 @@ const CommunicationsPage: React.FC = () => {
 
               {tipo_destinatari === 'per_livello' && (
                 <div className="space-y-2">
-                  <div>
-                    <Label className="text-xs">{t('dialog.recipient_level')}</Label>
-                    <Select value={livello_categoria} onValueChange={set_livello_categoria}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pulcini_only">{t('dialog.level_pulcini_only')}</SelectItem>
-                        <SelectItem value="stellina_1_plus">{t('level_labels.stellina_1_plus')}</SelectItem>
-                        <SelectItem value="bronzo_plus">{t('level_labels.bronzo_plus')}</SelectItem>
-                        <SelectItem value="argento_plus">{t('level_labels.argento_plus')}</SelectItem>
-                        <SelectItem value="oro_plus">{t('level_labels.oro_plus')}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Label className="text-xs">{t('dialog.recipient_level')}</Label>
+                  <SelectLivelli value={livelli_selezionati} onChange={set_livelli_selezionati} />
                   <p className="text-[11px] text-muted-foreground leading-snug">
                     {t('dialog.level_filter_hint')}
                   </p>
+                  {!livelli_tutti && livelli_scelti.length === 0 && (
+                    <p className="text-[11px] text-amber-600 leading-snug">
+                      {t('dialog.level_nessuno_selezionato')}
+                    </p>
+                  )}
                 </div>
               )}
 
