@@ -383,7 +383,6 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
     () => atleti.filter((a) => !assenti.has(a.atleta_id)),
     [atleti, assenti],
   );
-  const ids_presenti = React.useMemo(() => presenti.map((a) => a.atleta_id), [presenti]);
   // Musica: come tutto il resto della pagina passa da una RPC `pista_*`.
   // Il tablet non ha una riga in utenti_club, quindi get_current_club_id() è vuoto
   // e una lettura diretta della tabella non partirebbe mai (difetto invisibile).
