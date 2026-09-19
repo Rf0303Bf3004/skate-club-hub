@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -70,6 +70,13 @@ const RigaProva: React.FC<{ r: RichiestaProva; puo_gestire: boolean; on_salvata:
   const [note_club, set_note_club] = useState(r.note_club ?? "");
   const [salvando, set_salvando] = useState(false);
   const [errore_salvataggio, set_errore_salvataggio] = useState<string | null>(null);
+
+  // Dopo un salvataggio la riga arriva di nuovo dal server: i campi locali si
+  // riallineano, così il bottone «Salva» sparisce solo a scrittura riuscita.
+  useEffect(() => {
+    set_stato(r.stato);
+    set_note_club(r.note_club ?? "");
+  }, [r.stato, r.note_club]);
 
   const eta = eta_da(r.data_nascita);
   const giorni = giorni_da(r.creata_il);
