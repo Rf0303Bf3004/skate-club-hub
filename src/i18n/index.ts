@@ -129,6 +129,16 @@ function lingua_iniziale(): SupportedLocale {
   return 'it';
 }
 
+const chiavi_mancanti_viste = new Set<string>();
+
+/** Avviso console per chiave di traduzione mancante, una sola volta per chiave. */
+export function avvisa_chiave_mancante(namespace: string, chiave: string): void {
+  const id = `${namespace}:${chiave}`;
+  if (chiavi_mancanti_viste.has(id)) return;
+  chiavi_mancanti_viste.add(id);
+  console.warn(`[i18n] chiave mancante nel namespace "${namespace}": "${chiave}"`);
+}
+
 if (!i18n.isInitialized) {
   i18n
     .use(LanguageDetector)
@@ -149,6 +159,12 @@ if (!i18n.isInitialized) {
       },
       returnNull: false,
       react: { useSuspense: false },
+      // Una chiave mancante non deve comparire grezza a schermo senza lasciare
+      // traccia: avviso in console, una sola volta per chiave (altrimenti si
+      // ripete a ogni render e la console diventa illeggibile).
+      missingKeyHandler: (lngs, ns, key) => {
+        avvisa_chiave_mancante(String(ns), String(key));
+      },
     });
 }
 

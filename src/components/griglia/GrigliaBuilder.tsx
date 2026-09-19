@@ -1,6 +1,29 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { get_current_club_id } from "@/lib/supabase";
-import { DndContext, useDraggable, useDroppable, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import {
+  DndContext,
+  useDraggable,
+  useDroppable,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  pointerWithin,
+  rectIntersection,
+  type CollisionDetection,
+} from "@dnd-kit/core";
+
+/**
+ * Il contenitore del blocco (`blocco:`) è sempre montato e racchiude le
+ * sotto-sessioni (`sessione:`). Il rilascio dentro una sessione interseca
+ * entrambi: vince sempre il bersaglio più interno, altrimenti il messaggio
+ * "rilascia sulla sessione" apparirebbe anche a chi ha mirato bene.
+ */
+const collision_preferisci_interno: CollisionDetection = (args) => {
+  const dentro = pointerWithin(args);
+  const base = dentro.length > 0 ? dentro : rectIntersection(args);
+  const sessioni = base.filter((c) => String(c.id).startsWith("sessione:"));
+  return sessioni.length > 0 ? sessioni : base;
+};
 import { use_atleti, use_istruttori } from "@/hooks/use-supabase-data";
 import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
 import { useModalitaArea } from "@/hooks/useModalitaArea";
@@ -295,7 +318,9 @@ const PoolBox: React.FC<{
     if (prefisso !== "atleta") return [];
     const map = new Map<string, typeof filtrati>();
     for (const i of filtrati) {
-      const liv = (i.livello_attuale || "Senza livello") as string;
+      // Stesso ripiego di `risolvi_membri_gruppo` (use-griglia-ghiaccio):
+      // se divergono, il gruppo trascinato non corrisponde a quello mostrato.
+      const liv = (i.livello_attuale || "Pulcini") as string;
       map.set(liv, [...(map.get(liv) ?? []), i]);
     }
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0], "it"));
@@ -973,17 +998,19 @@ const SessioneBox: React.FC<{
 };
 
 // ─── Bersaglio di rilascio del blocco (per i blocchi senza sotto-sessioni) ───
-const BloccoDropZone: React.FC<{ blocco_id: string; children: React.ReactNode }> = ({
+const BloccoDropZone: React.FC<{ blocco_id: string; children: React.ReactNode; compatto?: boolean }> = ({
   blocco_id,
   children,
+  compatto = false,
 }) => {
   const { setNodeRef, isOver } = useDroppable({ id: `blocco:${blocco_id}` });
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "rounded-xl border-2 border-dashed p-6 transition-colors",
-        isOver ? "border-primary bg-primary/10" : "border-muted-foreground/30 bg-muted/30",
+        "rounded-xl border-2 border-dashed transition-colors",
+        compatto ? "p-1 border-transparent" : "p-6",
+        isOver ? "border-primary bg-primary/10" : compatto ? "" : "border-muted-foreground/30 bg-muted/30",
       )}
     >
       {children}
@@ -1900,7 +1927,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
       </div>
 
 
-      <DndContext sensors={sensors} onDragEnd={handle_drag_end}>
+      <DndContext sensors={sensors} collisionDetection={collision_preferisci_interno} onDragEnd={handle_drag_end}>
         {/* Toggle fonte dei pool per la sotto-sessione attiva */}
         {sessioni.length > 0 && (
           <div className="flex items-center gap-2 mb-2">
@@ -1977,8 +2004,11 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
 
         {/* Fascia inferiore: sotto-sessioni a tab */}
         <div className="mt-4">
+          {/* Il contenitore del blocco è sempre un bersaglio di rilascio: con
+              sotto-sessioni presenti serve per spiegare l'errore di mira,
+              senza sotto-sessioni propone di crearne una. */}
+          <BloccoDropZone blocco_id={blocco.id} compatto={sessioni.length > 0}>
           {sessioni.length === 0 ? (
-            <BloccoDropZone blocco_id={blocco.id}>
               <div className="space-y-3 text-center">
                 <p className="text-sm font-medium">Questo blocco non ha ancora nessuna sotto-sessione.</p>
                 <p className="text-xs text-muted-foreground">
@@ -1989,7 +2019,6 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                   <Plus className="w-4 h-4 mr-1" /> Aggiungi sotto-sessione
                 </Button>
               </div>
-            </BloccoDropZone>
           ) : (
             <Tabs value={tab_attivo ?? sessioni[0].id} onValueChange={set_tab_attivo} className="w-full">
               <div className="flex items-center gap-2">
@@ -2068,6 +2097,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
               ))}
             </Tabs>
           )}
+          </BloccoDropZone>
         </div>
       </DndContext>
 

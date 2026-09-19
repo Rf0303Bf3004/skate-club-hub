@@ -400,7 +400,8 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
       return ((data ?? []) as any[]).map((p) => ({
         id: p.id,
         atleta_id: p.atleta_id,
-        club_id: "",
+        // La RPC pista_programmi non restituisce il club: non inventarlo.
+        club_id: null,
         tipo: p.tipo,
         titolo_brano: p.titolo_brano ?? null,
         file_path: p.file_path ?? null,
