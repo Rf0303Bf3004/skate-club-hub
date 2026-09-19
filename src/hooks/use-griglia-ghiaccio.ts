@@ -1350,9 +1350,6 @@ export function use_assegna_gruppo_sessione() {
       const presenti_prima = await atleti_presenti_sessione(input.sessione_id);
       const mancanti = membri.filter((id) => !presenti_prima.has(id) && !esclusi.has(id));
       const gia_presenti = membri.filter((id) => presenti_prima.has(id)).length;
-      if (mancanti.length === 0 && esclusi.size < membri.length - gia_presenti) {
-        // nulla da fare: tutti già dentro
-      }
 
       const { data: gruppo, error: err_g } = await supabase
         .from("griglia_sessioni_gruppi" as any)
