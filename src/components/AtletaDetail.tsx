@@ -38,7 +38,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SelectLivello } from "@/components/ui/select-livello";
-import { opzioni_in_preparazione_con_salvato } from "@/lib/atleta-livello";
+import {
+  LIVELLI_AMATORI,
+  opzioni_in_preparazione_con_salvato,
+  opzioni_lista_con_salvato,
+} from "@/lib/atleta-livello";
 import { ArrowLeft, Shield, Medal, Save, Upload, Music, ArrowRightLeft, X, Mail, Copy, Printer, Link as LinkIcon, QrCode, Share2, Trophy, ShieldCheck, UserCog } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
@@ -1248,7 +1252,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                         <SelectTrigger><SelectValue placeholder={td("detail.none")} /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__none__">{td("detail.none_option")}</SelectItem>
-                          {opzioni_in_preparazione_con_salvato(form, form.livello_amatori).map((l) => (
+                          {opzioni_lista_con_salvato(LIVELLI_AMATORI, form.livello_amatori).map((l) => (
                             <SelectItem key={l} value={l}>{l}</SelectItem>
                           ))}
                         </SelectContent>
