@@ -2311,9 +2311,12 @@ const CorsoModal: React.FC<{
 };
 
 // ─── Livello badge color ───────────────────────────────────
-function get_livello_badge_classes(livello: string): string {
-  const l = (livello || "tutti").toLowerCase();
-  if (l === "tutti") return "bg-muted text-muted-foreground border-border";
+function get_livello_badge_classes(livello_richiesto: string | null | undefined): string {
+  if (!livello_dichiarato(livello_richiesto)) return "bg-amber-100 text-amber-800 border-amber-300";
+  if (is_apertura_totale(livello_richiesto)) return "bg-muted text-muted-foreground border-border";
+  const scelti = parse_livelli_corso(livello_richiesto);
+  if (scelti.length > 1) return "bg-indigo-100 text-indigo-800 border-indigo-200";
+  const l = scelti[0].toLowerCase().replace(/\s+/g, "");
   if (l === "pulcini" || l.startsWith("stellina")) return "bg-emerald-100 text-emerald-800 border-emerald-200";
   if (["interbronzo", "bronzo", "interargento", "argento", "interoro", "oro"].includes(l))
     return "bg-blue-100 text-blue-800 border-blue-200";
