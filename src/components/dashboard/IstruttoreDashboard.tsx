@@ -426,6 +426,7 @@ const IstruttoreDashboard: React.FC = () => {
         {sessioni_query.isError && (
           <Errore testo={t("istruttore_home.errore_turni", "Non è stato possibile leggere i tuoi turni di oggi. Riprova fra poco.")} />
         )}
+        {reminder_query.isError && <Errore testo={t("istruttore_home.errore_reminder")} />}
         {sessioni_query.isSuccess && sessioni.length > 0 &&
           sessioni.map((s, i) => {
             const evidenziata = i === indice_evidenziato;
