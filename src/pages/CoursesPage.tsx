@@ -82,25 +82,9 @@ function classifica_corso(
   return "da_pianificare";
 }
 
-const LIVELLI_CORSO = [
-  "tutti", "pulcini", "stellina1", "stellina2", "stellina3", "stellina4",
-  "Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro",
-];
+// Etichette e confronti dei livelli: `src/lib/livelli-corso.ts` (unica fonte).
 
-const LIVELLO_LABELS: Record<string, string> = {
-  tutti: "Tutti i livelli",
-  pulcini: "Pulcini",
-  stellina1: "Stellina 1",
-  stellina2: "Stellina 2",
-  stellina3: "Stellina 3",
-  stellina4: "Stellina 4",
-  Interbronzo: "Interbronzo",
-  Bronzo: "Bronzo",
-  Interargento: "Interargento",
-  Argento: "Argento",
-  Interoro: "Interoro",
-  Oro: "Oro",
-};
+
 
 function get_atleta_livello(atleta: any): string {
   return atleta.carriera_artistica || atleta.carriera_stile || atleta.percorso_amatori || "Pulcini";
