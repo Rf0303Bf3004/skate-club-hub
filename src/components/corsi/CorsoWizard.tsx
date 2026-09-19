@@ -315,6 +315,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
   const errors_step1: string[] = [];
   if (!form.nome.trim()) errors_step1.push(t("corso_wizard.campo_nome"));
   if (form.tipo !== "Ghiaccio" && form.tipo !== "Off-Ice") errors_step1.push(t("corso_wizard.campo_tipo"));
+  if (form.attivo && !livello_dichiarato(form.livello_richiesto)) errors_step1.push(t("livelli.campo_livello"));
 
   const errors_step2: string[] = [];
   if (posiziona_planning) {
