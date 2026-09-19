@@ -2357,7 +2357,11 @@ const CorsoCard: React.FC<{
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        <span className={`inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full border ${get_livello_badge_classes(livello)}`}>
+        <span
+          title={livello_mancante ? t("livelli.avviso_spento") : livello_label}
+          className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${get_livello_badge_classes(livello)}`}
+        >
+          {livello_mancante && <AlertTriangle className="w-3 h-3" />}
           {livello_label}
         </span>
         {corso.tipo && (() => {
