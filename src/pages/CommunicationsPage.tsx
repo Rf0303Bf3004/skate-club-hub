@@ -365,7 +365,7 @@ const CommunicationsPage: React.FC = () => {
     set_testo('');
     set_tipo_destinatari('tutti');
     set_corsi_ids([]);
-    set_livello_categoria('stellina_1_plus');
+    set_livelli_selezionati(null);
     set_giorno_data('');
     set_istruttore_id('');
     set_istruttore_data('');
