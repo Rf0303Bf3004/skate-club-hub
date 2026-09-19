@@ -4,6 +4,7 @@ import { Search, Send, Check, X, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { segnala_errore } from "@/lib/errori";
@@ -50,6 +51,7 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean; vai_a_domande: () => void }> 
   const [scadenza, set_scadenza] = useState("");
   const [riga_rifiuto, set_riga_rifiuto] = useState<RigaRegistro | null>(null);
   const [motivo, set_motivo] = useState("");
+  const [modo_risposte_a_voce, set_modo_risposte_a_voce] = useState(false);
 
   const lista = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -191,9 +193,27 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean; vai_a_domande: () => void }> 
         </div>
       )}
 
-      <div className="space-y-1 pt-2">
+      <div className="space-y-3 pt-2">
         <h3 className="text-base font-semibold text-foreground">{k("rinnovi.in_attesa_titolo")}</h3>
-        <p className="text-sm text-muted-foreground">{k("rinnovi.azioni_eccezione")}</p>
+        {puo_gestire && (
+          <div className="flex items-start gap-3">
+            <Switch
+              id="modo-risposte-a-voce"
+              checked={modo_risposte_a_voce}
+              onCheckedChange={set_modo_risposte_a_voce}
+              aria-label={k("rinnovi.modo_voce_label")}
+            />
+            <div className="space-y-1">
+              <label htmlFor="modo-risposte-a-voce" className="text-sm font-medium text-foreground">
+                {k("rinnovi.modo_voce_label")}
+              </label>
+              <p className="text-sm text-muted-foreground">{k("rinnovi.azioni_eccezione")}</p>
+            </div>
+          </div>
+        )}
+        {!modo_risposte_a_voce && (
+          <p className="text-sm text-muted-foreground">{k("rinnovi.in_attesa_nota")}</p>
+        )}
       </div>
 
       {/* Ricerca fra chi non ha ancora risposto */}
@@ -221,7 +241,7 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean; vai_a_domande: () => void }> 
               <tr>
                 <th className="p-3 text-left font-medium">{k("rinnovi.col_atleta")}</th>
                 <th className="p-3 text-left font-medium">{k("rinnovi.col_livello")}</th>
-                <th className="p-3" />
+                {puo_gestire && modo_risposte_a_voce && <th className="p-3" />}
               </tr>
             </thead>
             <tbody>
@@ -233,8 +253,8 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean; vai_a_domande: () => void }> 
                   <td className="p-3 text-muted-foreground">
                     {r.livello || (r.atleta ? get_livello_display(r.atleta as any) : "—")}
                   </td>
-                  <td className="p-3 text-right whitespace-nowrap">
-                    {puo_gestire && (
+                  {puo_gestire && modo_risposte_a_voce && (
+                    <td className="p-3 text-right whitespace-nowrap">
                       <Button
                         size="sm"
                         variant="outline"
@@ -252,8 +272,6 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean; vai_a_domande: () => void }> 
                         <Check className="w-4 h-4 mr-1" />
                         {k("rinnovi.azione_conferma")}
                       </Button>
-                    )}
-                    {puo_gestire && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -266,8 +284,8 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean; vai_a_domande: () => void }> 
                         <X className="w-4 h-4 mr-1" />
                         {k("rinnovi.azione_non_rinnovato")}
                       </Button>
-                    )}
-                  </td>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
