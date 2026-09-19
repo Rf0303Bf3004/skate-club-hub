@@ -416,9 +416,12 @@ export function use_upsert_corso() {
         note: data.note || "",
       };
       if (data.livello_richiesto !== undefined) {
-        // Valore "tutti"/stringa vuota indica nessun filtro: salviamo NULL (FK a livelli.nome).
-        const liv = data.livello_richiesto;
-        payload.livello_richiesto = liv && liv !== "tutti" ? liv : null;
+        // Si salva esattamente quello che è stato dichiarato: elenco di livelli
+        // separati da virgola, oppure la parola "tutti" (apertura dichiarata).
+        // Solo il campo davvero vuoto diventa NULL, e il vincolo
+        // `corsi_livello_dichiarato_chk` lo rifiuta se il corso è attivo.
+        const liv = (data.livello_richiesto ?? "").toString().trim();
+        payload.livello_richiesto = liv.length > 0 ? liv : null;
       }
       if (data.percorso !== undefined) payload.percorso = data.percorso || null;
       if (data.stagione_id) payload.stagione_id = data.stagione_id;
