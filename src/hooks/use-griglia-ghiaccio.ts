@@ -1450,12 +1450,14 @@ export async function sync_gruppo_sessione(input: {
     const { error } = await supabase
       .from("griglia_sessioni_atleti" as any)
       .insert(
-        da_aggiungere.map((atleta_id) => ({
-          sessione_id: input.sessione_id,
-          atleta_id,
-          provenienza: "gruppo",
-          gruppo_sessione_id: input.gruppo_sessione_id,
-        })) as any,
+        da_aggiungere.map((atleta_id) =>
+          _payload_assegnazione({
+            sessione_id: input.sessione_id,
+            atleta_id,
+            origine: "gruppo",
+            gruppo_sessione_id: input.gruppo_sessione_id,
+          }),
+        ) as any,
       );
     if (error && !`${error.message}`.includes("duplicate")) throw error;
   }
