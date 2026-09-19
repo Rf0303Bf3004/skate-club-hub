@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TabRinnovi from "@/components/iscrizioni/TabRinnovi";
 import TabDomandeNuove from "@/components/iscrizioni/TabDomandeNuove";
 import TabRichiesteCorsi from "@/components/iscrizioni/TabRichiesteCorsi";
+import TabProveGratuite, { use_richieste_prova } from "@/components/iscrizioni/TabProveGratuite";
 import { use_richieste_iscrizione } from "@/hooks/use-supabase-data";
 import { use_domande_iscrizione } from "@/hooks/use-iscrizioni-stagione";
 
@@ -32,6 +33,10 @@ const RichiesteIscrizionePage: React.FC = () => {
     ? ((richieste_corsi.data ?? []) as any[]).filter((r) => r.stato === "in_attesa").length
     : null;
   const domande_in_attesa = domande.isSuccess ? (domande.data ?? []).length : null;
+  const prove = use_richieste_prova();
+  const prove_nuove = prove.isSuccess
+    ? (prove.data ?? []).filter((r) => r.stato === "nuova").length
+    : null;
 
   const Bollino: React.FC<{ n: number | null }> = ({ n }) =>
     n && n > 0 ? (
@@ -77,6 +82,10 @@ const RichiesteIscrizionePage: React.FC = () => {
             {k("tabs.corsi")}
             <Bollino n={corsi_in_attesa} />
           </TabsTrigger>
+          <TabsTrigger value="prove">
+            {k("tabs.prove")}
+            <Bollino n={prove_nuove} />
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="rinnovi" className="mt-5">
@@ -87,6 +96,9 @@ const RichiesteIscrizionePage: React.FC = () => {
         </TabsContent>
         <TabsContent value="corsi" className="mt-5">
           <TabRichiesteCorsi puo_gestire_sportivo={puo_gestire_sportivo} />
+        </TabsContent>
+        <TabsContent value="prove" className="mt-5">
+          <TabProveGratuite puo_gestire={puo_gestire_sportivo} />
         </TabsContent>
       </Tabs>
     </div>
