@@ -489,6 +489,10 @@ const IstruttoreDashboard: React.FC = () => {
                 {prossimo_query.data.griglia_blocchi?.titolo && (
                   <p className="text-sm text-muted-foreground">{prossimo_query.data.griglia_blocchi.titolo}</p>
                 )}
+                {comando_assenza(
+                  prossimo_query.data.griglia_blocchi?.data ?? oggi,
+                  prossimo_query.data.ora_inizio,
+                )}
               </div>
             )}
             {prossimo_query.isSuccess && !prossimo_query.data && (
