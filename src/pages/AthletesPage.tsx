@@ -197,6 +197,18 @@ const AtletaModal: React.FC<{
     set_form((p) => ({ ...p, [k]: v }));
   }, []);
 
+  // Opzioni "livello in preparazione": dalla progressione (atleta-livello.ts),
+  // non dalla fase della tabella livelli. Il valore salvato resta in cima se
+  // non compare nell'elenco calcolato.
+  const opzioni_in_preparazione = useMemo(
+    () =>
+      opzioni_in_preparazione_con_salvato(
+        { ...atleta, livello_attuale: form.livello_attuale },
+        form.livello_in_preparazione,
+      ),
+    [atleta, form.livello_attuale, form.livello_in_preparazione],
+  );
+
   // Regola di formattazione: ogni parola con iniziale maiuscola, resto minuscolo
   const normalizza_campo = useCallback((k: string, tipo: "nome" | "indirizzo" | "email" = "nome") => {
     set_form((p) => {
