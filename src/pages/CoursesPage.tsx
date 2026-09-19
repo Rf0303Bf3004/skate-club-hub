@@ -2000,12 +2000,10 @@ const CorsoModal: React.FC<{
               </Field>
 
               <Field label={t("modal.required_level")}>
-                <SelectLivello
+                <SelectLivelli
                   value={form.livello_richiesto}
-                  onChange={(v) => set_val("livello_richiesto", v)}
-                  fase="qualsiasi"
-                  allowNull={true}
-                  nullLabel={t("modal.open_to_all_levels")}
+                  onChange={(v) => { set_errore_livello(null); set_val("livello_richiesto", v); }}
+                  errore={errore_livello}
                 />
               </Field>
 
