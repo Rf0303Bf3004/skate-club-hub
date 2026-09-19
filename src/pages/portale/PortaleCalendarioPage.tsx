@@ -1,7 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Loader2, Calendar as CalIcon, Clock, MapPin, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Calendar as CalIcon, Clock, MapPin, X, AlertTriangle } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { segnala_errore } from "@/lib/errori";
 import type { PortaleSession } from "@/lib/portale-auth";
 
 interface Evento {
@@ -13,6 +17,7 @@ interface Evento {
   nome_evento: string | null;
   luogo: string | null;
   stato: string;
+  riferimento_id: string | null;
 }
 
 const TIPO_META: Record<string, { label: string; bg: string; border: string; text: string }> = {
@@ -44,14 +49,24 @@ function lunedi_di(d: Date) {
 }
 function add_days(d: Date, n: number) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
 function ora_to_min(s: string | null): number { if (!s) return 0; const [h, m] = s.split(":").map(Number); return (h ?? 0) * 60 + (m ?? 0); }
+// Il calendario porta il corso, il planning porta la sessione: si incrociano su corso + giorno + ora.
+function chiave_sessione(corso_id: string | null, data: string | null, ora: string | null): string {
+  return `${corso_id ?? ""}|${data ?? ""}|${(ora ?? "").slice(0, 5)}`;
+}
 
 const PortaleCalendarioPage: React.FC = () => {
   const { session } = useOutletContext<{ session: PortaleSession }>();
+  const { t } = useTranslation("portale");
   const [oggi_ref] = useState(() => new Date());
   const [week_start, set_week_start] = useState<Date>(() => lunedi_di(new Date()));
   const [eventi, set_eventi] = useState<Evento[]>([]);
   const [loading, set_loading] = useState(true);
   const [selected, set_selected] = useState<Evento | null>(null);
+  // Sessioni del planning della settimana: chiave corso|data|ora → planning_corsi_settimana.id
+  const [planning_map, set_planning_map] = useState<Map<string, string>>(new Map());
+  const [assenze, set_assenze] = useState<Set<string>>(new Set());
+  const [errore_assenze, set_errore_assenze] = useState(false);
+  const [busy_assenza, set_busy_assenza] = useState(false);
 
   const week_end = useMemo(() => add_days(week_start, 6), [week_start]);
 
@@ -61,7 +76,7 @@ const PortaleCalendarioPage: React.FC = () => {
     (async () => {
       const { data } = await supabase
         .from("eventi_calendario" as any)
-        .select("id, tipo, data, ora_inizio, ora_fine, nome_evento, luogo, stato")
+        .select("id, tipo, data, ora_inizio, ora_fine, nome_evento, luogo, stato, riferimento_id")
         .eq("atleta_id", session.atleta.id)
         .gte("data", format_iso(week_start))
         .lte("data", format_iso(week_end))
@@ -74,6 +89,71 @@ const PortaleCalendarioPage: React.FC = () => {
     })();
     return () => { active = false; };
   }, [session.atleta.id, week_start, week_end]);
+
+  // Sessioni del planning + assenze già annunciate, sullo stesso intervallo mostrato.
+  const carica_assenze = React.useCallback(async () => {
+    const dal = format_iso(week_start);
+    const al = format_iso(week_end);
+    set_errore_assenze(false);
+    const [plan_res, ass_res] = await Promise.all([
+      supabase
+        .from("planning_corsi_settimana")
+        .select("id, corso_id, data, ora_inizio, annullato")
+        .gte("data", dal)
+        .lte("data", al),
+      supabase.rpc("assenze_dichiarate", { p_dal: dal, p_al: al }),
+    ]);
+    if (plan_res.error || ass_res.error) {
+      segnala_errore(
+        "PortaleCalendarioPage",
+        "assenze_dichiarate",
+        plan_res.error ?? ass_res.error,
+        undefined,
+        "avviso",
+      );
+      set_errore_assenze(true);
+      set_planning_map(new Map());
+      set_assenze(new Set());
+      return;
+    }
+    const mappa = new Map<string, string>();
+    ((plan_res.data ?? []) as any[]).forEach((p) => {
+      if (p.annullato) return;
+      mappa.set(chiave_sessione(p.corso_id, p.data, p.ora_inizio), p.id as string);
+    });
+    set_planning_map(mappa);
+    set_assenze(new Set(((ass_res.data ?? []) as any[]).map((r) => r.planning_id as string)));
+  }, [week_start, week_end]);
+
+  useEffect(() => { carica_assenze(); }, [carica_assenze]);
+
+  const planning_id_di = (ev: Evento | null): string | null => {
+    if (!ev || ev.tipo !== "corso" || !ev.riferimento_id) return null;
+    return planning_map.get(chiave_sessione(ev.riferimento_id, ev.data, ev.ora_inizio)) ?? null;
+  };
+
+  const e_futuro = (ev: Evento) =>
+    new Date(`${ev.data}T${(ev.ora_inizio ?? "00:00").slice(0, 8)}`).getTime() > Date.now();
+
+  const cambia_assenza = async (planning_id: string, assente: boolean) => {
+    set_busy_assenza(true);
+    const { error } = await supabase.rpc("dichiara_assenza", {
+      p_planning_id: planning_id,
+      p_assente: assente,
+    });
+    set_busy_assenza(false);
+    if (error) {
+      segnala_errore("PortaleCalendarioPage", "dichiara_assenza", error);
+      toast.error(t("assenze.errore"));
+      return;
+    }
+    set_assenze((prec) => {
+      const copia = new Set(prec);
+      if (assente) copia.add(planning_id); else copia.delete(planning_id);
+      return copia;
+    });
+    toast.success(assente ? t("assenze.salvato") : t("assenze.ritirato"));
+  };
 
   const giorni = useMemo(() => Array.from({ length: 7 }, (_, i) => add_days(week_start, i)), [week_start]);
   const today_iso = format_iso(oggi_ref);
@@ -232,6 +312,12 @@ const PortaleCalendarioPage: React.FC = () => {
                                 <span className={`inline-block w-1.5 h-1.5 rounded-full ${meta.bg} mr-1 align-middle`} />
                                 {meta.label}{ev.luogo ? ` · ${ev.luogo}` : ""}
                               </p>
+                              {(() => {
+                                const pid = planning_id_di(ev);
+                                return pid && assenze.has(pid) ? (
+                                  <p className="text-[11px] font-semibold text-rose-600">{t("assenze.avvisato")}</p>
+                                ) : null;
+                              })()}
                             </div>
                           </button>
                         </li>
@@ -292,6 +378,54 @@ const PortaleCalendarioPage: React.FC = () => {
                   </div>
                 )}
               </div>
+
+              {/* Annunciare un'assenza: solo sugli allenamenti futuri con una sessione del planning. */}
+              {(() => {
+                const planning_id = planning_id_di(selected);
+                if (!planning_id || !e_futuro(selected)) {
+                  return errore_assenze && selected.tipo === "corso" && e_futuro(selected) ? (
+                    <div className="mt-5 flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <div className="flex-1">
+                        <p>{t("assenze.errore_lettura")}</p>
+                        <Button variant="outline" size="sm" className="mt-2" onClick={carica_assenze}>
+                          {t("assenze.riprova")}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null;
+                }
+                const gia_assente = assenze.has(planning_id);
+                return (
+                  <div className="mt-5 border-t border-slate-100 pt-4">
+                    {gia_assente ? (
+                      <div className="space-y-2">
+                        <p className="text-sm font-semibold text-rose-600">{t("assenze.avvisato")}</p>
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          disabled={busy_assenza}
+                          onClick={() => cambia_assenza(planning_id, false)}
+                        >
+                          {t("assenze.invece_ci_saro")}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-sm text-slate-600">{t("assenze.attesa")}</p>
+                        <Button
+                          variant="outline"
+                          className="w-full border-rose-300 text-rose-600 hover:bg-rose-50"
+                          disabled={busy_assenza}
+                          onClick={() => cambia_assenza(planning_id, true)}
+                        >
+                          {t("assenze.non_posso")}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

@@ -1,12 +1,17 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery, useQueries } from "@tanstack/react-query";
+import { useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { AlertTriangle, CalendarDays, CheckCircle2, ClipboardCheck, Mail, Users } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/hooks/use-toast";
 import { segnala_errore } from "@/lib/errori";
 import { useAuth } from "@/lib/auth";
 
@@ -267,6 +272,104 @@ const IstruttoreDashboard: React.FC = () => {
     return righe;
   }, [messaggi_query.data]);
 
+  // 4) Promemoria dei miei turni: servono per poter avvisare un'assenza.
+  //    Senza riga di promemoria il comando non compare: non si inventano righe.
+  const qc = useQueryClient();
+  const [da_confermare, set_da_confermare] = React.useState<string | null>(null);
+  const [in_invio, set_in_invio] = React.useState(false);
+
+  const reminder_query = useQuery({
+    queryKey: ["istruttore_home_reminder_turni", session?.user_id],
+    enabled: !!session?.user_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("comunicazioni_destinatari_staff")
+        .select("id, rsvp_risposta, creato_at, comunicazioni!inner(planning_corso_id, sotto_tipo)")
+        .eq("user_id", session?.user_id as string)
+        .eq("comunicazioni.sotto_tipo", "reminder_staff")
+        .order("creato_at", { ascending: false })
+        .limit(60);
+      if (error) {
+        segnala_errore("IstruttoreDashboard", "reminder_staff", error);
+        throw new Error(error.message);
+      }
+      const righe = (data ?? []) as unknown as {
+        id: string;
+        rsvp_risposta: string | null;
+        comunicazioni: { planning_corso_id: string | null } | null;
+      }[];
+      const ids = [...new Set(righe.map((r) => r.comunicazioni?.planning_corso_id).filter(Boolean) as string[])];
+      if (ids.length === 0) return [] as { dest_id: string; rsvp_risposta: string | null; chiave: string }[];
+      const { data: sessioni_plan, error: err_plan } = await supabase
+        .from("planning_corsi_settimana")
+        .select("id, data, ora_inizio")
+        .in("id", ids);
+      if (err_plan) {
+        segnala_errore("IstruttoreDashboard", "planning_corsi_settimana", err_plan);
+        throw new Error(err_plan.message);
+      }
+      const per_id = new Map(
+        ((sessioni_plan ?? []) as any[]).map((p) => [p.id as string, `${p.data}|${String(p.ora_inizio ?? "").slice(0, 5)}`]),
+      );
+      return righe
+        .map((r) => {
+          const chiave = per_id.get(r.comunicazioni?.planning_corso_id ?? "");
+          return chiave ? { dest_id: r.id, rsvp_risposta: r.rsvp_risposta, chiave } : null;
+        })
+        .filter(Boolean) as { dest_id: string; rsvp_risposta: string | null; chiave: string }[];
+    },
+  });
+
+  const reminder_per_turno = React.useMemo(() => {
+    const m = new Map<string, { dest_id: string; rsvp_risposta: string | null }>();
+    (reminder_query.data ?? []).forEach((r) => {
+      if (!m.has(r.chiave)) m.set(r.chiave, { dest_id: r.dest_id, rsvp_risposta: r.rsvp_risposta });
+    });
+    return m;
+  }, [reminder_query.data]);
+
+  const invia_assenza = async (dest_id: string) => {
+    set_in_invio(true);
+    const { error } = await supabase
+      .from("comunicazioni_destinatari_staff")
+      .update({ rsvp_risposta: "no", rsvp_at: new Date().toISOString(), stato: "rifiutato" })
+      .eq("id", dest_id);
+    set_in_invio(false);
+    if (error) {
+      segnala_errore("IstruttoreDashboard", "assenza_staff", error);
+      toast({ title: t("istruttore_home.assenza_errore"), variant: "destructive" });
+      return;
+    }
+    toast({ title: t("istruttore_home.assenza_inviata") });
+    qc.invalidateQueries({ queryKey: ["istruttore_home_reminder_turni"] });
+    qc.invalidateQueries({ queryKey: ["miei_reminder_staff"] });
+  };
+
+  // Un turno e il suo promemoria si incrociano su giorno + ora d'inizio.
+  const comando_assenza = (data_turno: string, ora_inizio: string | null) => {
+    const r = reminder_per_turno.get(`${data_turno}|${ora_breve(ora_inizio)}`);
+    if (!r) return null;
+    if (r.rsvp_risposta === "no") {
+      return (
+        <p className="mt-2 text-sm font-medium text-destructive">
+          {t("istruttore_home.assenza_fatta")}
+        </p>
+      );
+    }
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="mt-2 h-auto px-0 text-sm text-muted-foreground underline underline-offset-2 hover:bg-transparent"
+        disabled={in_invio}
+        onClick={() => set_da_confermare(r.dest_id)}
+      >
+        {t("istruttore_home.assenza_non_posso")}
+      </Button>
+    );
+  };
+
+
   const data_estesa = (iso: string) =>
     new Date(`${iso}T00:00:00`).toLocaleDateString(i18n.language, {
       weekday: "long",
@@ -323,6 +426,7 @@ const IstruttoreDashboard: React.FC = () => {
         {sessioni_query.isError && (
           <Errore testo={t("istruttore_home.errore_turni", "Non è stato possibile leggere i tuoi turni di oggi. Riprova fra poco.")} />
         )}
+        {reminder_query.isError && <Errore testo={t("istruttore_home.errore_reminder")} />}
         {sessioni_query.isSuccess && sessioni.length > 0 &&
           sessioni.map((s, i) => {
             const evidenziata = i === indice_evidenziato;
@@ -360,6 +464,7 @@ const IstruttoreDashboard: React.FC = () => {
                     {t("istruttore_home.fai_appello", "Fai l'appello")}
                   </Button>
                 )}
+                {comando_assenza(oggi, s.ora_inizio)}
               </div>
             );
           })}
@@ -384,6 +489,10 @@ const IstruttoreDashboard: React.FC = () => {
                 </p>
                 {prossimo_query.data.griglia_blocchi?.titolo && (
                   <p className="text-sm text-muted-foreground">{prossimo_query.data.griglia_blocchi.titolo}</p>
+                )}
+                {comando_assenza(
+                  prossimo_query.data.griglia_blocchi?.data ?? oggi,
+                  prossimo_query.data.ora_inizio,
                 )}
               </div>
             )}
@@ -466,6 +575,28 @@ const IstruttoreDashboard: React.FC = () => {
           </Button>
         )}
       </Blocco>
+
+      <AlertDialog open={!!da_confermare} onOpenChange={(v) => { if (!v) set_da_confermare(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("istruttore_home.assenza_conferma_titolo")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("istruttore_home.assenza_conferma_testo")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("istruttore_home.assenza_annulla")}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={in_invio}
+              onClick={() => {
+                const id = da_confermare;
+                set_da_confermare(null);
+                if (id) invia_assenza(id);
+              }}
+            >
+              {t("istruttore_home.assenza_conferma_ok")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
