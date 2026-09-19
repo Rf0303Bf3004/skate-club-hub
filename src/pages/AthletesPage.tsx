@@ -1096,19 +1096,19 @@ const AthletesPage: React.FC = () => {
               <p className="text-sm text-muted-foreground mt-1">{t2("quick.description")}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Field label={t("modal.name")} required>
+              <Field label={t2("modal.name")} required>
                 <Input value={quick_form.nome} onChange={(e) => set_quick_form((p) => ({ ...p, nome: e.target.value }))} onBlur={() => set_quick_form((p) => ({ ...p, nome: capitalizza_nome(p.nome) }))} />
               </Field>
-              <Field label={t("modal.surname")} required>
+              <Field label={t2("modal.surname")} required>
                 <Input value={quick_form.cognome} onChange={(e) => set_quick_form((p) => ({ ...p, cognome: e.target.value }))} onBlur={() => set_quick_form((p) => ({ ...p, cognome: capitalizza_nome(p.cognome) }))} />
               </Field>
-              <Field label={t("quick.parent_email")}>
+              <Field label={t2("quick.parent_email")}>
                 <Input type="email" value={quick_form.genitore1_email} onChange={(e) => set_quick_form((p) => ({ ...p, genitore1_email: e.target.value }))} onBlur={() => set_quick_form((p) => ({ ...p, genitore1_email: normalizza_email(p.genitore1_email) }))} />
               </Field>
-              <Field label={t("quick.parent_phone")}>
+              <Field label={t2("quick.parent_phone")}>
                 <Input type="tel" value={quick_form.genitore1_telefono} onChange={(e) => set_quick_form((p) => ({ ...p, genitore1_telefono: e.target.value }))} />
               </Field>
-              <Field label={t("quick.initial_level")} required>
+              <Field label={t2("quick.initial_level")} required>
                 <Select value={quick_form.livello || undefined} onValueChange={(v) => set_quick_form((p) => ({ ...p, livello: v }))}>
                   <SelectTrigger><SelectValue placeholder={t2("quick.select_level")} /></SelectTrigger>
                   <SelectContent>
@@ -1116,7 +1116,7 @@ const AthletesPage: React.FC = () => {
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label={t("quick.in_preparation")}>
+              <Field label={t2("quick.in_preparation")}>
                 <Select value={quick_form.livello_prep || undefined} onValueChange={(v) => set_quick_form((p) => ({ ...p, livello_prep: v }))}>
                   <SelectTrigger><SelectValue placeholder={t2("quick.optional")} /></SelectTrigger>
                   <SelectContent>
@@ -1139,7 +1139,7 @@ const AthletesPage: React.FC = () => {
               >
                 {t2("quick.full_form_button")}
               </Button>
-              <Button variant="ghost" onClick={() => set_quick_open(false)} disabled={quick_saving}>{t("quick.cancel")}</Button>
+              <Button variant="ghost" onClick={() => set_quick_open(false)} disabled={quick_saving}>{t2("quick.cancel")}</Button>
               <Button onClick={crea_atleta_rapido} disabled={quick_saving}>
                 {quick_saving ? t2("quick.creating") : t2("quick.create_print")}
               </Button>
