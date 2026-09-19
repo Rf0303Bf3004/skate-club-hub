@@ -69,6 +69,7 @@ import SuperAdminAppMobilePage from "@/pages/SuperAdminAppMobilePage";
 import SuperAdminTraduzioniPage from "@/pages/SuperAdminTraduzioniPage";
 import ConvenzioniSociPage from "@/pages/ConvenzioniSociPage";
 import AvvioClubPage from "@/pages/AvvioClubPage";
+import EsportazioniPage from "@/pages/EsportazioniPage";
 import ConvenzionePubblicaPage from "@/pages/ConvenzionePubblicaPage";
 import CampoOspitePubblicoPage from "@/pages/CampoOspitePubblicoPage";
 import PortaleLoginPage from "@/pages/portale/PortaleLoginPage";
