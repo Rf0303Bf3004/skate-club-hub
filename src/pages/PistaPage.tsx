@@ -725,7 +725,7 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
         )}
         {presenti.map((atleta) => {
           const titolo = `${atleta.cognome} ${atleta.nome}`;
-          const suoi = programmi_per_atleta.get(atleta.atleta_id) ?? [];
+          const disco = bottone_disco(atleta.atleta_id, titolo);
           const sue_note = note_per_atleta.get(atleta.atleta_id) ?? [];
           return (
             <div
