@@ -960,12 +960,14 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
           </Button>
 
           {/* Uscita definitiva del tablet, dietro un menu discreto: dimentica il codice
-              conservato ed è rara, non deve stare accanto a bottoni toccati di continuo. */}
+              conservato ed è rara, non deve stare accanto a bottoni toccati di continuo.
+              È l'unico comando che non si stringe mai: resta in testo intero e
+              va a capo dentro il bottone se la larghezza manca. */}
           {sessione_pista && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="lg" aria-label={t("pista.scollega")}>
-                  <MoreVertical className="mr-2 h-5 w-5" />
+                <Button variant="outline" size="lg" className="whitespace-normal" aria-label={t("pista.scollega")}>
+                  <MoreVertical className="mr-2 h-5 w-5 shrink-0" />
                   {t("pista.scollega")}
                 </Button>
               </DropdownMenuTrigger>
@@ -978,6 +980,7 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
             </DropdownMenu>
           )}
         </div>
+
       </header>
 
       {puo_scegliere_momento && pannello_momento && (
