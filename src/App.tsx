@@ -500,6 +500,7 @@ const AuthenticatedApp = () => {
           <Route path="/pacchetti-sponsor" element={<SezioneGuard codice_sezione="pacchetti_sponsor"><PacchettiSponsorPage /></SezioneGuard>} />
           <Route path="/convenzioni" element={<SoloPresidenteGuard><ConvenzioniSociPage /></SoloPresidenteGuard>} />
           <Route path="/avvio" element={<SoloPresidenteGuard><AvvioClubPage /></SoloPresidenteGuard>} />
+          <Route path="/esportazioni" element={<SoloPresidenteGuard><EsportazioniPage /></SoloPresidenteGuard>} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/presidente/relazione" element={<SoloPresidenteGuard ruoli_extra={["dt"]}><PresidentRelazione /></SoloPresidenteGuard>} />
           <Route path="/presidente/relazione/contenuti" element={<Navigate to="/presidente/relazione" replace />} />
