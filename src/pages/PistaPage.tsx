@@ -280,9 +280,12 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
     if (sessioni.length === 0) return;
     if (modificato) return;
     if (scelta_manuale && sessione_id && sessioni.some((s) => s.sessione_id === sessione_id)) return;
+    // Prima la sessione in corso. Se non ce n'è nessuna, l'ultima già cominciata
+    // oggi (non la prossima, che è ancora bloccata); in mancanza, la prima del giorno.
     const in_corso = sessioni.find((s) => e_in_corso(s));
-    const prossima = sessioni.find((s) => (minuti_da_ora(s.ora_inizio) ?? 0) >= minuti_riferimento);
-    const scelta = (in_corso ?? prossima ?? sessioni[sessioni.length - 1]).sessione_id;
+    const gia_cominciate = sessioni.filter((s) => (minuti_da_ora(s.ora_inizio) ?? -1) <= minuti_riferimento);
+    const ultima_cominciata = gia_cominciate[gia_cominciate.length - 1];
+    const scelta = (in_corso ?? ultima_cominciata ?? sessioni[0]).sessione_id;
     if (scelta !== sessione_id) {
       // Cambio automatico di sessione: si riparte dall'appello della nuova
       // sessione, mai restando nell'elenco della precedente.
