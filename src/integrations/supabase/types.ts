@@ -9706,6 +9706,13 @@ export type Database = {
       }
       archivia_comunicazioni_vecchie: { Args: never; Returns: number }
       arrotonda_chf: { Args: { p: number }; Returns: number }
+      assenze_dichiarate: {
+        Args: { p_al: string; p_dal: string }
+        Returns: {
+          data: string
+          planning_id: string
+        }[]
+      }
       attesa_prima_di_riprovare: {
         Args: { p_origine: string }
         Returns: {
@@ -9871,6 +9878,10 @@ export type Database = {
           esito: string
           passo: number
         }[]
+      }
+      dichiara_assenza: {
+        Args: { p_assente?: boolean; p_planning_id: string }
+        Returns: undefined
       }
       documenti_oltre_conservazione: {
         Args: { p_anni?: number; p_club?: string }
