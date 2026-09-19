@@ -457,7 +457,9 @@ const AreaCard: React.FC<{
         ? "bg-amber-50 text-amber-700"
         : stato === "mancante"
           ? "bg-rose-50 text-rose-700"
-          : "bg-muted text-muted-foreground";
+          : stato === "senza_dati"
+            ? "bg-muted text-muted-foreground"
+            : "bg-muted text-muted-foreground";
   return (
     <article className="rounded-lg border bg-card p-6 shadow-sm">
       <button type="button" onClick={on_open} className="w-full text-left focus:outline-none focus:ring-2 focus:ring-ring rounded-md">
