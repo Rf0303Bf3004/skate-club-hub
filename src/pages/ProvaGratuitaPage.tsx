@@ -34,7 +34,7 @@ const Campo: React.FC<{ label: string; children: React.ReactNode }> = ({ label, 
 const ProvaGratuitaPage: React.FC = () => {
   const { slug } = useParams();
   const { t } = useTranslation("common");
-  const k = (s: string) => t(`prova_gratuita.${s}`) as string;
+  const k = (s: string, o?: Record<string, unknown>) => t(`prova_gratuita.${s}`, o as any) as string;
 
   const [is_loading, set_is_loading] = useState(true);
   const [club, set_club] = useState<ClubPubblico | null>(null);
