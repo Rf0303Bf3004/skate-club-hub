@@ -1002,6 +1002,52 @@ const AthletesPage: React.FC = () => {
   };
 
 
+  // Esporta in Excel le righe attualmente filtrate e ordinate a schermo.
+  // Le colonne sono esattamente quelle del modello di importazione
+  // (src/lib/atleti-colonne.ts): il file si può reimportare così com'è.
+  const esporta_excel = () => {
+    if (filtered.length === 0) return;
+    const si = t2("filters.yes");
+    const no = t2("filters.no");
+    const header = [
+      ...TARGET_FIELDS.map((f) => TEMPLATE_HEADERS[f.key]),
+      t2("header.export_col_code"),
+      t2("header.export_col_active"),
+    ];
+    const righe = filtered.map((a: any) => {
+      const livello = get_livello_display(a);
+      return [
+        a.nome ?? "",
+        a.cognome ?? "",
+        formatta_data_ch(a.data_nascita),
+        a.sesso ?? "",
+        a.telefono ?? "",
+        livello === "—" ? "" : livello,
+        a.categoria ?? "",
+        a.genitore1_email ?? "",
+        a.genitore1_telefono ?? "",
+        a.genitore1_nome ?? "",
+        a.genitore1_cognome ?? "",
+        a.genitore1_indirizzo ?? "",
+        a.genitore1_cap ?? "",
+        a.genitore1_citta ?? "",
+        a.genitore1_cantone ?? "",
+        a.codice_atleta ?? "",
+        a.attivo !== false ? si : no,
+      ];
+    });
+    const ws = XLSX.utils.aoa_to_sheet([header, ...righe]);
+    ws["!cols"] = [
+      { wch: 14 }, { wch: 16 }, { wch: 12 }, { wch: 6 }, { wch: 15 },
+      { wch: 14 }, { wch: 10 }, { wch: 26 }, { wch: 15 }, { wch: 14 },
+      { wch: 16 }, { wch: 24 }, { wch: 7 }, { wch: 14 }, { wch: 8 },
+      { wch: 14 }, { wch: 7 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Atleti");
+    XLSX.writeFile(wb, nome_file_atleti(club?.nome));
+  };
+
   const handle_save = async (data_in: any) => {
     const data = {
       ...data_in,
