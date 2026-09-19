@@ -574,6 +574,28 @@ const IstruttoreDashboard: React.FC = () => {
           </Button>
         )}
       </Blocco>
+
+      <AlertDialog open={!!da_confermare} onOpenChange={(v) => { if (!v) set_da_confermare(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("istruttore_home.assenza_conferma_titolo")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("istruttore_home.assenza_conferma_testo")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("istruttore_home.assenza_annulla")}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={in_invio}
+              onClick={() => {
+                const id = da_confermare;
+                set_da_confermare(null);
+                if (id) invia_assenza(id);
+              }}
+            >
+              {t("istruttore_home.assenza_conferma_ok")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
