@@ -10527,6 +10527,15 @@ export type Database = {
           voce: string
         }[]
       }
+      rinnovo_da_confermare: {
+        Args: never
+        Returns: {
+          scadenza: string
+          stagione_id: string
+          stagione_nome: string
+          status: string
+        }[]
+      }
       rispondi_invito_test: {
         Args: { p_invito: string; p_risposta: string }
         Returns: {
