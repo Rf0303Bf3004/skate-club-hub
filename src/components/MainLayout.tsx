@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { Users, Settings, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, ChevronDown, ChevronRight, FileText, Search, LayoutGrid, BadgePercent, Smartphone, Rocket } from "lucide-react";
+import { Users, Settings, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, ChevronDown, ChevronRight, FileText, Search, LayoutGrid, BadgePercent, Smartphone, Rocket, FileSpreadsheet } from "lucide-react";
 import GlobalSearchPalette from "@/components/common/GlobalSearchPalette";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
