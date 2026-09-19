@@ -19,32 +19,10 @@ import { CATEGORIE, get_categoria_label, type Categoria } from "@/lib/atleta-liv
 const ti = (key: string, opts?: any) => i18n.t(`import.${key}`, { ns: "atleti", ...(opts || {}) }) as string;
 
 // ──────────────────────────────────────────────────────────────────
-// Tipi & costanti
+// Tipi & costanti — colonne del modello condivise con l'esportazione
+// (src/lib/atleti-colonne.ts è l'unica fonte: non duplicarle qui).
 // ──────────────────────────────────────────────────────────────────
-
-/**
- * `colonna` è la colonna della tabella `atleti` su cui finisce davvero il dato:
- * le etichette devono dire la verità su dove va a scrivere ogni campo.
- */
-const TARGET_FIELDS = [
-  { key: "nome",                label_key: "field.nome",                colonna: "nome",                required: true  },
-  { key: "cognome",             label_key: "field.cognome",             colonna: "cognome",             required: true  },
-  { key: "data_nascita",        label_key: "field.data_nascita",        colonna: "data_nascita",        required: true  },
-  { key: "sesso",               label_key: "field.sesso",               colonna: "sesso",               required: false },
-  { key: "telefono",            label_key: "field.telefono_atleta",            colonna: "telefono",            required: false },
-  { key: "livello",             label_key: "field.livello",             colonna: "livello_attuale",     required: false },
-  { key: "categoria",           label_key: "field.categoria",           colonna: "categoria",           required: false },
-  { key: "email",               label_key: "field.email_genitore",               colonna: "genitore1_email",     required: false },
-  { key: "genitore1_telefono",  label_key: "field.genitore1_telefono",  colonna: "genitore1_telefono",  required: false },
-  { key: "genitore1_nome",      label_key: "field.genitore1_nome",      colonna: "genitore1_nome",      required: false },
-  { key: "genitore1_cognome",   label_key: "field.genitore1_cognome",   colonna: "genitore1_cognome",   required: false },
-  { key: "genitore1_indirizzo", label_key: "field.genitore1_indirizzo", colonna: "genitore1_indirizzo", required: false },
-  { key: "genitore1_cap",       label_key: "field.genitore1_cap",       colonna: "genitore1_cap",       required: false },
-  { key: "genitore1_citta",     label_key: "field.genitore1_citta",     colonna: "genitore1_citta",     required: false },
-  { key: "genitore1_cantone",   label_key: "field.genitore1_cantone",   colonna: "genitore1_cantone",   required: false },
-] as const;
-
-type TargetKey = typeof TARGET_FIELDS[number]["key"];
+import { TARGET_FIELDS, TEMPLATE_HEADERS, TEMPLATE_ESEMPIO, type TargetKey } from "@/lib/atleti-colonne";
 
 const SYNONYMS: Record<TargetKey, string[]> = {
   nome:         ["nome", "name", "first name", "firstname"],
@@ -64,42 +42,6 @@ const SYNONYMS: Record<TargetKey, string[]> = {
   genitore1_cantone:   ["cantone", "canton", "ct", "kanton"],
 };
 
-/** Campi che il modello scaricabile propone, nell'ordine dell'intestazione. */
-const TEMPLATE_HEADERS: Record<TargetKey, string> = {
-  nome: "nome",
-  cognome: "cognome",
-  data_nascita: "data_nascita",
-  sesso: "sesso",
-  telefono: "telefono",
-  livello: "livello",
-  categoria: "categoria",
-  email: "email genitore",
-  genitore1_telefono: "telefono genitore",
-  genitore1_nome: "nome genitore",
-  genitore1_cognome: "cognome genitore",
-  genitore1_indirizzo: "indirizzo",
-  genitore1_cap: "cap",
-  genitore1_citta: "localita",
-  genitore1_cantone: "cantone",
-};
-
-const TEMPLATE_ESEMPIO: Record<TargetKey, string> = {
-  nome: "Mario",
-  cognome: "Rossi",
-  data_nascita: "12.05.2010",
-  sesso: "M",
-  telefono: "+41791234567",
-  livello: "Stellina 2",
-  categoria: "amatori",
-  email: "famiglia.rossi@example.com",
-  genitore1_telefono: "+41791112233",
-  genitore1_nome: "Anna",
-  genitore1_cognome: "Rossi",
-  genitore1_indirizzo: "Via del Ghiaccio 12",
-  genitore1_cap: "6900",
-  genitore1_citta: "Lugano",
-  genitore1_cantone: "TI",
-};
 
 /** Oltre questa soglia l'anteprima non disegna tutte le righe. */
 const SOGLIA_RIGHE = 500;

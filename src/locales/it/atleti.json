@@ -332,7 +332,11 @@
     "to_verify_tooltip": "Mostra solo le atlete da verificare",
     "to_verify_button": "{{count}} da verificare",
     "only_to_verify": "Solo da verificare",
-    "import_excel": "Importa da Excel"
+    "import_excel": "Importa da Excel",
+    "export_excel": "Esporta in Excel",
+    "export_empty": "Nessuna atleta da esportare con i filtri attuali",
+    "export_col_code": "codice atleta",
+    "export_col_active": "attivo"
   },
   "cards": {
     "pulcini": "Pulcini",
