@@ -47,5 +47,9 @@
     "confirmed_on": "✓ Teilnahme bestätigt am {{data}}",
     "refused_on": "❌ Abwesenheit gemeldet am {{data}}",
     "waiting": "Teilnahme erwartet"
+  },
+  "dialog": {
+    "level_filter_hint": "Ein oder mehrere Niveaus ankreuzen: Nur Athletinnen der gewählten Niveaus erhalten die Mitteilung. Ohne Auswahl geht sie an niemanden.",
+    "level_nessuno_selezionato": "Kein Niveau ausgewählt: null Empfänger, der Versand bleibt gesperrt."
   }
 }

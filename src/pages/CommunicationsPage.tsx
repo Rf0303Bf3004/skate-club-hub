@@ -28,6 +28,9 @@ import { usePermessiAzione } from '@/hooks/use-permessi-azione';
 import NotaPermesso from '@/components/common/NotaPermesso';
 import { conta_gruppi, is_automatica } from '@/lib/raggruppa-comunicazioni';
 import { AutomaticheTab } from '@/components/comunicazioni/AutomaticheTab';
+import { SelectLivelli } from '@/components/ui/select-livelli';
+import { is_apertura_totale, parse_livelli_corso } from '@/lib/livelli-corso';
+import { get_livello_display } from '@/lib/atleta-livello';
 
 
 function build_templates(t: (key: string) => string) {
@@ -89,28 +92,6 @@ function build_placeholder_labels(t: (key: string) => string): Record<string, st
   };
 }
 
-const LIVELLI_ORDER: Record<string, number> = {
-  Pulcini: 0,
-  'Stellina 1': 1,
-  'Stellina 2': 2,
-  'Stellina 3': 3,
-  'Stellina 4': 4,
-  Interbronzo: 5,
-  Bronzo: 6,
-  Interargento: 7,
-  Argento: 8,
-  Interoro: 9,
-  Oro: 10,
-};
-
-const SOGLIE_LIVELLO: Record<string, number> = {
-  pulcini_only: 0,
-  stellina_1_plus: 1,
-  bronzo_plus: 6,
-  argento_plus: 8,
-  oro_plus: 10,
-};
-
 function format_date_label(value: string) {
   if (!value) return '';
   return new Date(`${value}T00:00:00`).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -118,10 +99,6 @@ function format_date_label(value: string) {
 
 function get_atleta_livello_label(atleta: any) {
   return atleta?.carriera_artistica || atleta?.carriera_stile || atleta?.percorso_amatori || 'Pulcini';
-}
-
-function get_atleta_livello_rank(atleta: any) {
-  return LIVELLI_ORDER[get_atleta_livello_label(atleta)] ?? 0;
 }
 
 type RecipientPreviewRow = {
@@ -151,7 +128,7 @@ const CommunicationsPage: React.FC = () => {
   const [testo, set_testo] = useState('');
   const [tipo_destinatari, set_tipo_destinatari] = useState('tutti');
   const [corsi_ids, set_corsi_ids] = useState<string[]>([]);
-  const [livello_categoria, set_livello_categoria] = useState('stellina_1_plus');
+  const [livelli_selezionati, set_livelli_selezionati] = useState<string | null>(null);
   const [giorno_data, set_giorno_data] = useState('');
   const [istruttore_id, set_istruttore_id] = useState('');
   const [istruttore_data, set_istruttore_data] = useState('');
@@ -212,14 +189,25 @@ const CommunicationsPage: React.FC = () => {
     set_corsi_ids((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   };
 
+  const livelli_tutti = is_apertura_totale(livelli_selezionati);
+  const livelli_scelti = useMemo(() => parse_livelli_corso(livelli_selezionati), [livelli_selezionati]);
+
+  // Un'atleta è destinataria se il suo livello (fonte di verità: get_livello_display,
+  // che copre anche il campo legacy livello_attuale) è fra quelli spuntati.
+  // Nessuna soglia e nessun "da lì in su". Selezione vuota = nessun destinatario.
+  const atleta_in_livelli_scelti = (atleta: any): boolean => {
+    if (livelli_tutti) return true;
+    if (livelli_scelti.length === 0) return false;
+    const nome = (get_livello_display(atleta) || '').trim().toLowerCase();
+    if (!nome || nome === '—') return false;
+    return livelli_scelti.some((s) => s.trim().toLowerCase() === nome);
+  };
+
   const level_count = useMemo(() => {
     if (tipo_destinatari !== 'per_livello') return 0;
-    return atleti.filter((atleta: any) => {
-      const rank = get_atleta_livello_rank(atleta);
-      if (livello_categoria === 'pulcini_only') return rank === 0;
-      return rank >= (SOGLIE_LIVELLO[livello_categoria] ?? 0);
-    }).length;
-  }, [atleti, livello_categoria, tipo_destinatari]);
+    return atleti.filter((atleta: any) => atleta_in_livelli_scelti(atleta)).length;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [atleti, livelli_selezionati, tipo_destinatari]);
 
   const agoniste_count = useMemo(
     () => atleti.filter((a: any) => a.attivo !== false && (a.agonista === true || a.partecipa_gare === true)).length,
@@ -377,7 +365,7 @@ const CommunicationsPage: React.FC = () => {
     set_testo('');
     set_tipo_destinatari('tutti');
     set_corsi_ids([]);
-    set_livello_categoria('stellina_1_plus');
+    set_livelli_selezionati(null);
     set_giorno_data('');
     set_istruttore_id('');
     set_istruttore_data('');
@@ -434,12 +422,34 @@ const CommunicationsPage: React.FC = () => {
     const final_titolo = fill_placeholders(titolo, placeholders);
     const final_testo = fill_placeholders(testo, placeholders);
     const evt_id = tipo_evento_collegato !== 'nessuno' && evento_collegato_id ? evento_collegato_id : null;
+
+    // Per livello: i destinatari sono risolti qui, con lo stesso filtro del conteggio,
+    // e inviati come elenco esplicito. Selezione vuota = zero destinatari = non si invia.
+    if (tipo_destinatari === 'per_livello') {
+      const ids = atleti.filter((a: any) => atleta_in_livelli_scelti(a)).map((a: any) => a.id);
+      if (ids.length === 0) return;
+      await crea.mutateAsync({
+        titolo: final_titolo,
+        testo: final_testo,
+        tipo_destinatari: 'atleti',
+        corso_id: null,
+        livello_categoria: null,
+        atleta_ids_manuali: ids,
+        gara_id: tipo_evento_collegato === 'gara' ? evt_id : null,
+        evento_straordinario_id: tipo_evento_collegato === 'gala' ? evt_id : null,
+        test_livello_id: tipo_evento_collegato === 'test' ? evt_id : null,
+        urgente,
+      });
+      set_modal_open(false);
+      return;
+    }
+
     await crea.mutateAsync({
       titolo: final_titolo,
       testo: final_testo,
       tipo_destinatari,
       corso_id: null,
-      livello_categoria: tipo_destinatari === 'per_livello' ? livello_categoria : null,
+      livello_categoria: null,
       atleta_ids_manuali: tipo_destinatari === 'atleti'
         ? atleti_specifici_ids
         : (['per_corsi', 'per_giorno', 'per_istruttore'].includes(tipo_destinatari) ? selected_recipient_ids : null),
@@ -1037,22 +1047,16 @@ const CommunicationsPage: React.FC = () => {
 
               {tipo_destinatari === 'per_livello' && (
                 <div className="space-y-2">
-                  <div>
-                    <Label className="text-xs">{t('dialog.recipient_level')}</Label>
-                    <Select value={livello_categoria} onValueChange={set_livello_categoria}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pulcini_only">{t('dialog.level_pulcini_only')}</SelectItem>
-                        <SelectItem value="stellina_1_plus">{t('level_labels.stellina_1_plus')}</SelectItem>
-                        <SelectItem value="bronzo_plus">{t('level_labels.bronzo_plus')}</SelectItem>
-                        <SelectItem value="argento_plus">{t('level_labels.argento_plus')}</SelectItem>
-                        <SelectItem value="oro_plus">{t('level_labels.oro_plus')}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Label className="text-xs">{t('dialog.recipient_level')}</Label>
+                  <SelectLivelli value={livelli_selezionati} onChange={set_livelli_selezionati} />
                   <p className="text-[11px] text-muted-foreground leading-snug">
                     {t('dialog.level_filter_hint')}
                   </p>
+                  {!livelli_tutti && livelli_scelti.length === 0 && (
+                    <p className="text-[11px] text-amber-600 leading-snug">
+                      {t('dialog.level_nessuno_selezionato')}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -1175,7 +1179,8 @@ const CommunicationsPage: React.FC = () => {
                       crea.isPending ||
                       !titolo_preview.trim() ||
                       !testo_preview.trim() ||
-                      (tipo_destinatari === 'atleti' && atleti_specifici_ids.length === 0)
+                      (tipo_destinatari === 'atleti' && atleti_specifici_ids.length === 0) ||
+                      (tipo_destinatari === 'per_livello' && level_count === 0)
                     }
                   >
                     {crea.isPending ? '...' : t('dialog.send')}

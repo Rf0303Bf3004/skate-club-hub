@@ -47,5 +47,9 @@
     "confirmed_on": "✓ présence confirmée le {{data}}",
     "refused_on": "❌ absence signalée le {{data}}",
     "waiting": "présence attendue"
+  },
+  "dialog": {
+    "level_filter_hint": "Cochez un ou plusieurs niveaux : seules les athlètes des niveaux choisis reçoivent la communication. Sans aucune case cochée, elle ne part à personne.",
+    "level_nessuno_selezionato": "Aucun niveau sélectionné : zéro destinataire, l'envoi reste bloqué."
   }
 }
