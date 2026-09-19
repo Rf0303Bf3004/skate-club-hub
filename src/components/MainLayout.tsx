@@ -400,6 +400,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <span>Avvio del club</span>
             </NavLink>
           )}
+          {!is_superadmin && session && !is_nuovo_ruolo && puo_vedere_avvio && (
+            <NavLink to="/esportazioni" onClick={() => set_sidebar_open(false)}
+              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/esportazioni" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+              <FileSpreadsheet className="w-4 h-4 shrink-0" />
+              <span>Esportazioni</span>
+            </NavLink>
+          )}
 
           {is_superadmin && (
             <>
