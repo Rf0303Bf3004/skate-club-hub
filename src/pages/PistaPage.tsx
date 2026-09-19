@@ -1252,7 +1252,7 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
               >
                 <Music className="mr-2 h-5 w-5" />
                 {t(`musica.tipo_${p.tipo}`, { defaultValue: p.tipo })}
-                {p.titolo_brano ? ` · ${p.titolo_brano}` : ""}
+                {` · ${p.titolo_brano || t("musica.senza_titolo")}`}
               </Button>
             ))}
           </div>
