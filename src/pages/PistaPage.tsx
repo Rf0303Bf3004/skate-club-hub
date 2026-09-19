@@ -980,8 +980,8 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
             </DropdownMenu>
           )}
         </div>
-
       </header>
+
 
       {puo_scegliere_momento && pannello_momento && (
         <div className="mb-3 rounded-xl border-2 border-border bg-card px-4 py-3">
