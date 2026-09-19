@@ -54,7 +54,7 @@ const PortaleNotiziePage: React.FC = () => {
       .eq("atleta_id", session.atleta.id)
       .order("creato_at", { ascending: false });
     if (error) {
-      segnala_errore("PortaleNotiziePage", "comunicazioni_destinatari", error, "avviso");
+      segnala_errore("PortaleNotiziePage", "comunicazioni_destinatari", error, undefined, "avviso");
       set_errore(true);
       set_items([]);
       set_loading(false);
