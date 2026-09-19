@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Shield, X, Trash2, Upload, ArrowLeft, Printer, Mail, AlertCircle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import AtletaDetail from "@/components/AtletaDetail";
 import SchedaAnagrafica from "@/components/SchedaAnagrafica";
 import AthleteBadges from "@/components/AthleteBadges";
@@ -180,6 +181,9 @@ const AtletaModal: React.FC<{
     genitore2_cap: atleta?.genitore2_cap || "",
     genitore2_citta: atleta?.genitore2_citta || "",
     genitore2_cantone: atleta?.genitore2_cantone || "",
+    genitori_separati: !!atleta?.genitori_separati,
+    fatture_intestate_a: atleta?.fatture_intestate_a || "genitore1",
+    comunicazioni_a: atleta?.comunicazioni_a || "entrambi",
   });
   const [show_g2, set_show_g2] = useState(!!(atleta?.genitore2_nome || atleta?.genitore2_email));
   const [confirm_delete, set_confirm_delete] = useState(false);
