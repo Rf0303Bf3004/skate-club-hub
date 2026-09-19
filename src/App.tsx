@@ -88,7 +88,7 @@ import IscrizioneAtletaPage from "@/pages/IscrizioneAtletaPage";
 import IscrivitiPage from "@/pages/IscrivitiPage";
 import PistaLoginPage from "@/pages/PistaLoginPage";
 import { usePistaSession } from "@/lib/pista-sessione";
-import { accedi_pista_con_codice, cancella_codice_pista, leggi_codice_pista } from "@/lib/pista-codice";
+import { accedi_pista_con_codice, cancella_codice_pista, chiudi_sessione_pista, leggi_codice_pista } from "@/lib/pista-codice";
 
 
 const queryClient = new QueryClient();
@@ -103,6 +103,16 @@ const PistaGate = ({ children }: { children: React.ReactNode }) => {
   // Riaccredito silenzioso: il tablet ha già il codice conservato, non deve
   // chiedere niente quando la sessione scade.
   const [riaccredito, set_riaccredito] = React.useState<"idle" | "in_corso" | "fallito">("idle");
+
+  // Rete di sicurezza per i tablet già in trappola (sessione pista viva,
+  // codice perso): arrivare al tastierino chiude la sessione residua prima
+  // di mostrare la pagina, senza dover pulire il dispositivo a mano.
+  useEffect(() => {
+    if (is_loading || !is_pista) return;
+    if (typeof window === "undefined") return;
+    if (window.location.pathname !== "/pista-login") return;
+    void chiudi_sessione_pista();
+  }, [is_loading, is_pista]);
 
   useEffect(() => {
     if (is_loading || is_pista || riaccredito !== "idle") return;

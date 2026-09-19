@@ -526,6 +526,7 @@
     "codice_errato": "Invalid code. Check the sheet and try again.",
     "troppi_tentativi": "Too many attempts. Please try again shortly.",
     "aiuto": "You can find the code in the club settings, under the rink tablet section.",
+    "accesso_staff": "Staff sign-in",
     "codice_cambiato": "The club code has changed: ask the club for it and type it here.",
     "qr_inquadra": "Scan the QR code",
     "qr_chiudi": "Close the camera",

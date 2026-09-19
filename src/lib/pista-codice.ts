@@ -74,12 +74,53 @@ export async function accedi_pista_con_codice(codice: string): Promise<EsitoPist
   }
 }
 
-/** Uscita definitiva del tablet: dimentica il codice e chiude la sessione. */
-export async function esci_dalla_pista(): Promise<void> {
-  cancella_codice_pista();
+/** Quanto può durare al massimo la chiusura di sessione prima di arrendersi. */
+const TIMEOUT_USCITA_MS = 2500;
+
+/**
+ * Rimuove a mano la chiave di sessione che il client conserva in locale.
+ * Ultima spiaggia quando la chiusura normale non è andata a buon fine:
+ * al prossimo caricamento la sessione non c'è più.
+ */
+function rimuovi_sessione_locale(): void {
   try {
-    await supabase.auth.signOut();
+    const ref = new URL(import.meta.env.VITE_SUPABASE_URL as string).hostname.split(".")[0];
+    window.localStorage.removeItem(`sb-${ref}-auth-token`);
   } catch {
-    /* anche se la chiusura remota fallisce, il codice non è più sul dispositivo */
+    /* dispositivo che non consente l'accesso: non resta altro da fare */
   }
+}
+
+/**
+ * Chiude la sessione del tablet in modo che non possa appendersi:
+ * la chiusura ha un tempo massimo, e se dopo la sessione risulta ancora
+ * viva la chiave locale viene rimossa a mano. Funziona anche a rete morta.
+ */
+export async function chiudi_sessione_pista(): Promise<void> {
+  try {
+    await Promise.race([
+      supabase.auth.signOut({ scope: "local" }),
+      new Promise<never>((_, rifiuta) => setTimeout(() => rifiuta(new Error("timeout uscita")), TIMEOUT_USCITA_MS)),
+    ]);
+  } catch {
+    /* rete lenta o assente: si prosegue con la rimozione manuale */
+  }
+  try {
+    const { data } = await supabase.auth.getSession();
+    if (data.session) rimuovi_sessione_locale();
+  } catch {
+    rimuovi_sessione_locale();
+  }
+}
+
+/**
+ * Uscita definitiva del tablet. Ordine obbligatorio: prima la sessione
+ * (con tempo massimo e rimozione manuale di riserva), poi il codice, poi
+ * il cambio pagina. Un guasto non deve mai lasciare il dispositivo con
+ * la sessione viva e il codice già perso.
+ */
+export async function esci_dalla_pista(): Promise<void> {
+  await chiudi_sessione_pista();
+  cancella_codice_pista();
+  window.location.replace("/pista-login");
 }

@@ -526,6 +526,7 @@
     "codice_errato": "Code non valide. Vérifiez la feuille et réessayez.",
     "troppi_tentativi": "Trop de tentatives. Réessayez dans un instant.",
     "aiuto": "Le code se trouve dans les paramètres du club, à la rubrique de la tablette de bord de piste.",
+    "accesso_staff": "Accès staff",
     "codice_cambiato": "Le code du club a changé : demandez-le au club et saisissez-le ici.",
     "qr_inquadra": "Scanner le QR",
     "qr_chiudi": "Fermer la caméra",
