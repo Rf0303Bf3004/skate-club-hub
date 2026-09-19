@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { Users, Settings, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, ChevronDown, ChevronRight, FileText, Search, LayoutGrid, BadgePercent, Smartphone } from "lucide-react";
+import { Users, Settings, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, ChevronDown, ChevronRight, FileText, Search, LayoutGrid, BadgePercent, Smartphone, Rocket } from "lucide-react";
 import GlobalSearchPalette from "@/components/common/GlobalSearchPalette";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -91,6 +91,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const can_manage_users = is_superadmin || is_admin || is_presidente;
   // Convenzioni: stessi ruoli della guardia di rotta SoloPresidenteGuard.
   const puo_vedere_convenzioni = is_superadmin || is_presidenza;
+  // Avvio del club: stessa regola della guardia di rotta SoloPresidenteGuard.
+  const puo_vedere_avvio = is_superadmin || is_presidenza;
   const non_lette_iscrizioni = use_count_iscrizioni_non_lette();
   const richieste_pendenti = use_count_richieste_pendenti();
   const [search_open, set_search_open] = React.useState(false);
@@ -317,7 +319,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 </div>
               )}
               {blocco_corrente === "conduzione" &&
-                nuovo_top.map((s) => render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato))}
+                nuovo_top.map((s) => (
+                  <React.Fragment key={s.codice}>
+                    {render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato)}
+                    {s.codice === "dashboard" && session && puo_vedere_avvio &&
+                      render_nav_item("/avvio", Rocket, "Avvio del club", "avvio_club")}
+                  </React.Fragment>
+                ))}
               {blocco_corrente === "conduzione" && session && puo_vedere_convenzioni &&
                 render_nav_item("/convenzioni", BadgePercent, "Convenzioni", "convenzioni")}
               {gruppi_del_blocco(blocco_corrente).map((gruppo) => {
@@ -383,6 +391,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <span>Convenzioni</span>
             </NavLink>
           )}
+          {!is_superadmin && session && !is_nuovo_ruolo && puo_vedere_avvio && (
+            <NavLink to="/avvio" onClick={() => set_sidebar_open(false)}
+              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/avvio" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+              <Rocket className="w-4 h-4 shrink-0" />
+              <span>Avvio del club</span>
+            </NavLink>
+          )}
 
           {is_superadmin && (
             <>
@@ -412,6 +427,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <NavLink to="/superadmin/convenzioni" onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin/convenzioni" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
                 <BadgePercent className="w-4 h-4 shrink-0" /><span>Convenzioni</span>
+              </NavLink>
+              <NavLink to="/avvio" onClick={() => set_sidebar_open(false)}
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/avvio" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
+                <Rocket className="w-4 h-4 shrink-0" /><span>Avvio del club</span>
               </NavLink>
               <NavLink to="/superadmin/app-mobile" onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin/app-mobile" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
