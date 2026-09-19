@@ -998,17 +998,19 @@ const SessioneBox: React.FC<{
 };
 
 // ─── Bersaglio di rilascio del blocco (per i blocchi senza sotto-sessioni) ───
-const BloccoDropZone: React.FC<{ blocco_id: string; children: React.ReactNode }> = ({
+const BloccoDropZone: React.FC<{ blocco_id: string; children: React.ReactNode; compatto?: boolean }> = ({
   blocco_id,
   children,
+  compatto = false,
 }) => {
   const { setNodeRef, isOver } = useDroppable({ id: `blocco:${blocco_id}` });
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "rounded-xl border-2 border-dashed p-6 transition-colors",
-        isOver ? "border-primary bg-primary/10" : "border-muted-foreground/30 bg-muted/30",
+        "rounded-xl border-2 border-dashed transition-colors",
+        compatto ? "p-1 border-transparent" : "p-6",
+        isOver ? "border-primary bg-primary/10" : compatto ? "" : "border-muted-foreground/30 bg-muted/30",
       )}
     >
       {children}
@@ -2095,6 +2097,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
               ))}
             </Tabs>
           )}
+          </BloccoDropZone>
         </div>
       </DndContext>
 
