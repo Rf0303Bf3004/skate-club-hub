@@ -1324,6 +1324,13 @@ export function use_assegna_gruppo_sessione() {
         input.gruppo_livello,
         input.gruppo_ragione_sociale_id ?? null,
       );
+      // Mai creare un gruppo senza nessun atleta: resterebbe un contenitore vuoto
+      // e l'utente vedrebbe un collegamento riuscito senza nessun effetto.
+      if (membri.length === 0) {
+        throw new Error(
+          `Il gruppo «${input.gruppo_livello}» non ha nessun atleta: nulla da collegare alla sessione.`,
+        );
+      }
 
       // Guardia bloccante per singolo atleta (motore unificato): se non è stata
       // autorizzata una forzatura, nessuna scrittura con atleti in conflitto.
@@ -1340,6 +1347,13 @@ export function use_assegna_gruppo_sessione() {
         }
       }
 
+      const presenti_prima = await atleti_presenti_sessione(input.sessione_id);
+      const mancanti = membri.filter((id) => !presenti_prima.has(id) && !esclusi.has(id));
+      const gia_presenti = membri.filter((id) => presenti_prima.has(id)).length;
+      if (mancanti.length === 0 && esclusi.size < membri.length - gia_presenti) {
+        // nulla da fare: tutti già dentro
+      }
+
       const { data: gruppo, error: err_g } = await supabase
         .from("griglia_sessioni_gruppi" as any)
         .insert({
@@ -1353,8 +1367,7 @@ export function use_assegna_gruppo_sessione() {
       if (err_g) throw err_g;
       const gruppo_sessione_id = (gruppo as any).id as string;
 
-      const presenti = await atleti_presenti_sessione(input.sessione_id);
-      const mancanti = membri.filter((id) => !presenti.has(id) && !esclusi.has(id));
+      let aggiunti = 0;
       if (mancanti.length > 0) {
         const forzatura = input.forzatura
           ? { motivo: input.forzatura.motivo, forzato_da: input.forzatura.forzato_da ?? session?.user_id ?? null }
@@ -1370,12 +1383,20 @@ export function use_assegna_gruppo_sessione() {
             }),
           ) as any,
         );
-        if (error && !`${error.message}`.includes("duplicate")) throw error;
+        if (error && !`${error.message}`.includes("duplicate")) {
+          // Senza transazione: si annulla il gruppo appena creato, altrimenti
+          // resterebbe un gruppo vuoto senza che nessuno lo sappia.
+          await supabase.from("griglia_sessioni_gruppi" as any).delete().eq("id", gruppo_sessione_id);
+          throw error;
+        }
+        const dopo = await atleti_presenti_sessione(input.sessione_id);
+        aggiunti = mancanti.filter((id) => dopo.has(id)).length;
       }
       return {
         gruppo_sessione_id,
-        aggiunti: mancanti.length,
+        aggiunti,
         membri: membri.length,
+        gia_presenti,
         esclusi: esclusi.size,
       };
     },
