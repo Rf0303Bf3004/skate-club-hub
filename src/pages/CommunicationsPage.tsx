@@ -189,14 +189,25 @@ const CommunicationsPage: React.FC = () => {
     set_corsi_ids((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   };
 
+  const livelli_tutti = is_apertura_totale(livelli_selezionati);
+  const livelli_scelti = useMemo(() => parse_livelli_corso(livelli_selezionati), [livelli_selezionati]);
+
+  // Un'atleta è destinataria se il suo livello (fonte di verità: get_livello_display,
+  // che copre anche il campo legacy livello_attuale) è fra quelli spuntati.
+  // Nessuna soglia e nessun "da lì in su". Selezione vuota = nessun destinatario.
+  const atleta_in_livelli_scelti = (atleta: any): boolean => {
+    if (livelli_tutti) return true;
+    if (livelli_scelti.length === 0) return false;
+    const nome = (get_livello_display(atleta) || '').trim().toLowerCase();
+    if (!nome || nome === '—') return false;
+    return livelli_scelti.some((s) => s.trim().toLowerCase() === nome);
+  };
+
   const level_count = useMemo(() => {
     if (tipo_destinatari !== 'per_livello') return 0;
-    return atleti.filter((atleta: any) => {
-      const rank = get_atleta_livello_rank(atleta);
-      if (livello_categoria === 'pulcini_only') return rank === 0;
-      return rank >= (SOGLIE_LIVELLO[livello_categoria] ?? 0);
-    }).length;
-  }, [atleti, livello_categoria, tipo_destinatari]);
+    return atleti.filter((atleta: any) => atleta_in_livelli_scelti(atleta)).length;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [atleti, livelli_selezionati, tipo_destinatari]);
 
   const agoniste_count = useMemo(
     () => atleti.filter((a: any) => a.attivo !== false && (a.agonista === true || a.partecipa_gare === true)).length,
