@@ -188,9 +188,9 @@ const PortaleNotiziePage: React.FC = () => {
         <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <div className="flex-1">
-            <p>{t("assenze.errore_lettura")}</p>
+            <p>{t("assenze.errore_notizie")}</p>
             <Button variant="outline" size="sm" className="mt-2" onClick={load}>
-              {t("login.entra") === "" ? "Riprova" : "Riprova"}
+              {t("assenze.riprova")}
             </Button>
           </div>
         </div>

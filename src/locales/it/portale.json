@@ -62,7 +62,9 @@
     "salvato": "Avviso inviato al club",
     "ritirato": "Va bene, ti aspettiamo.",
     "errore": "Non è stato possibile inviare l'avviso. Riprova fra poco.",
-    "errore_lettura": "Non è stato possibile leggere gli avvisi di assenza già inviati: non significa che non ce ne siano."
+    "errore_lettura": "Non è stato possibile leggere gli avvisi di assenza già inviati: non significa che non ce ne siano.",
+    "errore_notizie": "Non è stato possibile leggere le notizie: non significa che non ce ne siano.",
+    "riprova": "Riprova"
   },
   "profilo": {
     "titolo": "Il mio profilo",
