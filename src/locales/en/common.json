@@ -297,6 +297,7 @@
     "momento_appello_aperto": "Attendance has not been saved yet: save it or switch tab before changing the moment.",
     "esci": "Unlink this tablet",
     "esci_titolo": "Unlink this tablet?",
+    "esci_domanda": "DO YOU REALLY WANT TO CONTINUE?",
     "scollega": "Unlink this tablet",
     "esci_testo": "The code stored on this device will be deleted: to get back in you will need the club code or its QR code."
   },

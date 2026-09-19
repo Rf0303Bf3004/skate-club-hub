@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Search, Send, Check, X, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { segnala_errore } from "@/lib/errori";
@@ -174,9 +175,7 @@ const TabRinnovi: React.FC<{ puo_gestire: boolean; vai_a_domande: () => void }> 
           <span className="font-medium text-foreground">{k("rinnovi.avanzamento")}</span>
           <span className="tabular-nums text-muted-foreground">{avanzamento}%</span>
         </div>
-        <div className="h-3 overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${avanzamento}%` }} />
-        </div>
+        <Progress value={avanzamento} className="h-3" />
         <button type="button" onClick={vai_a_domande} className="text-sm font-medium text-primary hover:underline">
           {k("rinnovi.domande_collegamento", { count: s.domande_in_attesa })}
         </button>

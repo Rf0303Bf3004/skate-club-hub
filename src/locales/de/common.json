@@ -297,6 +297,7 @@
     "momento_appello_aperto": "Eine Anwesenheit ist noch nicht gespeichert: speichern oder Reiter wechseln, bevor der Zeitpunkt geändert wird.",
     "esci": "Dieses Tablet trennen",
     "esci_titolo": "Dieses Tablet trennen?",
+    "esci_domanda": "MÖCHTEN SIE WIRKLICH FORTFAHREN?",
     "scollega": "Dieses Tablet trennen",
     "esci_testo": "Der auf diesem Gerät gespeicherte Code wird gelöscht: Für den erneuten Zugang braucht es den Clubcode oder dessen QR-Code."
   },
