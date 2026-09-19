@@ -49,6 +49,10 @@ function lunedi_di(d: Date) {
 }
 function add_days(d: Date, n: number) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
 function ora_to_min(s: string | null): number { if (!s) return 0; const [h, m] = s.split(":").map(Number); return (h ?? 0) * 60 + (m ?? 0); }
+// Il calendario porta il corso, il planning porta la sessione: si incrociano su corso + giorno + ora.
+function chiave_sessione(corso_id: string | null, data: string | null, ora: string | null): string {
+  return `${corso_id ?? ""}|${data ?? ""}|${(ora ?? "").slice(0, 5)}`;
+}
 
 const PortaleCalendarioPage: React.FC = () => {
   const { session } = useOutletContext<{ session: PortaleSession }>();
