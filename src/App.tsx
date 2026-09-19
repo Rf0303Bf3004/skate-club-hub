@@ -139,7 +139,21 @@ const PistaGate = ({ children }: { children: React.ReactNode }) => {
     })();
   }, [is_loading, is_pista, riaccredito]);
 
-  if (is_loading || riaccredito === "in_corso") {
+  // Tempo massimo di attesa: se la lettura della sessione non risponde, lo
+  // spinner non può restare a schermo per sempre. Scaduti 8 secondi si mostra
+  // comunque qualcosa di toccabile (il contenuto normale, che per un tablet
+  // senza sessione è il tastierino di accesso).
+  const [attesa_scaduta, set_attesa_scaduta] = React.useState(false);
+  useEffect(() => {
+    if (!is_loading && riaccredito !== "in_corso") {
+      set_attesa_scaduta(false);
+      return;
+    }
+    const timer = window.setTimeout(() => set_attesa_scaduta(true), 8000);
+    return () => window.clearTimeout(timer);
+  }, [is_loading, riaccredito]);
+
+  if ((is_loading || riaccredito === "in_corso") && !attesa_scaduta) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
