@@ -7401,6 +7401,110 @@ export type Database = {
           },
         ]
       }
+      richieste_prova: {
+        Row: {
+          atleta_id: string | null
+          club_id: string
+          cognome: string
+          creata_il: string
+          data_nascita: string | null
+          email: string | null
+          genitore_nome: string
+          gestita_da: string | null
+          gestita_il: string | null
+          id: string
+          nome: string
+          note: string | null
+          note_club: string | null
+          stato: string
+          telefono: string | null
+        }
+        Insert: {
+          atleta_id?: string | null
+          club_id: string
+          cognome: string
+          creata_il?: string
+          data_nascita?: string | null
+          email?: string | null
+          genitore_nome: string
+          gestita_da?: string | null
+          gestita_il?: string | null
+          id?: string
+          nome: string
+          note?: string | null
+          note_club?: string | null
+          stato?: string
+          telefono?: string | null
+        }
+        Update: {
+          atleta_id?: string | null
+          club_id?: string
+          cognome?: string
+          creata_il?: string
+          data_nascita?: string | null
+          email?: string | null
+          genitore_nome?: string
+          gestita_da?: string | null
+          gestita_il?: string | null
+          id?: string
+          nome?: string
+          note?: string | null
+          note_club?: string | null
+          stato?: string
+          telefono?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "richieste_prova_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "richieste_prova_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "richieste_prova_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_famiglia"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "richieste_prova_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "richieste_prova_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "richieste_prova_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "elenco_club"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "richieste_prova_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+        ]
+      }
       risorse_strutture: {
         Row: {
           attiva: boolean
@@ -9640,6 +9744,19 @@ export type Database = {
           quanti: number
         }[]
       }
+      club_pubblico_da_slug: {
+        Args: { p_slug: string }
+        Returns: {
+          citta: string
+          club_id: string
+          colore_primario: string
+          email: string
+          logo_url: string
+          nome: string
+          sito_web: string
+          telefono: string
+        }[]
+      }
       conferma_rinnovo: {
         Args: { p_atleta: string; p_da?: string; p_stagione: string }
         Returns: undefined
@@ -10307,6 +10424,19 @@ export type Database = {
       ricalcola_cache_ore_mensile: {
         Args: { p_anno: number; p_istruttore_id: string; p_mese: number }
         Returns: undefined
+      }
+      richiedi_prova: {
+        Args: {
+          p_cognome: string
+          p_data_nascita: string
+          p_email: string
+          p_genitore_nome: string
+          p_nome: string
+          p_note?: string
+          p_slug: string
+          p_telefono: string
+        }
+        Returns: string
       }
       riconosci_identita: {
         Args: { p_valore: string }
