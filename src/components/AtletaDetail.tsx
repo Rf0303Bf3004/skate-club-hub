@@ -38,6 +38,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SelectLivello } from "@/components/ui/select-livello";
+import { opzioni_in_preparazione_con_salvato } from "@/lib/atleta-livello";
 import { ArrowLeft, Shield, Medal, Save, Upload, Music, ArrowRightLeft, X, Mail, Copy, Printer, Link as LinkIcon, QrCode, Share2, Trophy, ShieldCheck, UserCog } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
@@ -1247,7 +1248,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                         <SelectTrigger><SelectValue placeholder={td("detail.none")} /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__none__">{td("detail.none_option")}</SelectItem>
-                          {["Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4"].map((l) => (
+                          {opzioni_in_preparazione_con_salvato(form, form.livello_amatori).map((l) => (
                             <SelectItem key={l} value={l}>{l}</SelectItem>
                           ))}
                         </SelectContent>
@@ -1270,13 +1271,18 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                         </div>
                         <div className="space-y-1.5">
                           <Label className="text-sm text-muted-foreground">{td("detail.in_preparation")}</Label>
-                          <SelectLivello
-                            value={form.livello_artistica_in_preparazione}
-                            onChange={(v) => upd("livello_artistica_in_preparazione", v)}
-                            fase="carriera"
-                            allowNull={true}
-                            nullLabel={td("detail.none_option")}
-                          />
+                          <Select
+                            value={form.livello_artistica_in_preparazione || "__none__"}
+                            onValueChange={(v) => upd("livello_artistica_in_preparazione", v === "__none__" ? null : v)}
+                          >
+                            <SelectTrigger><SelectValue placeholder={td("detail.none_option")} /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none__">{td("detail.none_option")}</SelectItem>
+                              {opzioni_in_preparazione_con_salvato(form, form.livello_artistica_in_preparazione, "artistica").map((l) => (
+                                <SelectItem key={l} value={l}>{l}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1292,13 +1298,18 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                         </div>
                         <div className="space-y-1.5">
                           <Label className="text-sm text-muted-foreground">{td("detail.in_preparation")}</Label>
-                          <SelectLivello
-                            value={form.livello_stile_in_preparazione}
-                            onChange={(v) => upd("livello_stile_in_preparazione", v)}
-                            fase="carriera"
-                            allowNull={true}
-                            nullLabel={td("detail.none_option")}
-                          />
+                          <Select
+                            value={form.livello_stile_in_preparazione || "__none__"}
+                            onValueChange={(v) => upd("livello_stile_in_preparazione", v === "__none__" ? null : v)}
+                          >
+                            <SelectTrigger><SelectValue placeholder={td("detail.none_option")} /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none__">{td("detail.none_option")}</SelectItem>
+                              {opzioni_in_preparazione_con_salvato(form, form.livello_stile_in_preparazione, "stile").map((l) => (
+                                <SelectItem key={l} value={l}>{l}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
 
