@@ -46,7 +46,7 @@ import { supabase } from "@/lib/supabase";
 type Riga = Record<string, unknown>;
 type Stagione = { id: string; nome: string; data_inizio: string; data_fine: string; attiva: boolean };
 type AreaId = "domanda" | "atleti" | "ricavi" | "costi" | "lezioni" | "sportivo" | "catalogo";
-type StatoArea = "positivo" | "neutro" | "attenzione" | "mancante";
+type StatoArea = "positivo" | "neutro" | "attenzione" | "mancante" | "senza_dati";
 
 type DashboardData = {
   atleti: Riga[];
@@ -404,10 +404,11 @@ const DeltaPill: React.FC<{ value: number; suffix?: string }> = ({ value, suffix
   );
 };
 
-const ValoreGrande: React.FC<{ value: string; label: string; delta?: number; tono?: "base" | "positivo" | "attenzione" | "pericolo" }> = ({
+const ValoreGrande: React.FC<{ value: string; label: string; delta?: number; nota?: string; tono?: "base" | "positivo" | "attenzione" | "pericolo" }> = ({
   value,
   label,
   delta,
+  nota,
   tono = "base",
 }) => {
   const colore = tono === "positivo" ? "text-emerald-700" : tono === "attenzione" ? "text-amber-700" : tono === "pericolo" ? "text-rose-700" : "text-foreground";
@@ -415,7 +416,7 @@ const ValoreGrande: React.FC<{ value: string; label: string; delta?: number; ton
     <div className="rounded-lg border bg-card p-5 shadow-sm">
       <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className={`mt-2 text-3xl font-semibold tabular-nums ${colore}`}>{value}</div>
-      {delta !== undefined ? <div className="mt-2"><DeltaPill value={delta} /></div> : null}
+      {delta !== undefined ? <div className="mt-2"><DeltaPill value={delta} /></div> : nota ? <div className="mt-2 text-xs text-muted-foreground">{nota}</div> : null}
     </div>
   );
 };
