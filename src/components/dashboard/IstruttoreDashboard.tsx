@@ -463,6 +463,7 @@ const IstruttoreDashboard: React.FC = () => {
                     {t("istruttore_home.fai_appello", "Fai l'appello")}
                   </Button>
                 )}
+                {comando_assenza(oggi, s.ora_inizio)}
               </div>
             );
           })}
