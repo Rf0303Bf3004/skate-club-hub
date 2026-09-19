@@ -84,10 +84,16 @@ const TIMEOUT_USCITA_MS = 2500;
  */
 function rimuovi_sessione_locale(): void {
   try {
-    const ref = new URL(import.meta.env.VITE_SUPABASE_URL as string).hostname.split(".")[0];
-    window.localStorage.removeItem(`sb-${ref}-auth-token`);
-  } catch {
-    /* dispositivo che non consente l'accesso: non resta altro da fare */
+    // Non si ricava il nome del progetto dall'ambiente: si rimuovono tutte
+    // le chiavi di sessione del client, qualunque sia il progetto.
+    const da_togliere: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const chiave = window.localStorage.key(i);
+      if (chiave && /^sb-.*-auth-token$/.test(chiave)) da_togliere.push(chiave);
+    }
+    for (const chiave of da_togliere) window.localStorage.removeItem(chiave);
+  } catch (e) {
+    console.warn("[pista] rimozione manuale della sessione non riuscita:", e instanceof Error ? e.message : e);
   }
 }
 
