@@ -10142,6 +10142,18 @@ export type Database = {
           testo: string
         }[]
       }
+      pista_programmi: {
+        Args: { p_sessione_id: string }
+        Returns: {
+          atleta_id: string
+          durata_sec: number
+          file_path: string
+          id: string
+          in_preparazione: boolean
+          tipo: string
+          titolo_brano: string
+        }[]
+      }
       pista_riferimento: {
         Args: { p_sessione_id: string }
         Returns: {
