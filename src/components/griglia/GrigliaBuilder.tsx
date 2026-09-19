@@ -972,6 +972,25 @@ const SessioneBox: React.FC<{
   );
 };
 
+// ─── Bersaglio di rilascio del blocco (per i blocchi senza sotto-sessioni) ───
+const BloccoDropZone: React.FC<{ blocco_id: string; children: React.ReactNode }> = ({
+  blocco_id,
+  children,
+}) => {
+  const { setNodeRef, isOver } = useDroppable({ id: `blocco:${blocco_id}` });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "rounded-xl border-2 border-dashed p-6 transition-colors",
+        isOver ? "border-primary bg-primary/10" : "border-muted-foreground/30 bg-muted/30",
+      )}
+    >
+      {children}
+    </div>
+  );
+};
+
 // ─── Builder ───────────────────────────────────────────────
 interface Props {
   blocco: GrigliaBlocco;
@@ -1959,12 +1978,18 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         {/* Fascia inferiore: sotto-sessioni a tab */}
         <div className="mt-4">
           {sessioni.length === 0 ? (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">Nessuna sotto-sessione. Aggiungine una per iniziare.</p>
-              <Button variant="outline" size="sm" onClick={aggiungi_sessione}>
-                <Plus className="w-4 h-4 mr-1" /> Aggiungi sotto-sessione
-              </Button>
-            </div>
+            <BloccoDropZone blocco_id={blocco.id}>
+              <div className="space-y-3 text-center">
+                <p className="text-sm font-medium">Questo blocco non ha ancora nessuna sotto-sessione.</p>
+                <p className="text-xs text-muted-foreground">
+                  Trascina qui un atleta, un gruppo o un istruttore: creo io la sessione{" "}
+                  {hhmm(blocco.ora_inizio)}–{hhmm(blocco.ora_fine)} dopo la tua conferma.
+                </p>
+                <Button variant="outline" size="sm" onClick={aggiungi_sessione}>
+                  <Plus className="w-4 h-4 mr-1" /> Aggiungi sotto-sessione
+                </Button>
+              </div>
+            </BloccoDropZone>
           ) : (
             <Tabs value={tab_attivo ?? sessioni[0].id} onValueChange={set_tab_attivo} className="w-full">
               <div className="flex items-center gap-2">
@@ -2045,6 +2070,28 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           )}
         </div>
       </DndContext>
+
+      <AlertDialog
+        open={!!drop_blocco_vuoto}
+        onOpenChange={(v) => {
+          if (!v) set_drop_blocco_vuoto(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Questo spazio non ha ancora una sessione</AlertDialogTitle>
+            <AlertDialogDescription>
+              La creo dalle {hhmm(blocco.ora_inizio)} alle {hhmm(blocco.ora_fine)} e ci metto{" "}
+              {drop_blocco_vuoto?.chi}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={conferma_drop_blocco_vuoto}>Crea e assegna</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       <ConfermaForzaturaDisponibilita
         open={forzatura_open}
