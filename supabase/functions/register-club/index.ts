@@ -181,9 +181,9 @@ Deno.serve(async (req) => {
       nome: `${year}/${year + 1}`,
       tipo: "Regolare",
       data_inizio: `${year}-09-01`,
-      data_fine: `${year + 1}-06-30`,
+      data_fine: `${year + 1}-08-31`,
       attiva: true,
-      stato: "in_corso",
+      stato: "attiva",
     });
     if (stErr) {
       console.error("stagioni error", stErr);
