@@ -1,7 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Loader2, Calendar as CalIcon, Clock, MapPin, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Calendar as CalIcon, Clock, MapPin, X, AlertTriangle } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { segnala_errore } from "@/lib/errori";
 import type { PortaleSession } from "@/lib/portale-auth";
 
 interface Evento {
@@ -13,6 +17,7 @@ interface Evento {
   nome_evento: string | null;
   luogo: string | null;
   stato: string;
+  riferimento_id: string | null;
 }
 
 const TIPO_META: Record<string, { label: string; bg: string; border: string; text: string }> = {
