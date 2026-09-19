@@ -19,7 +19,16 @@ import {
   get_istruttore_name_from_list,
   use_livelli,
 } from "@/hooks/use-supabase-data";
-import { SelectLivello } from "@/components/ui/select-livello";
+import { SelectLivelli } from "@/components/ui/select-livelli";
+import {
+  formatta_livelli_corso,
+  is_apertura_totale,
+  livello_atleta_compatibile,
+  livello_dichiarato,
+  livello_da_sistemare,
+  messaggio_livello_obbligatorio,
+  parse_livelli_corso,
+} from "@/lib/livelli-corso";
 import { use_upsert_corso, use_elimina_corso, use_upsert_presenza_corso } from "@/hooks/use-supabase-mutations";
 import { istruttore_disponibile, calcola_status_istruttori_per_slot } from "@/lib/availability";
 import { Button } from "@/components/ui/button";
@@ -73,25 +82,9 @@ function classifica_corso(
   return "da_pianificare";
 }
 
-const LIVELLI_CORSO = [
-  "tutti", "pulcini", "stellina1", "stellina2", "stellina3", "stellina4",
-  "Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro",
-];
+// Etichette e confronti dei livelli: `src/lib/livelli-corso.ts` (unica fonte).
 
-const LIVELLO_LABELS: Record<string, string> = {
-  tutti: "Tutti i livelli",
-  pulcini: "Pulcini",
-  stellina1: "Stellina 1",
-  stellina2: "Stellina 2",
-  stellina3: "Stellina 3",
-  stellina4: "Stellina 4",
-  Interbronzo: "Interbronzo",
-  Bronzo: "Bronzo",
-  Interargento: "Interargento",
-  Argento: "Argento",
-  Interoro: "Interoro",
-  Oro: "Oro",
-};
+
 
 function get_atleta_livello(atleta: any): string {
   return atleta.carriera_artistica || atleta.carriera_stile || atleta.percorso_amatori || "Pulcini";
@@ -103,29 +96,11 @@ function prezzo_non_impostato(corso: any): boolean {
   return v === 0 || Number.isNaN(v);
 }
 
-function normalize_livello(l: string): string {
-  if (!l) return "pulcini";
-  const map: Record<string, string> = {
-    "pulcini": "pulcini",
-    "stellina 1": "stellina1", "stellina1": "stellina1", "stelline 1": "stellina1",
-    "stellina 2": "stellina2", "stellina2": "stellina2", "stelline 2": "stellina2",
-    "stellina 3": "stellina3", "stellina3": "stellina3", "stelline 3": "stellina3",
-    "stellina 4": "stellina4", "stellina4": "stellina4", "stelline 4": "stellina4",
-    "interbronzo": "Interbronzo",
-    "bronzo": "Bronzo",
-    "interargento": "Interargento",
-    "argento": "Argento",
-    "interoro": "Interoro",
-    "oro": "Oro",
-  };
-  return map[l.toLowerCase()] ?? l;
-}
 
+// Filtro dell'elenco proposto a chi compila. La decisione vera sull'iscrizione
+// resta della funzione SQL `valuta_iscrizione` (trigger su iscrizioni_corsi).
 function is_livello_compatibile(atleta: any, livello_richiesto: string): boolean {
-  if (!livello_richiesto || livello_richiesto === "tutti") return true;
-  const livello_atleta = normalize_livello(get_atleta_livello(atleta));
-  const livello_corso = normalize_livello(livello_richiesto);
-  return livello_atleta === livello_corso;
+  return livello_atleta_compatibile(get_atleta_livello(atleta), livello_richiesto);
 }
 
 function time_to_min(t: string): number {
@@ -356,7 +331,7 @@ const TabIscrizioni: React.FC<{
   const { modalita: modalita_fatturazione } = useModalitaArea("fatturazione");
   const multi_rs = modalita_fatturazione === "multi_ragione_sociale";
 
-  const ha_filtro_livello = !!livello_richiesto && livello_richiesto !== "tutti";
+  const ha_filtro_livello = livello_dichiarato(livello_richiesto) && !is_apertura_totale(livello_richiesto);
 
   // Unione tra iscritti dal DB e quelli appena aggiunti localmente
   const ids_esclusi = useMemo(
@@ -475,7 +450,7 @@ const TabIscrizioni: React.FC<{
     }
   };
 
-  const livello_label = LIVELLO_LABELS[livello_richiesto] || livello_richiesto || "Tutti";
+  const livello_label = formatta_livelli_corso(livello_richiesto, t);
 
   return (
     <div className="space-y-4">
@@ -1589,11 +1564,14 @@ const CorsoModal: React.FC<{
   };
 
   const { data: livelli_master_modal = [] } = use_livelli();
+  // Il percorso (artistica/stile) ha senso solo con UN livello di carriera dichiarato.
   const fase_livello_modal = useMemo(() => {
-    if (!form.livello_richiesto) return null;
-    return livelli_master_modal.find((l: any) => l.nome === form.livello_richiesto)?.fase ?? null;
+    const scelti = parse_livelli_corso(form.livello_richiesto);
+    if (scelti.length !== 1 || is_apertura_totale(form.livello_richiesto)) return null;
+    return livelli_master_modal.find((l: any) => l.nome === scelti[0])?.fase ?? null;
   }, [form.livello_richiesto, livelli_master_modal]);
   const is_carriera_modal = fase_livello_modal === "carriera";
+  const [errore_livello, set_errore_livello] = useState<string | null>(null);
   const percorso_invalido_modal = !!form.percorso && !is_carriera_modal;
   useEffect(() => {
     if (!is_carriera_modal && form.percorso !== null) {
@@ -1730,6 +1708,15 @@ const CorsoModal: React.FC<{
       toast({ title: t("modal.toast_name_required"), variant: "destructive" });
       return;
     }
+
+    // Un corso pubblicato deve dire per chi è: il vincolo esiste anche nel database.
+    if (form.attivo && !livello_dichiarato(form.livello_richiesto)) {
+      set_errore_livello(t("livelli.obbligatorio"));
+      toast({ title: t("livelli.obbligatorio"), variant: "destructive" });
+      return;
+    }
+    set_errore_livello(null);
+
 
     // Skip ghiaccio validation when not placing in planning
     if (!posiziona_planning) {
@@ -1989,12 +1976,10 @@ const CorsoModal: React.FC<{
               </Field>
 
               <Field label={t("modal.required_level")}>
-                <SelectLivello
+                <SelectLivelli
                   value={form.livello_richiesto}
-                  onChange={(v) => set_val("livello_richiesto", v)}
-                  fase="qualsiasi"
-                  allowNull={true}
-                  nullLabel={t("modal.open_to_all_levels")}
+                  onChange={(v) => { set_errore_livello(null); set_val("livello_richiesto", v); }}
+                  errore={errore_livello}
                 />
               </Field>
 
@@ -2128,7 +2113,7 @@ const CorsoModal: React.FC<{
               {corso?.id && (
                 <TabIscrizioni
                   corso_id={corso.id}
-                  livello_richiesto={corso.livello_richiesto || "tutti"}
+                  livello_richiesto={corso.livello_richiesto ?? ""}
                   atleti_iscritti_ids={corso.atleti_ids || []}
                   tutti_atleti={atleti}
                   on_refresh={() => qc.invalidateQueries({ queryKey: ["corsi"] })}
@@ -2293,9 +2278,12 @@ const CorsoModal: React.FC<{
 };
 
 // ─── Livello badge color ───────────────────────────────────
-function get_livello_badge_classes(livello: string): string {
-  const l = (livello || "tutti").toLowerCase();
-  if (l === "tutti") return "bg-muted text-muted-foreground border-border";
+function get_livello_badge_classes(livello_richiesto: string | null | undefined): string {
+  if (!livello_dichiarato(livello_richiesto)) return "bg-amber-100 text-amber-800 border-amber-300";
+  if (is_apertura_totale(livello_richiesto)) return "bg-muted text-muted-foreground border-border";
+  const scelti = parse_livelli_corso(livello_richiesto);
+  if (scelti.length > 1) return "bg-indigo-100 text-indigo-800 border-indigo-200";
+  const l = scelti[0].toLowerCase().replace(/\s+/g, "");
   if (l === "pulcini" || l.startsWith("stellina")) return "bg-emerald-100 text-emerald-800 border-emerald-200";
   if (["interbronzo", "bronzo", "interargento", "argento", "interoro", "oro"].includes(l))
     return "bg-blue-100 text-blue-800 border-blue-200";
@@ -2314,8 +2302,9 @@ const CorsoCard: React.FC<{
     .map((id: string) => istruttori.find((i: any) => i.id === id))
     .filter(Boolean);
 
-  const livello = corso.livello_richiesto || "tutti";
-  const livello_label = LIVELLO_LABELS[livello] || livello;
+  const livello = corso.livello_richiesto ?? "";
+  const livello_label = formatta_livelli_corso(livello, t);
+  const livello_mancante = livello_da_sistemare(corso);
   const num_iscritti = (corso.atleti_ids || []).length;
 
   return (
@@ -2335,7 +2324,11 @@ const CorsoCard: React.FC<{
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        <span className={`inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full border ${get_livello_badge_classes(livello)}`}>
+        <span
+          title={livello_mancante ? t("livelli.avviso_spento") : livello_label}
+          className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${get_livello_badge_classes(livello)}`}
+        >
+          {livello_mancante && <AlertTriangle className="w-3 h-3" />}
           {livello_label}
         </span>
         {corso.tipo && (() => {
@@ -2597,7 +2590,12 @@ const CoursesPage: React.FC = () => {
         }
       }
     } catch (err: any) {
-      toast({ title: t("page.toast_save_error"), description: err?.message, variant: "destructive" });
+      const livello_ko = messaggio_livello_obbligatorio(err, t);
+      toast({
+        title: livello_ko ?? t("page.toast_save_error"),
+        description: livello_ko ? undefined : err?.message,
+        variant: "destructive",
+      });
     }
   };
 

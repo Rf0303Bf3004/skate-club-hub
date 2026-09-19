@@ -4,6 +4,8 @@ import i18n from "@/i18n";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { use_corsi, use_istruttori, use_stagioni, use_atleti } from "@/hooks/use-supabase-data";
+import { SelectLivelli } from "@/components/ui/select-livelli";
+import { formatta_livelli_corso, is_apertura_totale, livello_dichiarato } from "@/lib/livelli-corso";
 import {
   X, Loader2, ChevronLeft, ChevronRight, Plus, Wrench, Eye, Check,
   ArrowLeft, LayoutGrid, Pencil, Undo2, Mail, Move, AlertTriangle, Calendar, Zap, CheckCircle2, Hammer, Trash2,
@@ -369,7 +371,7 @@ function private_lesson_has_ice(lesson: any, ghiaccio_slots: any[]) {
 }
 
 // ── Livelli ──
-const LIVELLI = ["pulcini","stellina1","stellina2","stellina3","stellina4","Interbronzo","Bronzo","Interargento","Argento","Interoro","Oro"];
+// Elenco dei livelli: arriva dalla tabella `livelli` tramite <SelectLivelli>.
 
 // ══════════════════════════════════════════════════════════════
 // SIDEBAR CARD (reusable for both views)
@@ -484,6 +486,7 @@ function SidebarCostruzione({
 // ══════════════════════════════════════════════════════════════
 function PlanningPageInner() {
   const { t } = useTranslation('planning');
+  const { t: t_corsi } = useTranslation('corsi');
   const { puo_pianificare } = usePermessiAzione();
   const queryClient = useQueryClient();
   const configQuery = use_config_ghiaccio();
@@ -1823,9 +1826,9 @@ function PlanningPageInner() {
                                     {first_istr.nome} {first_istr.cognome}
                                   </span>
                                 )}
-                                {w_px > 90 && c.livello_richiesto && (
+                                {w_px > 90 && livello_dichiarato(c.livello_richiesto) && (
                                   <span className="truncate rounded text-[9px] font-medium leading-tight" style={{ background: "rgba(255,255,255,0.92)", color: "#555", padding: "1px 4px", position: "relative", zIndex: 1, marginTop: 1 }}>
-                                    {c.livello_richiesto}
+                                    {formatta_livelli_corso(c.livello_richiesto, t_corsi)}
                                   </span>
                                 )}
                               </div>
@@ -1835,8 +1838,8 @@ function PlanningPageInner() {
                                 {w_px > 70 && first_istr && (
                                   <span className="truncate px-1 leading-tight" style={{ fontSize: 10, opacity: 0.85, color: "#fff" }}>{first_istr.nome} {first_istr.cognome}</span>
                                 )}
-                                {w_px > 90 && c.livello_richiesto && (
-                                  <span className="truncate px-1" style={{ fontSize: 9, opacity: 0.7, color: "#fff" }}>{c.livello_richiesto}</span>
+                                {w_px > 90 && livello_dichiarato(c.livello_richiesto) && (
+                                  <span className="truncate px-1" style={{ fontSize: 9, opacity: 0.7, color: "#fff" }}>{formatta_livelli_corso(c.livello_richiesto, t_corsi)}</span>
                                 )}
                               </>
                             )}
@@ -2420,7 +2423,9 @@ function PlanningPageInner() {
                             ? `inset 0 0 0 1px #fff, 0 0 0 2px ${alarm_color}, 0 0 0 3px #fff`
                             : (is_private ? `inset 0 0 0 1px ${colore}` : undefined);
                           const pulse = is_conflict || w.hard;
-                          const livello = c.livello_richiesto && c.livello_richiesto !== "tutti" ? c.livello_richiesto : null;
+                          const livello = livello_dichiarato(c.livello_richiesto) && !is_apertura_totale(c.livello_richiesto)
+                            ? formatta_livelli_corso(c.livello_richiesto, t_corsi)
+                            : null;
                           const n_atlete = is_private ? (c.atleti_ids?.length ?? 0) : 0;
                           const is_shared = n_atlete > 1;
                           const exc = exceptions_by_id[c.id];
@@ -3269,13 +3274,7 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti, 
           {tipo !== "privata" && (
             <div>
               <Label className="text-xs">{t('new_corso_modal.level')}</Label>
-              <Select value={livello} onValueChange={set_livello}>
-                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="tutti">{t('new_corso_modal.level_all')}</SelectItem>
-                  {LIVELLI.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SelectLivelli value={livello} onChange={(v) => set_livello(v ?? "")} />
             </div>
           )}
           <div className="flex gap-3">
@@ -3425,13 +3424,7 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
           </div>
           <div>
             <Label className="text-xs">{t('edit_corso_modal.level')}</Label>
-            <Select value={livello} onValueChange={set_livello}>
-              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tutti">{t('edit_corso_modal.level_all')}</SelectItem>
-                {LIVELLI.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <SelectLivelli value={livello} onChange={(v) => set_livello(v ?? "")} />
           </div>
           <div className="flex gap-3">
             <div className="flex-1">

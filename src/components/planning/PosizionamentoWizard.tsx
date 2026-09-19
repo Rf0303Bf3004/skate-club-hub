@@ -20,6 +20,8 @@ import {
   calcola_status_istruttori_per_slot,
   type planning_slot_per_conflitto,
 } from "@/lib/availability";
+import { useTranslation } from "react-i18next";
+import { formatta_livelli_corso } from "@/lib/livelli-corso";
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 const OFF_ICE_TYPES = ["off-ice", "off ice", "office", "palestra", "danza"];
@@ -68,6 +70,8 @@ export type posizionamento_wizard_props = {
 
 export function PosizionamentoWizard(props: posizionamento_wizard_props) {
   const { open, on_close, corsi_da_posizionare, slots, posizionati, istruttori, saving, on_place } = props;
+  const { t: t_corsi } = useTranslation("corsi");
+
 
   const [step, set_step] = useState(1);
   const [q_corso, set_q_corso] = useState("");
@@ -283,7 +287,9 @@ export function PosizionamentoWizard(props: posizionamento_wizard_props) {
                           {is_off_ice(c) ? "Off-Ice" : "Ghiaccio"}
                         </Badge>
                         {c.livello_richiesto && (
-                          <span className="text-[10px] text-muted-foreground">{c.livello_richiesto}</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {formatta_livelli_corso(c.livello_richiesto, t_corsi)}
+                          </span>
                         )}
                       </div>
                     </button>

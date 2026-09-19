@@ -13,7 +13,13 @@ import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import ConfirmButton from "@/components/common/ConfirmButton";
 import { calcola_status_istruttori_per_slot, norm_giorno, time_to_min as tmin } from "@/lib/availability";
-import { SelectLivello } from "@/components/ui/select-livello";
+import { SelectLivelli } from "@/components/ui/select-livelli";
+import {
+  is_apertura_totale,
+  livello_dichiarato,
+  messaggio_livello_obbligatorio,
+  parse_livelli_corso,
+} from "@/lib/livelli-corso";
 import { use_livelli, use_disponibilita_ghiaccio } from "@/hooks/use-supabase-data";
 import { useTranslation } from "react-i18next";
 
@@ -28,16 +34,7 @@ const GIORNO_TO_WEEKDAY: Record<string, number> = {
   "Domenica": 0,
 };
 
-const LIVELLI_CORSO = [
-  "tutti", "pulcini", "stellina1", "stellina2", "stellina3", "stellina4",
-  "Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro",
-];
-const LIVELLO_LABELS: Record<string, string> = {
-  tutti: "Tutti i livelli", pulcini: "Pulcini",
-  stellina1: "Stellina 1", stellina2: "Stellina 2", stellina3: "Stellina 3", stellina4: "Stellina 4",
-  Interbronzo: "Interbronzo", Bronzo: "Bronzo", Interargento: "Interargento",
-  Argento: "Argento", Interoro: "Interoro", Oro: "Oro",
-};
+// Etichette e confronti dei livelli: `src/lib/livelli-corso.ts` (unica fonte).
 
 const CATEGORIE_OFFICE_SUGGERIMENTI = [
   "Danza", "Stretching", "Pilates", "Preparazione atletica", "Yoga", "Fitness",
@@ -241,9 +238,11 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
   const set_val = (k: keyof typeof form, v: any) => set_form((p) => ({ ...p, [k]: v }));
 
   const { data: livelli_master = [] } = use_livelli();
+  // Il percorso (artistica/stile) ha senso solo con UN livello di carriera dichiarato.
   const fase_livello_selezionato = useMemo(() => {
-    if (!form.livello_richiesto) return null;
-    return livelli_master.find((l) => l.nome === form.livello_richiesto)?.fase ?? null;
+    const scelti = parse_livelli_corso(form.livello_richiesto);
+    if (scelti.length !== 1 || is_apertura_totale(form.livello_richiesto)) return null;
+    return livelli_master.find((l) => l.nome === scelti[0])?.fase ?? null;
   }, [form.livello_richiesto, livelli_master]);
   const is_carriera = fase_livello_selezionato === "carriera";
 
@@ -307,6 +306,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
   const errors_step1: string[] = [];
   if (!form.nome.trim()) errors_step1.push(t("corso_wizard.campo_nome"));
   if (form.tipo !== "Ghiaccio" && form.tipo !== "Off-Ice") errors_step1.push(t("corso_wizard.campo_tipo"));
+  if (form.attivo && !livello_dichiarato(form.livello_richiesto)) errors_step1.push(t("livelli.campo_livello"));
 
   const errors_step2: string[] = [];
   if (posiziona_planning) {
@@ -508,6 +508,13 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
   const [error_db, set_error_db] = useState<string | null>(null);
   const handle_submit = async () => {
     set_error_db(null);
+    // Un corso pubblicato deve dire per chi è (stesso vincolo del database).
+    if (form.attivo && !livello_dichiarato(form.livello_richiesto)) {
+      const msg = t("livelli.obbligatorio");
+      set_error_db(msg);
+      toast({ title: msg, variant: "destructive" });
+      return;
+    }
     if (istruttori_ko_selezionati.length > 0) {
       set_error_db(
         t("corso_wizard.err_istruttori_ko", {
@@ -541,7 +548,8 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
         percorso: is_carriera ? form.percorso : null,
       });
     } catch (e: any) {
-      const msg = e?.message || String(e) || t("corso_wizard.err_sconosciuto");
+      const msg =
+        messaggio_livello_obbligatorio(e, t) || e?.message || String(e) || t("corso_wizard.err_sconosciuto");
       set_error_db(msg);
     }
   };
@@ -651,17 +659,16 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                 </div>
               )}
 
-              {form.tipo === "Ghiaccio" && (
+              {/* Il livello va dichiarato per ogni tipo di corso, non solo per il ghiaccio. */}
+              {(form.tipo === "Ghiaccio" || form.tipo === "Off-Ice") && (
                 <div className="space-y-3">
                   <div>
                     <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("corso_wizard.livello_richiesto")}</Label>
                     <div className="mt-1.5">
-                      <SelectLivello
+                      <SelectLivelli
                         value={form.livello_richiesto}
                         onChange={(v) => set_val("livello_richiesto", v)}
-                        fase="qualsiasi"
-                        allowNull={true}
-                        nullLabel={t("corso_wizard.livello_null")}
+                        errore={form.attivo && !livello_dichiarato(form.livello_richiesto) ? t("livelli.obbligatorio") : null}
                       />
                     </div>
                   </div>
