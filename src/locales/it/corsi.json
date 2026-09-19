@@ -1,5 +1,16 @@
 {
   "corsi": "Corsi",
+  "livelli": {
+    "tutti": "Tutti i livelli",
+    "non_dichiarato": "Livello non dichiarato",
+    "obbligatorio": "Dì per chi è questo corso. Se è aperto a tutti, scegli Tutti i livelli.",
+    "aiuto": "Spunta uno o più livelli, oppure «Tutti i livelli»: il campo non può restare vuoto.",
+    "avviso_spento": "Livello non dichiarato: va scelto prima di pubblicare il corso.",
+    "errore_caricamento": "Non riesco a caricare l'elenco dei livelli: riprova.",
+    "riprova": "Riprova",
+    "caricamento": "Carico i livelli…",
+    "campo_livello": "Livello del corso"
+  },
   "tipo_corso": {
     "none": "Nessun tipo",
     "add_new": "Aggiungi nuovo tipo",

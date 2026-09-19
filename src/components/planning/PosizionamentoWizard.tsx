@@ -283,7 +283,9 @@ export function PosizionamentoWizard(props: posizionamento_wizard_props) {
                           {is_off_ice(c) ? "Off-Ice" : "Ghiaccio"}
                         </Badge>
                         {c.livello_richiesto && (
-                          <span className="text-[10px] text-muted-foreground">{c.livello_richiesto}</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {formatta_livelli_corso(c.livello_richiesto, t_corsi)}
+                          </span>
                         )}
                       </div>
                     </button>
