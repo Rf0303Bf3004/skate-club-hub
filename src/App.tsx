@@ -68,6 +68,7 @@ import SuperAdminConvenzioniPage from "@/pages/SuperAdminConvenzioniPage";
 import SuperAdminAppMobilePage from "@/pages/SuperAdminAppMobilePage";
 import SuperAdminTraduzioniPage from "@/pages/SuperAdminTraduzioniPage";
 import ConvenzioniSociPage from "@/pages/ConvenzioniSociPage";
+import AvvioClubPage from "@/pages/AvvioClubPage";
 import ConvenzionePubblicaPage from "@/pages/ConvenzionePubblicaPage";
 import CampoOspitePubblicoPage from "@/pages/CampoOspitePubblicoPage";
 import PortaleLoginPage from "@/pages/portale/PortaleLoginPage";
@@ -497,6 +498,7 @@ const AuthenticatedApp = () => {
           <Route path="/import-atleti" element={<SezioneGuard codice_sezione="import_dati"><ImportAtletiPage /></SezioneGuard>} />
           <Route path="/pacchetti-sponsor" element={<SezioneGuard codice_sezione="pacchetti_sponsor"><PacchettiSponsorPage /></SezioneGuard>} />
           <Route path="/convenzioni" element={<SoloPresidenteGuard><ConvenzioniSociPage /></SoloPresidenteGuard>} />
+          <Route path="/avvio" element={<SoloPresidenteGuard><AvvioClubPage /></SoloPresidenteGuard>} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/presidente/relazione" element={<SoloPresidenteGuard ruoli_extra={["dt"]}><PresidentRelazione /></SoloPresidenteGuard>} />
           <Route path="/presidente/relazione/contenuti" element={<Navigate to="/presidente/relazione" replace />} />
