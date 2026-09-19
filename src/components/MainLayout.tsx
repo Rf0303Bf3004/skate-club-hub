@@ -324,6 +324,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     {render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato)}
                     {s.codice === "dashboard" && session && puo_vedere_avvio &&
                       render_nav_item("/avvio", Rocket, "Avvio del club", "avvio_club")}
+                    {s.codice === "dashboard" && session && puo_vedere_avvio &&
+                      render_nav_item("/esportazioni", FileSpreadsheet, "Esportazioni", "esportazioni")}
                   </React.Fragment>
                 ))}
               {blocco_corrente === "conduzione" && session && puo_vedere_convenzioni &&
