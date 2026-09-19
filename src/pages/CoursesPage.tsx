@@ -1742,6 +1742,15 @@ const CorsoModal: React.FC<{
       return;
     }
 
+    // Un corso pubblicato deve dire per chi è: il vincolo esiste anche nel database.
+    if (form.attivo && !livello_dichiarato(form.livello_richiesto)) {
+      set_errore_livello(t("livelli.obbligatorio"));
+      toast({ title: t("livelli.obbligatorio"), variant: "destructive" });
+      return;
+    }
+    set_errore_livello(null);
+
+
     // Skip ghiaccio validation when not placing in planning
     if (!posiziona_planning) {
       do_save();
