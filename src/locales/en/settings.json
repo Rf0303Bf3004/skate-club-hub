@@ -173,5 +173,22 @@
     "invite": "Invite user",
     "role": "Role",
     "last_access": "Last access"
+  },
+  "nuova_stagione": {
+    "step2": {
+      "warning_title": "The ice slots are carried over to the new season",
+      "warning_desc": "The time slots of the season you are closing are copied into the new season, day by day. The old ones stay with the old season as history. Check them in {{club_config}}: you do not have to rebuild them from scratch.",
+      "ack_label": "Understood: the slots are carried over and I will check them",
+      "club_config_label": "Club setup"
+    },
+    "step5": {
+      "summary_note": "The ice slots are carried over to the new season. Instructors and course history remain available."
+    },
+    "toast": {
+      "success_con_fasce_one": "Season \"{{nome}}\" created. {{count}} ice slot carried over from the previous season: you can correct it in Club setup.",
+      "success_con_fasce_other": "Season \"{{nome}}\" created. {{count}} ice slots carried over from the previous season: you can correct them in Club setup.",
+      "success_senza_fasce": "Season \"{{nome}}\" created. The previous season had no ice slots to carry over: set them up in Club setup.",
+      "error_copia": "Season created, but the ice slots were not carried over: {{message}}. Check them in Club setup."
+    }
   }
 }

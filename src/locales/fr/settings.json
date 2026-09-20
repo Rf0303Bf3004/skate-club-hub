@@ -173,5 +173,22 @@
     "invite": "Inviter un utilisateur",
     "role": "Rôle",
     "last_access": "Dernière connexion"
+  },
+  "nuova_stagione": {
+    "step2": {
+      "warning_title": "Les plages de glace sont reportées dans la nouvelle saison",
+      "warning_desc": "Les plages horaires de la saison que vous clôturez sont copiées dans la nouvelle saison, jour par jour. Les anciennes restent liées à l'ancienne saison comme historique. Vérifiez-les dans {{club_config}} : vous n'avez pas à les reconstruire de zéro.",
+      "ack_label": "J'ai compris : les plages sont reportées et je les vérifierai",
+      "club_config_label": "Configuration du club"
+    },
+    "step5": {
+      "summary_note": "Les plages de glace sont reportées dans la nouvelle saison. Les entraîneurs et l'historique des cours restent disponibles."
+    },
+    "toast": {
+      "success_con_fasce_one": "Saison « {{nome}} » créée. {{count}} plage de glace reportée depuis la saison précédente : vous pouvez la corriger dans Configuration du club.",
+      "success_con_fasce_other": "Saison « {{nome}} » créée. {{count}} plages de glace reportées depuis la saison précédente : vous pouvez les corriger dans Configuration du club.",
+      "success_senza_fasce": "Saison « {{nome}} » créée. La saison précédente n'avait aucune plage de glace à reporter : définissez-les dans Configuration du club.",
+      "error_copia": "Saison créée, mais les plages de glace n'ont pas été reportées : {{message}}. Vérifiez-les dans Configuration du club."
+    }
   }
 }
