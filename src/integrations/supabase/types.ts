@@ -9812,37 +9812,22 @@ export type Database = {
           codice_atleta: string
         }[]
       }
-      approva_richiesta_privata:
-        | {
-            Args: {
-              p_costo_totale?: number
-              p_data: string
-              p_durata_minuti: number
-              p_istruttore_id: string
-              p_note?: string
-              p_ora_inizio: string
-              p_richiesta_id: string
-              p_ricorrenza: string
-              p_ripetizioni: number
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_costo_totale?: number
-              p_data: string
-              p_durata_minuti: number
-              p_istruttore_id: string
-              p_note?: string
-              p_ora_fine?: string
-              p_ora_inizio: string
-              p_richiesta_id: string
-              p_ricorrenza: string
-              p_ripetizioni: number
-              p_risorsa_id?: string
-            }
-            Returns: Json
-          }
+      approva_richiesta_privata: {
+        Args: {
+          p_costo_totale?: number
+          p_data: string
+          p_durata_minuti: number
+          p_istruttore_id: string
+          p_note?: string
+          p_ora_fine?: string
+          p_ora_inizio: string
+          p_richiesta_id: string
+          p_ricorrenza: string
+          p_ripetizioni: number
+          p_risorsa_id?: string
+        }
+        Returns: Json
+      }
       apri_accesso_assistenza: {
         Args: { p_club: string; p_motivo: string }
         Returns: string

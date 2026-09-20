@@ -1,0 +1,1 @@
+drop function if exists public.approva_richiesta_privata(uuid, uuid, date, time without time zone, integer, text, integer, numeric, text);
