@@ -36,8 +36,12 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const handler = (lng: string) => {
       const short = (lng?.slice(0, 2) || 'it') as Locale;
-      if ((SUPPORTED_LOCALES as readonly string[]).includes(short)) set_locale_state(short);
+      if ((SUPPORTED_LOCALES as readonly string[]).includes(short)) {
+        set_locale_state(short);
+        document.documentElement.lang = short;
+      }
     };
+    handler(i18nInstance.language);
     i18nInstance.on('languageChanged', handler);
     return () => { i18nInstance.off('languageChanged', handler); };
   }, [i18nInstance]);

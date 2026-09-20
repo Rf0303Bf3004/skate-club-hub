@@ -1,7 +1,25 @@
 // Helper centralizzato per la formattazione delle date in formato svizzero standard (gg.mm.aaaa).
 // Il valore salvato in DB resta sempre ISO YYYY-MM-DD: queste funzioni cambiano solo il rendering UI.
 
-const LOCALE = "de-CH";
+import i18n from "@/i18n";
+import type { Locale } from "./i18n";
+
+export const LOCALE_BCP47: Record<Locale, string> = {
+  it: "it-CH",
+  de: "de-CH",
+  fr: "fr-CH",
+  en: "en-CH",
+  rm: "rm-CH",
+};
+
+export function locale_to_bcp47(locale: string | undefined | null): string {
+  const lingua = locale?.slice(0, 2).toLowerCase() as Locale | undefined;
+  return lingua ? LOCALE_BCP47[lingua] ?? "it-CH" : "it-CH";
+}
+
+export function locale_data_corrente(): string {
+  return locale_to_bcp47(i18n.language);
+}
 
 type DateInput = Date | string | number | null | undefined;
 
@@ -23,14 +41,14 @@ function to_date(d: DateInput): Date | null {
 export function format_data_breve(d: DateInput, fallback: string = "—"): string {
   const dt = to_date(d);
   if (!dt) return fallback;
-  return dt.toLocaleDateString(LOCALE, { day: "2-digit", month: "2-digit", year: "2-digit" });
+  return dt.toLocaleDateString(locale_data_corrente(), { day: "2-digit", month: "2-digit", year: "2-digit" });
 }
 
 /** gg.mm.aaaa (es. 07.04.2026) — formato svizzero standard */
 export function format_data_completa(d: DateInput, fallback: string = "—"): string {
   const dt = to_date(d);
   if (!dt) return fallback;
-  return dt.toLocaleDateString(LOCALE, { day: "2-digit", month: "2-digit", year: "numeric" });
+  return dt.toLocaleDateString(locale_data_corrente(), { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 /** Variante con weekday e mese in lettere (es. "ven 7 apr 2026"). */
@@ -41,47 +59,40 @@ export function format_data_lunga(
 ): string {
   const dt = to_date(d);
   if (!dt) return fallback;
-  return dt.toLocaleDateString(LOCALE, opts);
+  return dt.toLocaleDateString(locale_data_corrente(), opts);
 }
 
 /** Formato gg.mm (senza anno) — utile per liste compatte. */
 export function format_data_gm(d: DateInput, fallback: string = "—"): string {
   const dt = to_date(d);
   if (!dt) return fallback;
-  return dt.toLocaleDateString(LOCALE, { day: "2-digit", month: "2-digit" });
+  return dt.toLocaleDateString(locale_data_corrente(), { day: "2-digit", month: "2-digit" });
 }
 
 /** Compat: formattazione personalizzata con sempre locale svizzero. */
 export function format_data(d: DateInput, opts: Intl.DateTimeFormatOptions, fallback: string = "—"): string {
   const dt = to_date(d);
   if (!dt) return fallback;
-  return dt.toLocaleDateString(LOCALE, opts);
+  return dt.toLocaleDateString(locale_data_corrente(), opts);
 }
 
-// ── i18n helpers ────────────────────────────────────────────────
-import type { Locale } from "./i18n";
-
-export const LOCALE_BCP47: Record<Locale, string> = {
-  it: "it-IT",
-  en: "en-GB",
-  fr: "fr-FR",
-  de: "de-DE",
-  rm: "rm-CH",
-};
-
-export function locale_to_bcp47(locale: Locale | undefined | null): string {
-  if (!locale) return "it-IT";
-  return LOCALE_BCP47[locale] ?? "it-IT";
+/** Ora localizzata nella lingua UI corrente. */
+export function format_ora(
+  d: DateInput,
+  opts: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit" },
+  fallback: string = "—"
+): string {
+  const dt = to_date(d);
+  if (!dt) return fallback;
+  return dt.toLocaleTimeString(locale_data_corrente(), opts);
 }
 
 /** Formato lungo localizzato (es. "martedì 28 aprile 2026") usando la lingua UI corrente. */
-export function fmt_date_long(d: DateInput, locale_code: string, fallback: string = "—"): string {
-  const dt = to_date(d);
-  if (!dt) return fallback;
-  return dt.toLocaleDateString(locale_code, {
+export function fmt_date_long(d: DateInput, fallback: string = "—"): string {
+  return format_data_lunga(d, {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
-  });
+  }, fallback);
 }
