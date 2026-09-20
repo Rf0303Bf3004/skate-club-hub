@@ -78,13 +78,6 @@ const hash_in_esecuzione: string | null = (() => {
   return trovato ? trovato[0] : null;
 })();
 
-let ultimo_tocco = Date.now();
-const segna_attivita = () => {
-  ultimo_tocco = Date.now();
-};
-window.addEventListener("pointerdown", segna_attivita, { passive: true });
-window.addEventListener("keydown", segna_attivita, { passive: true });
-
 async function controlla_versione(): Promise<void> {
   if (!hash_in_esecuzione) return;
   try {
