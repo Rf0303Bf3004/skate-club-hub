@@ -609,5 +609,10 @@
     "ok_richieste": "No pending registrations",
     "ok_bozze": "No invoices to send",
     "ok_anagrafiche": "Athlete records complete"
+  },
+  "corsi_creazione": {
+    "titolo": "Courses are created in the Activity Grid",
+    "testo": "In the Activity Grid the portal checks that ice and an instructor are available before creating the course.",
+    "azione": "Go to the Activity Grid"
   }
 }
