@@ -123,6 +123,7 @@ const LoginPage: React.FC = () => {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="password"
+                  required
                   placeholder={t('login.password_placeholder')}
                   value={password}
                   onChange={(e) => set_password(e.target.value)}
@@ -130,7 +131,16 @@ const LoginPage: React.FC = () => {
                 />
               </div>
             </div>
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={is_submitting}>
+            {errore_accesso && (
+              <p role="alert" className="text-sm font-medium text-destructive">
+                {errore_accesso}
+              </p>
+            )}
+            <Button
+              type="submit"
+              className="w-full bg-primary hover:bg-primary/90"
+              disabled={is_submitting || !email.trim() || !password.trim()}
+            >
               {is_submitting ? '...' : t('login.sign_in')}
             </Button>
           </form>
