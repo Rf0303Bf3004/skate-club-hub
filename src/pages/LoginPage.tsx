@@ -27,10 +27,12 @@ const LoginPage: React.FC = () => {
   const [email, set_email] = useState('');
   const [password, set_password] = useState('');
   const [is_submitting, set_is_submitting] = useState(false);
+  const [errore_accesso, set_errore_accesso] = useState<string | null>(null);
   const [account_recenti, set_account_recenti] = useState<string[]>(() => leggi_account_recenti());
 
   const handle_submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    set_errore_accesso(null);
     set_is_submitting(true);
 
     try {
