@@ -44,23 +44,20 @@ import {
 
 /** Etichetta e colore del ruolo nel club, leggibili anche in tema scuro. */
 const BADGE_LIVELLO: Record<string, string> = {
-  direttore_tecnico:
-    "bg-teal-100 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:border-teal-800",
   monitrice: "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-200 dark:border-purple-800",
   aiuto_monitrice:
     "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-200 dark:border-orange-800",
   istruttore: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-800",
 };
 
+// `direttore_tecnico` non è più un ruolo dell'anagrafica: un dato vecchio vale come istruttore.
 const badge_livello_cls = (liv: string) => BADGE_LIVELLO[liv] ?? BADGE_LIVELLO.istruttore;
 const badge_livello_key = (liv: string) =>
-  liv === "direttore_tecnico"
-    ? "badge.direttore_tecnico"
-    : liv === "monitrice"
-      ? "badge.monitrice"
-      : liv === "aiuto_monitrice"
-        ? "badge.aiuto_monitrice"
-        : "badge.istruttore";
+  liv === "monitrice"
+    ? "badge.monitrice"
+    : liv === "aiuto_monitrice"
+      ? "badge.aiuto_monitrice"
+      : "badge.istruttore";
 
 
 
