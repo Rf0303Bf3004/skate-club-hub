@@ -7403,6 +7403,7 @@ export type Database = {
           club_id: string
           created_at: string
           data_preferita: string | null
+          data_richiesta: string | null
           fascia_preferita: string | null
           gestita_da: string | null
           gestita_il: string | null
@@ -7411,8 +7412,11 @@ export type Database = {
           lezione_id: string | null
           note_richiesta: string | null
           note_risposta: string | null
+          ora_fine: string | null
+          ora_inizio: string | null
           ricorrenza: string
           ripetizioni: number
+          risorsa_id: string | null
           stato: string
         }
         Insert: {
@@ -7420,6 +7424,7 @@ export type Database = {
           club_id: string
           created_at?: string
           data_preferita?: string | null
+          data_richiesta?: string | null
           fascia_preferita?: string | null
           gestita_da?: string | null
           gestita_il?: string | null
@@ -7428,8 +7433,11 @@ export type Database = {
           lezione_id?: string | null
           note_richiesta?: string | null
           note_risposta?: string | null
+          ora_fine?: string | null
+          ora_inizio?: string | null
           ricorrenza?: string
           ripetizioni?: number
+          risorsa_id?: string | null
           stato?: string
         }
         Update: {
@@ -7437,6 +7445,7 @@ export type Database = {
           club_id?: string
           created_at?: string
           data_preferita?: string | null
+          data_richiesta?: string | null
           fascia_preferita?: string | null
           gestita_da?: string | null
           gestita_il?: string | null
@@ -7445,8 +7454,11 @@ export type Database = {
           lezione_id?: string | null
           note_richiesta?: string | null
           note_risposta?: string | null
+          ora_fine?: string | null
+          ora_inizio?: string | null
           ricorrenza?: string
           ripetizioni?: number
+          risorsa_id?: string | null
           stato?: string
         }
         Relationships: [
@@ -7511,6 +7523,13 @@ export type Database = {
             columns: ["lezione_id"]
             isOneToOne: false
             referencedRelation: "lezioni_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "richieste_lezioni_private_risorsa_id_fkey"
+            columns: ["risorsa_id"]
+            isOneToOne: false
+            referencedRelation: "risorse_strutture"
             referencedColumns: ["id"]
           },
         ]
@@ -9800,10 +9819,12 @@ export type Database = {
           p_durata_minuti: number
           p_istruttore_id: string
           p_note?: string
+          p_ora_fine?: string
           p_ora_inizio: string
           p_richiesta_id: string
           p_ricorrenza: string
           p_ripetizioni: number
+          p_risorsa_id?: string
         }
         Returns: Json
       }
