@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Snowflake, Dumbbell, Lock } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { use_eventi_unificati, add_giorni, lunedi_di_iso, iso_da_date } from "@/hooks/use-planning-unificato";
 
+import { format_data } from "@/lib/format-data";
 interface Props {
   data_sel: string;
   includi_ospiti: boolean;
@@ -85,7 +86,7 @@ const MeseGrigliaView: React.FC<Props> = ({
           Mese successivo <ChevronRight className="h-4 w-4" />
         </Button>
         <span className="text-sm font-medium capitalize">
-          {riferimento.toLocaleDateString("it-CH", { month: "long", year: "numeric" })}
+          {format_data(riferimento, { month: "long", year: "numeric" })}
         </span>
       </div>
 

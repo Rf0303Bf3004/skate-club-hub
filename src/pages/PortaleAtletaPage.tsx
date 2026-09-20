@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { use_contenuti_traduzioni } from "@/hooks/use-contenuti-traduzioni";
 import { formatta_livelli_corso, is_apertura_totale, livello_dichiarato } from "@/lib/livelli-corso";
 
+import { format_data } from "@/lib/format-data";
 // Portale pubblico mobile-first: l'identificativo è il `codice_atleta` (AT-XXXX-XXXX),
 // lo stesso usato dall'app mobile genitori. Tutte le query passano dall'edge function `portale-atleta`.
 
@@ -209,7 +210,7 @@ const PortaleAtletaPage: React.FC = () => {
                 <Row label={t("atleta_page.nome")}>{nome_completo}</Row>
                 <Row label={t("atleta_page.data_nascita")}>
                   {atleta.data_nascita
-                    ? new Date(atleta.data_nascita + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
+                    ? format_data(new Date(atleta.data_nascita + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" })
                     : "—"}
                 </Row>
                 <Row label={t("atleta_page.luogo_nascita")}>{atleta.luogo_nascita || "—"}</Row>
@@ -240,7 +241,7 @@ const PortaleAtletaPage: React.FC = () => {
                   <Row label={t("atleta_page.categoria")}>{atleta.licenza_sis_categoria || "—"}</Row>
                   <Row label={t("atleta_page.validita")}>
                     {atleta.licenza_sis_validita_a
-                      ? new Date(atleta.licenza_sis_validita_a + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
+                      ? format_data(new Date(atleta.licenza_sis_validita_a + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" })
                       : "—"}
                   </Row>
                 </dl>
@@ -259,7 +260,7 @@ const PortaleAtletaPage: React.FC = () => {
                 <div key={i} className="bg-card border border-border rounded-xl p-3 shadow-card flex gap-3">
                   <div className="flex flex-col items-center justify-center bg-primary/10 text-primary rounded-lg px-3 py-2 min-w-[60px]">
                     <span className="text-xs uppercase font-bold">
-                      {new Date(e.data + "T00:00:00").toLocaleDateString("de-CH", { month: "short" })}
+                      {format_data(new Date(e.data + "T00:00:00"), { month: "short" })}
                     </span>
                     <span className="text-xl font-black leading-none">
                       {new Date(e.data + "T00:00:00").getDate()}
@@ -295,7 +296,7 @@ const PortaleAtletaPage: React.FC = () => {
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <h3 className="text-sm font-bold text-foreground">{traduci(com?.id, "titolo", com?.titolo)}</h3>
                       <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                        {new Date(c.creato_at).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                        {format_data(new Date(c.creato_at), { day: "2-digit", month: "2-digit", year: "numeric" })}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">
@@ -343,7 +344,7 @@ const PortaleAtletaPage: React.FC = () => {
                       <p className="text-sm font-semibold text-foreground truncate">{f.descrizione || f.tipo}</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {f.data_emissione
-                          ? new Date(f.data_emissione + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
+                          ? format_data(new Date(f.data_emissione + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" })
                           : ""}
                       </p>
                     </div>

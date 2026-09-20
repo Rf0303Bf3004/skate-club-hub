@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { format_ora } from "@/lib/format-data";
 interface Club {
   id: string;
   nome: string;
@@ -47,7 +48,7 @@ const SuperAdminManutenzioneStr: React.FC = () => {
   const [log, set_log] = useState<string[]>([]);
 
   const add_log = (msg: string) => {
-    const ts = new Date().toLocaleTimeString("it-CH");
+    const ts = format_ora(new Date());
     set_log((prev) => [`[${ts}] ${msg}`, ...prev.slice(0, 99)]);
   };
 

@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { format_data_ora } from "@/lib/format-data";
 
 const RUOLI = ["superadmin", "admin", "presidente", "vicepresidente", "segreteria", "dt", "istruttore", "aiuto_monitore"];
 
@@ -220,7 +221,7 @@ const SuperAdminUtentiPage: React.FC = () => {
                     </TableCell>
                   )}
                   <TableCell className="text-xs text-muted-foreground">
-                    {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString("it-CH", { dateStyle: "short", timeStyle: "short" }) : "—"}
+                    {u.last_sign_in_at ? format_data_ora(u.last_sign_in_at, { dateStyle: "short", timeStyle: "short" }) : "—"}
                   </TableCell>
                   <TableCell>
                     {u.banned ? <span className="text-xs font-bold text-red-600">Disattivato</span> : <span className="text-xs text-emerald-600">Attivo</span>}

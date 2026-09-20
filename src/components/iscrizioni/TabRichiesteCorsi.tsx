@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslation } from "react-i18next";
 
+import { format_data } from "@/lib/format-data";
 type Filtro = "tutte" | "in_attesa" | "approvata" | "rifiutata" | "archivio";
 
 const GIORNI_ARCHIVIO = 30;
@@ -144,7 +145,7 @@ const TabRichiesteCorsi: React.FC<{ puo_gestire_sportivo: boolean }> = ({ puo_ge
         </td>
         <td className="p-3 text-sm text-primary font-medium truncate">{corso?.nome || (r.corso_id ?? "").slice(0, 8)}</td>
         <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">
-          {new Date(r.created_at).toLocaleDateString("de-CH", { day: "numeric", month: "short", year: "numeric" })}
+          {format_data(new Date(r.created_at), { day: "numeric", month: "short", year: "numeric" })}
         </td>
         <td className="p-3">
           {stato_badge(r.stato)}

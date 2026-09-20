@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, Bot } from 'lucide-react';
 import { ListaComunicazioni } from '@/components/comunicazioni/ListaComunicazioni';
+import { format_data } from "@/lib/format-data";
 import {
   raggruppa_comunicazioni,
   riepilogo_automatiche,
@@ -25,7 +26,7 @@ function giorno_di(c: any) {
 
 function etichetta_giorno(giorno: string) {
   if (!giorno) return 'Senza data';
-  return new Date(`${giorno}T00:00:00`).toLocaleDateString('it-CH', {
+  return format_data(new Date(`${giorno}T00:00:00`), {
     day: 'numeric',
     month: 'long',
     year: 'numeric',

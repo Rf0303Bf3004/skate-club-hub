@@ -5,9 +5,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 
+import { format_ora } from "@/lib/format-data";
 function format_time(d: Date | null): string {
   if (!d) return "";
-  return d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+  return format_ora(d, { hour: "2-digit", minute: "2-digit" });
 }
 
 export default function SavingIndicator() {

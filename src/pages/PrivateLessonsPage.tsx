@@ -24,6 +24,7 @@ import { useSearchParams } from "react-router-dom";
 import CampoEnteLezione from "@/components/lezioni/CampoEnteLezione";
 import { use_ente_predefinito, use_enti_lezione, use_nome_ente } from "@/hooks/use-ente-lezione";
 
+import { format_data } from "@/lib/format-data";
 // ─── Helpers ───────────────────────────────────────────────
 function fmt(d: Date): string {
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -285,7 +286,7 @@ const SlotModal: React.FC<{
 }> = ({ form, atleti, slot_minuti, on_change, on_submit, on_close, loading }) => {
   const { t } = useTranslation('corsi');
   const date_obj = new Date(form.data + "T00:00:00");
-  const date_label = date_obj.toLocaleDateString("de-CH", {
+  const date_label = format_data(date_obj, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -1050,7 +1051,7 @@ const LezioniPrivatePage: React.FC = () => {
   const selected_date_obj = new Date(selected_date + "T00:00:00");
   const is_today = selected_date === today;
   const now_minutes = (() => { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); })();
-  const selected_label = selected_date_obj.toLocaleDateString("de-CH", {
+  const selected_label = format_data(selected_date_obj, {
     weekday: "long",
     day: "numeric",
     month: "long",

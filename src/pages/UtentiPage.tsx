@@ -21,6 +21,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
+import { format_data_ora } from "@/lib/format-data";
 
 const RUOLI_BASE_VALUES = [
   "presidente",
@@ -72,7 +73,7 @@ function format_relative(date_str: string | null | undefined, t: (k: string, opt
   if (diff_min < 1) return t("users.relative_time.now");
   if (diff_min < 60) return t("users.relative_time.minutes_ago", { count: diff_min });
   if (diff_min < 60 * 24) return t("users.relative_time.hours_ago", { count: Math.floor(diff_min / 60) });
-  return d.toLocaleString("it-IT", {
+  return format_data_ora(d, {
     day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
   });
 }

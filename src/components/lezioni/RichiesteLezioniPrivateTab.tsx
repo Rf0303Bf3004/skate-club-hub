@@ -8,6 +8,7 @@ import { AlertTriangle, Loader2, CalendarClock, User } from "lucide-react";
 import { toast } from "sonner";
 import ApprovaRichiestaDialog from "@/components/lezioni/ApprovaRichiestaDialog";
 
+import { format_data } from "@/lib/format-data";
 export interface RichiestaLezione {
   id: string;
   club_id: string;
@@ -138,7 +139,7 @@ const RichiesteLezioniPrivateTab: React.FC<Props> = ({
     return t("richieste_private.stato_in_attesa");
   };
   const data_label = (d: string | null) =>
-    d ? new Date(`${d}T00:00:00`).toLocaleDateString(i18n.language) : t("richieste_private.nessuna_preferenza");
+    d ? format_data(new Date(`${d}T00:00:00`)) : t("richieste_private.nessuna_preferenza");
 
   const conferma_rifiuto = async () => {
     if (!rifiuta_id) return;

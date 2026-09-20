@@ -9,6 +9,7 @@ import { use_app_store_links } from '@/hooks/use-app-store-links';
 import { use_qr_data_url } from '@/hooks/use-qr-data-url';
 import FotoAtleta from "@/components/common/FotoAtleta";
 
+import { format_data } from "@/lib/format-data";
 interface SchedaProps { atleta: any; on_back: () => void; modo?: 'foto' | 'iscrizione'; }
 
 /** Rende una stringa con separatore " · " su più righe */
@@ -99,7 +100,7 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back, modo = 'foto
               <FotoAtleta foto_path={atleta.foto_path} nome={atleta.nome} cognome={atleta.cognome} className='w-16 h-16 rounded-full border-2 border-indigo-100' fallback={<div className='w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-2xl'>{atleta.nome?.[0]}{atleta.cognome?.[0]}</div>} />
               <div>
                 <p className='text-xl font-semibold text-gray-900'>{atleta.nome} {atleta.cognome}</p>
-                <p className='text-sm text-gray-500 mt-0.5'>{t('anagrafica.born_on')} {atleta.data_nascita ? new Date(atleta.data_nascita).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}</p>
+                <p className='text-sm text-gray-500 mt-0.5'>{t('anagrafica.born_on')} {atleta.data_nascita ? format_data(new Date(atleta.data_nascita), { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}</p>
                 <span className='inline-block mt-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700'>{atleta.percorso_amatori || atleta.carriera_artistica || '—'}</span>
               </div>
             </div>
@@ -132,7 +133,7 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back, modo = 'foto
               <div>
                 <p className='text-xs font-bold text-gray-400 uppercase tracking-widest mb-2'>{t('anagrafica.license_title')}</p>
                 <div className='grid grid-cols-2 gap-2'>
-                  {[[t('anagrafica.license_number'), atleta.licenza_sis_numero],[t('anagrafica.license_category'), atleta.licenza_sis_categoria],[t('anagrafica.license_discipline'), atleta.licenza_sis_disciplina],[t('anagrafica.license_validity'), atleta.licenza_sis_validita_a ? t('anagrafica.license_until', { data: new Date(atleta.licenza_sis_validita_a).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' }) }) : null]].map(([l,v]) => (
+                  {[[t('anagrafica.license_number'), atleta.licenza_sis_numero],[t('anagrafica.license_category'), atleta.licenza_sis_categoria],[t('anagrafica.license_discipline'), atleta.licenza_sis_disciplina],[t('anagrafica.license_validity'), atleta.licenza_sis_validita_a ? t('anagrafica.license_until', { data: format_data(new Date(atleta.licenza_sis_validita_a), { day: '2-digit', month: '2-digit', year: 'numeric' }) }) : null]].map(([l,v]) => (
                     <div key={l as string} className='bg-blue-50 rounded-lg px-3 py-2 border border-blue-100'>
                       <p className='text-xs text-blue-400'>{l}</p>
                       <p className='text-sm font-medium text-blue-800'>{v || '—'}</p>
@@ -224,7 +225,7 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back, modo = 'foto
 
         <div className='px-6 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between'>
           <p className='text-xs text-gray-400'><span className='inline-block w-2 h-2 bg-green-500 rounded-full mr-1'></span>{stagione_attiva?.nome ? t('anagrafica.card_valid_season', { stagione: stagione_attiva.nome }) : t('anagrafica.card_valid')}</p>
-          <p className='text-xs text-gray-400'>{t('anagrafica.generated_on', { data: new Date().toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' }) })}</p>
+          <p className='text-xs text-gray-400'>{t('anagrafica.generated_on', { data: format_data(new Date(), { day: '2-digit', month: '2-digit', year: 'numeric' }) })}</p>
         </div>
       </div>
     </div>

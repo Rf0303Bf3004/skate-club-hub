@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { CalendarX, Trash2 } from "lucide-react";
 
+import { format_data } from "@/lib/format-data";
 interface BloccoFuori {
   id: string;
   data: string;
@@ -16,7 +17,7 @@ interface BloccoFuori {
 }
 
 function data_it(d: string): string {
-  return new Date(`${d}T00:00:00`).toLocaleDateString("it-CH");
+  return format_data(new Date(`${d}T00:00:00`));
 }
 
 /**

@@ -65,6 +65,7 @@ import FatturazioneIscrizioneRow from "@/components/corsi/FatturazioneIscrizione
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
 
+import { format_data } from "@/lib/format-data";
 const GIORNI_DB = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 
 // Classifica un corso in una delle 4 colonne del protocollo di lavoro.
@@ -877,7 +878,7 @@ const TabPresenze: React.FC<{
   const genera_wa_link = (persona: any, tipo: string) => {
     const tel = persona.genitore1_telefono || persona.telefono || "";
     if (!tel) return null;
-    const data_fmt = new Date(data_sel + "T00:00:00").toLocaleDateString("de-CH", {
+    const data_fmt = format_data(new Date(data_sel + "T00:00:00"), {
       weekday: "long",
       day: "numeric",
       month: "long",
@@ -916,7 +917,7 @@ const TabPresenze: React.FC<{
           <div className="flex items-center justify-between">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
               {t("presenze.attendance_for")} —{" "}
-              {new Date(data_sel + "T00:00:00").toLocaleDateString("de-CH", {
+              {format_data(new Date(data_sel + "T00:00:00"), {
                 weekday: "long",
                 day: "numeric",
                 month: "long",

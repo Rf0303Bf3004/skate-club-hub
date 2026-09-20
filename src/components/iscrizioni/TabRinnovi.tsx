@@ -23,8 +23,9 @@ import {
 } from "@/hooks/use-iscrizioni-stagione";
 import { get_livello_display } from "@/lib/atleta-livello";
 
+import { format_data } from "@/lib/format-data";
 const data_breve = (v: string | null, lingua: string) =>
-  v ? new Date(v).toLocaleDateString(lingua, { day: "numeric", month: "short", year: "numeric" }) : "";
+  v ? format_data(new Date(v), { day: "numeric", month: "short", year: "numeric" }) : "";
 
 const TabRinnovi: React.FC<{ puo_gestire: boolean; vai_a_domande: () => void }> = ({
   puo_gestire,

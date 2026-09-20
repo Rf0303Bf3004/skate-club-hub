@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import type { PortaleSession } from "@/lib/portale-auth";
 import { segnala_errore } from "@/lib/errori";
 import { Button } from "@/components/ui/button";
+import { format_data } from "@/lib/format-data";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -136,7 +137,7 @@ const PortaleHomePage: React.FC = () => {
   }, [session.atleta.id]);
 
   const oggi = new Date();
-  const giorno_sett = oggi.toLocaleDateString("it-CH", { weekday: "long" });
+  const giorno_sett = format_data(oggi, { weekday: "long" });
   const campagna = rinnovo.isSuccess && rinnovo.data && !["attivo", "non_rinnovato"].includes(rinnovo.data.status)
     ? rinnovo.data
     : null;
@@ -166,7 +167,7 @@ const PortaleHomePage: React.FC = () => {
           {campagna.scadenza && (
             <p className="mt-2 text-sm font-medium text-slate-600">
               {t("rinnovo.scadenza", {
-                data: new Date(`${campagna.scadenza}T00:00:00`).toLocaleDateString(i18n.language),
+                data: format_data(new Date(`${campagna.scadenza}T00:00:00`)),
               })}
             </p>
           )}
@@ -252,7 +253,7 @@ const PortaleHomePage: React.FC = () => {
                         {ev.nome_evento ?? meta.label}
                       </p>
                       <p className="text-xs text-slate-500 mt-1 capitalize">
-                        {new Date(ev.data + "T00:00:00").toLocaleDateString("it-CH", { weekday: "long", day: "2-digit", month: "short" })}
+                        {format_data(new Date(ev.data + "T00:00:00"), { weekday: "long", day: "2-digit", month: "short" })}
                       </p>
                     </div>
                   </div>

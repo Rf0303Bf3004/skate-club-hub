@@ -8,6 +8,7 @@ import { Loader2, AlertTriangle, Plus } from "lucide-react";
 import { toast } from "sonner";
 import DateInput from "@/components/forms/DateInput";
 
+import { format_data } from "@/lib/format-data";
 interface Props {
   atleta_id: string;
   club_id: string;
@@ -251,7 +252,7 @@ const RichiestePrivateSezione: React.FC<Props> = ({ atleta_id, club_id }) => {
               </div>
               <p className="text-xs text-slate-500">
                 {r.data_preferita
-                  ? new Date(`${r.data_preferita}T00:00:00`).toLocaleDateString(i18n.language)
+                  ? format_data(new Date(`${r.data_preferita}T00:00:00`))
                   : t("richieste_private.nessuna_preferenza")}{" "}
                 · {etichetta_fascia(r.fascia_preferita)}
               </p>

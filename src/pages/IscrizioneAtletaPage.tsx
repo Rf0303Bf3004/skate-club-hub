@@ -9,6 +9,7 @@ import { Camera, CheckCircle2, Loader2, AlertCircle, Send } from "lucide-react";
 import { type ArticoloContratto, type DatiContratto } from "@/lib/contratto-adesione";
 import { get_livello_display } from "@/lib/atleta-livello";
 
+import { format_data } from "@/lib/format-data";
 const MAX_BYTES = 2 * 1024 * 1024;
 const TIPI_OK = ["image/jpeg", "image/jpg", "image/png"];
 
@@ -307,13 +308,13 @@ const IscrizioneAtletaPage: React.FC = () => {
   const gia_attivo = registro?.status === "attivo";
   const gia_non_rinnovato = registro?.status === "non_rinnovato";
   const data_conferma = registro?.confermato_il
-    ? new Date(registro.confermato_il).toLocaleDateString("it-CH")
+    ? format_data(new Date(registro.confermato_il))
     : null;
 
   // Rinnovo di stagione: prima la scelta, poi (se conferma) il resto della pagina.
   if (rinnovo_aperto && scelta !== "confermo") {
     const scadenza = stagione?.iscrizioni_scadenza
-      ? new Date(stagione.iscrizioni_scadenza + "T00:00:00").toLocaleDateString("it-CH")
+      ? format_data(new Date(stagione.iscrizioni_scadenza + "T00:00:00"))
       : null;
     const risposta_data = (gia_attivo || gia_non_rinnovato) && !riapri;
     return (
@@ -413,7 +414,7 @@ const IscrizioneAtletaPage: React.FC = () => {
               </Campo>
             )}
             {nascita_bloccata ? (
-              <ReadOnly label="Data di nascita" valore={new Date(atleta.data_nascita + "T00:00:00").toLocaleDateString("it-CH")} />
+              <ReadOnly label="Data di nascita" valore={format_data(new Date(atleta.data_nascita + "T00:00:00"))} />
             ) : (
               <Campo label="Data di nascita">
                 <Input type="date" className="h-11" value={form.data_nascita} onChange={(e) => set_val("data_nascita", e.target.value)} />

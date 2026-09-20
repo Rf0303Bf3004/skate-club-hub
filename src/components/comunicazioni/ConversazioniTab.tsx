@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { use_atleti } from "@/hooks/use-supabase-data";
 import { chiave_gruppo } from "@/lib/raggruppa-comunicazioni";
 
+import { format_data } from "@/lib/format-data";
 const tk = (key: string, opts?: any) => i18n.t(`conversazioni.${key}`, { ns: "communications", ...(opts ?? {}) }) as string;
 
 
@@ -36,7 +37,7 @@ type Conversazione = {
 
 function format_date(iso: string | null) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("it-CH", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return format_data(new Date(iso), { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 export const ConversazioniTab: React.FC = () => {

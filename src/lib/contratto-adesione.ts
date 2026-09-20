@@ -1,3 +1,4 @@
+import { format_data } from "@/lib/format-data";
 // ATTENZIONE — la versione buona di questo contratto è quella del server, in
 // `supabase/functions/_shared/contratto.ts`: è il testo che viene mostrato alla
 // famiglia e archiviato alla firma. Questo file resta solo per i punti che non
@@ -29,7 +30,7 @@ const fmt_data = (v?: string | null) => {
   if (!v) return null;
   const d = new Date(v + "T00:00:00");
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString("it-CH", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return format_data(d, { day: "2-digit", month: "2-digit", year: "numeric" });
 };
 
 export function build_contratto(dati: DatiContratto): ArticoloContratto[] {

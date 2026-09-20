@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { get_fattura_stato_ui, get_fattura_stato_label } from "@/lib/fattura-status";
-import { format_data_completa } from "@/lib/format-data";
+import { format_data_completa, format_data } from "@/lib/format-data";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Calendar } from "lucide-react";
@@ -975,7 +975,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                           {td("detail.flag_ospite", { club: (form as any).club_provenienza || "—" })}
                           {(form as any).livello_dichiarato ? ` • ${(form as any).livello_dichiarato}` : ""}
                           {(form as any).ospite_scade_il
-                            ? ` • ${td("detail.ospite_scade", { data: new Date((form as any).ospite_scade_il + "T00:00:00").toLocaleDateString("it-CH") })}`
+                            ? ` • ${td("detail.ospite_scade", { data: format_data(new Date((form as any).ospite_scade_il + "T00:00:00")) })}`
                             : ""}
                         </span>
                       )}
@@ -1479,7 +1479,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                         <tr key={g.id} className="border-b border-border/50">
                           <td className="px-4 py-3 font-medium text-foreground">{g.nome}</td>
                           <td className="px-4 py-3 text-muted-foreground">
-                            {new Date(g.data + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                            {format_data(new Date(g.data + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" })}
                           </td>
                           <td className="px-4 py-3 text-center tabular-nums text-muted-foreground">
                             {entry?.punteggio_tecnico ?? "—"}
@@ -1740,7 +1740,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                       {f.descrizione && <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{f.descrizione}</p>}
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">
-                          {f.data_scadenza ? td("detail.invoice_due", { data: new Date(f.data_scadenza + "T00:00:00").toLocaleDateString("de-CH") }) : "—"}
+                          {f.data_scadenza ? td("detail.invoice_due", { data: format_data(new Date(f.data_scadenza + "T00:00:00")) }) : "—"}
                         </span>
                         <span className="font-bold tabular-nums text-foreground">CHF {Number(f.importo || 0).toFixed(2)}</span>
                       </div>
@@ -1783,7 +1783,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                     athlete_lezioni.map((l: any) => (
                       <tr key={l.id} className="border-b border-border/50">
                         <td className="px-4 py-3 text-muted-foreground">
-                          {new Date(l.data + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                          {format_data(new Date(l.data + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" })}
                         </td>
                         <td className="px-4 py-3 font-medium text-foreground">
                           {get_istruttore_name_from_list(istruttori, l.istruttore_id)}

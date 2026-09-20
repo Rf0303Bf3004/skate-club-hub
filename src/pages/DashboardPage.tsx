@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
-import { fmt_date_long, locale_to_bcp47 } from "@/lib/format-data";
+import { fmt_date_long, format_data } from "@/lib/format-data";
 
 import { useNavigate } from "react-router-dom";
 import {
@@ -115,7 +115,7 @@ function get_giorno_key(date: string): string {
 }
 
 function format_data_breve(date: string): string {
-  return new Date(date + "T00:00:00").toLocaleDateString("de-CH", { weekday: "short", day: "numeric", month: "short" });
+  return format_data(new Date(date + "T00:00:00"), { weekday: "short", day: "numeric", month: "short" });
 }
 
 // ─── Hook template comunicazioni ──────────────────────────
@@ -638,7 +638,7 @@ const BoxComunicazione: React.FC<{
   const detected_placeholders = React.useMemo(() => extract_placeholders(template_raw), [template_raw]);
 
   const fmt_date_it = (d: string) =>
-    new Date(d + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "long", year: "numeric" });
+    format_data(new Date(d + "T00:00:00"), { day: "2-digit", month: "long", year: "numeric" });
 
   React.useEffect(() => {
     if (!template_raw) return;
@@ -874,7 +874,7 @@ const BoxComunicazione: React.FC<{
             <option value="">{td("quick_comm.select_gara")}</option>
             {gare.map((g) => (
               <option key={g.id} value={g.id}>
-                {g.nome} — {new Date(g.data + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                {g.nome} — {format_data(new Date(g.data + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" })}
               </option>
             ))}
           </select>
@@ -1194,7 +1194,7 @@ const WidgetFatture: React.FC<{ fatture: any[]; atleti: any[] }> = ({ fatture, a
             <div className="text-right">
               <p className="text-xs font-bold text-foreground">CHF {Number(f.importo).toFixed(2)}</p>
               <p className="text-xs text-orange-500">
-                {new Date(f.scadenza + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "short" })}
+                {format_data(new Date(f.scadenza + "T00:00:00"), { day: "2-digit", month: "short" })}
               </p>
             </div>
           </div>
@@ -1296,9 +1296,8 @@ const DashboardPage: React.FC = () => {
   if ((session?.ruolo as string) === "presidente") {
     return <PresidentDashboard />;
   }
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const { t: td } = useTranslation("dashboard");
-  const locale_code = locale_to_bcp47(locale);
 
   const { data: atleti = [], isLoading: loading_atleti } = use_atleti();
   const { data: corsi = [], isLoading: loading_corsi } = use_corsi();
@@ -1503,7 +1502,7 @@ const DashboardPage: React.FC = () => {
           </Button>
           <div className="text-right">
             <p className="text-xs text-muted-foreground capitalize">
-              {fmt_date_long(new Date(), locale_code)}
+              {fmt_date_long(new Date())}
             </p>
             <p className="text-xs font-bold text-success">{td("presenti_in_pista", { count: totale_presenti })}</p>
           </div>
@@ -1613,7 +1612,7 @@ const DashboardPage: React.FC = () => {
         oggi.setHours(0, 0, 0, 0);
         const diff_days = Math.ceil((fine.getTime() - oggi.getTime()) / (1000 * 60 * 60 * 24));
         if (diff_days > 30) return null;
-        const data_fmt = fine.toLocaleDateString("de-CH", { day: "numeric", month: "long", year: "numeric" });
+        const data_fmt = format_data(fine, { day: "numeric", month: "long", year: "numeric" });
         const is_past = diff_days < 0;
         return (
           <div

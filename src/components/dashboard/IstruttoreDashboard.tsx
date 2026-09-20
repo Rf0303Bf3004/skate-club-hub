@@ -17,6 +17,7 @@ import { useAuth } from "@/lib/auth";
 import PromemoriaEsameGs from "@/components/istruttori/PromemoriaEsameGs";
 import { use_istruttori } from "@/hooks/use-supabase-data";
 
+import { format_data } from "@/lib/format-data";
 /**
  * Home dell'istruttore (e dell'aiuto monitore): «cosa devo fare adesso».
  * Pagina unica e identica per tutti: non dipende dalla matrice dei riquadri.
@@ -406,7 +407,7 @@ const IstruttoreDashboard: React.FC = () => {
 
 
   const data_estesa = (iso: string) =>
-    new Date(`${iso}T00:00:00`).toLocaleDateString(i18n.language, {
+    format_data(new Date(`${iso}T00:00:00`), {
       weekday: "long",
       day: "numeric",
       month: "long",
@@ -451,7 +452,7 @@ const IstruttoreDashboard: React.FC = () => {
           {t("istruttore_home.titolo", "La mia giornata")}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {adesso.toLocaleDateString(i18n.language, { weekday: "long", day: "numeric", month: "long" })}
+          {format_data(adesso, { weekday: "long", day: "numeric", month: "long" })}
         </p>
       </div>
 

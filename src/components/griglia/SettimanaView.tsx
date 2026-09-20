@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { Snowflake, Dumbbell, ChevronLeft, ChevronRight, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EventoUnificatoBox from "@/components/griglia/EventoUnificatoBox";
+import { format_data } from "@/lib/format-data";
 import {
   use_eventi_unificati,
   add_giorni,
@@ -25,7 +26,7 @@ interface Props {
 
 function label_giorno(data_iso: string): string {
   const d = new Date(`${data_iso}T00:00:00`);
-  return d.toLocaleDateString("it-CH", { weekday: "short", day: "numeric", month: "short" });
+  return format_data(d, { weekday: "short", day: "numeric", month: "short" });
 }
 
 function hhmm_da_min(m: number): string {
@@ -200,8 +201,8 @@ const SettimanaView: React.FC<Props> = ({
           Settimana successiva <ChevronRight className="h-4 w-4" />
         </Button>
         <span className="text-sm font-medium">
-          {new Date(`${lunedi}T00:00:00`).toLocaleDateString("it-CH", { day: "numeric", month: "long" })} –{" "}
-          {new Date(`${domenica}T00:00:00`).toLocaleDateString("it-CH", {
+          {format_data(new Date(`${lunedi}T00:00:00`), { day: "numeric", month: "long" })} –{" "}
+          {format_data(new Date(`${domenica}T00:00:00`), {
             day: "numeric",
             month: "long",
             year: "numeric",

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Trophy, Sparkles, ClipboardCheck, Archive, ExternalLink, Inbox } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
+import { format_data } from "@/lib/format-data";
 const tk = (key: string, opts?: any) => i18n.t(`iscrizioni_notifiche.${key}`, { ns: "communications", ...(opts ?? {}) }) as string;
 
 
@@ -175,7 +176,7 @@ export const IscrizioniAtletiNotifiche: React.FC = () => {
                     )}
                   </h3>
                   <p className="text-[11px] tabular-nums text-muted-foreground shrink-0">
-                    {new Date(n.creato_at).toLocaleDateString("it-CH", {
+                    {format_data(new Date(n.creato_at), {
                       day: "2-digit",
                       month: "2-digit",
                       year: "numeric",

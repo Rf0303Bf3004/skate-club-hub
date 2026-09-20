@@ -31,7 +31,7 @@ import CreaAccessoDialog from "@/components/istruttori/CreaAccessoDialog";
 import { use_email_utenti_club } from "@/hooks/use-accessi-utenti";
 import { ore_distinte_per_data, ore_reali_senza_sovrapposizioni } from "@/lib/availability";
 import DateInput from "@/components/forms/DateInput";
-import { format_data_completa } from "@/lib/format-data";
+import { format_data_completa, format_data } from "@/lib/format-data";
 
 import {
   segnalazioni_gs,
@@ -73,7 +73,7 @@ const TIPI_CONTRATTO = [
 ];
 
 function get_mese_label(anno: number, mese: number) {
-  return new Date(anno, mese - 1, 1).toLocaleDateString("de-CH", { month: "long", year: "numeric" });
+  return format_data(new Date(anno, mese - 1, 1), { month: "long", year: "numeric" });
 }
 
 function time_to_min(t: string): number {

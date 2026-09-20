@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import type { PortaleSession } from "@/lib/portale-auth";
 import { useTranslation } from "react-i18next";
 
+import { format_data } from "@/lib/format-data";
 const STATO_COLORS: Record<string, string> = {
   bozza: "bg-slate-100 text-slate-700 border-slate-200",
   inviata: "bg-blue-100 text-blue-700 border-blue-200",
@@ -77,7 +78,7 @@ const FattureTab: React.FC = () => {
                   <Badge variant="outline" className={STATO_COLORS[f.stato] || "bg-muted"}>{f.stato}</Badge>
                 </div>
                 <p className="font-medium text-slate-800 truncate">{f.descrizione ?? f.periodo ?? "Fattura"}</p>
-                <p className="text-xs text-slate-500">{f.data_emissione ? new Date(f.data_emissione + "T00:00:00").toLocaleDateString("it-CH") : ""}</p>
+                <p className="text-xs text-slate-500">{f.data_emissione ? format_data(new Date(f.data_emissione + "T00:00:00")) : ""}</p>
               </div>
               <div className="text-right">
                 <p className="font-bold tabular-nums text-slate-800 text-lg">CHF {Number(f.importo ?? 0).toFixed(2)}</p>

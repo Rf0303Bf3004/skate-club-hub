@@ -8,6 +8,7 @@ import { format_local_iso } from "@/lib/planning-occorrenze";
 import { settimane_fra } from "@/lib/stagione-attiva";
 import { Repeat, CalendarRange, CalendarDays } from "lucide-react";
 
+import { format_data } from "@/lib/format-data";
 interface Props {
   open: boolean;
   on_close: () => void;
@@ -105,7 +106,7 @@ const RipetiSessioneDialog: React.FC<Props> = ({
               <span className="block font-medium">Ogni {giorno} fino a fine stagione</span>
               <span className="block text-xs text-muted-foreground">
                 {fine_stagione
-                  ? `Ultima occorrenza entro il ${new Date(`${fine_stagione}T00:00:00`).toLocaleDateString("it-CH")}`
+                  ? `Ultima occorrenza entro il ${format_data(new Date(`${fine_stagione}T00:00:00`))}`
                   : "Nessuna stagione attiva configurata"}
               </span>
             </span>
@@ -131,7 +132,7 @@ const RipetiSessioneDialog: React.FC<Props> = ({
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Ultima occorrenza: {new Date(`${data_fine_n}T00:00:00`).toLocaleDateString("it-CH")}
+              Ultima occorrenza: {format_data(new Date(`${data_fine_n}T00:00:00`))}
             </p>
           </div>
         </div>

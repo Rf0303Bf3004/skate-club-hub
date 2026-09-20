@@ -7,17 +7,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Inbox, Check, X, UserPlus, CalendarClock, RefreshCw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { format_data_completa, format_data_lunga, locale_to_bcp47 } from "@/lib/format-data";
-import { useI18n } from "@/lib/i18n";
+import { format_data_completa, format_data_lunga, format_data } from "@/lib/format-data";
 import { useTranslation } from "react-i18next";
 import FotoAtleta from "@/components/common/FotoAtleta";
 import { Link } from "react-router-dom";
 import { segnala_errore } from "@/lib/errori";
 
-function fmt_data_breve_localizzata(data_iso: string, locale_code: string): string {
+function fmt_data_breve_localizzata(data_iso: string): string {
   const dt = new Date(data_iso + "T00:00:00");
   if (isNaN(dt.getTime())) return "—";
-  return dt.toLocaleDateString(locale_code, { weekday: "short", day: "numeric", month: "short" });
+  return format_data(dt, { weekday: "short", day: "numeric", month: "short" });
 }
 
 const REFETCH_MS = 60_000;
@@ -400,8 +399,6 @@ export const UltimeIscrizioniWidget: React.FC = () => {
 export const RichiesteLezioniPrivateWidget: React.FC = () => {
   const { t } = useTranslation("dashboard");
   const club_id = get_current_club_id();
-  const { locale } = useI18n();
-  const locale_code = locale_to_bcp47(locale);
 
   const { data, isLoading, isError, error: errore_query, isFetching, refetch } = useQuery({
     queryKey: ["richieste_lezioni_private", "dashboard", club_id],
@@ -505,7 +502,7 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {r.data_preferita
-                    ? fmt_data_breve_localizzata(r.data_preferita, locale_code)
+                    ? fmt_data_breve_localizzata(r.data_preferita)
                     : t("widget_lezioni_private.nessuna_data")}
                   {" · "}
                   {tempo_relativo(r.created_at, t)}

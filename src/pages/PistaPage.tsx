@@ -25,6 +25,7 @@ import { segnala_errore } from "@/lib/errori";
 import { useAuth } from "@/lib/auth";
 import { esci_dalla_pista } from "@/lib/pista-codice";
 
+import { format_ora, format_data } from "@/lib/format-data";
 /**
  * Bordo pista: tablet condiviso a bordo ghiaccio.
  * Divisione principale per istruttore, più una linguetta "Tutto il ghiaccio".
@@ -633,13 +634,13 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
   const ora_sblocco = minuti_sblocco == null ? "" : da_minuti(minuti_sblocco);
 
   const lingua = i18n.language || "it";
-  const data_estesa = riferimento.toLocaleDateString(lingua, {
+  const data_estesa = format_data(riferimento, {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   });
-  const ora_corrente = riferimento.toLocaleTimeString(lingua, { hour: "2-digit", minute: "2-digit" });
+  const ora_corrente = format_ora(riferimento, { hour: "2-digit", minute: "2-digit" });
 
   const compleanni = compleanni_query.data ?? [];
 
@@ -1295,7 +1296,7 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
                     <span className="text-sm text-muted-foreground">
                       {t("pista.nota_firma", {
                         autore: n.autore_nome ?? "—",
-                        ora: new Date(n.creata_il).toLocaleTimeString(lingua, { hour: "2-digit", minute: "2-digit" }),
+                        ora: format_ora(new Date(n.creata_il), { hour: "2-digit", minute: "2-digit" }),
                       })}
                     </span>
                     <Button

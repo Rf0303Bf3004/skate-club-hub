@@ -9,6 +9,7 @@ import type { PortaleSession } from "@/lib/portale-auth";
 import { useTranslation } from "react-i18next";
 import { motivo_non_iscrivibile, oggi_iso, type AtletaLivelloGara } from "@/lib/gare-iscrivibilita";
 
+import { format_data } from "@/lib/format-data";
 const PortaleEventiPage: React.FC = () => {
   const { session } = useOutletContext<{ session: PortaleSession }>();
   const { t } = useTranslation("portale");
@@ -119,7 +120,7 @@ const PortaleEventiPage: React.FC = () => {
                   )}
                   {!viva && !motivo && g.scadenza_iscrizioni && (
                     <p className="text-[11px] text-slate-400 mt-1">
-                      Iscrizioni entro il {new Date(g.scadenza_iscrizioni + "T00:00:00").toLocaleDateString("it-CH")}
+                      Iscrizioni entro il {format_data(new Date(g.scadenza_iscrizioni + "T00:00:00"))}
                     </p>
                   )}
                 </div>
@@ -170,7 +171,7 @@ const PortaleEventiPage: React.FC = () => {
 const DateBox: React.FC<{ data: string }> = ({ data }) => (
   <div className="flex flex-col items-center justify-center bg-orange-100 text-orange-700 rounded-xl px-3 py-2 min-w-[56px]">
     <span className="text-[10px] uppercase font-bold">
-      {new Date(data + "T00:00:00").toLocaleDateString("it-CH", { month: "short" })}
+      {format_data(new Date(data + "T00:00:00"), { month: "short" })}
     </span>
     <span className="text-xl font-black leading-none">{new Date(data + "T00:00:00").getDate()}</span>
   </div>

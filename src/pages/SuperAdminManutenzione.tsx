@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { format_data, format_ora } from "@/lib/format-data";
 interface Club {
   id: string;
   nome: string;
@@ -37,7 +38,7 @@ const SuperAdminManutenzione: React.FC = () => {
   const [log, set_log] = useState<string[]>([]);
 
   const add_log = (msg: string) => {
-    const ts = new Date().toLocaleTimeString("it-CH");
+    const ts = format_ora(new Date());
     set_log((prev) => [`[${ts}] ${msg}`, ...prev.slice(0, 99)]);
   };
 
@@ -162,7 +163,7 @@ const SuperAdminManutenzione: React.FC = () => {
         if (!cid) return t("manutenzione.op.export.need_club");
         const club = clubs.find((c) => c.id === cid);
         const tables = ["atleti", "istruttori", "corsi", "fatture"] as const;
-        let all_csv = `=== BACKUP ${club?.nome?.toUpperCase()} — ${new Date().toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })} ===\n\n`;
+        let all_csv = `=== BACKUP ${club?.nome?.toUpperCase()} — ${format_data(new Date(), { day: "2-digit", month: "2-digit", year: "numeric" })} ===\n\n`;
 
         for (const table of tables) {
           const { data } = await supabase.from(table).select("*").eq("club_id", cid);

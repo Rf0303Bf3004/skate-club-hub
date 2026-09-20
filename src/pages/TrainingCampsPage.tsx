@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, MapPin, Calendar, X, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
+import { format_data } from "@/lib/format-data";
 // ─── NumInput ──────────────────────────────────────────────
 function to_num(v: string | number): number {
   if (typeof v === "number") return isNaN(v) ? 0 : v;
@@ -465,8 +466,8 @@ const TrainingCampsPage: React.FC = () => {
                   <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5" />
-                      {new Date(camp.data_inizio + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })} —{" "}
-                      {new Date(camp.data_fine + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                      {format_data(new Date(camp.data_inizio + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" })} —{" "}
+                      {format_data(new Date(camp.data_fine + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" })}
                     </span>
                     {camp.luogo && (
                       <span className="flex items-center gap-1">
