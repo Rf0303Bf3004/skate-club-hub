@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { segnala_errore } from "@/lib/errori";
 import { useAuth } from "@/lib/auth";
+import PromemoriaEsameGs from "@/components/istruttori/PromemoriaEsameGs";
+import { use_istruttori } from "@/hooks/use-supabase-data";
 
 /**
  * Home del direttore tecnico: «oggi fila tutto o c'è un buco?».
@@ -216,6 +218,10 @@ const DTDashboard: React.FC = () => {
         <h1 className="text-2xl font-bold tracking-tight">{t("dt_home.titolo", "Il ghiaccio di oggi")}</h1>
         <p className="text-sm text-muted-foreground">{data_estesa(oggi)}</p>
       </div>
+
+      <PromemoriaEsameGs istruttori={istruttori_query.data ?? []} />
+
+
 
       {/* 1. Buchi di oggi */}
       <Blocco titolo={t("dt_home.buchi", "Buchi di oggi — sessioni senza istruttore")} icona={UserX}>
