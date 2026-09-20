@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { Users, Settings, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, ChevronDown, ChevronRight, FileText, Search, LayoutGrid, BadgePercent, Smartphone, Rocket, FileSpreadsheet } from "lucide-react";
+import { Users, Settings, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, ChevronDown, ChevronRight, FileText, Search, LayoutGrid, BadgePercent, Smartphone, Rocket, FileSpreadsheet, UserX } from "lucide-react";
 import GlobalSearchPalette from "@/components/common/GlobalSearchPalette";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -93,6 +93,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const puo_vedere_convenzioni = is_superadmin || is_presidenza;
   // Avvio del club: stessa regola della guardia di rotta SoloPresidenteGuard.
   const puo_vedere_avvio = is_superadmin || is_presidenza;
+  // Assenze staff: stessa regola della guardia SoloPresidenteGuard con dt e segreteria.
+  const puo_vedere_assenze_staff =
+    puo_vedere_avvio || (session?.ruolo as string) === "dt" || (session?.ruolo as string) === "segreteria";
+
   const non_lette_iscrizioni = use_count_iscrizioni_non_lette();
   const richieste_pendenti = use_count_richieste_pendenti();
   const [search_open, set_search_open] = React.useState(false);
