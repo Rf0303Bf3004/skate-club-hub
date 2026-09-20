@@ -9,6 +9,8 @@
     "new_club_question": "New club?",
     "register_here": "Register",
     "tablet_pista": "Use this device as the rink-side tablet →",
+    "torna_al_bordo_pista": "Back to rink tablet mode",
+    "torna_al_bordo_pista_nota": "This device is registered as a club tablet.",
     "password_manuale": "The list fills in the email only: type your password."
   },
   "register": {

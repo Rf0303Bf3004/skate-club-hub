@@ -9,6 +9,8 @@
     "new_club_question": "Nouveau club ?",
     "register_here": "S'inscrire",
     "tablet_pista": "Utiliser cet appareil comme tablette de bord piste →",
+    "torna_al_bordo_pista": "Revenir au mode tablette de bord de piste",
+    "torna_al_bordo_pista_nota": "Cet appareil est enregistré comme tablette du club.",
     "password_manuale": "La liste remplit seulement l'e-mail : tapez votre mot de passe."
   },
   "register": {

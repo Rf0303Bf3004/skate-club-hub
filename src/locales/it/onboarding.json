@@ -9,6 +9,8 @@
     "new_club_question": "Nuovo club?",
     "register_here": "Registrati",
     "tablet_pista": "Usa questo dispositivo come tablet di bordo pista →",
+    "torna_al_bordo_pista": "Torna alla modalità bordo pista",
+    "torna_al_bordo_pista_nota": "Questo dispositivo è registrato come tablet del club.",
     "password_manuale": "La tendina riempie solo l'email: la password va digitata."
   },
   "register": {
