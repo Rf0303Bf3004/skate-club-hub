@@ -75,7 +75,20 @@ export default function NuovaStagionePage() {
   const handle_complete = async () => {
     if (submitting) return;
     set_submitting(true);
+    let stagione_creata = false;
     try {
+      const stagione_precedente_id: string | null = (stagione_attiva as any)?.id ?? null;
+
+      // Le fasce della stagione che si sta chiudendo: vanno riportate, non cancellate.
+      const lettura_fasce = supabase
+        .from("disponibilita_ghiaccio")
+        .select("giorno, ora_inizio, ora_fine, tipo, risorsa_id, note")
+        .eq("club_id", club_id);
+      const { data: fasce_precedenti, error: err_lettura_fasce } = await (stagione_precedente_id
+        ? lettura_fasce.eq("stagione_id", stagione_precedente_id)
+        : lettura_fasce.is("stagione_id", null));
+      if (err_lettura_fasce) throw err_lettura_fasce;
+
       const { error: err_close_existing } = await supabase
         .from("stagioni")
         .update({ attiva: false })
@@ -83,22 +96,21 @@ export default function NuovaStagionePage() {
         .eq("attiva", true);
       if (err_close_existing) throw err_close_existing;
 
-      const { error: err_reset_ghiaccio } = await supabase
-        .from("disponibilita_ghiaccio")
-        .delete()
-        .eq("club_id", club_id);
-      if (err_reset_ghiaccio) throw err_reset_ghiaccio;
-
       // Inserisci nuova stagione
-      const { error: err_insert } = await supabase.from("stagioni").insert({
-        club_id,
-        nome: nome.trim(),
-        data_inizio,
-        data_fine,
-        attiva: true,
-        tipo: "Regolare",
-      } as any);
+      const { data: nuova_stagione, error: err_insert } = await supabase
+        .from("stagioni")
+        .insert({
+          club_id,
+          nome: nome.trim(),
+          data_inizio,
+          data_fine,
+          attiva: true,
+          tipo: "Regolare",
+        } as any)
+        .select("id")
+        .single();
       if (err_insert) throw err_insert;
+      stagione_creata = true;
 
       // Aggiorna setup_club con le nuove date
       const { data: existing } = await supabase
@@ -109,21 +121,56 @@ export default function NuovaStagionePage() {
         await supabase.from("setup_club").insert({ club_id, data_inizio_stagione: data_inizio, data_fine_stagione: data_fine });
       }
 
+      // Copia delle fasce nella stagione nuova: le vecchie restano come storico.
+      const da_copiare = (fasce_precedenti ?? []) as any[];
+      let copiate = 0;
+      if (da_copiare.length > 0) {
+        const { error: err_copia } = await supabase.from("disponibilita_ghiaccio").insert(
+          da_copiare.map((f) => ({
+            club_id,
+            stagione_id: (nuova_stagione as any).id,
+            giorno: f.giorno,
+            ora_inizio: f.ora_inizio,
+            ora_fine: f.ora_fine,
+            tipo: f.tipo,
+            risorsa_id: f.risorsa_id,
+            note: f.note,
+          })) as any,
+        );
+        if (err_copia) throw err_copia;
+        copiate = da_copiare.length;
+      }
+
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["stagione_attiva", club_id] }),
+        queryClient.invalidateQueries({ queryKey: ["stagione_attiva"] }),
         queryClient.invalidateQueries({ queryKey: ["stagioni", club_id] }),
         queryClient.invalidateQueries({ queryKey: ["setup_club", club_id] }),
-        queryClient.invalidateQueries({ queryKey: ["disponibilita_ghiaccio", club_id] }),
+        queryClient.invalidateQueries({ queryKey: ["disponibilita_ghiaccio"] }),
       ]);
 
-      toast.success(t("nuova_stagione.toast.success", { nome: nome.trim() }));
+      toast.success(
+        copiate > 0
+          ? t("nuova_stagione.toast.success_con_fasce", { nome: nome.trim(), count: copiate })
+          : t("nuova_stagione.toast.success_senza_fasce", { nome: nome.trim() }),
+      );
       navigate("/setup-club", { replace: true });
     } catch (e: any) {
-      toast.error(t("nuova_stagione.toast.error", { message: e?.message || t("nuova_stagione.toast.error_generic") }));
+      const motivo = e?.message || t("nuova_stagione.toast.error_generic");
+      // La stagione può essere già stata creata: dirlo, invece di lasciar credere
+      // che non sia successo niente.
+      await queryClient.invalidateQueries({ queryKey: ["stagione_attiva"] });
+      await queryClient.invalidateQueries({ queryKey: ["disponibilita_ghiaccio"] });
+      toast.error(
+        stagione_creata
+          ? t("nuova_stagione.toast.error_copia", { message: motivo })
+          : t("nuova_stagione.toast.error", { message: motivo }),
+      );
     } finally {
       set_submitting(false);
     }
   };
+
 
   const format_date = (d?: string | null) => {
     if (!d) return t("nuova_stagione.date_placeholder");
