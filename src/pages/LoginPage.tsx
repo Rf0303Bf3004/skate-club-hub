@@ -150,6 +150,20 @@ const LoginPage: React.FC = () => {
           </form>
 
           <div className="space-y-2 text-center">
+            {codice_pista && (
+              <div className="space-y-1">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => window.location.replace("/pista")}
+                >
+                  {t('login.torna_al_bordo_pista')}
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  {t('login.torna_al_bordo_pista_nota')}
+                </p>
+              </div>
+            )}
             <a href="/portale-recovery" className="text-xs text-muted-foreground hover:text-primary hover:underline block">
               Password dimenticata?
             </a>
@@ -157,12 +171,14 @@ const LoginPage: React.FC = () => {
                 una sola volta al caricamento; una navigazione interna di
                 react-router non troverebbe /pista-login e darebbe una schermata
                 bianca senza errori. */}
-            <a
-              href="/pista-login"
-              className="text-xs text-muted-foreground hover:text-primary hover:underline block"
-            >
-              {t('login.tablet_pista')}
-            </a>
+            {!codice_pista && (
+              <a
+                href="/pista-login"
+                className="text-xs text-muted-foreground hover:text-primary hover:underline block"
+              >
+                {t('login.tablet_pista')}
+              </a>
+            )}
             <p className="text-sm text-muted-foreground">
               {t('login.new_club_question')} <a href="/registrati" className="text-primary underline">{t('login.register_here')}</a>
             </p>
