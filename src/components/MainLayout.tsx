@@ -330,6 +330,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                       render_nav_item("/avvio", Rocket, "Avvio del club", "avvio_club")}
                     {s.codice === "dashboard" && session && puo_vedere_avvio &&
                       render_nav_item("/esportazioni", FileSpreadsheet, "Esportazioni", "esportazioni")}
+                    {s.codice === "dashboard" && session && puo_vedere_assenze_staff &&
+                      render_nav_item("/assenze-staff", UserX, "Assenze staff", "assenze_staff")}
+
                   </React.Fragment>
                 ))}
               {blocco_corrente === "conduzione" && session && puo_vedere_convenzioni &&
