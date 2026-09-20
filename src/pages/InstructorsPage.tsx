@@ -2213,6 +2213,24 @@ const InstructorsPage: React.FC = () => {
                       </span>
                     </div>
                   </div>
+                  {/* Segnalazione G+S: rossa se grave, altrimenti ambra; testo della prima segnalazione */}
+                  {(() => {
+                    const segn = segnalazioni_gs(i, ti);
+                    const gravita = gravita_massima(segn);
+                    if (!gravita) return null;
+                    const prima = segn.find((s) => s.gravita === gravita) ?? segn[0];
+                    const cls =
+                      gravita === "rosso"
+                        ? "bg-destructive/10 text-destructive border-destructive/30"
+                        : "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-700";
+                    return (
+                      <div className={`mt-3 flex items-start gap-2 rounded-lg border px-2.5 py-1.5 text-xs ${cls}`}>
+                        <span className="leading-4">●</span>
+                        <span className="leading-4">{prima.testo}</span>
+                      </div>
+                    );
+                  })()}
+
                   {(liv === "monitrice" || liv === "aiuto_monitrice") && linked_atleta && puo_gestire_sportivo && (
                     <Button
                       variant="outline"
