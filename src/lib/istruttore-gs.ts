@@ -44,7 +44,7 @@ export const GIORNI_PREAVVISO_GS = 90;
 export const MESI_TERMINE_ESAME_GS = 12;
 
 /** Livelli per cui la qualifica G+S va conseguita. */
-const LIVELLI_CON_ESAME = ["istruttore", "monitrice", "direttore_tecnico"];
+const LIVELLI_CON_ESAME = ["istruttore", "monitrice"];
 
 function anno_nascita(data_nascita?: string | null): number | null {
   if (!data_nascita) return null;

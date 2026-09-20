@@ -3,8 +3,7 @@
     "ruolo_club": "Role in the club",
     "ruolo_istruttore": "Instructor",
     "ruolo_monitrice": "Monitor",
-    "ruolo_aiuto_monitrice": "Assistant monitor",
-    "ruolo_direttore_tecnico": "Technical director"
+    "ruolo_aiuto_monitrice": "Assistant monitor"
   },
   "gs": {
     "titolo": "Gioventù e Sport (G+S)",
@@ -37,17 +36,26 @@
     "scaduto_da_giorni_one": "overdue by {{count}} day",
     "scaduto_da_giorni_other": "overdue by {{count}} days"
   },
-  "badge": {
-    "direttore_tecnico": "Technical director"
-  },
-  "lista": {
-    "filtro_direttori_tecnici": "Technical directors ({{count}})"
-  },
+  "badge": {},
+  "lista": {},
   "promemoria": {
     "titolo": "G+S exams still to be taken",
     "senza_termine": "No deadline set",
     "personale_titolo": "Your G+S qualification",
     "personale_testo": "You must take the G+S exam by {{data}}.",
     "personale_scaduto": "The deadline for your G+S exam was {{data}}."
+  },
+  "specialita": {
+    "label": "Specialisation",
+    "placeholder": "e.g. Choreography",
+    "opzioni": {
+      "coreografia": "Choreography",
+      "preparazione_atletica": "Athletic conditioning (off-ice)",
+      "danza_ghiaccio": "Ice dance",
+      "sincronizzato": "Synchronised skating",
+      "salti": "Jumps",
+      "trottole": "Spins",
+      "abilita_base": "Basic skills"
+    }
   }
 }
