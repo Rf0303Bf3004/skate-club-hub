@@ -58,7 +58,13 @@ function TestoCapitolo({ club_id, stagione, tono, area, modificabile = true, pro
   const qc = useQueryClient();
   const chiave = ["relazione_paragrafi", club_id, stagione.id, tono, area];
   const [bozze, set_bozze] = useState<Record<number, string>>({});
-  const [modificati, set_modificati] = useState<Set<number>>(new Set());
+  // "sporche": modifiche non ancora salvate. "in_volo": salvataggio in corso.
+  // Una bozza sporca o in volo non viene mai sostituita da quello che arriva
+  // dal server: nel dubbio si tiene quello che ha scritto la persona.
+  const [sporche, set_sporche] = useState<Set<number>>(new Set());
+  const in_volo = useRef<Set<number>>(new Set());
+  const bozze_ref = useRef<Record<number, string>>({});
+  bozze_ref.current = bozze;
   const q = useQuery({
     queryKey: chiave,
     queryFn: async () => {
@@ -73,38 +79,64 @@ function TestoCapitolo({ club_id, stagione, tono, area, modificabile = true, pro
   });
   useEffect(() => {
     if (!q.isSuccess) return;
-    set_bozze(Object.fromEntries(q.data.map((p) => [p.paragrafo_ordine, p.contenuto ?? ""])));
-    set_modificati(new Set());
-  }, [q.data, q.isSuccess]);
+    set_bozze((correnti) => {
+      const prossime = { ...correnti };
+      for (const p of q.data) {
+        const ordine = p.paragrafo_ordine as number;
+        if (sporche.has(ordine) || in_volo.current.has(ordine)) continue;
+        prossime[ordine] = p.contenuto ?? "";
+      }
+      return prossime;
+    });
+  }, [q.data, q.isSuccess, sporche]);
   const salva = useMutation({
     mutationFn: async ({ ordine, contenuto }: { ordine: number; contenuto: string }) => {
+      in_volo.current.add(ordine);
       const { error } = await supabase.from("relazioni_paragrafi_auto" as any).upsert({
         club_id, stagione_id: stagione.id, area_id: area, paragrafo_ordine: ordine, tono,
         contenuto, is_edited: true, updated_at: new Date().toISOString(),
       }, { onConflict: "club_id,stagione_id,area_id,paragrafo_ordine,tono" });
       if (error) throw error;
     },
-    onError: (e) => segnala_errore("Relazione", t("relazione.paragrafi.salvataggio"), e),
+    onError: (e, variabili) => {
+      in_volo.current.delete(variabili.ordine);
+      // Il testo resta sporco e resta a schermo: un errore di rete non cancella.
+      segnala_errore("Relazione", t("relazione.paragrafi.salvataggio"), e);
+    },
     onSuccess: (_data, variabili) => {
-      set_modificati((correnti) => { const prossimi = new Set(correnti); prossimi.delete(variabili.ordine); return prossimi; });
+      in_volo.current.delete(variabili.ordine);
+      // Pulita solo se nel frattempo non si è continuato a scrivere.
+      if ((bozze_ref.current[variabili.ordine] ?? "") === variabili.contenuto) {
+        set_sporche((correnti) => { const prossimi = new Set(correnti); prossimi.delete(variabili.ordine); return prossimi; });
+      }
       qc.invalidateQueries({ queryKey: chiave });
     },
   });
+  // Il salvataggio sta in un ref: il ritardo di 700 ms non si riarma a ogni render.
+  const salva_ref = useRef(salva.mutate);
+  salva_ref.current = salva.mutate;
+  const in_corso = salva.isPending;
   useEffect(() => {
-    if (!q.isSuccess || modificati.size === 0 || salva.isPending) return;
+    if (sporche.size === 0 || in_corso) return;
     const timer = window.setTimeout(() => {
-      const ordine = Array.from(modificati)[0];
-      salva.mutate({ ordine, contenuto: bozze[ordine] ?? "" });
+      const ordine = Array.from(sporche)[0];
+      salva_ref.current({ ordine, contenuto: bozze_ref.current[ordine] ?? "" });
     }, 700);
     return () => window.clearTimeout(timer);
-  }, [bozze, modificati, q.isSuccess, salva]);
+  }, [bozze, sporche, in_corso]);
+  useEffect(() => {
+    if (sporche.size === 0) return;
+    const avvisa = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", avvisa);
+    return () => window.removeEventListener("beforeunload", avvisa);
+  }, [sporche]);
   if (q.isPending) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
   if (q.isError) return <div className="flex items-center gap-2 text-sm text-destructive"><AlertTriangle className="h-4 w-4" />{t("relazione.paragrafi.errore_lettura")}<Button size="sm" variant="outline" onClick={() => q.refetch()}>{t("relazione.riprova")}</Button></div>;
   // Chi non può correggere questo capitolo lo legge e basta.
   if (!modificabile) {
     return <div className="space-y-4">{q.data.map((p) => <p key={p.paragrafo_ordine} className="whitespace-pre-wrap break-words font-serif text-base leading-relaxed">{p.contenuto ?? ""}</p>)}</div>;
   }
-  return <div className="space-y-4">{q.data.map((p) => <TextareaCrescente key={p.paragrafo_ordine} value={bozze[p.paragrafo_ordine] ?? ""} onChange={(e) => { set_bozze((v) => ({ ...v, [p.paragrafo_ordine]: e.target.value })); set_modificati((v) => new Set(v).add(p.paragrafo_ordine)); }} className="min-h-24 border-transparent bg-transparent px-0 font-serif text-base leading-relaxed shadow-none focus-visible:border-border focus-visible:px-3" title={t("relazione.paragrafi.clicca_per_correggere")} />)}</div>;
+  return <div className="space-y-4">{q.data.map((p) => <TextareaCrescente key={p.paragrafo_ordine} value={bozze[p.paragrafo_ordine] ?? ""} onChange={(e) => { const testo = e.target.value; set_bozze((v) => ({ ...v, [p.paragrafo_ordine]: testo })); set_sporche((v) => new Set(v).add(p.paragrafo_ordine)); }} className="min-h-24 border-transparent bg-transparent px-0 font-serif text-base leading-relaxed shadow-none focus-visible:border-border focus-visible:px-3" title={t("relazione.paragrafi.clicca_per_correggere")} />)}</div>;
 }
 
 function Modulo({ risultato, colore }: { risultato: ModuloRisultato; colore: string }) {
