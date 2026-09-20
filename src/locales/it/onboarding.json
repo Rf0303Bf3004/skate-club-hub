@@ -8,7 +8,8 @@
     "sign_in_failed": "Login non riuscito",
     "new_club_question": "Nuovo club?",
     "register_here": "Registrati",
-    "tablet_pista": "Tablet di bordo pista →"
+    "tablet_pista": "Tablet di bordo pista →",
+    "password_manuale": "La tendina riempie solo l'email: la password va digitata."
   },
   "register": {
     "title": "Registra il tuo club",

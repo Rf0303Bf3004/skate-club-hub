@@ -8,7 +8,8 @@
     "sign_in_failed": "Sign-in failed",
     "new_club_question": "New club?",
     "register_here": "Register",
-    "tablet_pista": "Rink-side tablet →"
+    "tablet_pista": "Rink-side tablet →",
+    "password_manuale": "The list fills in the email only: type your password."
   },
   "register": {
     "title": "Register your club",
