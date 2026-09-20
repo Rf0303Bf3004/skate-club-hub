@@ -517,7 +517,13 @@
     "errore_turni": "Deine heutigen Einheiten konnten nicht gelesen werden. Bitte versuche es gleich erneut.",
     "errore_prossimo": "Deine nächste Einheit konnte nicht gelesen werden.",
     "errore_atlete": "Die vollständige Liste der Läuferinnen konnte nicht gelesen werden.",
-    "errore_messaggi": "Deine Nachrichten konnten nicht gelesen werden. Bitte versuche es gleich erneut."
+    "errore_messaggi": "Deine Nachrichten konnten nicht gelesen werden. Bitte versuche es gleich erneut.",
+    "ritiro_invece_ci_saro": "Ich bin doch da",
+    "ritiro_conferma_titolo": "Bestätigst du deine Anwesenheit?",
+    "ritiro_conferma_testo": "Der Club hat womöglich bereits eine Vertretung organisiert: Melde dich, wenn sich nochmals etwas ändert.",
+    "ritiro_conferma_ok": "Ja, ich bin da",
+    "ritiro_inviato": "Der Club weiss, dass du da bist",
+    "ritiro_errore": "Der Hinweis konnte nicht aktualisiert werden. Bitte später erneut versuchen."
   },
   "pista_login": {
     "titolo": "Zugang Eisrand",

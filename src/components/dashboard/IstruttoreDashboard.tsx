@@ -279,7 +279,9 @@ const IstruttoreDashboard: React.FC = () => {
   //    Senza riga di promemoria il comando non compare: non si inventano righe.
   const qc = useQueryClient();
   const [da_confermare, set_da_confermare] = React.useState<string | null>(null);
+  const [da_ritirare, set_da_ritirare] = React.useState<string | null>(null);
   const [in_invio, set_in_invio] = React.useState(false);
+
 
   const reminder_query = useQuery({
     queryKey: ["istruttore_home_reminder_turni", session?.user_id],
@@ -348,15 +350,44 @@ const IstruttoreDashboard: React.FC = () => {
     qc.invalidateQueries({ queryKey: ["miei_reminder_staff"] });
   };
 
+  // Ritorno indietro: un tocco per sbaglio non deve restare per sempre.
+  const ritira_assenza = async (dest_id: string) => {
+    set_in_invio(true);
+    const { error } = await supabase
+      .from("comunicazioni_destinatari_staff")
+      .update({ rsvp_risposta: "si", rsvp_at: new Date().toISOString(), stato: "confermato" })
+      .eq("id", dest_id);
+    set_in_invio(false);
+    if (error) {
+      segnala_errore("IstruttoreDashboard", "ritiro_assenza_staff", error);
+      toast({ title: t("istruttore_home.ritiro_errore"), variant: "destructive" });
+      return;
+    }
+    toast({ title: t("istruttore_home.ritiro_inviato") });
+    qc.invalidateQueries({ queryKey: ["istruttore_home_reminder_turni"] });
+    qc.invalidateQueries({ queryKey: ["miei_reminder_staff"] });
+  };
+
   // Un turno e il suo promemoria si incrociano su giorno + ora d'inizio.
   const comando_assenza = (data_turno: string, ora_inizio: string | null) => {
     const r = reminder_per_turno.get(`${data_turno}|${ora_breve(ora_inizio)}`);
     if (!r) return null;
     if (r.rsvp_risposta === "no") {
       return (
-        <p className="mt-2 text-sm font-medium text-destructive">
-          {t("istruttore_home.assenza_fatta")}
-        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <p className="text-sm font-medium text-destructive">
+            {t("istruttore_home.assenza_fatta")}
+          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-auto px-0 text-sm text-muted-foreground underline underline-offset-2 hover:bg-transparent"
+            disabled={in_invio}
+            onClick={() => set_da_ritirare(r.dest_id)}
+          >
+            {t("istruttore_home.ritiro_invece_ci_saro")}
+          </Button>
+        </div>
       );
     }
     return (
@@ -371,6 +402,7 @@ const IstruttoreDashboard: React.FC = () => {
       </Button>
     );
   };
+
 
 
   const data_estesa = (iso: string) =>
@@ -605,6 +637,29 @@ const IstruttoreDashboard: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!da_ritirare} onOpenChange={(v) => { if (!v) set_da_ritirare(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("istruttore_home.ritiro_conferma_titolo")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("istruttore_home.ritiro_conferma_testo")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("istruttore_home.assenza_annulla")}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={in_invio}
+              onClick={() => {
+                const id = da_ritirare;
+                set_da_ritirare(null);
+                if (id) ritira_assenza(id);
+              }}
+            >
+              {t("istruttore_home.ritiro_conferma_ok")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 };

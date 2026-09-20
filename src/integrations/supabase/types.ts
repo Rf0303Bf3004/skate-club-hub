@@ -211,6 +211,82 @@ export type Database = {
         }
         Relationships: []
       }
+      assenze_staff_esiti: {
+        Row: {
+          aggiornato_at: string
+          aggiornato_da: string | null
+          club_id: string
+          destinatario_staff_id: string
+          esito: string
+          id: string
+          nota: string | null
+          sostituto_istruttore_id: string | null
+        }
+        Insert: {
+          aggiornato_at?: string
+          aggiornato_da?: string | null
+          club_id: string
+          destinatario_staff_id: string
+          esito?: string
+          id?: string
+          nota?: string | null
+          sostituto_istruttore_id?: string | null
+        }
+        Update: {
+          aggiornato_at?: string
+          aggiornato_da?: string | null
+          club_id?: string
+          destinatario_staff_id?: string
+          esito?: string
+          id?: string
+          nota?: string | null
+          sostituto_istruttore_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assenze_staff_esiti_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assenze_staff_esiti_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assenze_staff_esiti_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "elenco_club"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assenze_staff_esiti_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "assenze_staff_esiti_destinatario_staff_id_fkey"
+            columns: ["destinatario_staff_id"]
+            isOneToOne: true
+            referencedRelation: "comunicazioni_destinatari_staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assenze_staff_esiti_sostituto_istruttore_id_fkey"
+            columns: ["sostituto_istruttore_id"]
+            isOneToOne: false
+            referencedRelation: "istruttori"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       atleta_ppc_elementi: {
         Row: {
           atleta_id: string

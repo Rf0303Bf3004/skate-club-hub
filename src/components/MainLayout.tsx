@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { Users, Settings, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, ChevronDown, ChevronRight, FileText, Search, LayoutGrid, BadgePercent, Smartphone, Rocket, FileSpreadsheet } from "lucide-react";
+import { Users, Settings, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, ChevronDown, ChevronRight, FileText, Search, LayoutGrid, BadgePercent, Smartphone, Rocket, FileSpreadsheet, UserX } from "lucide-react";
 import GlobalSearchPalette from "@/components/common/GlobalSearchPalette";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -93,6 +93,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const puo_vedere_convenzioni = is_superadmin || is_presidenza;
   // Avvio del club: stessa regola della guardia di rotta SoloPresidenteGuard.
   const puo_vedere_avvio = is_superadmin || is_presidenza;
+  // Assenze staff: stessa regola della guardia SoloPresidenteGuard con dt e segreteria.
+  const puo_vedere_assenze_staff =
+    puo_vedere_avvio || (session?.ruolo as string) === "dt" || (session?.ruolo as string) === "segreteria";
+
   const non_lette_iscrizioni = use_count_iscrizioni_non_lette();
   const richieste_pendenti = use_count_richieste_pendenti();
   const [search_open, set_search_open] = React.useState(false);
@@ -326,6 +330,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                       render_nav_item("/avvio", Rocket, "Avvio del club", "avvio_club")}
                     {s.codice === "dashboard" && session && puo_vedere_avvio &&
                       render_nav_item("/esportazioni", FileSpreadsheet, "Esportazioni", "esportazioni")}
+                    {s.codice === "dashboard" && session && puo_vedere_assenze_staff &&
+                      render_nav_item("/assenze-staff", UserX, "Assenze staff", "assenze_staff")}
+
                   </React.Fragment>
                 ))}
               {blocco_corrente === "conduzione" && session && puo_vedere_convenzioni &&
@@ -407,6 +414,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <span>Esportazioni</span>
             </NavLink>
           )}
+          {!is_superadmin && session && !is_nuovo_ruolo && puo_vedere_assenze_staff && (
+            <NavLink to="/assenze-staff" onClick={() => set_sidebar_open(false)}
+              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/assenze-staff" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+              <UserX className="w-4 h-4 shrink-0" />
+              <span>Assenze staff</span>
+            </NavLink>
+          )}
+
 
           {is_superadmin && (
             <>
@@ -445,6 +460,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/esportazioni" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
                 <FileSpreadsheet className="w-4 h-4 shrink-0" /><span>Esportazioni</span>
               </NavLink>
+              <NavLink to="/assenze-staff" onClick={() => set_sidebar_open(false)}
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/assenze-staff" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
+                <UserX className="w-4 h-4 shrink-0" /><span>Assenze staff</span>
+              </NavLink>
+
               <NavLink to="/superadmin/app-mobile" onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin/app-mobile" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
                 <Smartphone className="w-4 h-4 shrink-0" /><span>App Mobile</span>

@@ -517,7 +517,13 @@
     "errore_turni": "Impossible de lire vos séances d'aujourd'hui. Réessayez dans un instant.",
     "errore_prossimo": "Impossible de lire votre prochaine séance.",
     "errore_atlete": "Impossible de lire la liste complète des patineuses.",
-    "errore_messaggi": "Impossible de lire vos messages. Réessayez dans un instant."
+    "errore_messaggi": "Impossible de lire vos messages. Réessayez dans un instant.",
+    "ritiro_invece_ci_saro": "Finalement je serai là",
+    "ritiro_conferma_titolo": "Confirmez-vous votre présence ?",
+    "ritiro_conferma_testo": "Le club a peut-être déjà organisé un remplacement : prévenez-le si quelque chose change encore.",
+    "ritiro_conferma_ok": "Oui, je serai là",
+    "ritiro_inviato": "Le club sait que vous serez là",
+    "ritiro_errore": "L'avis n'a pas pu être mis à jour. Réessayez dans un instant."
   },
   "pista_login": {
     "titolo": "Accès bord de piste",

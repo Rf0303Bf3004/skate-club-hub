@@ -517,7 +517,13 @@
     "errore_turni": "We could not read today's sessions. Please try again shortly.",
     "errore_prossimo": "We could not read your next session.",
     "errore_atlete": "We could not read the full list of skaters.",
-    "errore_messaggi": "We could not read your messages. Please try again shortly."
+    "errore_messaggi": "We could not read your messages. Please try again shortly.",
+    "ritiro_invece_ci_saro": "Actually, I will be there",
+    "ritiro_conferma_titolo": "Confirm you will be there?",
+    "ritiro_conferma_testo": "The club may already have arranged a replacement: let them know if anything changes again.",
+    "ritiro_conferma_ok": "Yes, I will be there",
+    "ritiro_inviato": "The club knows you will be there",
+    "ritiro_errore": "The notice could not be updated. Try again shortly."
   },
   "pista_login": {
     "titolo": "Rink-side access",

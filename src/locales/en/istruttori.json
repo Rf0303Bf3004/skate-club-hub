@@ -57,5 +57,55 @@
       "trottole": "Spins",
       "abilita_base": "Basic skills"
     }
+  },
+  "assenze": {
+    "titolo": "Staff absences",
+    "sottotitolo": "Absences announced by staff and how they were resolved.",
+    "filtro_periodo": "Period",
+    "periodo": {
+      "prossimi_7_one": "Next 7 days ({{count}})",
+      "prossimi_7_other": "Next 7 days ({{count}})",
+      "mese_one": "This month ({{count}})",
+      "mese_other": "This month ({{count}})",
+      "tutto_one": "Everything ({{count}})",
+      "tutto_other": "Everything ({{count}})"
+    },
+    "filtro_persona": "Person",
+    "persona_tutte_one": "All people ({{count}})",
+    "persona_tutte_other": "All people ({{count}})",
+    "persona_non_collegata": "Account not linked to any instructor record",
+    "sessione_mancante": "Session no longer in the calendar",
+    "data_sconosciuta": "Date not available",
+    "ora_sconosciuta": "Time not available",
+    "corso_sconosciuto": "Course not available",
+    "segnalata_il": "Absence reported on {{quando}}",
+    "esito": {
+      "annunciata": "Absence announced",
+      "presentata": "Showed up anyway",
+      "sostituita": "Replaced",
+      "ritirata": "Absence withdrawn"
+    },
+    "sostituita_da": "Replaced by {{nome}}",
+    "turno_passato": "Session already past",
+    "azione_presentata": "Showed up anyway",
+    "azione_sostituita": "Replaced by...",
+    "azione_annulla_esito": "Clear outcome",
+    "nota_placeholder": "Free note",
+    "salva_nota": "Save note",
+    "salvato": "Outcome saved",
+    "errore_salvataggio": "The outcome could not be saved. Try again shortly.",
+    "errore_titolo": "The absences could not be loaded",
+    "riprova": "Try again",
+    "vuoto_titolo": "No absence announced in the selected period",
+    "vuoto_testo": "Change the period or the person to see other absences.",
+    "sostituto_titolo": "Who covered the session",
+    "sostituto_testo": "Next to each name are the course hours already worked in the month of the session.",
+    "sostituto_scegli": "Choose an instructor",
+    "sostituto_ore": "{{ore}} hours this month",
+    "sostituto_ore_ignote": "hours for the month not recorded",
+    "sostituto_conferma": "Save replacement",
+    "sostituto_annulla": "Cancel",
+    "sostituto_errore_elenco": "The instructor list could not be loaded.",
+    "sostituto_errore_ore": "The worked hours for the month could not be loaded."
   }
 }

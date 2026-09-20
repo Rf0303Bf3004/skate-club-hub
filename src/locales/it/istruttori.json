@@ -256,5 +256,55 @@
       "trottole": "Trottole",
       "abilita_base": "Abilità di base"
     }
+  },
+  "assenze": {
+    "titolo": "Assenze staff",
+    "sottotitolo": "Le assenze annunciate dallo staff e come sono state risolte.",
+    "filtro_periodo": "Periodo",
+    "periodo": {
+      "prossimi_7_one": "Prossimi 7 giorni ({{count}})",
+      "prossimi_7_other": "Prossimi 7 giorni ({{count}})",
+      "mese_one": "Questo mese ({{count}})",
+      "mese_other": "Questo mese ({{count}})",
+      "tutto_one": "Tutto ({{count}})",
+      "tutto_other": "Tutto ({{count}})"
+    },
+    "filtro_persona": "Persona",
+    "persona_tutte_one": "Tutte le persone ({{count}})",
+    "persona_tutte_other": "Tutte le persone ({{count}})",
+    "persona_non_collegata": "Accesso non collegato a nessuna scheda istruttore",
+    "sessione_mancante": "Sessione non più in calendario",
+    "data_sconosciuta": "Data non disponibile",
+    "ora_sconosciuta": "Ora non disponibile",
+    "corso_sconosciuto": "Corso non disponibile",
+    "segnalata_il": "Assenza segnalata il {{quando}}",
+    "esito": {
+      "annunciata": "Assenza annunciata",
+      "presentata": "Si è presentata lo stesso",
+      "sostituita": "Sostituita",
+      "ritirata": "Assenza ritirata"
+    },
+    "sostituita_da": "Sostituita da {{nome}}",
+    "turno_passato": "Turno già passato",
+    "azione_presentata": "Si è presentata lo stesso",
+    "azione_sostituita": "Sostituita da...",
+    "azione_annulla_esito": "Annulla esito",
+    "nota_placeholder": "Nota libera",
+    "salva_nota": "Salva nota",
+    "salvato": "Esito salvato",
+    "errore_salvataggio": "Non è stato possibile salvare l'esito. Riprova fra poco.",
+    "errore_titolo": "Non è stato possibile leggere le assenze",
+    "riprova": "Riprova",
+    "vuoto_titolo": "Nessuna assenza annunciata nel periodo scelto",
+    "vuoto_testo": "Cambia il periodo o la persona per vedere le altre assenze.",
+    "sostituto_titolo": "Chi ha coperto il turno",
+    "sostituto_testo": "Accanto a ogni nome ci sono le ore di corsi già lavorate nel mese del turno.",
+    "sostituto_scegli": "Scegli un istruttore",
+    "sostituto_ore": "{{ore}} ore nel mese",
+    "sostituto_ore_ignote": "ore del mese non registrate",
+    "sostituto_conferma": "Salva sostituzione",
+    "sostituto_annulla": "Annulla",
+    "sostituto_errore_elenco": "Non è stato possibile leggere l'elenco degli istruttori.",
+    "sostituto_errore_ore": "Non è stato possibile leggere le ore lavorate del mese."
   }
 }
