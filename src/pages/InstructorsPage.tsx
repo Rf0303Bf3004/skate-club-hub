@@ -33,7 +33,34 @@ import { ore_distinte_per_data, ore_reali_senza_sovrapposizioni } from "@/lib/av
 import DateInput from "@/components/forms/DateInput";
 import { format_data_completa } from "@/lib/format-data";
 
-import { segnalazioni_gs, gravita_massima, type QualificaGs, type SegnalazioneGs } from "@/lib/istruttore-gs";
+import {
+  segnalazioni_gs,
+  gravita_massima,
+  termine_esame_gs,
+  giorni_al_termine_gs,
+  type QualificaGs,
+  type SegnalazioneGs,
+} from "@/lib/istruttore-gs";
+
+/** Etichetta e colore del ruolo nel club, leggibili anche in tema scuro. */
+const BADGE_LIVELLO: Record<string, string> = {
+  direttore_tecnico:
+    "bg-teal-100 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:border-teal-800",
+  monitrice: "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-200 dark:border-purple-800",
+  aiuto_monitrice:
+    "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-200 dark:border-orange-800",
+  istruttore: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-800",
+};
+
+const badge_livello_cls = (liv: string) => BADGE_LIVELLO[liv] ?? BADGE_LIVELLO.istruttore;
+const badge_livello_key = (liv: string) =>
+  liv === "direttore_tecnico"
+    ? "badge.direttore_tecnico"
+    : liv === "monitrice"
+      ? "badge.monitrice"
+      : liv === "aiuto_monitrice"
+        ? "badge.aiuto_monitrice"
+        : "badge.istruttore";
 
 
 
@@ -170,6 +197,8 @@ const IstruttoreModal: React.FC<{
     numero_gs: istruttore?.numero_gs || "",
     gs_valido_fino: istruttore?.gs_valido_fino || "",
     data_nascita: istruttore?.data_nascita || "",
+    data_inizio_attivita: istruttore?.data_inizio_attivita || "",
+    gs_termine_esame: istruttore?.gs_termine_esame || "",
   });
 
   const [confirm_delete, set_confirm_delete] = useState(false);
@@ -232,6 +261,8 @@ const IstruttoreModal: React.FC<{
       numero_gs: form.qualifica_gs === "nessuna" ? null : form.numero_gs || null,
       gs_valido_fino: form.qualifica_gs === "nessuna" ? null : form.gs_valido_fino || null,
       data_nascita: form.data_nascita || null,
+      data_inizio_attivita: form.data_inizio_attivita || null,
+      gs_termine_esame: form.qualifica_gs === "monitore_gs" ? null : form.gs_termine_esame || null,
     });
   };
 
@@ -295,6 +326,7 @@ const IstruttoreModal: React.FC<{
               onChange={(e) => set_val("livello_istruttore", e.target.value)}
               className={input_cls}
             >
+              <option value="direttore_tecnico">{t("modal.ruolo_direttore_tecnico")}</option>
               <option value="istruttore">{t("modal.ruolo_istruttore")}</option>
               <option value="monitrice">{t("modal.ruolo_monitrice")}</option>
               <option value="aiuto_monitrice">{t("modal.ruolo_aiuto_monitrice")}</option>
@@ -340,6 +372,33 @@ const IstruttoreModal: React.FC<{
             <Field label={t("gs.data_nascita")}>
               <DateInput value={form.data_nascita} onChange={(v) => set_val("data_nascita", v)} />
             </Field>
+
+            <Field label={t("gs.inizio_attivita")}>
+              <DateInput
+                value={form.data_inizio_attivita}
+                onChange={(v) => set_val("data_inizio_attivita", v)}
+              />
+            </Field>
+
+            {/* Chi ha già la qualifica non deve dare nessun esame: il termine non serve */}
+            {form.qualifica_gs !== "monitore_gs" && (
+              <Field label={t("gs.termine_esame")}>
+                <DateInput value={form.gs_termine_esame} onChange={(v) => set_val("gs_termine_esame", v)} />
+                {form.gs_termine_esame ? (
+                  <p className="text-xs text-muted-foreground">{t("gs.termine_manuale")}</p>
+                ) : (
+                  form.data_inizio_attivita && (
+                    <p className="text-xs text-muted-foreground">
+                      {t("gs.termine_calcolato", {
+                        data: format_data_completa(
+                          termine_esame_gs({ data_inizio_attivita: form.data_inizio_attivita })?.data
+                        ),
+                      })}
+                    </p>
+                  )
+                )}
+              </Field>
+            )}
           </div>
 
 
