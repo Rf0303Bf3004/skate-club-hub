@@ -49,6 +49,9 @@ const LoginPage: React.FC = () => {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : t('login.sign_in_failed');
+      // L'errore resta a schermo sotto il modulo finché non si riprova:
+      // il messaggio a comparsa da solo sparisce e l'utente resta muto.
+      set_errore_accesso(message);
       toast.error(message);
     } finally {
       set_is_submitting(false);
