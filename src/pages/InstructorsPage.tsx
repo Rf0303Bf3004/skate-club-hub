@@ -41,26 +41,25 @@ import {
   type QualificaGs,
   type SegnalazioneGs,
 } from "@/lib/istruttore-gs";
+import { SPECIALIZZAZIONI_SUGGERITE, chiave_specializzazione } from "@/lib/istruttore-specialita";
+
 
 /** Etichetta e colore del ruolo nel club, leggibili anche in tema scuro. */
 const BADGE_LIVELLO: Record<string, string> = {
-  direttore_tecnico:
-    "bg-teal-100 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:border-teal-800",
   monitrice: "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-200 dark:border-purple-800",
   aiuto_monitrice:
     "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-200 dark:border-orange-800",
   istruttore: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-800",
 };
 
+// `direttore_tecnico` non è più un ruolo dell'anagrafica: un dato vecchio vale come istruttore.
 const badge_livello_cls = (liv: string) => BADGE_LIVELLO[liv] ?? BADGE_LIVELLO.istruttore;
 const badge_livello_key = (liv: string) =>
-  liv === "direttore_tecnico"
-    ? "badge.direttore_tecnico"
-    : liv === "monitrice"
-      ? "badge.monitrice"
-      : liv === "aiuto_monitrice"
-        ? "badge.aiuto_monitrice"
-        : "badge.istruttore";
+  liv === "monitrice"
+    ? "badge.monitrice"
+    : liv === "aiuto_monitrice"
+      ? "badge.aiuto_monitrice"
+      : "badge.istruttore";
 
 
 
@@ -193,6 +192,7 @@ const IstruttoreModal: React.FC<{
     ruolo: "istruttore",
     // Ruolo nel club e qualifica Gioventù e Sport (G+S)
     livello_istruttore: istruttore?.livello_istruttore || "istruttore",
+    specialita: istruttore?.specialita || "",
     qualifica_gs: (istruttore?.qualifica_gs || "nessuna") as QualificaGs,
     numero_gs: istruttore?.numero_gs || "",
     gs_valido_fino: istruttore?.gs_valido_fino || "",
@@ -257,6 +257,7 @@ const IstruttoreModal: React.FC<{
       costo_minuto_lezione_privata: to_num(form.costo_minuto_lezione_privata),
       // Ruolo nel club e dati G+S: un campo vuoto viene salvato come NULL, mai come stringa vuota.
       livello_istruttore: form.livello_istruttore,
+      specialita: form.specialita.trim(),
       qualifica_gs: form.qualifica_gs,
       numero_gs: form.qualifica_gs === "nessuna" ? null : form.numero_gs || null,
       gs_valido_fino: form.qualifica_gs === "nessuna" ? null : form.gs_valido_fino || null,
@@ -326,11 +327,32 @@ const IstruttoreModal: React.FC<{
               onChange={(e) => set_val("livello_istruttore", e.target.value)}
               className={input_cls}
             >
-              <option value="direttore_tecnico">{t("modal.ruolo_direttore_tecnico")}</option>
               <option value="istruttore">{t("modal.ruolo_istruttore")}</option>
               <option value="monitrice">{t("modal.ruolo_monitrice")}</option>
               <option value="aiuto_monitrice">{t("modal.ruolo_aiuto_monitrice")}</option>
             </select>
+          </Field>
+
+          {/* Specializzazione: testo libero, i suggerimenti riempiono soltanto il campo */}
+          <Field label={t("specialita.label")}>
+            <input
+              value={form.specialita}
+              onChange={(e) => set_val("specialita", e.target.value)}
+              placeholder={t("specialita.placeholder")}
+              className={input_cls}
+            />
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {SPECIALIZZAZIONI_SUGGERITE.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => set_val("specialita", t(chiave_specializzazione(s)))}
+                  className="text-[11px] px-2 py-0.5 rounded-full border border-border bg-muted text-muted-foreground hover:bg-muted/70"
+                >
+                  {t(chiave_specializzazione(s))}
+                </button>
+              ))}
+            </div>
           </Field>
 
           {/* Gioventù e Sport (G+S): qualifica unica fra tre alternative */}
@@ -1659,7 +1681,7 @@ const InstructorsPage: React.FC = () => {
   // Tutti gli istruttori (incluso monitrici/aiuto auto-create dal trigger)
   const istruttori_veri = istruttori;
   const counts = useMemo(() => {
-    const c = { tutti: istruttori.length, direttore_tecnico: 0, istruttore: 0, monitrice: 0, aiuto_monitrice: 0 };
+    const c = { tutti: istruttori.length, istruttore: 0, monitrice: 0, aiuto_monitrice: 0 };
     istruttori.forEach((i: any) => {
       const liv = i.livello_istruttore || "istruttore";
       if (liv in c) (c as any)[liv]++;
@@ -1943,6 +1965,16 @@ const InstructorsPage: React.FC = () => {
                   </div>
                 );
               })()}
+
+              {/* Specializzazione: il riquadro non compare se il campo è vuoto */}
+              {selected.specialita && (
+                <div className="max-w-lg bg-card rounded-xl shadow-card p-6">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    {ti("specialita.label")}
+                  </p>
+                  <p className="text-sm text-foreground mt-1">{selected.specialita}</p>
+                </div>
+              )}
               <div className="max-w-lg">
                 <CodiceIstruttoreCard istruttore={selected} />
               </div>
@@ -2187,7 +2219,6 @@ const InstructorsPage: React.FC = () => {
         <div className="flex flex-wrap gap-2 border-b border-border pb-3">
           {[
             { key: "tutti", label: ti("lista.filtro_tutti", { count: counts.tutti }) },
-            { key: "direttore_tecnico", label: ti("lista.filtro_direttori_tecnici", { count: counts.direttore_tecnico }) },
             { key: "istruttore", label: ti("lista.filtro_istruttori", { count: counts.istruttore }) },
             { key: "monitrice", label: ti("lista.filtro_monitrici", { count: counts.monitrice }) },
             { key: "aiuto_monitrice", label: ti("lista.filtro_aiuto_monitrici", { count: counts.aiuto_monitrice }) },
@@ -2249,6 +2280,10 @@ const InstructorsPage: React.FC = () => {
                         {i.nome} {i.cognome}
                         {sospeso && <span className="ml-1 text-xs text-muted-foreground">{ti("lista.sospeso")}</span>}
                       </p>
+                      {/* Specializzazione: riga presente solo se valorizzata */}
+                      {i.specialita && (
+                        <p className="text-[11px] text-muted-foreground truncate">{i.specialita}</p>
+                      )}
                       {linked_atleta && (
                         <button
                           onClick={(e) => {

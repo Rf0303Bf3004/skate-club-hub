@@ -26,8 +26,7 @@
     "ruolo_club": "Ruolo nel club",
     "ruolo_istruttore": "Istruttore",
     "ruolo_monitrice": "Monitrice",
-    "ruolo_aiuto_monitrice": "Aiuto monitrice",
-    "ruolo_direttore_tecnico": "Direttore tecnico"
+    "ruolo_aiuto_monitrice": "Aiuto monitrice"
   },
   "ore": {
     "stato_presenza": "Presenza",
@@ -158,8 +157,7 @@
   "badge": {
     "monitrice": "Monitrice",
     "aiuto_monitrice": "Aiuto monitrice",
-    "istruttore": "Istruttore",
-    "direttore_tecnico": "Direttore tecnico"
+    "istruttore": "Istruttore"
   },
   "lista": {
     "titolo": "Istruttori",
@@ -176,8 +174,7 @@
     "vendita_min": "Vendita/min",
     "costo_ora_club": "Costo/h club",
     "lezioni_abbr": "L",
-    "corsi_abbr": "C",
-    "filtro_direttori_tecnici": "Direttori tecnici ({{count}})"
+    "corsi_abbr": "C"
   },
   "toast": {
     "foto_caricata": "✅ Foto caricata",
@@ -246,5 +243,18 @@
     "personale_titolo": "La tua qualifica G+S",
     "personale_testo": "Devi sostenere l'esame G+S entro il {{data}}.",
     "personale_scaduto": "Il termine per il tuo esame G+S era il {{data}}."
+  },
+  "specialita": {
+    "label": "Specializzazione",
+    "placeholder": "es. Coreografia",
+    "opzioni": {
+      "coreografia": "Coreografia",
+      "preparazione_atletica": "Preparazione atletica (off-ice)",
+      "danza_ghiaccio": "Danza su ghiaccio",
+      "sincronizzato": "Sincronizzato",
+      "salti": "Salti",
+      "trottole": "Trottole",
+      "abilita_base": "Abilità di base"
+    }
   }
 }

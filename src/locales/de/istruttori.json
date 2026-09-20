@@ -3,8 +3,7 @@
     "ruolo_club": "Rolle im Club",
     "ruolo_istruttore": "Instruktor",
     "ruolo_monitrice": "Leiterin",
-    "ruolo_aiuto_monitrice": "Hilfsleiterin",
-    "ruolo_direttore_tecnico": "Technischer Leiter"
+    "ruolo_aiuto_monitrice": "Hilfsleiterin"
   },
   "gs": {
     "titolo": "Gioventù e Sport (G+S)",
@@ -37,17 +36,26 @@
     "scaduto_da_giorni_one": "seit {{count}} Tag überfällig",
     "scaduto_da_giorni_other": "seit {{count}} Tagen überfällig"
   },
-  "badge": {
-    "direttore_tecnico": "Technischer Leiter"
-  },
-  "lista": {
-    "filtro_direttori_tecnici": "Technische Leiter ({{count}})"
-  },
+  "badge": {},
+  "lista": {},
   "promemoria": {
     "titolo": "Ausstehende G+S-Prüfungen",
     "senza_termine": "Keine Frist gesetzt",
     "personale_titolo": "Deine G+S-Qualifikation",
     "personale_testo": "Du musst die G+S-Prüfung bis zum {{data}} ablegen.",
     "personale_scaduto": "Die Frist für deine G+S-Prüfung war der {{data}}."
+  },
+  "specialita": {
+    "label": "Spezialisierung",
+    "placeholder": "z. B. Choreografie",
+    "opzioni": {
+      "coreografia": "Choreografie",
+      "preparazione_atletica": "Athletiktraining (Off-Ice)",
+      "danza_ghiaccio": "Eistanz",
+      "sincronizzato": "Synchronised Skating",
+      "salti": "Sprünge",
+      "trottole": "Pirouetten",
+      "abilita_base": "Grundfertigkeiten"
+    }
   }
 }

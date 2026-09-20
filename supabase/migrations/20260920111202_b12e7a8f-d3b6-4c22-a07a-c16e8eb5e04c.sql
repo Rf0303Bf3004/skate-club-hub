@@ -1,0 +1,1 @@
+UPDATE public.istruttori SET livello_istruttore = 'istruttore'::livello_istruttore_enum WHERE livello_istruttore = 'direttore_tecnico'::livello_istruttore_enum;
