@@ -31,6 +31,8 @@ import CreaAccessoDialog from "@/components/istruttori/CreaAccessoDialog";
 import { use_email_utenti_club } from "@/hooks/use-accessi-utenti";
 import { ore_distinte_per_data, ore_reali_senza_sovrapposizioni } from "@/lib/availability";
 import DateInput from "@/components/forms/DateInput";
+import { format_data_completa } from "@/lib/format-data";
+
 import { segnalazioni_gs, gravita_massima, type QualificaGs, type SegnalazioneGs } from "@/lib/istruttore-gs";
 
 
