@@ -2175,6 +2175,7 @@ const InstructorsPage: React.FC = () => {
         <div className="flex flex-wrap gap-2 border-b border-border pb-3">
           {[
             { key: "tutti", label: ti("lista.filtro_tutti", { count: counts.tutti }) },
+            { key: "direttore_tecnico", label: ti("lista.filtro_direttori_tecnici", { count: counts.direttore_tecnico }) },
             { key: "istruttore", label: ti("lista.filtro_istruttori", { count: counts.istruttore }) },
             { key: "monitrice", label: ti("lista.filtro_monitrici", { count: counts.monitrice }) },
             { key: "aiuto_monitrice", label: ti("lista.filtro_aiuto_monitrici", { count: counts.aiuto_monitrice }) },
