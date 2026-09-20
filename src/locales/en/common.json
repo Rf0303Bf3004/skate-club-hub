@@ -299,7 +299,8 @@
     "esci_titolo": "Unlink this tablet?",
     "esci_domanda": "DO YOU REALLY WANT TO CONTINUE?",
     "scollega": "Unlink this tablet",
-    "esci_testo": "The code stored on this device will be deleted: to get back in you will need the club code or its QR code."
+    "esci_testo": "The code stored on this device will be deleted: to get back in you will need the club code or its QR code.",
+    "dispositivo_registrato": "This device is registered as a rink-side tablet"
   },
   "richieste_private": {
     "titolo": "Private lesson requests",

@@ -299,7 +299,8 @@
     "esci_titolo": "Dissocier cette tablette ?",
     "esci_domanda": "VOULEZ-VOUS VRAIMENT CONTINUER ?",
     "scollega": "Dissocier cette tablette",
-    "esci_testo": "Le code conservé sur cet appareil sera supprimé : pour revenir, il faudra le code du club ou son QR."
+    "esci_testo": "Le code conservé sur cet appareil sera supprimé : pour revenir, il faudra le code du club ou son QR.",
+    "dispositivo_registrato": "Cet appareil est enregistré comme tablette de bord de piste"
   },
   "richieste_private": {
     "titolo": "Demandes de leçon privée",

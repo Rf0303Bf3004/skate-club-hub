@@ -388,7 +388,8 @@
     "impostazioni": "Impostazioni del tablet",
     "tablet_titolo": "Tablet di bordo pista",
     "accesso_staff": "Accesso staff",
-    "accesso_staff_descrizione": "Entra con le tue credenziali senza scollegare il tablet."
+    "accesso_staff_descrizione": "Entra con le tue credenziali senza scollegare il tablet.",
+    "dispositivo_registrato": "Questo dispositivo è registrato come tablet di bordo pista"
   },
   "richieste_private": {
     "titolo": "Richieste di lezione privata",

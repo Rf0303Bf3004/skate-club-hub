@@ -8,7 +8,8 @@
     "sign_in_failed": "Échec de la connexion",
     "new_club_question": "Nouveau club ?",
     "register_here": "S'inscrire",
-    "tablet_pista": "Tablette de bord piste →"
+    "tablet_pista": "Tablette de bord piste →",
+    "password_manuale": "La liste remplit seulement l'e-mail : tapez votre mot de passe."
   },
   "register": {
     "title": "Inscrivez votre club",

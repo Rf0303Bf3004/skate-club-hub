@@ -27,10 +27,12 @@ const LoginPage: React.FC = () => {
   const [email, set_email] = useState('');
   const [password, set_password] = useState('');
   const [is_submitting, set_is_submitting] = useState(false);
+  const [errore_accesso, set_errore_accesso] = useState<string | null>(null);
   const [account_recenti, set_account_recenti] = useState<string[]>(() => leggi_account_recenti());
 
   const handle_submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    set_errore_accesso(null);
     set_is_submitting(true);
 
     try {
@@ -47,6 +49,9 @@ const LoginPage: React.FC = () => {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : t('login.sign_in_failed');
+      // L'errore resta a schermo sotto il modulo finché non si riprova:
+      // il messaggio a comparsa da solo sparisce e l'utente resta muto.
+      set_errore_accesso(message);
       toast.error(message);
     } finally {
       set_is_submitting(false);
@@ -95,6 +100,8 @@ const LoginPage: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {/* La tendina riempie solo l'email: la password va sempre digitata. */}
+                <p className="text-xs text-muted-foreground">{t('login.password_manuale')}</p>
               </div>
             )}
             <div className="space-y-2">
@@ -103,6 +110,7 @@ const LoginPage: React.FC = () => {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="email"
+                  required
                   placeholder={t('login.email_placeholder')}
                   value={email}
                   onChange={(e) => set_email(e.target.value)}
@@ -115,6 +123,7 @@ const LoginPage: React.FC = () => {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="password"
+                  required
                   placeholder={t('login.password_placeholder')}
                   value={password}
                   onChange={(e) => set_password(e.target.value)}
@@ -122,7 +131,16 @@ const LoginPage: React.FC = () => {
                 />
               </div>
             </div>
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={is_submitting}>
+            {errore_accesso && (
+              <p role="alert" className="text-sm font-medium text-destructive">
+                {errore_accesso}
+              </p>
+            )}
+            <Button
+              type="submit"
+              className="w-full bg-primary hover:bg-primary/90"
+              disabled={is_submitting || !email.trim() || !password.trim()}
+            >
               {is_submitting ? '...' : t('login.sign_in')}
             </Button>
           </form>
