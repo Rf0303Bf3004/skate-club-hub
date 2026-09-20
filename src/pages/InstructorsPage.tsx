@@ -224,8 +224,15 @@ const IstruttoreModal: React.FC<{
       ruolo: "istruttore",
       user_id: form.user_id || null,
       costo_minuto_lezione_privata: to_num(form.costo_minuto_lezione_privata),
+      // Ruolo nel club e dati G+S: un campo vuoto viene salvato come NULL, mai come stringa vuota.
+      livello_istruttore: form.livello_istruttore,
+      qualifica_gs: form.qualifica_gs,
+      numero_gs: form.qualifica_gs === "nessuna" ? null : form.numero_gs || null,
+      gs_valido_fino: form.qualifica_gs === "nessuna" ? null : form.gs_valido_fino || null,
+      data_nascita: form.data_nascita || null,
     });
   };
+
 
 
   return (
