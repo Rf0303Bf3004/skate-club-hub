@@ -66,12 +66,6 @@ const LandingPage: React.FC = () => {
             >
               Accesso staff →
             </a>
-            <a
-              href="/pista-login"
-              className="inline-block text-sm text-white/60 hover:text-white/90 underline-offset-4 hover:underline"
-            >
-              Tablet di bordo pista →
-            </a>
           </div>
         </div>
       </div>
