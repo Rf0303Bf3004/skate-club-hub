@@ -1879,6 +1879,66 @@ const InstructorsPage: React.FC = () => {
                 <CodiceIstruttoreCard istruttore={selected} />
               </div>
 
+              {/* Riquadro Gioventù e Sport: qualifica, numero, validità e segnalazioni */}
+              {(() => {
+                const qualifica = (selected.qualifica_gs || "nessuna") as QualificaGs;
+                const liv_sel = selected.livello_istruttore || "istruttore";
+                const segnalazioni = segnalazioni_gs(selected, ti);
+                return (
+                  <div className="bg-card rounded-xl shadow-card p-6 space-y-3 max-w-lg">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      {ti("gs.titolo")}
+                    </p>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">{ti("gs.qualifica")}</span>
+                      <span className="text-foreground">{ti(`gs.q_${qualifica}`)}</span>
+                    </div>
+                    {/* Con qualifica 'nessuna' numero e validità non esistono: non si mostrano affatto */}
+                    {qualifica !== "nessuna" && (
+                      <>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">{ti("gs.numero")}</span>
+                          <span className="text-foreground">{selected.numero_gs || "—"}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">{ti("gs.valido_fino")}</span>
+                          <span className="text-foreground">{format_data_completa(selected.gs_valido_fino)}</span>
+                        </div>
+                      </>
+                    )}
+                    {selected.data_nascita && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{ti("gs.data_nascita")}</span>
+                        <span className="text-foreground">{format_data_completa(selected.data_nascita)}</span>
+                      </div>
+                    )}
+
+                    <div className="pt-2 border-t border-border space-y-1.5">
+                      {segnalazioni.length === 0 ? (
+                        qualifica === "nessuna" && liv_sel === "aiuto_monitrice" ? (
+                          <p className="text-sm text-muted-foreground">{ti("gs.non_richiesta")}</p>
+                        ) : (
+                          <p className="text-sm text-emerald-700 dark:text-emerald-300">{ti("gs.in_regola")}</p>
+                        )
+                      ) : (
+                        segnalazioni.map((s: SegnalazioneGs, idx: number) => (
+                          <p
+                            key={idx}
+                            className={`text-sm ${
+                              s.gravita === "rosso"
+                                ? "text-destructive"
+                                : "text-amber-700 dark:text-amber-300"
+                            }`}
+                          >
+                            {s.gravita === "rosso" ? "●" : "●"} {s.testo}
+                          </p>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div className="bg-card rounded-xl shadow-card p-6 space-y-3 max-w-lg">
                 {[
                   { label: t("email"), value: selected.email },
