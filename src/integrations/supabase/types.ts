@@ -10077,6 +10077,24 @@ export type Database = {
           minuti: number
         }[]
       }
+      finestre_private_disponibili: {
+        Args: {
+          p_a: string
+          p_club: string
+          p_da: string
+          p_istruttore: string
+          p_min_minuti?: number
+        }
+        Returns: {
+          alle: string
+          dalle: string
+          data: string
+          minuti: number
+          risorsa_id: string
+          risorsa_nome: string
+          risorsa_tipo: string
+        }[]
+      }
       formatta_numero_fattura: {
         Args: {
           p_anno: number
