@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
-import { fmt_date_long, locale_to_bcp47, format_data } from "@/lib/format-data";
+import { fmt_date_long, format_data } from "@/lib/format-data";
 
 import { useNavigate } from "react-router-dom";
 import {
@@ -1296,9 +1296,8 @@ const DashboardPage: React.FC = () => {
   if ((session?.ruolo as string) === "presidente") {
     return <PresidentDashboard />;
   }
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const { t: td } = useTranslation("dashboard");
-  const locale_code = locale_to_bcp47(locale);
 
   const { data: atleti = [], isLoading: loading_atleti } = use_atleti();
   const { data: corsi = [], isLoading: loading_corsi } = use_corsi();
@@ -1503,7 +1502,7 @@ const DashboardPage: React.FC = () => {
           </Button>
           <div className="text-right">
             <p className="text-xs text-muted-foreground capitalize">
-              {fmt_date_long(new Date(), locale_code)}
+              {fmt_date_long(new Date())}
             </p>
             <p className="text-xs font-bold text-success">{td("presenti_in_pista", { count: totale_presenti })}</p>
           </div>
