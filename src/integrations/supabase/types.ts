@@ -5058,9 +5058,11 @@ export type Database = {
           costo_orario_corsi: number | null
           costo_orario_lezioni: number | null
           created_at: string
+          data_inizio_attivita: string | null
           data_nascita: string | null
           email: string | null
           foto_url: string | null
+          gs_termine_esame: string | null
           gs_valido_fino: string | null
           id: string
           linked_atleta_id: string | null
@@ -5088,9 +5090,11 @@ export type Database = {
           costo_orario_corsi?: number | null
           costo_orario_lezioni?: number | null
           created_at?: string
+          data_inizio_attivita?: string | null
           data_nascita?: string | null
           email?: string | null
           foto_url?: string | null
+          gs_termine_esame?: string | null
           gs_valido_fino?: string | null
           id?: string
           linked_atleta_id?: string | null
@@ -5118,9 +5122,11 @@ export type Database = {
           costo_orario_corsi?: number | null
           costo_orario_lezioni?: number | null
           created_at?: string
+          data_inizio_attivita?: string | null
           data_nascita?: string | null
           email?: string | null
           foto_url?: string | null
+          gs_termine_esame?: string | null
           gs_valido_fino?: string | null
           id?: string
           linked_atleta_id?: string | null
