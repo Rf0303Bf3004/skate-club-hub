@@ -108,13 +108,15 @@ const PistaGate = ({ children }: { children: React.ReactNode }) => {
   const [riaccredito, set_riaccredito] = React.useState<"idle" | "in_corso" | "fallito">("idle");
 
   // Rete di sicurezza per i tablet già in trappola (sessione pista viva,
-  // codice perso): arrivare al tastierino chiude la sessione residua prima
-  // di mostrare la pagina, senza dover pulire il dispositivo a mano.
+  // codice conservato): arrivare al tastierino chiude la sessione residua
+  // E cancella il codice, altrimenti il riaccredito silenzioso su /pista
+  // rimetterebbe il dispositivo tablet da solo: un anello chiuso.
   useEffect(() => {
     if (is_loading || !is_pista) return;
     if (typeof window === "undefined") return;
     if (window.location.pathname !== "/pista-login") return;
     void chiudi_sessione_pista();
+    cancella_codice_pista();
   }, [is_loading, is_pista]);
 
   useEffect(() => {

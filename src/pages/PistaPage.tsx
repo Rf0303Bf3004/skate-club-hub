@@ -1108,6 +1108,22 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
         </div>
       )}
 
+      {/* Via d'uscita sempre visibile in fondo: chi si ritrova il proprio
+          dispositivo trasformato in tablet deve poterlo scollegare senza
+          cercare nei menu. Si aggiunge ai comandi in alto, non li sostituisce. */}
+      {sessione_pista && (
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 border-t border-border pt-6 pb-2 text-sm text-muted-foreground">
+          <span>{t("pista.dispositivo_registrato")}</span>
+          <button
+            type="button"
+            className="font-medium text-destructive underline underline-offset-4"
+            onClick={() => set_scollega_aperto(true)}
+          >
+            {t("pista.scollega")}
+          </button>
+        </div>
+      )}
+
 
 
       <AlertDialog open={!!in_attesa} onOpenChange={(aperto) => !aperto && set_in_attesa(null)}>
