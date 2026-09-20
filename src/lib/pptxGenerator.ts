@@ -19,6 +19,7 @@ import { fetchCamminoAtlete, type AreaId, type ModuloRisultato, type Stagione } 
 import type { GraficoSpec, RigaResoconto } from "@/lib/relazione/grafici";
 import { firma_foto_atleta } from "@/hooks/useSignedPhoto";
 import type { VoceComposizione } from "@/lib/pdfGenerator";
+import { format_data_lunga } from "@/lib/format-data";
 
 const ts = (chiave: string, opzioni?: Record<string, unknown>) =>
   i18n.t(`relazione.slide.${chiave}`, { ns: "dashboard", ...(opzioni ?? {}) }) as string;
@@ -76,7 +77,7 @@ function righe_stimate(testo: string, larghezza_in: number, corpo_pt: number): n
 }
 
 function data_oggi(): string {
-  return new Intl.DateTimeFormat(i18n.language || "it", { dateStyle: "long" }).format(new Date());
+  return format_data_lunga(new Date(), { dateStyle: "long" });
 }
 
 // ── Impaginazione ───────────────────────────────────────────────

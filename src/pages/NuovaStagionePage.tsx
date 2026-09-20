@@ -8,9 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, ExternalLink, Info } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
+import { format_data } from "@/lib/format-data";
 
 /** Conferma esplicita di presa visione: evita di attivare una stagione "saltando" i passaggi. */
 const AckStep: React.FC<{
@@ -175,7 +174,7 @@ export default function NuovaStagionePage() {
   const format_date = (d?: string | null) => {
     if (!d) return t("nuova_stagione.date_placeholder");
     try {
-      return format(new Date(d), "d MMMM yyyy", { locale: it });
+      return format_data(d, { day: "numeric", month: "long", year: "numeric" });
     } catch {
       return d;
     }

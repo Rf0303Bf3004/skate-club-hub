@@ -17,7 +17,7 @@ import {
 import EmptyState from "@/components/common/EmptyState";
 import { toast } from "@/hooks/use-toast";
 
-import { format_data } from "@/lib/format-data";
+import { format_data, format_data_ora } from "@/lib/format-data";
 /**
  * Assenze annunciate dallo staff: un posto dove il club le vede tutte e dice
  * come sono finite. Un dato che manca va detto, mai nascosto.
@@ -52,7 +52,7 @@ const ora_breve = (v: string | null | undefined) => (v ? String(v).slice(0, 5) :
 const periodo_mese = (iso: string | null) => (iso ? iso.slice(0, 7) : null);
 
 export default function AssenzeStaffPage() {
-  const { t, i18n } = useTranslation("istruttori");
+  const { t } = useTranslation("istruttori");
   const { session } = useAuth();
   const club_id = session?.club_id ?? "";
   const qc = useQueryClient();
@@ -277,7 +277,7 @@ export default function AssenzeStaffPage() {
     });
 
   const istante = (iso: string | null) =>
-    iso ? new Date(iso).toLocaleString(i18n.language, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : null;
+    iso ? format_data_ora(iso, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : null;
 
   const nome_istruttore = (id: string | null | undefined) => {
     if (!id) return null;

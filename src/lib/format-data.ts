@@ -87,6 +87,23 @@ export function format_ora(
   return dt.toLocaleTimeString(locale_data_corrente(), opts);
 }
 
+/** Data e ora localizzate nella lingua UI corrente. */
+export function format_data_ora(
+  d: DateInput,
+  opts: Intl.DateTimeFormatOptions = {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  },
+  fallback: string = "—"
+): string {
+  const dt = to_date(d);
+  if (!dt) return fallback;
+  return dt.toLocaleString(locale_data_corrente(), opts);
+}
+
 /** Formato lungo localizzato (es. "martedì 28 aprile 2026") usando la lingua UI corrente. */
 export function fmt_date_long(d: DateInput, fallback: string = "—"): string {
   return format_data_lunga(d, {

@@ -6,17 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { calcola_ore_impegnate_giorno } from "@/lib/availability";
-import { useI18n, type Locale } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
 
 import { format_data } from "@/lib/format-data";
-const LOCALE_BCP47: Record<Locale, string> = {
-  it: "it-IT",
-  en: "en-GB",
-  fr: "fr-FR",
-  de: "de-DE",
-  rm: "rm-CH",
-};
 
 // ── Helpers data ─────────────────────────────────────────────
 function to_date_key(d: Date): string {
@@ -39,7 +31,7 @@ function giorno_italiano(date_str: string): string {
   return GIORNI_IT[new Date(date_str + "T00:00:00").getDay()];
 }
 
-function fmt_label(date_str: string, locale_code: string): string {
+function fmt_label(date_str: string): string {
   return format_data(new Date(date_str + "T00:00:00"), {
     weekday: "long",
     day: "numeric",
@@ -100,8 +92,6 @@ function use_disponibilita_giorno(date_str: string) {
 export const IstruttoriDisponibiliWidget: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation("dashboard");
-  const { locale } = useI18n();
-  const locale_code = LOCALE_BCP47[locale] ?? "it-IT";
   const [date_str, set_date_str] = useState<string>(() => to_date_key(new Date()));
   const { data, isLoading } = use_disponibilita_giorno(date_str);
 
@@ -192,7 +182,7 @@ export const IstruttoriDisponibiliWidget: React.FC = () => {
               : "bg-muted text-muted-foreground hover:bg-muted/80"
           }`}
         >
-          {fmt_label(date_str, locale_code)}
+          {fmt_label(date_str)}
         </button>
         <Button
           size="sm"
