@@ -450,10 +450,10 @@
       "end_date_label": "Data fine"
     },
     "step2": {
-      "warning_title": "Azzeramento fasce ghiaccio",
-      "warning_desc": "Le fasce orario ghiaccio verranno azzerate. Potrai configurarle da zero in {{club_config}} dopo aver creato la stagione.",
+      "warning_title": "Le fasce di ghiaccio vengono riportate nella stagione nuova",
+      "warning_desc": "Le fasce orario della stagione che stai chiudendo vengono copiate nella stagione nuova, giorno per giorno. Quelle vecchie restano legate alla stagione vecchia come storico. Controllale in {{club_config}}: non devi ricostruirle da zero.",
       "club_config_label": "Configurazione Club",
-      "ack_label": "Ho capito: le fasce ghiaccio verranno azzerate"
+      "ack_label": "Ho capito: le fasce vengono riportate e le controllerò"
     },
     "step3": {
       "info": "Gli istruttori esistenti restano disponibili. Verifica e aggiorna disponibilità e costi in {{istruttori}}.",
@@ -471,7 +471,7 @@
       "summary_name": "Nome:",
       "summary_start": "Inizio:",
       "summary_end": "Fine:",
-      "summary_note": "Le fasce ghiaccio verranno azzerate. Istruttori e storico corsi restano disponibili.",
+      "summary_note": "Le fasce di ghiaccio vengono riportate nella stagione nuova. Istruttori e storico corsi restano disponibili.",
       "confirm_label": "Confermo di voler creare la nuova stagione"
     },
     "nav": {
@@ -481,9 +481,12 @@
       "create_activate": "Crea e Attiva Nuova Stagione"
     },
     "toast": {
-      "success": "Nuova stagione \"{{nome}}\" creata! Configura la disponibilità ghiaccio per iniziare.",
       "error": "Errore: {{message}}",
-      "error_generic": "operazione fallita"
+      "error_generic": "operazione fallita",
+      "success_con_fasce_one": "Stagione \"{{nome}}\" creata. Riportata {{count}} fascia di ghiaccio dalla stagione precedente: puoi correggerla in Setup del club.",
+      "success_con_fasce_other": "Stagione \"{{nome}}\" creata. Riportate {{count}} fasce di ghiaccio dalla stagione precedente: puoi correggerle in Setup del club.",
+      "success_senza_fasce": "Stagione \"{{nome}}\" creata. Nella stagione precedente non c'era nessuna fascia di ghiaccio da riportare: impostale in Setup del club.",
+      "error_copia": "Stagione creata, ma le fasce di ghiaccio non sono state riportate: {{message}}. Controllale in Setup del club."
     },
     "date_placeholder": "—"
   },

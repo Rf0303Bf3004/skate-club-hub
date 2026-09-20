@@ -173,5 +173,22 @@
     "invite": "Benutzer einladen",
     "role": "Rolle",
     "last_access": "Letzter Zugriff"
+  },
+  "nuova_stagione": {
+    "step2": {
+      "warning_title": "Die Eiszeiten werden in die neue Saison übernommen",
+      "warning_desc": "Die Zeitfenster der Saison, die du abschliesst, werden Tag für Tag in die neue Saison kopiert. Die alten bleiben als Verlauf bei der alten Saison. Prüfe sie in {{club_config}}: Du musst sie nicht neu aufbauen.",
+      "ack_label": "Verstanden: Die Zeitfenster werden übernommen und ich prüfe sie",
+      "club_config_label": "Club-Konfiguration"
+    },
+    "step5": {
+      "summary_note": "Die Eiszeiten werden in die neue Saison übernommen. Trainerinnen und Kursverlauf bleiben erhalten."
+    },
+    "toast": {
+      "success_con_fasce_one": "Saison „{{nome}}“ erstellt. {{count}} Eiszeit aus der vorherigen Saison übernommen: Du kannst sie in der Club-Konfiguration anpassen.",
+      "success_con_fasce_other": "Saison „{{nome}}“ erstellt. {{count}} Eiszeiten aus der vorherigen Saison übernommen: Du kannst sie in der Club-Konfiguration anpassen.",
+      "success_senza_fasce": "Saison „{{nome}}“ erstellt. In der vorherigen Saison gab es keine Eiszeiten zum Übernehmen: Lege sie in der Club-Konfiguration an.",
+      "error_copia": "Saison erstellt, aber die Eiszeiten wurden nicht übernommen: {{message}}. Prüfe sie in der Club-Konfiguration."
+    }
   }
 }
