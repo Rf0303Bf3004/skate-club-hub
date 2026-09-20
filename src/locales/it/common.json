@@ -608,7 +608,13 @@
     "assenza_fatta": "Hai avvisato che non ci sarai",
     "assenza_inviata": "Avviso inviato al club",
     "assenza_errore": "Non è stato possibile inviare l'avviso. Riprova fra poco.",
-    "errore_reminder": "Non è stato possibile leggere i promemoria dei tuoi turni: il comando per avvisare un'assenza può mancare."
+    "errore_reminder": "Non è stato possibile leggere i promemoria dei tuoi turni: il comando per avvisare un'assenza può mancare.",
+    "ritiro_invece_ci_saro": "Invece ci sarò",
+    "ritiro_conferma_titolo": "Confermi che ci sarai?",
+    "ritiro_conferma_testo": "Il club potrebbe aver già organizzato una sostituzione: avvisalo se qualcosa cambia ancora.",
+    "ritiro_conferma_ok": "Sì, ci sarò",
+    "ritiro_inviato": "Il club sa che ci sarai",
+    "ritiro_errore": "Non è stato possibile aggiornare l'avviso. Riprova fra poco."
   },
   "pista_login": {
     "titolo": "Accesso bordo pista",

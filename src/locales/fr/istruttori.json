@@ -57,5 +57,55 @@
       "trottole": "Pirouettes",
       "abilita_base": "Habiletés de base"
     }
+  },
+  "assenze": {
+    "titolo": "Absences du personnel",
+    "sottotitolo": "Les absences annoncées par le personnel et la manière dont elles ont été résolues.",
+    "filtro_periodo": "Période",
+    "periodo": {
+      "prossimi_7_one": "7 prochains jours ({{count}})",
+      "prossimi_7_other": "7 prochains jours ({{count}})",
+      "mese_one": "Ce mois ({{count}})",
+      "mese_other": "Ce mois ({{count}})",
+      "tutto_one": "Tout ({{count}})",
+      "tutto_other": "Tout ({{count}})"
+    },
+    "filtro_persona": "Personne",
+    "persona_tutte_one": "Toutes les personnes ({{count}})",
+    "persona_tutte_other": "Toutes les personnes ({{count}})",
+    "persona_non_collegata": "Accès non lié à une fiche d'entraîneur",
+    "sessione_mancante": "Séance qui n'est plus au calendrier",
+    "data_sconosciuta": "Date non disponible",
+    "ora_sconosciuta": "Heure non disponible",
+    "corso_sconosciuto": "Cours non disponible",
+    "segnalata_il": "Absence signalée le {{quando}}",
+    "esito": {
+      "annunciata": "Absence annoncée",
+      "presentata": "Finalement présente",
+      "sostituita": "Remplacée",
+      "ritirata": "Absence retirée"
+    },
+    "sostituita_da": "Remplacée par {{nome}}",
+    "turno_passato": "Séance déjà passée",
+    "azione_presentata": "Finalement présente",
+    "azione_sostituita": "Remplacée par...",
+    "azione_annulla_esito": "Annuler le résultat",
+    "nota_placeholder": "Note libre",
+    "salva_nota": "Enregistrer la note",
+    "salvato": "Résultat enregistré",
+    "errore_salvataggio": "Le résultat n'a pas pu être enregistré. Réessayez dans un instant.",
+    "errore_titolo": "Les absences n'ont pas pu être lues",
+    "riprova": "Réessayer",
+    "vuoto_titolo": "Aucune absence annoncée sur la période choisie",
+    "vuoto_testo": "Changez la période ou la personne pour voir les autres absences.",
+    "sostituto_titolo": "Qui a assuré la séance",
+    "sostituto_testo": "À côté de chaque nom figurent les heures de cours déjà effectuées dans le mois de la séance.",
+    "sostituto_scegli": "Choisir un entraîneur",
+    "sostituto_ore": "{{ore}} heures dans le mois",
+    "sostituto_ore_ignote": "heures du mois non enregistrées",
+    "sostituto_conferma": "Enregistrer le remplacement",
+    "sostituto_annulla": "Annuler",
+    "sostituto_errore_elenco": "La liste des entraîneurs n'a pas pu être lue.",
+    "sostituto_errore_ore": "Les heures travaillées du mois n'ont pas pu être lues."
   }
 }

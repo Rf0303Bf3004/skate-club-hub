@@ -57,5 +57,55 @@
       "trottole": "Pirouetten",
       "abilita_base": "Grundfertigkeiten"
     }
+  },
+  "assenze": {
+    "titolo": "Abwesenheiten des Personals",
+    "sottotitolo": "Vom Personal gemeldete Abwesenheiten und wie sie gelöst wurden.",
+    "filtro_periodo": "Zeitraum",
+    "periodo": {
+      "prossimi_7_one": "Nächste 7 Tage ({{count}})",
+      "prossimi_7_other": "Nächste 7 Tage ({{count}})",
+      "mese_one": "Dieser Monat ({{count}})",
+      "mese_other": "Dieser Monat ({{count}})",
+      "tutto_one": "Alles ({{count}})",
+      "tutto_other": "Alles ({{count}})"
+    },
+    "filtro_persona": "Person",
+    "persona_tutte_one": "Alle Personen ({{count}})",
+    "persona_tutte_other": "Alle Personen ({{count}})",
+    "persona_non_collegata": "Zugang mit keinem Trainerprofil verknüpft",
+    "sessione_mancante": "Einheit nicht mehr im Kalender",
+    "data_sconosciuta": "Datum nicht verfügbar",
+    "ora_sconosciuta": "Uhrzeit nicht verfügbar",
+    "corso_sconosciuto": "Kurs nicht verfügbar",
+    "segnalata_il": "Abwesenheit gemeldet am {{quando}}",
+    "esito": {
+      "annunciata": "Abwesenheit gemeldet",
+      "presentata": "Doch erschienen",
+      "sostituita": "Ersetzt",
+      "ritirata": "Abwesenheit zurückgezogen"
+    },
+    "sostituita_da": "Ersetzt durch {{nome}}",
+    "turno_passato": "Einheit bereits vorbei",
+    "azione_presentata": "Doch erschienen",
+    "azione_sostituita": "Ersetzt durch...",
+    "azione_annulla_esito": "Ergebnis zurücksetzen",
+    "nota_placeholder": "Freie Notiz",
+    "salva_nota": "Notiz speichern",
+    "salvato": "Ergebnis gespeichert",
+    "errore_salvataggio": "Das Ergebnis konnte nicht gespeichert werden. Bitte später erneut versuchen.",
+    "errore_titolo": "Die Abwesenheiten konnten nicht gelesen werden",
+    "riprova": "Erneut versuchen",
+    "vuoto_titolo": "Keine gemeldete Abwesenheit im gewählten Zeitraum",
+    "vuoto_testo": "Zeitraum oder Person ändern, um andere Abwesenheiten zu sehen.",
+    "sostituto_titolo": "Wer die Einheit übernommen hat",
+    "sostituto_testo": "Neben jedem Namen stehen die im Monat der Einheit bereits geleisteten Kursstunden.",
+    "sostituto_scegli": "Trainerin oder Trainer wählen",
+    "sostituto_ore": "{{ore}} Stunden im Monat",
+    "sostituto_ore_ignote": "Stunden des Monats nicht erfasst",
+    "sostituto_conferma": "Vertretung speichern",
+    "sostituto_annulla": "Abbrechen",
+    "sostituto_errore_elenco": "Die Trainerliste konnte nicht gelesen werden.",
+    "sostituto_errore_ore": "Die geleisteten Stunden des Monats konnten nicht gelesen werden."
   }
 }
