@@ -10,6 +10,7 @@ import { Search, Archive, ArchiveRestore, MessageSquare, AlertTriangle, X, Chevr
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { segnala_errore } from "@/lib/errori";
+import { format_ora } from "@/lib/format-data";
 import {
   raggruppa_comunicazioni,
   etichetta_destinatari_gruppo,
@@ -42,7 +43,7 @@ function get_ts(c: any) {
 function ora_label(c: any) {
   const iso = (c.stato === 'inviata' && c.inviata_at) ? c.inviata_at : c.created_at;
   if (!iso) return '';
-  return new Date(iso).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
+  return format_ora(new Date(iso), { hour: '2-digit', minute: '2-digit' });
 }
 
 function bucket_of(ts: number) {

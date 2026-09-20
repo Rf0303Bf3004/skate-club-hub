@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, X, Loader2, BellRing } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
+import { format_data } from "@/lib/format-data";
 // Tab "I miei reminder" — mostra a istruttori/staff i reminder turno del giorno successivo
 // con bottoni Sarò presente / Sarò assente. I trigger DB gestiscono le conseguenze.
 export const MieiReminderStaffTab: React.FC = () => {
@@ -82,7 +83,7 @@ export const MieiReminderStaffTab: React.FC = () => {
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-bold text-foreground">{com?.titolo}</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {com?.data_evento && new Date(com.data_evento + "T00:00:00").toLocaleDateString("it-CH", { weekday: "long", day: "2-digit", month: "long" })}
+                  {com?.data_evento && format_data(new Date(com.data_evento + "T00:00:00"), { weekday: "long", day: "2-digit", month: "long" })}
                 </p>
               </div>
               {sola_lettura ? (

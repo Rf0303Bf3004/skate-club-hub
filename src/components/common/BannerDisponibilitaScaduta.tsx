@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
 import { use_club } from "@/hooks/use-supabase-data";
 
+import { format_data } from "@/lib/format-data";
 function oggi_iso(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -19,7 +20,7 @@ const BannerDisponibilitaScaduta: React.FC = () => {
   if (!valida_fino_al) return null;
   if (valida_fino_al >= oggi_iso()) return null;
 
-  const label = new Date(`${valida_fino_al}T00:00:00`).toLocaleDateString("it-CH", {
+  const label = format_data(new Date(`${valida_fino_al}T00:00:00`), {
     day: "numeric",
     month: "long",
     year: "numeric",

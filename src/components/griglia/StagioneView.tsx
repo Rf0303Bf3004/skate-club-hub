@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Snowflake, Dumbbell, Lock, HelpCircle } from "lucide-react";
+import { format_data } from "@/lib/format-data";
 import {
   use_eventi_unificati,
   add_giorni,
@@ -197,8 +198,8 @@ const StagioneView: React.FC<{
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <span className="font-medium">{stagione.nome}</span>
         <span className="text-muted-foreground">
-          {new Date(`${da}T00:00:00`).toLocaleDateString("it-CH")} –{" "}
-          {new Date(`${a}T00:00:00`).toLocaleDateString("it-CH")} · {n_settimane} settimane ·{" "}
+          {format_data(new Date(`${da}T00:00:00`))} –{" "}
+          {format_data(new Date(`${a}T00:00:00`))} · {n_settimane} settimane ·{" "}
           {eventi_filtrati.length} voci
         </span>
       </div>

@@ -13,6 +13,7 @@ import i18n from "@/i18n";
 import { use_livelli } from "@/hooks/use-supabase-data";
 import { segnala_errore, segnala_a_vuoto } from "@/lib/errori";
 
+import { format_data } from "@/lib/format-data";
 const tf = (key: string, opts?: any) => i18n.t(`form_section.${key}`, { ns: "communications", ...(opts ?? {}) }) as string;
 
 
@@ -252,7 +253,7 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
 
 const fmt_date_it = (d: string | null | undefined) => {
   if (!d) return "—";
-  return new Date(d + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "long", year: "numeric" });
+  return format_data(new Date(d + "T00:00:00"), { day: "2-digit", month: "long", year: "numeric" });
 };
 
 /**

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CheckCircle2, XCircle, Clock } from "lucide-react";
 
+import { format_data } from "@/lib/format-data";
 type Riga = {
   id: string;
   esito: string;
@@ -88,7 +89,7 @@ export default function StoricoTestAtleta({ atleta_id }: Props) {
             return (
               <TableRow key={r.id}>
                 <TableCell className="text-sm">
-                  {r.test?.data ? new Date(r.test.data + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
+                  {r.test?.data ? format_data(new Date(r.test.data + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
                 </TableCell>
                 <TableCell className="font-medium text-sm">{r.test?.nome || "—"}</TableCell>
                 <TableCell className="text-sm capitalize text-muted-foreground">{r.test?.tipo || "—"}</TableCell>

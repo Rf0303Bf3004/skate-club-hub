@@ -5,6 +5,7 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 
+import { format_data } from "@/lib/format-data";
 const tk = (key: string, opts?: Record<string, unknown>) =>
   i18n.t(`calendario.${key}`, { ns: "atleti", ...(opts ?? {}) }) as string;
 
@@ -250,7 +251,7 @@ const DayBottomSheet: React.FC<{
 }> = ({ date, events, on_close, on_event }) => {
   if (!date) return null;
   const day_events = events.filter(e => e.date === date).sort((a, b) => a.time_start.localeCompare(b.time_start));
-  const label = new Date(date + "T00:00:00").toLocaleDateString("de-CH", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const label = format_data(new Date(date + "T00:00:00"), { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   return (
     <>
@@ -335,7 +336,7 @@ const EventBottomSheet: React.FC<{ event: CalEvent | null; on_close: () => void 
               <div className="flex items-center gap-3 text-sm">
                 <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
                 <span className="text-foreground">
-                  {new Date(event.date + "T00:00:00").toLocaleDateString("de-CH", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                  {format_data(new Date(event.date + "T00:00:00"), { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
                 </span>
               </div>
               {(event.time_start || event.time_end) && (
@@ -533,7 +534,7 @@ const AgendaList: React.FC<{ events: CalEvent[]; on_event: (e: CalEvent) => void
           <React.Fragment key={i}>
             {show_header && (
               <div className="px-4 py-2 bg-muted/50 text-xs font-semibold text-muted-foreground uppercase tracking-wide sticky top-0">
-                {new Date(ev.date + "T00:00:00").toLocaleDateString("de-CH", { weekday: "long", day: "numeric", month: "long" })}
+                {format_data(new Date(ev.date + "T00:00:00"), { weekday: "long", day: "numeric", month: "long" })}
               </div>
             )}
             <button

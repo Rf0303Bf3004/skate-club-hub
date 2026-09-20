@@ -104,6 +104,7 @@ import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2, GripVertical, HelpCircle, ChevronDown, ChevronRight, AlertTriangle, Repeat, Link2, RefreshCw, Package } from "lucide-react";
 
+import { format_data } from "@/lib/format-data";
 const DURATA_DEFAULT_MIN = 20;
 const ALTRO = "__altro__";
 
@@ -1882,7 +1883,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           {blocco.stato === "pubblicato" ? (
             <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
               <CheckCircle2 className="w-3 h-3 mr-1" />
-              Pubblicato{blocco.pubblicato_at ? ` il ${new Date(blocco.pubblicato_at).toLocaleDateString("it-CH")}` : ""}
+              Pubblicato{blocco.pubblicato_at ? ` il ${format_data(new Date(blocco.pubblicato_at))}` : ""}
             </Badge>
           ) : (
             <>
@@ -2272,14 +2273,14 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                 : `${oltre_stagione?.date.length ?? 0} date cadono`}{" "}
               fuori dalla stagione «{oltre_stagione?.stagione.nome}», che finisce il{" "}
               {oltre_stagione
-                ? new Date(`${oltre_stagione.stagione.data_fine}T00:00:00`).toLocaleDateString("it-CH")
+                ? format_data(new Date(`${oltre_stagione.stagione.data_fine}T00:00:00`))
                 : ""}
               . Puoi fermarti alla fine della stagione oppure generarle comunque.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="max-h-40 overflow-auto rounded border p-2 text-xs space-y-1">
             {(oltre_stagione?.date ?? []).map((d) => (
-              <div key={d}>{new Date(`${d}T00:00:00`).toLocaleDateString("it-CH")}</div>
+              <div key={d}>{format_data(new Date(`${d}T00:00:00`))}</div>
             ))}
           </div>
           <AlertDialogFooter>

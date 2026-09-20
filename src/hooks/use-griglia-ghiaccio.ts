@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { date_settimanali, genera_occorrenze_corso } from "@/lib/planning-occorrenze";
+import { format_data } from "@/lib/format-data";
 import {
   carica_stagione_attiva,
   date_fuori_stagione,
@@ -543,7 +544,7 @@ export function use_pubblica_blocco() {
           .eq("data_evento", data_evento);
         if (err_del) throw err_del;
 
-        const label_giorno = new Date(`${data_evento}T00:00:00`).toLocaleDateString("it-CH", {
+        const label_giorno = format_data(new Date(`${data_evento}T00:00:00`), {
           weekday: "long",
           day: "numeric",
           month: "long",

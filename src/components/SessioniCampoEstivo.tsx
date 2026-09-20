@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { format_data } from "@/lib/format-data";
 interface Props {
   gara_id: string;
 }
@@ -240,7 +241,7 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-semibold text-foreground">
-                          {new Date(s.data + "T00:00:00").toLocaleDateString("de-CH", {
+                          {format_data(new Date(s.data + "T00:00:00"), {
                             weekday: "short",
                             day: "numeric",
                             month: "short",
@@ -285,7 +286,7 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
                     <ConfirmButton
                       titolo={t("sessioni_campo.confirm_delete_title")}
                       descrizione={t("sessioni_campo.confirm_delete_desc", {
-                        data: new Date(s.data + "T00:00:00").toLocaleDateString("de-CH"),
+                        data: format_data(new Date(s.data + "T00:00:00")),
                       })}
                       on_conferma={() => handle_delete_session(s.id)}
                     >

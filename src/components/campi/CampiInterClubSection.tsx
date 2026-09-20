@@ -55,6 +55,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { format_data } from "@/lib/format-data";
 import {
   Users,
   Plus,
@@ -77,7 +78,7 @@ import {
 } from "lucide-react";
 
 const fmt_date = (d: string | null) =>
-  d ? new Date(d + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
+  d ? format_data(new Date(d + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
 
 const anno_nascita = (d?: string | null) => (d ? new Date(d + "T00:00:00").getFullYear() : null);
 
