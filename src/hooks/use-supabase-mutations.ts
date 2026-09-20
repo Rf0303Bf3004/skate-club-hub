@@ -351,6 +351,7 @@ export function use_upsert_istruttore() {
         // Ruolo nel club e qualifica Gioventù e Sport: inviati solo se il chiamante li fornisce,
         // per non azzerarli da schermate che non li mostrano.
         ...(data.livello_istruttore !== undefined ? { livello_istruttore: data.livello_istruttore } : {}),
+        ...(data.specialita !== undefined ? { specialita: data.specialita } : {}),
         ...(data.qualifica_gs !== undefined ? { qualifica_gs: data.qualifica_gs } : {}),
         ...(data.numero_gs !== undefined ? { numero_gs: data.numero_gs } : {}),
         ...(data.gs_valido_fino !== undefined ? { gs_valido_fino: data.gs_valido_fino } : {}),

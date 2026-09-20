@@ -257,6 +257,7 @@ const IstruttoreModal: React.FC<{
       costo_minuto_lezione_privata: to_num(form.costo_minuto_lezione_privata),
       // Ruolo nel club e dati G+S: un campo vuoto viene salvato come NULL, mai come stringa vuota.
       livello_istruttore: form.livello_istruttore,
+      specialita: form.specialita.trim(),
       qualifica_gs: form.qualifica_gs,
       numero_gs: form.qualifica_gs === "nessuna" ? null : form.numero_gs || null,
       gs_valido_fino: form.qualifica_gs === "nessuna" ? null : form.gs_valido_fino || null,
@@ -1680,7 +1681,7 @@ const InstructorsPage: React.FC = () => {
   // Tutti gli istruttori (incluso monitrici/aiuto auto-create dal trigger)
   const istruttori_veri = istruttori;
   const counts = useMemo(() => {
-    const c = { tutti: istruttori.length, direttore_tecnico: 0, istruttore: 0, monitrice: 0, aiuto_monitrice: 0 };
+    const c = { tutti: istruttori.length, istruttore: 0, monitrice: 0, aiuto_monitrice: 0 };
     istruttori.forEach((i: any) => {
       const liv = i.livello_istruttore || "istruttore";
       if (liv in c) (c as any)[liv]++;
@@ -2208,7 +2209,6 @@ const InstructorsPage: React.FC = () => {
         <div className="flex flex-wrap gap-2 border-b border-border pb-3">
           {[
             { key: "tutti", label: ti("lista.filtro_tutti", { count: counts.tutti }) },
-            { key: "direttore_tecnico", label: ti("lista.filtro_direttori_tecnici", { count: counts.direttore_tecnico }) },
             { key: "istruttore", label: ti("lista.filtro_istruttori", { count: counts.istruttore }) },
             { key: "monitrice", label: ti("lista.filtro_monitrici", { count: counts.monitrice }) },
             { key: "aiuto_monitrice", label: ti("lista.filtro_aiuto_monitrici", { count: counts.aiuto_monitrice }) },
