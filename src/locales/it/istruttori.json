@@ -26,7 +26,8 @@
     "ruolo_club": "Ruolo nel club",
     "ruolo_istruttore": "Istruttore",
     "ruolo_monitrice": "Monitrice",
-    "ruolo_aiuto_monitrice": "Aiuto monitrice"
+    "ruolo_aiuto_monitrice": "Aiuto monitrice",
+    "ruolo_direttore_tecnico": "Direttore tecnico"
   },
   "ore": {
     "stato_presenza": "Presenza",
@@ -157,7 +158,8 @@
   "badge": {
     "monitrice": "Monitrice",
     "aiuto_monitrice": "Aiuto monitrice",
-    "istruttore": "Istruttore"
+    "istruttore": "Istruttore",
+    "direttore_tecnico": "Direttore tecnico"
   },
   "lista": {
     "titolo": "Istruttori",
@@ -174,7 +176,8 @@
     "vendita_min": "Vendita/min",
     "costo_ora_club": "Costo/h club",
     "lezioni_abbr": "L",
-    "corsi_abbr": "C"
+    "corsi_abbr": "C",
+    "filtro_direttori_tecnici": "Direttori tecnici ({{count}})"
   },
   "toast": {
     "foto_caricata": "✅ Foto caricata",
@@ -220,9 +223,28 @@
     "segnalazione": {
       "monitrice_senza_gs": "Monitrice senza qualifica G+S",
       "eta_insufficiente": "Non raggiunge i 17 anni richiesti da G+S",
-      "istruttore_senza_gs": "Istruttore senza qualifica G+S: ha un anno di tempo per l'esame",
       "scaduto": "Riconoscimento G+S scaduto il {{data}}",
-      "in_scadenza": "Riconoscimento G+S in scadenza il {{data}}"
-    }
+      "in_scadenza": "Riconoscimento G+S in scadenza il {{data}}",
+      "esame_scaduto": "Esame G+S non sostenuto: termine {{data}}, in ritardo di {{giorni}} giorni",
+      "esame_vicino": "Esame G+S da sostenere entro il {{data}}: restano {{giorni}} giorni",
+      "esame_previsto": "Esame G+S previsto entro il {{data}} ({{giorni}} giorni)",
+      "senza_termine": "Senza qualifica G+S e senza una data entro cui darla"
+    },
+    "inizio_attivita": "Inizio attività nel club",
+    "termine_esame": "Termine per l'esame G+S",
+    "termine_calcolato": "Calcolato: 12 mesi dall'inizio attività ({{data}})",
+    "termine_manuale": "Termine impostato a mano",
+    "termine": "Termine esame G+S",
+    "restano_giorni_one": "restano {{count}} giorno",
+    "restano_giorni_other": "restano {{count}} giorni",
+    "scaduto_da_giorni_one": "scaduto da {{count}} giorno",
+    "scaduto_da_giorni_other": "scaduto da {{count}} giorni"
+  },
+  "promemoria": {
+    "titolo": "Esami G+S da sostenere",
+    "senza_termine": "Nessun termine fissato",
+    "personale_titolo": "La tua qualifica G+S",
+    "personale_testo": "Devi sostenere l'esame G+S entro il {{data}}.",
+    "personale_scaduto": "Il termine per il tuo esame G+S era il {{data}}."
   }
 }

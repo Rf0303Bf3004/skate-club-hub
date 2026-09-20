@@ -3,7 +3,8 @@
     "ruolo_club": "Rôle dans le club",
     "ruolo_istruttore": "Instructeur",
     "ruolo_monitrice": "Monitrice",
-    "ruolo_aiuto_monitrice": "Aide-monitrice"
+    "ruolo_aiuto_monitrice": "Aide-monitrice",
+    "ruolo_direttore_tecnico": "Directeur technique"
   },
   "gs": {
     "titolo": "Gioventù e Sport (G+S)",
@@ -19,9 +20,34 @@
     "segnalazione": {
       "monitrice_senza_gs": "Monitrice sans qualification G+S",
       "eta_insufficiente": "N'atteint pas les 17 ans exigés par G+S",
-      "istruttore_senza_gs": "Instructeur sans qualification G+S : un an pour passer l'examen",
       "scaduto": "Reconnaissance G+S échue le {{data}}",
-      "in_scadenza": "Reconnaissance G+S arrivant à échéance le {{data}}"
-    }
+      "in_scadenza": "Reconnaissance G+S arrivant à échéance le {{data}}",
+      "esame_scaduto": "Examen G+S non passé : délai {{data}}, {{giorni}} jours de retard",
+      "esame_vicino": "Examen G+S à passer avant le {{data}} : il reste {{giorni}} jours",
+      "esame_previsto": "Examen G+S prévu avant le {{data}} ({{giorni}} jours)",
+      "senza_termine": "Sans qualification G+S et sans date pour la passer"
+    },
+    "inizio_attivita": "Début de l'activité au club",
+    "termine_esame": "Délai pour l'examen G+S",
+    "termine_calcolato": "Calculé : 12 mois après le début de l'activité ({{data}})",
+    "termine_manuale": "Délai fixé à la main",
+    "termine": "Délai examen G+S",
+    "restano_giorni_one": "il reste {{count}} jour",
+    "restano_giorni_other": "il reste {{count}} jours",
+    "scaduto_da_giorni_one": "échu depuis {{count}} jour",
+    "scaduto_da_giorni_other": "échu depuis {{count}} jours"
+  },
+  "badge": {
+    "direttore_tecnico": "Directeur technique"
+  },
+  "lista": {
+    "filtro_direttori_tecnici": "Directeurs techniques ({{count}})"
+  },
+  "promemoria": {
+    "titolo": "Examens G+S à passer",
+    "senza_termine": "Aucun délai fixé",
+    "personale_titolo": "Votre qualification G+S",
+    "personale_testo": "Vous devez passer l'examen G+S avant le {{data}}.",
+    "personale_scaduto": "Le délai pour votre examen G+S était le {{data}}."
   }
 }
