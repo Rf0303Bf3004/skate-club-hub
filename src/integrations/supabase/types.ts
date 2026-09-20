@@ -4151,6 +4151,7 @@ export type Database = {
           forzato_da: string | null
           fuori_disponibilita: boolean
           id: string
+          lezione_privata_id: string | null
           messaggio_atleti: string | null
           motivo_forzatura: string | null
           note: string | null
@@ -4169,6 +4170,7 @@ export type Database = {
           forzato_da?: string | null
           fuori_disponibilita?: boolean
           id?: string
+          lezione_privata_id?: string | null
           messaggio_atleti?: string | null
           motivo_forzatura?: string | null
           note?: string | null
@@ -4187,6 +4189,7 @@ export type Database = {
           forzato_da?: string | null
           fuori_disponibilita?: boolean
           id?: string
+          lezione_privata_id?: string | null
           messaggio_atleti?: string | null
           motivo_forzatura?: string | null
           note?: string | null
@@ -4210,6 +4213,13 @@ export type Database = {
             columns: ["corso_id"]
             isOneToOne: false
             referencedRelation: "corsi"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_lezione_privata_id_fkey"
+            columns: ["lezione_privata_id"]
+            isOneToOne: false
+            referencedRelation: "lezioni_private"
             referencedColumns: ["id"]
           },
           {
@@ -5390,6 +5400,7 @@ export type Database = {
           richiede_approvazione: boolean
           richiesta_id: string | null
           ricorrente: boolean
+          risorsa_id: string | null
         }
         Insert: {
           annullata?: boolean
@@ -5409,6 +5420,7 @@ export type Database = {
           richiede_approvazione?: boolean
           richiesta_id?: string | null
           ricorrente?: boolean
+          risorsa_id?: string | null
         }
         Update: {
           annullata?: boolean
@@ -5428,6 +5440,7 @@ export type Database = {
           richiede_approvazione?: boolean
           richiesta_id?: string | null
           ricorrente?: boolean
+          risorsa_id?: string | null
         }
         Relationships: [
           {
@@ -5477,6 +5490,13 @@ export type Database = {
             columns: ["richiesta_id"]
             isOneToOne: false
             referencedRelation: "richieste_lezioni_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lezioni_private_risorsa_id_fkey"
+            columns: ["risorsa_id"]
+            isOneToOne: false
+            referencedRelation: "risorse_strutture"
             referencedColumns: ["id"]
           },
         ]
