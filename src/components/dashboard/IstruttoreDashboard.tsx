@@ -637,6 +637,29 @@ const IstruttoreDashboard: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!da_ritirare} onOpenChange={(v) => { if (!v) set_da_ritirare(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("istruttore_home.ritiro_conferma_titolo")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("istruttore_home.ritiro_conferma_testo")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("istruttore_home.assenza_annulla")}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={in_invio}
+              onClick={() => {
+                const id = da_ritirare;
+                set_da_ritirare(null);
+                if (id) ritira_assenza(id);
+              }}
+            >
+              {t("istruttore_home.ritiro_conferma_ok")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 };
