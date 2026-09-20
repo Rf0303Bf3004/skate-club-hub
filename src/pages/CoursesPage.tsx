@@ -38,7 +38,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Plus,
+  LayoutGrid,
   AlertTriangle,
   X,
   ChevronDown,
@@ -54,6 +54,7 @@ import {
   Snowflake,
   Dumbbell,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { CorsoWizard } from "@/components/corsi/CorsoWizard";
@@ -2460,6 +2461,8 @@ const FilterBar: React.FC<{
 const CoursesPage: React.FC = () => {
   const { puo_gestire_sportivo } = usePermessiAzione();
   const { t } = useTranslation("corsi");
+  const { t: t_common } = useTranslation("common");
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const { data: corsi = [], isLoading } = use_corsi();
   const { data: istruttori = [] } = use_istruttori();
@@ -2863,19 +2866,22 @@ const CoursesPage: React.FC = () => {
                 <Copy className="w-4 h-4 mr-2" /> {t("page.duplicate_season")}
               </Button>
             )}
-            {puo_gestire_sportivo && (
-              <Button
-                className="bg-primary hover:bg-primary/90"
-                onClick={() => {
-                  set_wizard_corso(null);
-                  set_wizard_open(true);
-                }}
-              >
-                <Plus className="w-4 h-4 mr-2" /> {t("page.new_course")}
-              </Button>
-            )}
           </div>
         </div>
+
+        {puo_gestire_sportivo && (
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3">
+            <LayoutGrid className="w-5 h-5 text-primary flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">{t_common("corsi_creazione.titolo")}</p>
+              <p className="text-sm text-muted-foreground">{t_common("corsi_creazione.testo")}</p>
+            </div>
+            <Button variant="outline" onClick={() => navigate("/griglia-ghiaccio")}>
+              {t_common("corsi_creazione.azione")}
+            </Button>
+          </div>
+        )}
+
         {!puo_gestire_sportivo && (
           <NotaPermesso testo="Sola lettura: solo lo staff di gestione può creare o modificare corsi." />
         )}
