@@ -286,6 +286,61 @@ const IstruttoreModal: React.FC<{
             </Field>
           </div>
 
+          {/* Ruolo nel club: scrive livello_istruttore (valori del database) */}
+          <Field label={t("modal.ruolo_club")}>
+            <select
+              value={form.livello_istruttore}
+              onChange={(e) => set_val("livello_istruttore", e.target.value)}
+              className={input_cls}
+            >
+              <option value="istruttore">{t("modal.ruolo_istruttore")}</option>
+              <option value="monitrice">{t("modal.ruolo_monitrice")}</option>
+              <option value="aiuto_monitrice">{t("modal.ruolo_aiuto_monitrice")}</option>
+            </select>
+          </Field>
+
+          {/* Gioventù e Sport (G+S): qualifica unica fra tre alternative */}
+          <div className="rounded-lg border border-border p-3 space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("gs.titolo")}</p>
+            <Field label={t("gs.qualifica")}>
+              <div className="space-y-1.5">
+                {(["nessuna", "monitore_gs", "coach_1418"] as QualificaGs[]).map((q) => (
+                  <label key={q} className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                    <input
+                      type="radio"
+                      name="qualifica_gs"
+                      value={q}
+                      checked={form.qualifica_gs === q}
+                      onChange={() => set_val("qualifica_gs", q)}
+                      className="w-4 h-4 accent-primary"
+                    />
+                    {t(`gs.q_${q}`)}
+                  </label>
+                ))}
+              </div>
+            </Field>
+
+            {form.qualifica_gs !== "nessuna" && (
+              <>
+                <Field label={t("gs.numero")}>
+                  <input
+                    value={form.numero_gs}
+                    onChange={(e) => set_val("numero_gs", e.target.value)}
+                    className={input_cls}
+                  />
+                </Field>
+                <Field label={t("gs.valido_fino")}>
+                  <DateInput value={form.gs_valido_fino} onChange={(v) => set_val("gs_valido_fino", v)} />
+                </Field>
+              </>
+            )}
+
+            <Field label={t("gs.data_nascita")}>
+              <DateInput value={form.data_nascita} onChange={(v) => set_val("data_nascita", v)} />
+            </Field>
+          </div>
+
+
           {contatti_visibili ? (
             <>
               <Field label={t("modal.email")}>
