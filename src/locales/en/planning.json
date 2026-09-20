@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "edit_planning": "Only users who can plan (superadmin, admin, president, vice president, technical director) can edit the planning."
+  },
+  "toolbar": {
+    "title": "Planning"
+  }
+}

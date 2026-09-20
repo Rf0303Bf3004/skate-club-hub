@@ -200,7 +200,7 @@
   },
   "reminder_staff": {
     "empty_title": "Nessun reminder o convocazione per te al momento.",
-    "empty_hint": "Qui trovi i reminder turno e le convocazioni della Griglia Ghiaccio.",
+    "empty_hint": "Qui trovi i reminder turno e le convocazioni della Griglia attività.",
     "presence_confirmed": "✅ Presenza confermata",
     "absence_sent": "❌ Assenza segnalata al club",
     "error": "Errore",

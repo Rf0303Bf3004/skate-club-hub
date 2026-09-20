@@ -12,7 +12,7 @@
     "telefono": "Telefono",
     "utente_collegato": "Utente collegato (accesso app)",
     "nessun_utente_collegato": "— Nessun utente collegato —",
-    "hint_utente_collegato": "Serve per ricevere in app le convocazioni della Griglia Ghiaccio.",
+    "hint_utente_collegato": "Serve per ricevere in app le convocazioni della Griglia attività.",
     "tag_nfc": "TAG NFC",
     "tag_nfc_placeholder": "es. 04:A3:B2:C1:D0",
     "prezzo_minuto_lezioni": "Prezzo al minuto lezioni private (vendita al cliente)",
