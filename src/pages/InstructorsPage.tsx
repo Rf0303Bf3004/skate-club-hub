@@ -1965,6 +1965,16 @@ const InstructorsPage: React.FC = () => {
                   </div>
                 );
               })()}
+
+              {/* Specializzazione: il riquadro non compare se il campo è vuoto */}
+              {selected.specialita && (
+                <div className="max-w-lg bg-card rounded-xl shadow-card p-6">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    {ti("specialita.label")}
+                  </p>
+                  <p className="text-sm text-foreground mt-1">{selected.specialita}</p>
+                </div>
+              )}
               <div className="max-w-lg">
                 <CodiceIstruttoreCard istruttore={selected} />
               </div>
@@ -2270,6 +2280,10 @@ const InstructorsPage: React.FC = () => {
                         {i.nome} {i.cognome}
                         {sospeso && <span className="ml-1 text-xs text-muted-foreground">{ti("lista.sospeso")}</span>}
                       </p>
+                      {/* Specializzazione: riga presente solo se valorizzata */}
+                      {i.specialita && (
+                        <p className="text-[11px] text-muted-foreground truncate">{i.specialita}</p>
+                      )}
                       {linked_atleta && (
                         <button
                           onClick={(e) => {
