@@ -348,7 +348,15 @@ export function use_upsert_istruttore() {
         user_id: data.user_id || null,
         foto_url: data.foto_url || null,
         tag_nfc: data.tag_nfc || null,
+        // Ruolo nel club e qualifica Gioventù e Sport: inviati solo se il chiamante li fornisce,
+        // per non azzerarli da schermate che non li mostrano.
+        ...(data.livello_istruttore !== undefined ? { livello_istruttore: data.livello_istruttore } : {}),
+        ...(data.qualifica_gs !== undefined ? { qualifica_gs: data.qualifica_gs } : {}),
+        ...(data.numero_gs !== undefined ? { numero_gs: data.numero_gs } : {}),
+        ...(data.gs_valido_fino !== undefined ? { gs_valido_fino: data.gs_valido_fino } : {}),
+        ...(data.data_nascita !== undefined ? { data_nascita: data.data_nascita } : {}),
       };
+
       if (data.id) {
         const { error } = await supabase.from("istruttori").update(payload).eq("id", data.id);
         if (error) throw error;

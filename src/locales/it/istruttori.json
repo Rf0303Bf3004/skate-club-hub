@@ -22,7 +22,11 @@
     "annulla": "Annulla",
     "salva": "💾 Salva",
     "elimina": "Elimina",
-    "elimina_definitivamente": "Elimina definitivamente"
+    "elimina_definitivamente": "Elimina definitivamente",
+    "ruolo_club": "Ruolo nel club",
+    "ruolo_istruttore": "Istruttore",
+    "ruolo_monitrice": "Monitrice",
+    "ruolo_aiuto_monitrice": "Aiuto monitrice"
   },
   "ore": {
     "stato_presenza": "Presenza",
@@ -201,5 +205,24 @@
     "popup_blocked": "Il browser ha bloccato la finestra di stampa",
     "not_assigned": "Nessun codice assegnato a questo istruttore.",
     "print_hint": "Apri l'app, scegli \"Accedi con il codice\" e inquadra il QR oppure digita il codice."
+  },
+  "gs": {
+    "titolo": "Gioventù e Sport (G+S)",
+    "qualifica": "Qualifica",
+    "q_nessuna": "Nessuna qualifica",
+    "q_monitore_gs": "Monitore G+S",
+    "q_coach_1418": "1418coach (14/18)",
+    "numero": "Numero G+S",
+    "valido_fino": "Riconoscimento valido fino al",
+    "data_nascita": "Data di nascita",
+    "in_regola": "In regola",
+    "non_richiesta": "Nessuna qualifica richiesta per questo ruolo",
+    "segnalazione": {
+      "monitrice_senza_gs": "Monitrice senza qualifica G+S",
+      "eta_insufficiente": "Non raggiunge i 17 anni richiesti da G+S",
+      "istruttore_senza_gs": "Istruttore senza qualifica G+S: ha un anno di tempo per l'esame",
+      "scaduto": "Riconoscimento G+S scaduto il {{data}}",
+      "in_scadenza": "Riconoscimento G+S in scadenza il {{data}}"
+    }
   }
 }

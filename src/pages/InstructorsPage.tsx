@@ -30,6 +30,11 @@ import NotaPermesso from "@/components/common/NotaPermesso";
 import CreaAccessoDialog from "@/components/istruttori/CreaAccessoDialog";
 import { use_email_utenti_club } from "@/hooks/use-accessi-utenti";
 import { ore_distinte_per_data, ore_reali_senza_sovrapposizioni } from "@/lib/availability";
+import DateInput from "@/components/forms/DateInput";
+import { format_data_completa } from "@/lib/format-data";
+
+import { segnalazioni_gs, gravita_massima, type QualificaGs, type SegnalazioneGs } from "@/lib/istruttore-gs";
+
 
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
@@ -159,7 +164,14 @@ const IstruttoreModal: React.FC<{
     tag_nfc: istruttore?.tag_nfc || "",
     user_id: istruttore?.user_id || "",
     ruolo: "istruttore",
+    // Ruolo nel club e qualifica Gioventù e Sport (G+S)
+    livello_istruttore: istruttore?.livello_istruttore || "istruttore",
+    qualifica_gs: (istruttore?.qualifica_gs || "nessuna") as QualificaGs,
+    numero_gs: istruttore?.numero_gs || "",
+    gs_valido_fino: istruttore?.gs_valido_fino || "",
+    data_nascita: istruttore?.data_nascita || "",
   });
+
   const [confirm_delete, set_confirm_delete] = useState(false);
   const [uploading_foto, set_uploading_foto] = useState(false);
 
@@ -214,8 +226,15 @@ const IstruttoreModal: React.FC<{
       ruolo: "istruttore",
       user_id: form.user_id || null,
       costo_minuto_lezione_privata: to_num(form.costo_minuto_lezione_privata),
+      // Ruolo nel club e dati G+S: un campo vuoto viene salvato come NULL, mai come stringa vuota.
+      livello_istruttore: form.livello_istruttore,
+      qualifica_gs: form.qualifica_gs,
+      numero_gs: form.qualifica_gs === "nessuna" ? null : form.numero_gs || null,
+      gs_valido_fino: form.qualifica_gs === "nessuna" ? null : form.gs_valido_fino || null,
+      data_nascita: form.data_nascita || null,
     });
   };
+
 
 
   return (
@@ -268,6 +287,61 @@ const IstruttoreModal: React.FC<{
               <input value={form.cognome} onChange={(e) => set_val("cognome", e.target.value)} className={input_cls} />
             </Field>
           </div>
+
+          {/* Ruolo nel club: scrive livello_istruttore (valori del database) */}
+          <Field label={t("modal.ruolo_club")}>
+            <select
+              value={form.livello_istruttore}
+              onChange={(e) => set_val("livello_istruttore", e.target.value)}
+              className={input_cls}
+            >
+              <option value="istruttore">{t("modal.ruolo_istruttore")}</option>
+              <option value="monitrice">{t("modal.ruolo_monitrice")}</option>
+              <option value="aiuto_monitrice">{t("modal.ruolo_aiuto_monitrice")}</option>
+            </select>
+          </Field>
+
+          {/* Gioventù e Sport (G+S): qualifica unica fra tre alternative */}
+          <div className="rounded-lg border border-border p-3 space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("gs.titolo")}</p>
+            <Field label={t("gs.qualifica")}>
+              <div className="space-y-1.5">
+                {(["nessuna", "monitore_gs", "coach_1418"] as QualificaGs[]).map((q) => (
+                  <label key={q} className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                    <input
+                      type="radio"
+                      name="qualifica_gs"
+                      value={q}
+                      checked={form.qualifica_gs === q}
+                      onChange={() => set_val("qualifica_gs", q)}
+                      className="w-4 h-4 accent-primary"
+                    />
+                    {t(`gs.q_${q}`)}
+                  </label>
+                ))}
+              </div>
+            </Field>
+
+            {form.qualifica_gs !== "nessuna" && (
+              <>
+                <Field label={t("gs.numero")}>
+                  <input
+                    value={form.numero_gs}
+                    onChange={(e) => set_val("numero_gs", e.target.value)}
+                    className={input_cls}
+                  />
+                </Field>
+                <Field label={t("gs.valido_fino")}>
+                  <DateInput value={form.gs_valido_fino} onChange={(v) => set_val("gs_valido_fino", v)} />
+                </Field>
+              </>
+            )}
+
+            <Field label={t("gs.data_nascita")}>
+              <DateInput value={form.data_nascita} onChange={(v) => set_val("data_nascita", v)} />
+            </Field>
+          </div>
+
 
           {contatti_visibili ? (
             <>
@@ -1807,6 +1881,66 @@ const InstructorsPage: React.FC = () => {
                 <CodiceIstruttoreCard istruttore={selected} />
               </div>
 
+              {/* Riquadro Gioventù e Sport: qualifica, numero, validità e segnalazioni */}
+              {(() => {
+                const qualifica = (selected.qualifica_gs || "nessuna") as QualificaGs;
+                const liv_sel = selected.livello_istruttore || "istruttore";
+                const segnalazioni = segnalazioni_gs(selected, ti);
+                return (
+                  <div className="bg-card rounded-xl shadow-card p-6 space-y-3 max-w-lg">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      {ti("gs.titolo")}
+                    </p>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">{ti("gs.qualifica")}</span>
+                      <span className="text-foreground">{ti(`gs.q_${qualifica}`)}</span>
+                    </div>
+                    {/* Con qualifica 'nessuna' numero e validità non esistono: non si mostrano affatto */}
+                    {qualifica !== "nessuna" && (
+                      <>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">{ti("gs.numero")}</span>
+                          <span className="text-foreground">{selected.numero_gs || "—"}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">{ti("gs.valido_fino")}</span>
+                          <span className="text-foreground">{format_data_completa(selected.gs_valido_fino)}</span>
+                        </div>
+                      </>
+                    )}
+                    {selected.data_nascita && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{ti("gs.data_nascita")}</span>
+                        <span className="text-foreground">{format_data_completa(selected.data_nascita)}</span>
+                      </div>
+                    )}
+
+                    <div className="pt-2 border-t border-border space-y-1.5">
+                      {segnalazioni.length === 0 ? (
+                        qualifica === "nessuna" && liv_sel === "aiuto_monitrice" ? (
+                          <p className="text-sm text-muted-foreground">{ti("gs.non_richiesta")}</p>
+                        ) : (
+                          <p className="text-sm text-emerald-700 dark:text-emerald-300">{ti("gs.in_regola")}</p>
+                        )
+                      ) : (
+                        segnalazioni.map((s: SegnalazioneGs, idx: number) => (
+                          <p
+                            key={idx}
+                            className={`text-sm ${
+                              s.gravita === "rosso"
+                                ? "text-destructive"
+                                : "text-amber-700 dark:text-amber-300"
+                            }`}
+                          >
+                            {s.gravita === "rosso" ? "●" : "●"} {s.testo}
+                          </p>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div className="bg-card rounded-xl shadow-card p-6 space-y-3 max-w-lg">
                 {[
                   { label: t("email"), value: selected.email },
@@ -2079,6 +2213,24 @@ const InstructorsPage: React.FC = () => {
                       </span>
                     </div>
                   </div>
+                  {/* Segnalazione G+S: rossa se grave, altrimenti ambra; testo della prima segnalazione */}
+                  {(() => {
+                    const segn = segnalazioni_gs(i, ti);
+                    const gravita = gravita_massima(segn);
+                    if (!gravita) return null;
+                    const prima = segn.find((s) => s.gravita === gravita) ?? segn[0];
+                    const cls =
+                      gravita === "rosso"
+                        ? "bg-destructive/10 text-destructive border-destructive/30"
+                        : "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-700";
+                    return (
+                      <div className={`mt-3 flex items-start gap-2 rounded-lg border px-2.5 py-1.5 text-xs ${cls}`}>
+                        <span className="leading-4">●</span>
+                        <span className="leading-4">{prima.testo}</span>
+                      </div>
+                    );
+                  })()}
+
                   {(liv === "monitrice" || liv === "aiuto_monitrice") && linked_atleta && puo_gestire_sportivo && (
                     <Button
                       variant="outline"
