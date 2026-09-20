@@ -955,15 +955,18 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
                         : "border-border"
                   }`}
                 >
-                  <Button variant="ghost" className="h-12" onClick={() => usa_punto(p)}>
+                  <Button variant="ghost" className="h-14" onClick={() => usa_punto(p)}>
                     <span
-                      className="mr-2 flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                      className="mr-2 flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold text-white"
                       style={{ backgroundColor: colore }}
                     >
                       {numero}
                     </span>
-                    {p.nome} · {mmss(p.secondi)}
-                    {p.secondi_fine != null ? ` – ${mmss(p.secondi_fine)}` : ""}
+                    <span className="text-lg font-semibold leading-tight">{p.nome}</span>
+                    <span className="text-sm font-normal text-muted-foreground">
+                      · {mmss(p.secondi)}
+                      {p.secondi_fine != null ? ` – ${mmss(p.secondi_fine)}` : ""}
+                    </span>
                   </Button>
 
                   <Button
