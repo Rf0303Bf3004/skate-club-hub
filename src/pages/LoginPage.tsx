@@ -30,6 +30,9 @@ const LoginPage: React.FC = () => {
   const [is_submitting, set_is_submitting] = useState(false);
   const [errore_accesso, set_errore_accesso] = useState<string | null>(null);
   const [account_recenti, set_account_recenti] = useState<string[]>(() => leggi_account_recenti());
+  // Si legge una sola volta al montaggio: qui non c'è nulla che scrive il codice,
+  // quindi il valore al primo render è quello che conta.
+  const codice_pista = React.useMemo(() => leggi_codice_pista(), []);
 
   const handle_submit = async (e: React.FormEvent) => {
     e.preventDefault();
