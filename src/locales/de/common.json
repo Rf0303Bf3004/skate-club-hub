@@ -228,6 +228,7 @@
   "confirm_delete_title": "Löschen bestätigen",
   "menu": {
     "griglia_ghiaccio": "Aktivitätenraster",
+    "planning_ghiaccio": "Planung",
     "ruoli_permessi": "Rollenverwaltung",
     "pista": "Am Eisrand"
   },

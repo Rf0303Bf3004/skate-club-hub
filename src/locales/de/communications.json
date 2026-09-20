@@ -48,6 +48,9 @@
     "refused_on": "❌ Abwesenheit gemeldet am {{data}}",
     "waiting": "Teilnahme erwartet"
   },
+  "reminder_staff": {
+    "empty_hint": "Hier finden Sie Ihre Einsatzerinnerungen und Aufgebote aus dem Aktivitätenraster."
+  },
   "dialog": {
     "level_filter_hint": "Ein oder mehrere Niveaus ankreuzen: Nur Athletinnen der gewählten Niveaus erhalten die Mitteilung. Ohne Auswahl geht sie an niemanden.",
     "level_nessuno_selezionato": "Kein Niveau ausgewählt: null Empfänger, der Versand bleibt gesperrt."

@@ -15,12 +15,15 @@
     "testi": {
       "dato_non_disponibile": "Donnée non disponible",
       "config_ghiaccio_in_caricamento": "Chargement de la configuration de la glace…",
+      "planning_giornaliero_info": "Un message unique avec tout le programme de la journée pour les personnes ayant des séances dans la grille des activités.",
+      "disponibilita_scadenza_info": "Après cette date, un avis apparaîtra dans le tableau de bord et dans la Grille des activités pour revoir les disponibilités. Enregistrez avec « Enregistrer les données du club ».",
       "auguri_compleanno_info": "Le jour de l'anniversaire, à l'heure choisie, la famille de l'athlète reçoit un message de vœux du club, dans l'application et comme notification sur le téléphone.",
       "auguri_compleanno_modello_pre": "Le texte se personnalise dans les ",
       "auguri_compleanno_modello_link": "modèles de communication",
       "auguri_compleanno_modello_post": " : créez un modèle appelé « Auguri di compleanno » avec les espaces réservés {nome_atleta} et {eta}. Sans modèle, un texte standard est utilisé."
     },
     "sezioni": {
+      "planning_giornaliero": "📅 Planning quotidien (Grille des activités)",
       "auguri_compleanno": "🎂 Vœux d'anniversaire",
       "codice_pista": "Code de la tablette de bord de piste"
     },
