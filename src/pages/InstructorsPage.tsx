@@ -1740,6 +1740,18 @@ const InstructorsPage: React.FC = () => {
     set_disp_local(JSON.parse(JSON.stringify(i.disponibilita || {})));
   };
 
+  // Apertura diretta della scheda da un collegamento esterno (/istruttori?id=...)
+  const [id_url_usato, set_id_url_usato] = useState(false);
+  useEffect(() => {
+    if (id_url_usato || selected_id) return;
+    const id_url = new URLSearchParams(window.location.search).get("id");
+    if (!id_url) return;
+    const trovato = istruttori.find((i: any) => i.id === id_url);
+    if (!trovato) return;
+    set_id_url_usato(true);
+    open_detail(trovato);
+  }, [istruttori, id_url_usato, selected_id]);
+
   const add_slot = (giorno: string) => {
     set_disp_local((prev) => ({
       ...prev,

@@ -12,6 +12,7 @@ export interface IstruttoreGs {
   id?: string;
   nome?: string | null;
   cognome?: string | null;
+  user_id?: string | null;
   livello_istruttore?: string | null;
   qualifica_gs?: string | null;
   numero_gs?: string | null;
