@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LOCALE_LABELS, Locale, useI18n } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
+import { leggi_codice_pista } from '@/lib/pista-codice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -29,6 +30,9 @@ const LoginPage: React.FC = () => {
   const [is_submitting, set_is_submitting] = useState(false);
   const [errore_accesso, set_errore_accesso] = useState<string | null>(null);
   const [account_recenti, set_account_recenti] = useState<string[]>(() => leggi_account_recenti());
+  // Si legge una sola volta al montaggio: qui non c'è nulla che scrive il codice,
+  // quindi il valore al primo render è quello che conta.
+  const codice_pista = React.useMemo(() => leggi_codice_pista(), []);
 
   const handle_submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,6 +150,20 @@ const LoginPage: React.FC = () => {
           </form>
 
           <div className="space-y-2 text-center">
+            {codice_pista && (
+              <div className="space-y-1">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => window.location.replace("/pista")}
+                >
+                  {t('login.torna_al_bordo_pista')}
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  {t('login.torna_al_bordo_pista_nota')}
+                </p>
+              </div>
+            )}
             <a href="/portale-recovery" className="text-xs text-muted-foreground hover:text-primary hover:underline block">
               Password dimenticata?
             </a>
@@ -153,12 +171,14 @@ const LoginPage: React.FC = () => {
                 una sola volta al caricamento; una navigazione interna di
                 react-router non troverebbe /pista-login e darebbe una schermata
                 bianca senza errori. */}
-            <a
-              href="/pista-login"
-              className="text-xs text-muted-foreground hover:text-primary hover:underline block"
-            >
-              {t('login.tablet_pista')}
-            </a>
+            {!codice_pista && (
+              <a
+                href="/pista-login"
+                className="text-xs text-muted-foreground hover:text-primary hover:underline block"
+              >
+                {t('login.tablet_pista')}
+              </a>
+            )}
             <p className="text-sm text-muted-foreground">
               {t('login.new_club_question')} <a href="/registrati" className="text-primary underline">{t('login.register_here')}</a>
             </p>

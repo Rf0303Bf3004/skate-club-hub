@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase, set_current_club_id } from "./supabase";
-import { leggi_codice_pista } from "./pista-codice";
 import type { RuoloUtente } from "./roles";
 
 export interface UserSession {
@@ -109,12 +108,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     await supabase.auth.signOut();
     set_session(null);
-    // Il codice pista conservato non va toccato: uscendo dal portale lo staff,
-    // un tablet accreditato come pista torna da solo a essere la pista.
-    // (L'uscita definitiva del tablet, che cancella il codice, è esci_dalla_pista.)
-    if (leggi_codice_pista()) {
-      window.location.replace("/pista");
-    }
+    // Uscire è un gesto di una persona: si atterra sempre sulla pagina di
+    // accesso, mai dentro la modalità tablet. Se il dispositivo è davvero un
+    // tablet, il codice resta conservato e la pagina di accesso offre il
+    // rientro con un tocco: la scelta è di chi ha in mano il dispositivo.
+    window.location.replace("/staff");
   };
 
   return (
