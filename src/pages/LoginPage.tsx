@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LOCALE_LABELS, Locale, useI18n } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
+import { leggi_codice_pista } from '@/lib/pista-codice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
