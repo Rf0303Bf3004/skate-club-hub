@@ -1,0 +1,27 @@
+{
+  "modal": {
+    "ruolo_club": "Rôle dans le club",
+    "ruolo_istruttore": "Instructeur",
+    "ruolo_monitrice": "Monitrice",
+    "ruolo_aiuto_monitrice": "Aide-monitrice"
+  },
+  "gs": {
+    "titolo": "Gioventù e Sport (G+S)",
+    "qualifica": "Qualification",
+    "q_nessuna": "Aucune qualification",
+    "q_monitore_gs": "Moniteur G+S",
+    "q_coach_1418": "1418coach (14/18)",
+    "numero": "Numéro G+S",
+    "valido_fino": "Reconnaissance valable jusqu'au",
+    "data_nascita": "Date de naissance",
+    "in_regola": "En règle",
+    "non_richiesta": "Aucune qualification requise pour ce rôle",
+    "segnalazione": {
+      "monitrice_senza_gs": "Monitrice sans qualification G+S",
+      "eta_insufficiente": "N'atteint pas les 17 ans exigés par G+S",
+      "istruttore_senza_gs": "Instructeur sans qualification G+S : un an pour passer l'examen",
+      "scaduto": "Reconnaissance G+S échue le {{data}}",
+      "in_scadenza": "Reconnaissance G+S arrivant à échéance le {{data}}"
+    }
+  }
+}

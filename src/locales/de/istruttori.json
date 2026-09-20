@@ -1,0 +1,27 @@
+{
+  "modal": {
+    "ruolo_club": "Rolle im Club",
+    "ruolo_istruttore": "Instruktor",
+    "ruolo_monitrice": "Leiterin",
+    "ruolo_aiuto_monitrice": "Hilfsleiterin"
+  },
+  "gs": {
+    "titolo": "Gioventù e Sport (G+S)",
+    "qualifica": "Qualifikation",
+    "q_nessuna": "Keine Qualifikation",
+    "q_monitore_gs": "G+S-Leiter/in",
+    "q_coach_1418": "1418coach (14/18)",
+    "numero": "G+S-Nummer",
+    "valido_fino": "Anerkennung gültig bis",
+    "data_nascita": "Geburtsdatum",
+    "in_regola": "In Ordnung",
+    "non_richiesta": "Für diese Rolle ist keine Qualifikation erforderlich",
+    "segnalazione": {
+      "monitrice_senza_gs": "Leiterin ohne G+S-Qualifikation",
+      "eta_insufficiente": "Erreicht das von G+S geforderte Alter von 17 Jahren nicht",
+      "istruttore_senza_gs": "Instruktor ohne G+S-Qualifikation: ein Jahr Zeit für die Prüfung",
+      "scaduto": "G+S-Anerkennung am {{data}} abgelaufen",
+      "in_scadenza": "G+S-Anerkennung läuft am {{data}} ab"
+    }
+  }
+}
