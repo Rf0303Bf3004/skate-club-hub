@@ -17,6 +17,7 @@ import {
 import EmptyState from "@/components/common/EmptyState";
 import { toast } from "@/hooks/use-toast";
 
+import { format_data } from "@/lib/format-data";
 /**
  * Assenze annunciate dallo staff: un posto dove il club le vede tutte e dice
  * come sono finite. Un dato che manca va detto, mai nascosto.
@@ -269,7 +270,7 @@ export default function AssenzeStaffPage() {
   const conta_periodo = (p: "prossimi_7" | "mese" | "tutto") => righe.filter((r) => nel_periodo(r, p)).length;
 
   const data_lunga = (iso: string) =>
-    new Date(`${iso}T00:00:00`).toLocaleDateString(i18n.language, {
+    format_data(new Date(`${iso}T00:00:00`), {
       weekday: "short",
       day: "numeric",
       month: "long",

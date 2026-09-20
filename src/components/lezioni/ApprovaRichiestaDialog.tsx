@@ -8,6 +8,7 @@ import { use_approva_richiesta_privata, type EsitoApprovazione } from "@/hooks/u
 import CampoEnteLezione from "@/components/lezioni/CampoEnteLezione";
 import { use_ente_predefinito, use_enti_lezione } from "@/hooks/use-ente-lezione";
 
+import { format_data } from "@/lib/format-data";
 export interface DatiRichiestaDaApprovare {
   id: string;
   atleta_id: string;
@@ -83,7 +84,7 @@ const ApprovaRichiestaDialog: React.FC<Props> = ({
   const elenco_date = useMemo(() => {
     return date_previste
       .map((d, i) =>
-        new Date(`${d}T00:00:00`).toLocaleDateString(i18n.language, {
+        format_data(new Date(`${d}T00:00:00`), {
           weekday: i === 0 ? "long" : undefined,
           day: "numeric",
           month: "long",

@@ -16,6 +16,7 @@ import { use_club } from "@/hooks/use-supabase-data";
 import ConfermaRichiesteDialog from "@/components/richieste/ConfermaRichiesteDialog";
 import type { RichiestaDaGestire } from "@/hooks/use-richieste-iscrizione";
 
+import { format_data } from "@/lib/format-data";
 /**
  * Home della segreteria: «cosa devo spedire e completare oggi».
  * Pagina unica e identica per tutti gli utenti di segreteria:
@@ -123,7 +124,7 @@ const SegreteriaDashboard: React.FC = () => {
   const senza_club = !!session && !club_id;
 
   const data_compatta = (iso: string) =>
-    new Date(`${iso.slice(0, 10)}T00:00:00`).toLocaleDateString(i18n.language, {
+    format_data(new Date(`${iso.slice(0, 10)}T00:00:00`), {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -276,7 +277,7 @@ const SegreteriaDashboard: React.FC = () => {
   };
 
   const data_estesa = (d: Date) =>
-    d.toLocaleDateString(i18n.language, { weekday: "long", day: "numeric", month: "long" });
+    format_data(d, { weekday: "long", day: "numeric", month: "long" });
 
   if (senza_club) {
     return (

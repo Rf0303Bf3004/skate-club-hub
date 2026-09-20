@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/auth";
 import PromemoriaEsameGs from "@/components/istruttori/PromemoriaEsameGs";
 import { use_istruttori } from "@/hooks/use-supabase-data";
 
+import { format_data } from "@/lib/format-data";
 /**
  * Home del direttore tecnico: «oggi fila tutto o c'è un buco?».
  * Pagina unica e identica per tutti i DT: non dipende dalla matrice dei riquadri.
@@ -183,7 +184,7 @@ const DTDashboard: React.FC = () => {
   });
 
   const data_estesa = (iso: string) =>
-    new Date(`${iso}T00:00:00`).toLocaleDateString(i18n.language, {
+    format_data(new Date(`${iso}T00:00:00`), {
       weekday: "long",
       day: "numeric",
       month: "long",

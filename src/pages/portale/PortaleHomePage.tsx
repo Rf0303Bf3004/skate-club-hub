@@ -167,7 +167,7 @@ const PortaleHomePage: React.FC = () => {
           {campagna.scadenza && (
             <p className="mt-2 text-sm font-medium text-slate-600">
               {t("rinnovo.scadenza", {
-                data: new Date(`${campagna.scadenza}T00:00:00`).toLocaleDateString(i18n.language),
+                data: format_data(new Date(`${campagna.scadenza}T00:00:00`)),
               })}
             </p>
           )}

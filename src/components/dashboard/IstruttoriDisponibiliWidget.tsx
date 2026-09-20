@@ -9,6 +9,7 @@ import { calcola_ore_impegnate_giorno } from "@/lib/availability";
 import { useI18n, type Locale } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
 
+import { format_data } from "@/lib/format-data";
 const LOCALE_BCP47: Record<Locale, string> = {
   it: "it-IT",
   en: "en-GB",
@@ -39,7 +40,7 @@ function giorno_italiano(date_str: string): string {
 }
 
 function fmt_label(date_str: string, locale_code: string): string {
-  return new Date(date_str + "T00:00:00").toLocaleDateString(locale_code, {
+  return format_data(new Date(date_str + "T00:00:00"), {
     weekday: "long",
     day: "numeric",
     month: "long",
