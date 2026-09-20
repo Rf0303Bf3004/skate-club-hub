@@ -159,7 +159,14 @@ const IstruttoreModal: React.FC<{
     tag_nfc: istruttore?.tag_nfc || "",
     user_id: istruttore?.user_id || "",
     ruolo: "istruttore",
+    // Ruolo nel club e qualifica Gioventù e Sport (G+S)
+    livello_istruttore: istruttore?.livello_istruttore || "istruttore",
+    qualifica_gs: (istruttore?.qualifica_gs || "nessuna") as QualificaGs,
+    numero_gs: istruttore?.numero_gs || "",
+    gs_valido_fino: istruttore?.gs_valido_fino || "",
+    data_nascita: istruttore?.data_nascita || "",
   });
+
   const [confirm_delete, set_confirm_delete] = useState(false);
   const [uploading_foto, set_uploading_foto] = useState(false);
 
