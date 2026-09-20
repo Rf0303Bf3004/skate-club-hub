@@ -100,6 +100,8 @@ const LoginPage: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {/* La tendina riempie solo l'email: la password va sempre digitata. */}
+                <p className="text-xs text-muted-foreground">{t('login.password_manuale')}</p>
               </div>
             )}
             <div className="space-y-2">
@@ -108,6 +110,7 @@ const LoginPage: React.FC = () => {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="email"
+                  required
                   placeholder={t('login.email_placeholder')}
                   value={email}
                   onChange={(e) => set_email(e.target.value)}
