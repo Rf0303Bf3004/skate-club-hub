@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import TextareaCrescente from "./TextareaCrescente";
 import { Button } from "@/components/ui/button";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { segnala_errore } from "@/lib/errori";
 import { useTranslation } from "react-i18next";
 
@@ -39,21 +39,29 @@ export default function MessaggioPresidente({ club_id, stagione_id }: Props) {
   const qc = useQueryClient();
   const { data, isLoading, isError, error, refetch } = useMessaggioPresidente(club_id, stagione_id);
   const [testo, set_testo] = useState("");
-  const [toccato, set_toccato] = useState(false);
+  // "sporco": modifiche non ancora salvate. "in_volo": salvataggio in corso.
+  // Un testo sporco o in volo non viene mai sostituito da quello che arriva
+  // dal server: nel dubbio si tiene quello che ha scritto la persona.
+  const [sporco, set_sporco] = useState(false);
+  const in_volo = useRef(false);
+  const testo_ref = useRef("");
+  testo_ref.current = testo;
 
   useEffect(() => {
-    if (!toccato && typeof data === "string") set_testo(data);
-  }, [data, toccato]);
+    if (sporco || in_volo.current) return;
+    if (typeof data === "string") set_testo(data);
+  }, [data, sporco]);
 
   const m_salva = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (contenuto: string) => {
+      in_volo.current = true;
       const { error: err } = await supabase
         .from("relazioni_paragrafi_auto" as any)
         .upsert(
           {
             club_id, stagione_id,
             ...CHIAVE_MESSAGGIO,
-            contenuto: testo,
+            contenuto,
             is_edited: true,
             updated_at: new Date().toISOString(),
           },
@@ -61,18 +69,35 @@ export default function MessaggioPresidente({ club_id, stagione_id }: Props) {
         );
       if (err) throw err;
     },
-    onError: (e) => segnala_errore("Relazione", t("relazione.messaggio.salvataggio"), e),
-    onSuccess: () => {
-      set_toccato(false);
+    onError: (e, _contenuto) => {
+      in_volo.current = false;
+      // Il testo resta sporco e resta a schermo: un errore di rete non cancella.
+      segnala_errore("Relazione", t("relazione.messaggio.salvataggio"), e);
+    },
+    onSuccess: (_data, contenuto) => {
+      in_volo.current = false;
+      // Pulito solo se nel frattempo non si è continuato a scrivere.
+      if (testo_ref.current === contenuto) set_sporco(false);
       qc.invalidateQueries({ queryKey: ["relazione_messaggio", club_id, stagione_id] });
     },
   });
 
+  // Il salvataggio sta in un ref: il ritardo di 700 ms non si riarma a ogni render.
+  const salva_ref = useRef(m_salva.mutate);
+  salva_ref.current = m_salva.mutate;
+  const in_corso = m_salva.isPending;
   useEffect(() => {
-    if (!toccato || isLoading || isError || m_salva.isPending) return;
-    const timer = window.setTimeout(() => m_salva.mutate(), 700);
+    if (!sporco || isLoading || isError || in_corso) return;
+    const timer = window.setTimeout(() => salva_ref.current(testo_ref.current), 700);
     return () => window.clearTimeout(timer);
-  }, [testo, toccato, isLoading, isError, m_salva]);
+  }, [testo, sporco, isLoading, isError, in_corso]);
+
+  useEffect(() => {
+    if (!sporco) return;
+    const avvisa = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", avvisa);
+    return () => window.removeEventListener("beforeunload", avvisa);
+  }, [sporco]);
 
   if (isError) {
     return (
@@ -93,13 +118,21 @@ export default function MessaggioPresidente({ club_id, stagione_id }: Props) {
     <div className="space-y-2">
       <TextareaCrescente
         value={testo}
-        onChange={(e) => { set_testo(e.target.value); set_toccato(true); }}
+        onChange={(e) => { set_testo(e.target.value); set_sporco(true); }}
         rows={12}
         disabled={isLoading}
         placeholder={t("relazione.messaggio.placeholder")}
         className="border-transparent bg-transparent px-0 font-serif text-base leading-relaxed shadow-none focus-visible:border-border focus-visible:px-3"
       />
-      <span className="text-xs text-muted-foreground">{isLoading || m_salva.isPending ? t("relazione.caricamento") : t("relazione.messaggio.salvataggio_automatico")}</span>
+      <span className="text-xs text-muted-foreground">
+        {isLoading
+          ? t("relazione.caricamento")
+          : in_corso
+            ? t("relazione.messaggio.salvataggio_in_corso")
+            : sporco
+              ? t("relazione.messaggio.da_salvare")
+              : t("relazione.messaggio.salvato")}
+      </span>
     </div>
   );
 }
