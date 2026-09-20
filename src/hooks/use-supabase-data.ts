@@ -1,6 +1,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { norm_giorno } from "@/lib/availability";
+import { use_stagione_attiva } from "@/lib/stagione-attiva";
+
 
 // ─── Club & Setup ──────────────────────────────────────────
 export function use_club() {
@@ -590,20 +592,27 @@ export function use_richieste_iscrizione() {
 }
 
 // ─── Disponibilità Ghiaccio ────────────────────────────────
+// Le fasce appartengono a una stagione. Si leggono quelle della stagione attiva
+// più quelle senza stagione (dati vecchi o club senza stagione attiva).
 export function use_disponibilita_ghiaccio() {
+  const { data: stagione, isSuccess: stagione_pronta, isError: stagione_in_errore, error: errore_stagione } =
+    use_stagione_attiva();
+  const stagione_id = stagione?.id ?? null;
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!get_current_club_id(),
-    queryKey: ["disponibilita_ghiaccio", get_current_club_id()],
+    enabled: !!get_current_club_id() && (stagione_pronta || stagione_in_errore),
+    queryKey: ["disponibilita_ghiaccio", get_current_club_id(), stagione_id],
     queryFn: async () => {
+      if (stagione_in_errore) throw errore_stagione;
       const club_id = get_current_club_id();
+      const base = supabase
+        .from("disponibilita_ghiaccio")
+        .select("*")
+        .eq("club_id", club_id)
+        .eq("tipo", "ghiaccio");
       const [{ data, error }, { data: risorse }] = await Promise.all([
-        supabase
-          .from("disponibilita_ghiaccio")
-          .select("*")
-          .eq("club_id", club_id)
-          .eq("tipo", "ghiaccio"),
+        stagione_id ? base.or(`stagione_id.is.null,stagione_id.eq.${stagione_id}`) : base,
         supabase
           .from("risorse_strutture" as any)
           .select("id, tipo")
@@ -620,6 +629,7 @@ export function use_disponibilita_ghiaccio() {
 
   });
 }
+
 
 // ─── Corso Completo Logic ──────────────────────────────────
 function _time_to_min(t: string): number {
