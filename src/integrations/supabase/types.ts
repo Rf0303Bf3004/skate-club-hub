@@ -10692,7 +10692,11 @@ export type Database = {
       }
     }
     Enums: {
-      livello_istruttore_enum: "istruttore" | "monitrice" | "aiuto_monitrice"
+      livello_istruttore_enum:
+        | "istruttore"
+        | "monitrice"
+        | "aiuto_monitrice"
+        | "direttore_tecnico"
       stato_staff_enum: "attivo" | "sospeso"
     }
     CompositeTypes: {
@@ -10821,7 +10825,12 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      livello_istruttore_enum: ["istruttore", "monitrice", "aiuto_monitrice"],
+      livello_istruttore_enum: [
+        "istruttore",
+        "monitrice",
+        "aiuto_monitrice",
+        "direttore_tecnico",
+      ],
       stato_staff_enum: ["attivo", "sospeso"],
     },
   },
