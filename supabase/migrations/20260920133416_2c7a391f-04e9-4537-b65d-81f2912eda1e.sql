@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.disponibilita_ghiaccio_stagione_default() FROM PUBLIC, anon, authenticated;
