@@ -68,20 +68,15 @@ window.addEventListener("unhandledrejection", (evento) => {
 });
 
 // 2) Controllo periodico: se è uscita una versione nuova, questa è vecchia.
-//    Si ricarica solo quando la pagina non è in uso (nascosta oppure senza
-//    tocchi da almeno un minuto), mai mentre qualcuno ci sta lavorando.
+//    Si ricarica SOLO mentre la pagina è nascosta. Mai quando è visibile: chi
+//    torna sulla scheda dopo un'assenza troverebbe i moduli a metà cancellati
+//    senza preavviso (il tempo di inattività da solo non distingue «nessuno»
+//    da «sono appena rientrato»).
 const hash_in_esecuzione: string | null = (() => {
   const src = document.querySelector<HTMLScriptElement>("script[type=module]")?.src ?? "";
   const trovato = /assets\/index-[^/]+\.js/.exec(src);
   return trovato ? trovato[0] : null;
 })();
-
-let ultimo_tocco = Date.now();
-const segna_attivita = () => {
-  ultimo_tocco = Date.now();
-};
-window.addEventListener("pointerdown", segna_attivita, { passive: true });
-window.addEventListener("keydown", segna_attivita, { passive: true });
 
 async function controlla_versione(): Promise<void> {
   if (!hash_in_esecuzione) return;
@@ -91,9 +86,9 @@ async function controlla_versione(): Promise<void> {
     const html = await risposta.text();
     const trovato = /assets\/index-[^/]+\.js/.exec(html);
     if (!trovato || trovato[0] === hash_in_esecuzione) return;
-    // Versione nuova pubblicata: ricarica solo se nessuno sta usando la pagina.
-    const inattiva = document.hidden || Date.now() - ultimo_tocco >= FINESTRA_RICARICA_MS;
-    if (inattiva) ricarica_con_freno();
+    // Versione nuova pubblicata: ricarica solo se la pagina è nascosta.
+    // Una pagina visibile non si ricarica mai da sola, neppure se inattiva.
+    if (document.hidden) ricarica_con_freno();
   } catch {
     // Rete assente o instabile: non è un problema, si riprova al prossimo giro.
   }
