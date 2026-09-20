@@ -1659,7 +1659,7 @@ const InstructorsPage: React.FC = () => {
   // Tutti gli istruttori (incluso monitrici/aiuto auto-create dal trigger)
   const istruttori_veri = istruttori;
   const counts = useMemo(() => {
-    const c = { tutti: istruttori.length, istruttore: 0, monitrice: 0, aiuto_monitrice: 0 };
+    const c = { tutti: istruttori.length, direttore_tecnico: 0, istruttore: 0, monitrice: 0, aiuto_monitrice: 0 };
     istruttori.forEach((i: any) => {
       const liv = i.livello_istruttore || "istruttore";
       if (liv in c) (c as any)[liv]++;
@@ -1851,13 +1851,8 @@ const InstructorsPage: React.FC = () => {
                 <div className="flex items-center gap-2 mt-1">
                   {(() => {
                     const liv = selected.livello_istruttore || "istruttore";
-                    const cls =
-                      liv === "monitrice"
-                        ? "bg-purple-100 text-purple-700 border-purple-200"
-                        : liv === "aiuto_monitrice"
-                          ? "bg-orange-100 text-orange-700 border-orange-200"
-                          : "bg-blue-100 text-blue-700 border-blue-200";
-                    const lbl = liv === "monitrice" ? ti("badge.monitrice") : liv === "aiuto_monitrice" ? ti("badge.aiuto_monitrice") : ti("badge.istruttore");
+                    const cls = badge_livello_cls(liv);
+                    const lbl = ti(badge_livello_key(liv));
                     return (
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cls}`}>
                         {lbl}
@@ -1973,6 +1968,23 @@ const InstructorsPage: React.FC = () => {
                         <span className="text-foreground">{format_data_completa(selected.data_nascita)}</span>
                       </div>
                     )}
+                    {/* Termine dell'esame G+S con il conto alla rovescia in parole */}
+                    {(() => {
+                      const termine = termine_esame_gs(selected);
+                      if (!termine) return null;
+                      const giorni = giorni_al_termine_gs(selected) ?? 0;
+                      return (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">{ti("gs.termine")}</span>
+                          <span className="text-foreground">
+                            {format_data_completa(termine.data)} ·{" "}
+                            {giorni < 0
+                              ? ti("gs.scaduto_da_giorni", { count: Math.abs(giorni) })
+                              : ti("gs.restano_giorni", { count: giorni })}
+                          </span>
+                        </div>
+                      );
+                    })()}
 
                     <div className="pt-2 border-t border-border space-y-1.5">
                       {segnalazioni.length === 0 ? (
@@ -1988,10 +2000,12 @@ const InstructorsPage: React.FC = () => {
                             className={`text-sm ${
                               s.gravita === "rosso"
                                 ? "text-destructive"
-                                : "text-amber-700 dark:text-amber-300"
+                                : s.gravita === "ambra"
+                                  ? "text-amber-700 dark:text-amber-300"
+                                  : "text-muted-foreground"
                             }`}
                           >
-                            {s.gravita === "rosso" ? "●" : "●"} {s.testo}
+                            ● {s.testo}
                           </p>
                         ))
                       )}
@@ -2200,14 +2214,8 @@ const InstructorsPage: React.FC = () => {
               const liv = i.livello_istruttore || "istruttore";
               const sospeso = i.stato_staff === "sospeso";
               const linked_atleta = i.linked_atleta_id ? atleti_by_id.get(i.linked_atleta_id) : null;
-              const badge_cls =
-                liv === "monitrice"
-                  ? "bg-purple-100 text-purple-700 border-purple-200"
-                  : liv === "aiuto_monitrice"
-                    ? "bg-orange-100 text-orange-700 border-orange-200"
-                    : "bg-blue-100 text-blue-700 border-blue-200";
-              const badge_label =
-                liv === "monitrice" ? ti("badge.monitrice") : liv === "aiuto_monitrice" ? ti("badge.aiuto_monitrice") : ti("badge.istruttore");
+              const badge_cls = badge_livello_cls(liv);
+              const badge_label = ti(badge_livello_key(liv));
               return (
                 <div
                   key={i.id}
@@ -2281,7 +2289,9 @@ const InstructorsPage: React.FC = () => {
                     const cls =
                       gravita === "rosso"
                         ? "bg-destructive/10 text-destructive border-destructive/30"
-                        : "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-700";
+                        : gravita === "ambra"
+                          ? "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-700"
+                          : "bg-muted text-muted-foreground border-border";
                     return (
                       <div className={`mt-3 flex items-start gap-2 rounded-lg border px-2.5 py-1.5 text-xs ${cls}`}>
                         <span className="leading-4">●</span>
