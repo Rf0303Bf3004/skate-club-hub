@@ -414,6 +414,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <span>Esportazioni</span>
             </NavLink>
           )}
+          {!is_superadmin && session && !is_nuovo_ruolo && puo_vedere_assenze_staff && (
+            <NavLink to="/assenze-staff" onClick={() => set_sidebar_open(false)}
+              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/assenze-staff" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+              <UserX className="w-4 h-4 shrink-0" />
+              <span>Assenze staff</span>
+            </NavLink>
+          )}
+
 
           {is_superadmin && (
             <>
