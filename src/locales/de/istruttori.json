@@ -3,7 +3,8 @@
     "ruolo_club": "Rolle im Club",
     "ruolo_istruttore": "Instruktor",
     "ruolo_monitrice": "Leiterin",
-    "ruolo_aiuto_monitrice": "Hilfsleiterin"
+    "ruolo_aiuto_monitrice": "Hilfsleiterin",
+    "hint_utente_collegato": "Erforderlich, um Aufgebote aus dem Aktivitätenraster in der App zu erhalten."
   },
   "gs": {
     "titolo": "Gioventù e Sport (G+S)",

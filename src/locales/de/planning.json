@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "edit_planning": "Nur planungsberechtigte Personen (Superadmin, Admin, Präsident, Vizepräsident, technische Leitung) können die Planung bearbeiten."
+  },
+  "toolbar": {
+    "title": "Planung"
+  }
+}

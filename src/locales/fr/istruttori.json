@@ -3,7 +3,8 @@
     "ruolo_club": "Rôle dans le club",
     "ruolo_istruttore": "Instructeur",
     "ruolo_monitrice": "Monitrice",
-    "ruolo_aiuto_monitrice": "Aide-monitrice"
+    "ruolo_aiuto_monitrice": "Aide-monitrice",
+    "hint_utente_collegato": "Nécessaire pour recevoir les convocations de la Grille des activités dans l'application."
   },
   "gs": {
     "titolo": "Gioventù e Sport (G+S)",

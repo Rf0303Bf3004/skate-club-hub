@@ -149,7 +149,7 @@
   "per_corso": "By course",
   "percorso_amatori": "Amateur path",
   "percorso_completato": "Amateur path completed",
-  "planning_ghiaccio": "Ice schedule",
+  "planning_ghiaccio": "Planning",
   "posizione": "Position",
   "post_season": "Post-season",
   "pre_season": "Pre-season",
@@ -227,14 +227,15 @@
   "irreversible_warning": "This action is irreversible. All linked data will be deleted.",
   "confirm_delete_title": "Confirm deletion",
   "menu": {
-    "griglia_ghiaccio": "Ice Grid",
+    "griglia_ghiaccio": "Activity grid",
+    "planning_ghiaccio": "Planning",
     "ruoli_permessi": "Role Management",
     "pista": "Rinkside"
   },
   "menu_gruppo": {
     "generale": "General",
     "persone": "People",
-    "ghiaccio": "Ice",
+    "ghiaccio": "Activities",
     "soldi": "Administration",
     "club": "The club",
     "struttura": "The club",

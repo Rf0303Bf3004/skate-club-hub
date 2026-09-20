@@ -149,7 +149,7 @@
   "per_corso": "Par cours",
   "percorso_amatori": "Parcours amateurs",
   "percorso_completato": "Parcours amateurs terminé",
-  "planning_ghiaccio": "Planning de la glace",
+  "planning_ghiaccio": "Planning",
   "posizione": "Position",
   "post_season": "Post-saison",
   "pre_season": "Pré-saison",
@@ -227,14 +227,15 @@
   "irreversible_warning": "Cette opération est irréversible. Toutes les données liées seront supprimées.",
   "confirm_delete_title": "Confirmer la suppression",
   "menu": {
-    "griglia_ghiaccio": "Grille de glace",
+    "griglia_ghiaccio": "Grille des activités",
+    "planning_ghiaccio": "Planning",
     "ruoli_permessi": "Gestion des rôles",
     "pista": "Au bord de la glace"
   },
   "menu_gruppo": {
     "generale": "Général",
     "persone": "Personnes",
-    "ghiaccio": "Glace",
+    "ghiaccio": "Activités",
     "soldi": "Administration",
     "club": "Le club",
     "struttura": "Le club",

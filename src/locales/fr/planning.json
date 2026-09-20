@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "edit_planning": "Seules les personnes autorisées à planifier (superadmin, admin, président, vice-président, directeur technique) peuvent modifier le planning."
+  },
+  "toolbar": {
+    "title": "Planning"
+  }
+}

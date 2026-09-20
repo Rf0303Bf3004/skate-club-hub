@@ -3,7 +3,8 @@
     "ruolo_club": "Role in the club",
     "ruolo_istruttore": "Instructor",
     "ruolo_monitrice": "Monitor",
-    "ruolo_aiuto_monitrice": "Assistant monitor"
+    "ruolo_aiuto_monitrice": "Assistant monitor",
+    "hint_utente_collegato": "Required to receive Activity grid call-ups in the app."
   },
   "gs": {
     "titolo": "Gioventù e Sport (G+S)",

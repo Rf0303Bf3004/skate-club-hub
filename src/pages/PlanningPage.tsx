@@ -2144,7 +2144,7 @@ function PlanningPageInner() {
           </div>
         </div>
         {!puo_pianificare && (
-          <NotaPermesso testo="Solo chi può pianificare (superadmin, admin, presidente, vicepresidente, dt) può modificare il planning ghiaccio." />
+          <NotaPermesso testo={t('permissions.edit_planning')} />
         )}
 
         {/* Week / Month navigation */}

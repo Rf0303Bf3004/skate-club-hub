@@ -272,7 +272,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-center gap-2">
         <LayoutGrid className="w-10 h-10 text-muted-foreground" />
-        <h1 className="text-lg font-semibold">Griglia Ghiaccio</h1>
+        <h1 className="text-lg font-semibold">{t("menu.griglia_ghiaccio")}</h1>
         <p className="text-sm text-muted-foreground max-w-md">
           Questa funzione non è attiva per il tuo club. Attivala in Setup del Club → Modalità di gestione.
         </p>
@@ -286,7 +286,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-              <LayoutGrid className="w-4 h-4 text-primary" /> Griglia Ghiaccio
+              <LayoutGrid className="w-4 h-4 text-primary" /> {t("menu.griglia_ghiaccio")}
             </h1>
             <div className="mt-1 inline-flex items-center rounded-xl bg-primary/10 border border-primary/30 px-4 py-2">
               <span className="text-xl md:text-3xl font-extrabold capitalize text-primary leading-tight">

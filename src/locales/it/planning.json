@@ -33,8 +33,11 @@
     "conflict_with_continue": "Conflitto con: {{names}}. Continuare comunque?",
     "conflict_with_continue_short": "Conflitto con: {{names}}. Continuare?"
   },
+  "permissions": {
+    "edit_planning": "Solo chi può pianificare (superadmin, admin, presidente, vicepresidente, dt) può modificare il planning."
+  },
   "toolbar": {
-    "title": "Planning Ghiaccio",
+    "title": "Planning",
     "published": "PUBBLICATA",
     "draft": "BOZZA",
     "selected": "Selezionato: {{name}}",

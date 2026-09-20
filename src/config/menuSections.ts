@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Trophy, Clock,
-  Receipt, MessageSquare, Building2, Calendar, CalendarRange, Snowflake,
+  Receipt, MessageSquare, Building2, Calendar, CalendarRange,
   ListChecks, Handshake, UserCog, ShieldCheck, Wrench, FileSpreadsheet,
   ClipboardCheck, Sparkles, UserPlus, LayoutGrid, Tablet,
 } from "lucide-react";
@@ -37,7 +37,7 @@ export const MENU_SECTIONS: MenuSection[] = [
   { codice: "atleti",           label: "Atleti",             icon: Users,           path: "/atleti",            blocco: "conduzione", gruppo: "persone", ordine: 1 },
   { codice: "richieste_iscrizione", label: "Richieste Iscrizione", icon: UserPlus,  path: "/richieste-iscrizione", blocco: "conduzione", gruppo: "persone", ordine: 2 },
 
-  { codice: "griglia_ghiaccio", label: "Griglia Ghiaccio",   icon: LayoutGrid,      path: "/griglia-ghiaccio",  blocco: "conduzione", gruppo: "ghiaccio", ordine: 1 },
+  { codice: "griglia_ghiaccio", label: "Griglia attività",   icon: LayoutGrid,      path: "/griglia-ghiaccio",  blocco: "conduzione", gruppo: "ghiaccio", ordine: 1 },
   { codice: "lezioni_private",  label: "Lezioni Private",    icon: Clock,           path: "/lezioni-private",   blocco: "conduzione", gruppo: "ghiaccio", ordine: 2 },
   { codice: "gare",             label: "Gare",               icon: Trophy,          path: "/gare",              blocco: "conduzione", gruppo: "ghiaccio", ordine: 3 },
   { codice: "test_livello",     label: "Test Livello",       icon: ClipboardCheck,  path: "/test",              blocco: "conduzione", gruppo: "ghiaccio", ordine: 4 },
@@ -51,7 +51,7 @@ export const MENU_SECTIONS: MenuSection[] = [
   { codice: "livelli",          label: "Livelli",            icon: ListChecks,      path: "/livelli",           blocco: "setup", gruppo: "struttura", ordine: 3, non_implementato: true },
 
   { codice: "corsi",            label: "Corsi",              icon: BookOpen,        path: "/corsi",             blocco: "setup", gruppo: "offerta", ordine: 1 },
-  { codice: "planning_ghiaccio", label: "Planning Ghiaccio", icon: CalendarRange,   path: "/planning",          blocco: "setup", gruppo: "offerta", ordine: 2 },
+  { codice: "planning_ghiaccio", label: "Planning",          icon: CalendarRange,   path: "/planning",          blocco: "setup", gruppo: "offerta", ordine: 2 },
   { codice: "istruttori",       label: "Istruttori",         icon: GraduationCap,   path: "/istruttori",        blocco: "setup", gruppo: "offerta", ordine: 3 },
 
   { codice: "sponsor",          label: "Sponsor",            icon: Handshake,       path: "/sponsor",           blocco: "setup", gruppo: "sponsor_gruppo", ordine: 1, non_implementato: true },
@@ -75,7 +75,7 @@ export const MENU_TOP = MENU_SECTIONS
 
 const GRUPPI_DEF: { id: MenuGruppo; blocco: MenuBlocco; label_key: string; label_fallback: string; icon: any }[] = [
   { id: "persone", blocco: "conduzione", label_key: "menu_gruppo.persone", label_fallback: "Persone", icon: Users },
-  { id: "ghiaccio", blocco: "conduzione", label_key: "menu_gruppo.ghiaccio", label_fallback: "Ghiaccio", icon: Snowflake },
+  { id: "ghiaccio", blocco: "conduzione", label_key: "menu_gruppo.ghiaccio", label_fallback: "Attività", icon: LayoutGrid },
   { id: "soldi", blocco: "conduzione", label_key: "menu_gruppo.soldi", label_fallback: "Amministrazione", icon: Receipt },
   { id: "struttura", blocco: "setup", label_key: "menu_gruppo.struttura", label_fallback: "Il club", icon: Building2 },
   { id: "offerta", blocco: "setup", label_key: "menu_gruppo.offerta", label_fallback: "Corsi e istruttori", icon: BookOpen },

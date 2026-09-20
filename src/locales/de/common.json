@@ -149,7 +149,7 @@
   "per_corso": "Pro Kurs",
   "percorso_amatori": "Amateur-Laufbahn",
   "percorso_completato": "Amateur-Laufbahn abgeschlossen",
-  "planning_ghiaccio": "Eis-Planung",
+  "planning_ghiaccio": "Planung",
   "posizione": "Position",
   "post_season": "Nachsaison",
   "pre_season": "Vorsaison",
@@ -227,14 +227,15 @@
   "irreversible_warning": "Diese Aktion ist unwiderruflich. Alle verknüpften Daten werden gelöscht.",
   "confirm_delete_title": "Löschen bestätigen",
   "menu": {
-    "griglia_ghiaccio": "Eisraster",
+    "griglia_ghiaccio": "Aktivitätenraster",
+    "planning_ghiaccio": "Planung",
     "ruoli_permessi": "Rollenverwaltung",
     "pista": "Am Eisrand"
   },
   "menu_gruppo": {
     "generale": "Allgemein",
     "persone": "Personen",
-    "ghiaccio": "Eis",
+    "ghiaccio": "Aktivitäten",
     "soldi": "Verwaltung",
     "club": "Der Club",
     "struttura": "Der Club",

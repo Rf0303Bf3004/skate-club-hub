@@ -15,12 +15,16 @@
     "testi": {
       "dato_non_disponibile": "Daten nicht verfügbar",
       "config_ghiaccio_in_caricamento": "Eis-Konfiguration wird geladen…",
+      "planning_giornaliero_info": "Eine Nachricht mit dem gesamten Tagesprogramm für alle Personen mit Einheiten im Aktivitätenraster.",
+      "disponibilita_scadenza_info": "Nach diesem Datum erscheint im Dashboard und im Aktivitätenraster ein Hinweis, die Verfügbarkeit zu überprüfen. Speichern Sie mit \"Club-Daten speichern\".",
       "auguri_compleanno_info": "Am Geburtstag des Athleten erhält die Familie zur gewählten Uhrzeit Glückwünsche vom Club, in der App und als Benachrichtigung auf dem Telefon.",
       "auguri_compleanno_modello_pre": "Der Text kann in den ",
       "auguri_compleanno_modello_link": "Kommunikationsvorlagen",
       "auguri_compleanno_modello_post": " angepasst werden: Erstellen Sie eine Vorlage namens \"Auguri di compleanno\" mit den Platzhaltern {nome_atleta} und {eta}. Ohne Vorlage wird ein Standardtext verwendet."
     },
     "sezioni": {
+      "planning_giornaliero": "📅 Tagesplanung (Aktivitätenraster)",
+      "ghiaccio_planning": "Aktivitäten und Planung",
       "auguri_compleanno": "🎂 Geburtstagswünsche",
       "codice_pista": "Code für das Eisrand-Tablet"
     },
