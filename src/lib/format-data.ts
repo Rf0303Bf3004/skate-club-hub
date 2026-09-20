@@ -70,7 +70,7 @@ export function format_data_gm(d: DateInput, fallback: string = "—"): string {
 }
 
 /** Compat: formattazione personalizzata con sempre locale svizzero. */
-export function format_data(d: DateInput, opts: Intl.DateTimeFormatOptions, fallback: string = "—"): string {
+export function format_data(d: DateInput, opts: Intl.DateTimeFormatOptions = {}, fallback: string = "—"): string {
   const dt = to_date(d);
   if (!dt) return fallback;
   return dt.toLocaleDateString(locale_data_corrente(), opts);
