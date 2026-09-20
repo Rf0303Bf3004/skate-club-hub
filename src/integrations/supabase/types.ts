@@ -5058,13 +5058,17 @@ export type Database = {
           costo_orario_corsi: number | null
           costo_orario_lezioni: number | null
           created_at: string
+          data_nascita: string | null
           email: string | null
           foto_url: string | null
+          gs_valido_fino: string | null
           id: string
           linked_atleta_id: string | null
           livello_istruttore: Database["public"]["Enums"]["livello_istruttore_enum"]
           nome: string
           note: string | null
+          numero_gs: string | null
+          qualifica_gs: string
           specialita: string | null
           stato_staff: Database["public"]["Enums"]["stato_staff_enum"]
           tag_nfc: string | null
@@ -5084,13 +5088,17 @@ export type Database = {
           costo_orario_corsi?: number | null
           costo_orario_lezioni?: number | null
           created_at?: string
+          data_nascita?: string | null
           email?: string | null
           foto_url?: string | null
+          gs_valido_fino?: string | null
           id?: string
           linked_atleta_id?: string | null
           livello_istruttore?: Database["public"]["Enums"]["livello_istruttore_enum"]
           nome?: string
           note?: string | null
+          numero_gs?: string | null
+          qualifica_gs?: string
           specialita?: string | null
           stato_staff?: Database["public"]["Enums"]["stato_staff_enum"]
           tag_nfc?: string | null
@@ -5110,13 +5118,17 @@ export type Database = {
           costo_orario_corsi?: number | null
           costo_orario_lezioni?: number | null
           created_at?: string
+          data_nascita?: string | null
           email?: string | null
           foto_url?: string | null
+          gs_valido_fino?: string | null
           id?: string
           linked_atleta_id?: string | null
           livello_istruttore?: Database["public"]["Enums"]["livello_istruttore_enum"]
           nome?: string
           note?: string | null
+          numero_gs?: string | null
+          qualifica_gs?: string
           specialita?: string | null
           stato_staff?: Database["public"]["Enums"]["stato_staff_enum"]
           tag_nfc?: string | null
