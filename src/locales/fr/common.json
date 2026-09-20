@@ -609,5 +609,10 @@
     "ok_richieste": "Aucune inscription en attente",
     "ok_bozze": "Aucune facture à envoyer",
     "ok_anagrafiche": "Fiches complètes"
+  },
+  "corsi_creazione": {
+    "titolo": "Les cours se créent dans la Grille d'activités",
+    "testo": "Dans la Grille d'activités, le portail vérifie la disponibilité de la glace et de l'instructeur avant de créer le cours.",
+    "azione": "Aller à la Grille d'activités"
   }
 }

@@ -718,5 +718,10 @@
     "club_non_trovato_titolo": "Indirizzo non riconosciuto",
     "club_non_trovato_testo": "Questo indirizzo non corrisponde a nessun club. Controlla il link sul volantino o contatta direttamente il club.",
     "errore_generico": "Invio non riuscito, riprova."
+  },
+  "corsi_creazione": {
+    "titolo": "I corsi si creano nella Griglia attività",
+    "testo": "Nella Griglia attività il portale controlla che ci siano il ghiaccio e l'istruttore prima di creare il corso.",
+    "azione": "Vai alla Griglia attività"
   }
 }

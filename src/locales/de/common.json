@@ -609,5 +609,10 @@
     "ok_richieste": "Keine offenen Anmeldungen",
     "ok_bozze": "Keine Rechnungen zu senden",
     "ok_anagrafiche": "Stammdaten vollständig"
+  },
+  "corsi_creazione": {
+    "titolo": "Kurse werden im Aktivitätsraster erstellt",
+    "testo": "Im Aktivitätsraster prüft das Portal, ob Eis und eine Trainerin oder ein Trainer verfügbar sind, bevor der Kurs erstellt wird.",
+    "azione": "Zum Aktivitätsraster"
   }
 }
