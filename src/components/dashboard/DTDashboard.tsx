@@ -87,6 +87,7 @@ const DTDashboard: React.FC = () => {
   const { t, i18n } = useTranslation("common");
   const navigate = useNavigate();
   const { session } = useAuth();
+  const istruttori_query = use_istruttori();
 
   const [adesso, set_adesso] = React.useState(() => new Date());
   React.useEffect(() => {
