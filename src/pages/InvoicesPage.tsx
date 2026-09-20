@@ -25,6 +25,7 @@ import NotaPermesso from "@/components/common/NotaPermesso";
 
 
 
+import { format_data } from "@/lib/format-data";
 // Valori di stato accettati nell'indirizzo: solo quelli veri del filtro.
 const STATI_URL = ["bozza", "inviata", "sollecitata", "pagata", "annullata", "stornata", "scaduta"];
 
@@ -383,7 +384,7 @@ const InvoicesPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">
                         {f.data_scadenza || f.scadenza
-                          ? new Date(f.data_scadenza || f.scadenza).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
+                          ? format_data(new Date(f.data_scadenza || f.scadenza), { day: "2-digit", month: "2-digit", year: "numeric" })
                           : "—"}
                       </td>
                       <td className="px-4 py-3 text-center">

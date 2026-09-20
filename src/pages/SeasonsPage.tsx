@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { format_data } from "@/lib/format-data";
 const input_cls =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
@@ -280,10 +281,10 @@ const SeasonsPage: React.FC = () => {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">
-                      {new Date(s.data_inizio + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                      {format_data(new Date(s.data_inizio + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" })}
                     </td>
                     <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">
-                      {new Date(s.data_fine + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                      {format_data(new Date(s.data_fine + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" })}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <Badge variant={s.attiva ? "default" : "secondary"} className="text-xs">

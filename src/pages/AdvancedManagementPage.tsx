@@ -8,12 +8,13 @@ import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 
+import { format_data } from "@/lib/format-data";
 const ta = (key: string, opts?: any) => i18n.t(`advanced.${key}`, { ns: "settings", ...(opts || {}) }) as string;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmt_date(d: string) {
   const obj = new Date(d + "T00:00:00");
-  return obj.toLocaleDateString("de-CH", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+  return format_data(obj, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 }
 
 function get_day_of_week(d: string) {

@@ -41,6 +41,7 @@ import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import ConfirmButton from "@/components/common/ConfirmButton";
 
+import { format_data } from "@/lib/format-data";
 type EventoCampo = {
   id: string;
   club_id: string;
@@ -77,7 +78,7 @@ type IscrizioneEvento = {
 
 const fmt_date = (d: string | null) => {
   if (!d) return "—";
-  return new Date(d + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return format_data(new Date(d + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" });
 };
 
 // ═══════════════════════════════════════════════════════════

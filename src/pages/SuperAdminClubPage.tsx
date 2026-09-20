@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { format_data } from "@/lib/format-data";
 interface Club {
   id: string;
   nome: string;
@@ -352,7 +353,7 @@ const SuperAdminClubPage: React.FC = () => {
               )}
 
               <p className="text-[10px] text-muted-foreground">
-                {t("clubs.created_on", { data: new Date(selected.created_at).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) })}
+                {t("clubs.created_on", { data: format_data(new Date(selected.created_at), { day: "2-digit", month: "2-digit", year: "numeric" }) })}
               </p>
             </div>
           )}

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { segnala_errore } from "@/lib/errori";
 import type { PortaleSession } from "@/lib/portale-auth";
 
+import { format_data } from "@/lib/format-data";
 interface Evento {
   id: string;
   tipo: string;
@@ -171,7 +172,7 @@ const PortaleCalendarioPage: React.FC = () => {
 
   const ore = useMemo(() => Array.from({ length: ORA_END - ORA_START }, (_, i) => ORA_START + i), []);
 
-  const month_label = `${week_start.toLocaleDateString("it-CH", { day: "2-digit", month: "short" })} – ${week_end.toLocaleDateString("it-CH", { day: "2-digit", month: "short", year: "numeric" })}`;
+  const month_label = `${format_data(week_start, { day: "2-digit", month: "short" })} – ${format_data(week_end, { day: "2-digit", month: "short", year: "numeric" })}`;
 
   return (
     <div className="max-w-6xl mx-auto space-y-5">
@@ -292,7 +293,7 @@ const PortaleCalendarioPage: React.FC = () => {
                 <div key={iso} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                   <div className={`px-4 py-2.5 border-b border-slate-100 ${is_today ? "bg-sky-50" : "bg-slate-50"}`}>
                     <p className={`text-sm font-bold capitalize ${is_today ? "text-sky-700" : "text-slate-700"}`}>
-                      {d.toLocaleDateString("it-CH", { weekday: "long", day: "2-digit", month: "long" })}
+                      {format_data(d, { weekday: "long", day: "2-digit", month: "long" })}
                     </p>
                   </div>
                   <ul className="divide-y divide-slate-100">
@@ -362,7 +363,7 @@ const PortaleCalendarioPage: React.FC = () => {
                 <div className="flex items-center gap-3 text-slate-700">
                   <CalIcon className="w-4 h-4 text-sky-500" />
                   <span className="capitalize">
-                    {new Date(selected.data + "T00:00:00").toLocaleDateString("it-CH", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
+                    {format_data(new Date(selected.data + "T00:00:00"), { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-slate-700">

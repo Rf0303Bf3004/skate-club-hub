@@ -48,6 +48,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import i18n from "@/i18n";
 
+import { format_data } from "@/lib/format-data";
 const LIVELLI = [
   "Pulcini",
   "Stellina 1",
@@ -746,7 +747,7 @@ const GraficoAndamento: React.FC<{
         const pa = ai?.punteggio_artistico ?? null;
         const totale = pt !== null && pa !== null ? pt + pa : (ai?.punteggio ?? null);
         return {
-          gara: new Date(g.data + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "short" }),
+          gara: format_data(new Date(g.data + "T00:00:00"), { day: "2-digit", month: "short" }),
           nome_gara: g.nome,
           punteggio: totale,
           posizione: ai?.posizione ?? null,
@@ -1110,7 +1111,7 @@ const CompetitionsPage: React.FC = () => {
             </div>
             <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5" /> {new Date(selected.data + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                <Calendar className="w-3.5 h-3.5" /> {format_data(new Date(selected.data + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" })}
               </span>
               <span className="flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5" /> {selected.localita}
@@ -1436,7 +1437,7 @@ const CompetitionsPage: React.FC = () => {
                     >
                       <td className="px-4 py-3 font-medium text-foreground">{g.nome}</td>
                       <td className="px-4 py-3 tabular-nums text-muted-foreground">
-                        {new Date(g.data + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                        {format_data(new Date(g.data + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" })}
                       </td>
                       <td className="px-4 py-3">
                         <CountdownBadge data={g.data} />
@@ -1512,7 +1513,7 @@ const CompetitionsPage: React.FC = () => {
                         >
                           <td className="px-4 py-3 font-medium text-foreground">{g.nome}</td>
                           <td className="px-4 py-3 tabular-nums text-muted-foreground">
-                            {g.data ? new Date(g.data + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
+                            {g.data ? format_data(new Date(g.data + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
                           </td>
                           <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{g.luogo || "—"}</td>
                           <td className="px-4 py-3">

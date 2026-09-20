@@ -9,6 +9,7 @@ import type { PortaleSession } from "@/lib/portale-auth";
 import { useTranslation } from "react-i18next";
 import RichiestePrivateSezione from "@/components/portale/RichiestePrivateSezione";
 
+import { format_data } from "@/lib/format-data";
 const CorsiTab: React.FC = () => {
   const ctx = useOutletContext<{ session?: PortaleSession }>() as any;
   const session = ctx?.session as PortaleSession | undefined;
@@ -94,7 +95,7 @@ const CorsiTab: React.FC = () => {
           <div key={l.id} className="bg-white border border-slate-200 rounded-2xl p-4">
             <p className="font-semibold text-slate-800">Lezione privata</p>
             <p className="text-sm text-slate-500">
-              {new Date(l.data + "T00:00:00").toLocaleDateString("it-CH")} · {l.ora_inizio?.slice(0,5)}–{l.ora_fine?.slice(0,5)}
+              {format_data(new Date(l.data + "T00:00:00"))} · {l.ora_inizio?.slice(0,5)}–{l.ora_fine?.slice(0,5)}
             </p>
           </div>
         ))}

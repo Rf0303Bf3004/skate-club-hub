@@ -41,6 +41,7 @@ import { LayoutGrid, Printer, AlertTriangle, Columns3, Rows3, CalendarDays, Cale
 import DateInput from "@/components/forms/DateInput";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
+import { format_data } from "@/lib/format-data";
 function sposta_giorno(data_iso: string, delta: number): string {
   const d = new Date(`${data_iso}T00:00:00`);
   d.setDate(d.getDate() + delta);
@@ -55,7 +56,7 @@ function oggi_iso(): string {
 function label_data(data_iso: string): string {
   if (!data_iso) return "";
   const d = new Date(`${data_iso}T00:00:00`);
-  return d.toLocaleDateString("it-CH", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  return format_data(d, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 }
 
 function hhmm(t?: string | null): string {

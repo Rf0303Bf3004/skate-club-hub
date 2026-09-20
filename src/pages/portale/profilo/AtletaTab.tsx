@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { portale_ensure_session, type PortaleSession } from "@/lib/portale-auth";
 
+import { format_data } from "@/lib/format-data";
 const MAX_BYTES = 2 * 1024 * 1024;
 const TIPI_OK = ["image/jpeg", "image/jpg", "image/png"];
 
@@ -205,7 +206,7 @@ const AtletaTab: React.FC = () => {
   if (!atleta) return <p className="text-slate-500">Nessun dato disponibile.</p>;
 
   const data_nascita = atleta.data_nascita
-    ? new Date(atleta.data_nascita + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "long", year: "numeric" })
+    ? format_data(new Date(atleta.data_nascita + "T00:00:00"), { day: "2-digit", month: "long", year: "numeric" })
     : "—";
 
   const has_g1 = atleta.genitore1_nome || atleta.genitore1_email || atleta.genitore1_telefono;

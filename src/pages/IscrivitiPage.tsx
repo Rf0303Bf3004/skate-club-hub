@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AlertCircle, CheckCircle2, Loader2, Send } from "lucide-react";
 import { type ArticoloContratto } from "@/lib/contratto-adesione";
 
+import { format_data } from "@/lib/format-data";
 const CANTONI_CH = [
   "AG","AI","AR","BE","BL","BS","FR","GE","GL","GR","JU","LU","NE","NW","OW","SG","SH","SO","SZ","TG","TI","UR","VD","VS","ZG","ZH",
 ];
@@ -171,7 +172,7 @@ const IscrivitiPage: React.FC = () => {
   }
 
   const scadenza = stagione.iscrizioni_scadenza
-    ? new Date(stagione.iscrizioni_scadenza + "T00:00:00").toLocaleDateString("it-CH")
+    ? format_data(new Date(stagione.iscrizioni_scadenza + "T00:00:00"))
     : null;
 
   return (

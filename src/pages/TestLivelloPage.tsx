@@ -40,6 +40,7 @@ import {
 } from "@/lib/atleta-livello";
 import { use_tariffe_test, LIVELLI_TARIFFA } from "@/components/setup/TariffeTestSection";
 
+import { format_data } from "@/lib/format-data";
 // ─── Tipi ───────────────────────────────────────────────────────────────
 type TestLivello = {
   id: string;
@@ -827,7 +828,7 @@ export default function TestLivelloPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1 text-sm text-muted-foreground">
-                    {tv.data && <p>📅 {new Date(tv.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>}
+                    {tv.data && <p>📅 {format_data(new Date(tv.data), { day: "2-digit", month: "2-digit", year: "numeric" })}</p>}
                     {tv.luogo && <p>📍 {tv.luogo}{tv.club_ospitante ? ` · ${tv.club_ospitante}` : ""}</p>}
                     <p className="text-xs">
                       {rows.length === 0
@@ -940,7 +941,7 @@ export default function TestLivelloPage() {
                         <div className="px-3 py-2 text-sm text-muted-foreground">{t("level_tests.no_future_races")}</div>
                       ) : gare.map((g) => (
                         <SelectItem key={g.id} value={g.id}>
-                          {g.nome} {g.data ? `· ${new Date(g.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}` : ""}
+                          {g.nome} {g.data ? `· ${format_data(new Date(g.data), { day: "2-digit", month: "2-digit", year: "numeric" })}` : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -948,7 +949,7 @@ export default function TestLivelloPage() {
                 </div>
                 {gara_sel && (
                   <div className="md:col-span-2 grid gap-2 md:grid-cols-3 text-sm bg-muted/40 rounded-md p-3">
-                    <div><span className="text-muted-foreground">Data:</span> {gara_sel.data ? new Date(gara_sel.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "-"}</div>
+                    <div><span className="text-muted-foreground">Data:</span> {gara_sel.data ? format_data(new Date(gara_sel.data), { day: "2-digit", month: "2-digit", year: "numeric" }) : "-"}</div>
                     <div><span className="text-muted-foreground">Ora:</span> {gara_sel.ora?.slice(0, 5) || "-"}</div>
                     <div><span className="text-muted-foreground">Luogo:</span> {gara_sel.luogo || "-"}</div>
                     {gara_sel.club_ospitante && <div className="md:col-span-3"><span className="text-muted-foreground">{t("level_tests.race_host_club_prefix")}</span> {gara_sel.club_ospitante}</div>}
@@ -1082,7 +1083,7 @@ export default function TestLivelloPage() {
 
       <Card>
         <CardContent className="pt-4 grid gap-2 md:grid-cols-4 text-sm">
-          <div><span className="text-muted-foreground">{t("level_tests.detail_date")}</span> {selected_test.data ? new Date(selected_test.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "-"}</div>
+          <div><span className="text-muted-foreground">{t("level_tests.detail_date")}</span> {selected_test.data ? format_data(new Date(selected_test.data), { day: "2-digit", month: "2-digit", year: "numeric" }) : "-"}</div>
           <div><span className="text-muted-foreground">{t("level_tests.detail_time")}</span> {selected_test.ora?.slice(0, 5) || "-"}</div>
           <div><span className="text-muted-foreground">{t("level_tests.detail_place")}</span> {selected_test.luogo || "-"}</div>
           <div><span className="text-muted-foreground">{t("level_tests.detail_club")}</span> {selected_test.club_ospitante || "-"}</div>
@@ -1121,7 +1122,7 @@ export default function TestLivelloPage() {
           <div className="md:col-span-4 text-sm">
             <span className="text-muted-foreground">Ultimo giorno per ritirarsi senza pagare:</span>{" "}
             {selected_test.scadenza_disdetta
-              ? new Date(selected_test.scadenza_disdetta).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
+              ? format_data(new Date(selected_test.scadenza_disdetta), { day: "2-digit", month: "2-digit", year: "numeric" })
               : "nessuno — chi aderisce paga comunque"}
           </div>
         </CardContent>
@@ -1335,7 +1336,7 @@ export default function TestLivelloPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {r.risposta_at ? new Date(r.risposta_at).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
+                        {r.risposta_at ? format_data(new Date(r.risposta_at), { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
                       </TableCell>
                       <TableCell className="align-top">
                         {puo_gestire_sportivo ? (
@@ -1631,7 +1632,7 @@ export default function TestLivelloPage() {
         <h1 style={{ fontSize: "18pt", fontWeight: 700, marginBottom: "2mm" }}>{selected_test.nome}</h1>
         <p style={{ fontSize: "11pt", marginBottom: "1mm" }}>
           {selected_test.data
-            ? new Date(selected_test.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
+            ? format_data(new Date(selected_test.data), { day: "2-digit", month: "2-digit", year: "numeric" })
             : "data da definire"}
           {selected_test.ora ? ` · ${selected_test.ora.slice(0, 5)}` : ""}
           {selected_test.luogo ? ` · ${selected_test.luogo}` : ""}
@@ -1682,7 +1683,7 @@ export default function TestLivelloPage() {
         ))}
         <p style={{ fontSize: "10pt", marginTop: "8mm" }}>
           Totale iscritte: {totale_iscritte} · Totale quote: CHF {totale_quote_stampa.toFixed(2)} · Stampato il{" "}
-          {new Date().toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
+          {format_data(new Date(), { day: "2-digit", month: "2-digit", year: "numeric" })}
         </p>
         </div>,
         document.body,

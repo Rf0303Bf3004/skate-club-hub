@@ -14,6 +14,7 @@ import {
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 
+import { format_ora } from "@/lib/format-data";
 const ts = (key: string, opts?: any) => i18n.t(`panel.${key}`, { ns: "superadmin", ...(opts || {}) }) as string;
 
 // ─── Tipi ─────────────────────────────────────────────────
@@ -459,7 +460,7 @@ const SuperAdminPage: React.FC = () => {
   const [log, set_log] = useState<string[]>([]);
 
   const add_log = (msg: string) => {
-    const ts = new Date().toLocaleTimeString("it-CH");
+    const ts = format_ora(new Date());
     set_log((prev) => [`[${ts}] ${msg}`, ...prev.slice(0, 49)]);
   };
 

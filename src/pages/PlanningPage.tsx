@@ -37,6 +37,7 @@ import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import ConfirmButton from "@/components/common/ConfirmButton";
 
+import { format_data } from "@/lib/format-data";
 // ── ErrorBoundary ──
 class PlanningErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -587,7 +588,7 @@ function PlanningPageInner() {
           // formato data settimana per il toast
           const lun = new Date(`${dataLunediISO}T00:00:00`);
           const dom = addDays(lun, 6);
-          const fmt = (d: Date) => d.toLocaleDateString("de-CH", { day: "numeric", month: "short" });
+          const fmt = (d: Date) => format_data(d, { day: "numeric", month: "short" });
           toast.success(t('toast.week_generated_from_template', { start: fmt(lun), end: fmt(dom), count: inseriti }), {
             duration: 3000,
           });

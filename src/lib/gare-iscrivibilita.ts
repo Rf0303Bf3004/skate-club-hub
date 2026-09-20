@@ -1,3 +1,4 @@
+import { format_data } from "@/lib/format-data";
 /**
  * Regole di iscrivibilità a una gara per il portale genitori.
  *
@@ -73,7 +74,7 @@ export function motivo_non_iscrivibile(
   if (gara?.archiviata) return "Gara archiviata";
   if (gara?.data && gara.data < oggi) return "Gara già svolta";
   if (gara?.scadenza_iscrizioni && gara.scadenza_iscrizioni < oggi) {
-    const d = new Date(gara.scadenza_iscrizioni + "T00:00:00").toLocaleDateString("it-CH");
+    const d = format_data(new Date(gara.scadenza_iscrizioni + "T00:00:00"));
     return `Iscrizioni chiuse il ${d}`;
   }
   const minimo = normalizza_livello(gara?.livello_minimo);

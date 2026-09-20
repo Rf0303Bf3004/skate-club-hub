@@ -44,6 +44,7 @@ import { segnala_errore } from "@/lib/errori";
 
 
 
+import { format_data } from "@/lib/format-data";
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] as const;
 
 // ── Hooks for ghiaccio config ──
@@ -1277,7 +1278,7 @@ const ClubSetupPage: React.FC = () => {
                 <span className="text-muted-foreground">{t("club.testi.prossima_scadenza")}: </span>
                 <strong>
                   {get_val("disponibilita_valida_fino_al", "")
-                    ? new Date(`${get_val("disponibilita_valida_fino_al", "")}T00:00:00`).toLocaleDateString("it-CH")
+                    ? format_data(new Date(`${get_val("disponibilita_valida_fino_al", "")}T00:00:00`))
                     : t("club.testi.scadenza_non_impostata")}
                 </strong>
               </p>

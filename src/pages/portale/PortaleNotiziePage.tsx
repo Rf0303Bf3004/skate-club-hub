@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import { use_contenuti_traduzioni } from "@/hooks/use-contenuti-traduzioni";
 import { segnala_errore } from "@/lib/errori";
 
+import { format_data } from "@/lib/format-data";
 interface Dest {
   id: string;
   archiviato_at: string | null;
@@ -164,7 +165,7 @@ const PortaleNotiziePage: React.FC = () => {
                 {traduci(it.comunicazioni?.id, "titolo", it.comunicazioni?.titolo) || "—"}
               </h3>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                {new Date(it.creato_at).toLocaleDateString("it-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                {format_data(new Date(it.creato_at), { day: "2-digit", month: "2-digit", year: "numeric" })}
               </p>
             </div>
             <Button variant="ghost" size="sm" onClick={() => toggle_archive(it)}>
