@@ -14,6 +14,8 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { segnala_errore } from "@/lib/errori";
 import { useAuth } from "@/lib/auth";
+import PromemoriaEsameGs from "@/components/istruttori/PromemoriaEsameGs";
+import { use_istruttori } from "@/hooks/use-supabase-data";
 
 /**
  * Home dell'istruttore (e dell'aiuto monitore): «cosa devo fare adesso».
@@ -100,6 +102,7 @@ const IstruttoreDashboard: React.FC = () => {
   const { t, i18n } = useTranslation("common");
   const navigate = useNavigate();
   const { session } = useAuth();
+  const istruttori_query = use_istruttori();
 
   const [adesso, set_adesso] = React.useState(() => new Date());
   React.useEffect(() => {
@@ -419,6 +422,11 @@ const IstruttoreDashboard: React.FC = () => {
           {adesso.toLocaleDateString(i18n.language, { weekday: "long", day: "numeric", month: "long" })}
         </p>
       </div>
+
+      {/* Promemoria personale: solo la propria posizione G+S, mai quella degli altri */}
+      <PromemoriaEsameGs istruttori={istruttori_query.data ?? []} solo_user_id={session?.user_id ?? null} />
+
+
 
       {/* 1. Oggi — i miei turni */}
       <Blocco titolo={t("istruttore_home.turni_oggi", "Oggi — i miei turni")} icona={CalendarDays}>

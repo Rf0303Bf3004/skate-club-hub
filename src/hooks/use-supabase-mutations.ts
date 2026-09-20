@@ -355,6 +355,8 @@ export function use_upsert_istruttore() {
         ...(data.numero_gs !== undefined ? { numero_gs: data.numero_gs } : {}),
         ...(data.gs_valido_fino !== undefined ? { gs_valido_fino: data.gs_valido_fino } : {}),
         ...(data.data_nascita !== undefined ? { data_nascita: data.data_nascita } : {}),
+        ...(data.data_inizio_attivita !== undefined ? { data_inizio_attivita: data.data_inizio_attivita } : {}),
+        ...(data.gs_termine_esame !== undefined ? { gs_termine_esame: data.gs_termine_esame } : {}),
       };
 
       if (data.id) {

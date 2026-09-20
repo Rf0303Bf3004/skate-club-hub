@@ -32,6 +32,8 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useTranslation } from "react-i18next";
+import PromemoriaEsameGs from "@/components/istruttori/PromemoriaEsameGs";
+import { use_istruttori } from "@/hooks/use-supabase-data";
 
 import FotoAtleta from "@/components/common/FotoAtleta";
 import OnboardingBanner from "@/components/dashboard/OnboardingBanner";
@@ -1123,6 +1125,7 @@ const PresidentDashboard: React.FC = () => {
   const [open_area, set_open_area] = useState<AreaId | null>(null);
 
   const stagioni_query = use_stagioni_presidente(club_id);
+  const istruttori_query = use_istruttori();
   const stagioni = stagioni_query.data ?? [];
   const stagioni_ord = useMemo(() => stagioni.slice().sort((a, b) => b.data_inizio.localeCompare(a.data_inizio)), [stagioni]);
 
@@ -1392,6 +1395,10 @@ const PresidentDashboard: React.FC = () => {
         </header>
 
         <StatoSegreteria d={d} t={t} />
+
+        <div className="mt-10">
+          <PromemoriaEsameGs istruttori={istruttori_query.data ?? []} />
+        </div>
 
         <section className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {aree.map((area) => (

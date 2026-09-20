@@ -1,0 +1,1 @@
+ALTER TYPE public.livello_istruttore_enum ADD VALUE IF NOT EXISTS 'direttore_tecnico';
