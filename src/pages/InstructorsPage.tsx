@@ -41,6 +41,8 @@ import {
   type QualificaGs,
   type SegnalazioneGs,
 } from "@/lib/istruttore-gs";
+import { SPECIALIZZAZIONI_SUGGERITE, chiave_specializzazione } from "@/lib/istruttore-specialita";
+
 
 /** Etichetta e colore del ruolo nel club, leggibili anche in tema scuro. */
 const BADGE_LIVELLO: Record<string, string> = {
@@ -190,6 +192,7 @@ const IstruttoreModal: React.FC<{
     ruolo: "istruttore",
     // Ruolo nel club e qualifica Gioventù e Sport (G+S)
     livello_istruttore: istruttore?.livello_istruttore || "istruttore",
+    specialita: istruttore?.specialita || "",
     qualifica_gs: (istruttore?.qualifica_gs || "nessuna") as QualificaGs,
     numero_gs: istruttore?.numero_gs || "",
     gs_valido_fino: istruttore?.gs_valido_fino || "",
@@ -323,11 +326,32 @@ const IstruttoreModal: React.FC<{
               onChange={(e) => set_val("livello_istruttore", e.target.value)}
               className={input_cls}
             >
-              <option value="direttore_tecnico">{t("modal.ruolo_direttore_tecnico")}</option>
               <option value="istruttore">{t("modal.ruolo_istruttore")}</option>
               <option value="monitrice">{t("modal.ruolo_monitrice")}</option>
               <option value="aiuto_monitrice">{t("modal.ruolo_aiuto_monitrice")}</option>
             </select>
+          </Field>
+
+          {/* Specializzazione: testo libero, i suggerimenti riempiono soltanto il campo */}
+          <Field label={t("specialita.label")}>
+            <input
+              value={form.specialita}
+              onChange={(e) => set_val("specialita", e.target.value)}
+              placeholder={t("specialita.placeholder")}
+              className={input_cls}
+            />
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {SPECIALIZZAZIONI_SUGGERITE.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => set_val("specialita", t(chiave_specializzazione(s)))}
+                  className="text-[11px] px-2 py-0.5 rounded-full border border-border bg-muted text-muted-foreground hover:bg-muted/70"
+                >
+                  {t(chiave_specializzazione(s))}
+                </button>
+              ))}
+            </div>
           </Field>
 
           {/* Gioventù e Sport (G+S): qualifica unica fra tre alternative */}
