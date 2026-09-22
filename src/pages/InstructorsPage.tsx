@@ -1670,15 +1670,15 @@ const InstructorsPage: React.FC = () => {
   const { data: istruttori = [], isLoading } = use_istruttori();
   // Referto G+S: la regola sta nel database. Un errore non diventa mai "tutti in regola".
   const referto_gs_query = use_referto_gs();
-  const referto_gs_by_chi = useMemo(() => {
+  const referto_gs_by_id = useMemo(() => {
     const m = new Map<string, RigaRefertoGs>();
-    (referto_gs_query.data ?? []).forEach((r) => m.set((r.chi || "").trim().toLowerCase(), r));
+    (referto_gs_query.data ?? []).forEach((r) => m.set(r.id, r));
     return m;
   }, [referto_gs_query.data]);
   const riga_referto_gs = useCallback(
     (i: any): RigaRefertoGs | undefined =>
-      referto_gs_by_chi.get(`${i?.cognome || ""} ${i?.nome || ""}`.trim().toLowerCase()),
-    [referto_gs_by_chi]
+      i?.id ? referto_gs_by_id.get(i.id) : undefined,
+    [referto_gs_by_id]
   );
   const gs_fuori_regola = (referto_gs_query.data ?? []).filter((r) => r.esito !== "OK").length;
   const { data: monitori_atleti = [] } = use_atleti_monitori();
