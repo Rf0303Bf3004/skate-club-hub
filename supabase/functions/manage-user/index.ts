@@ -129,10 +129,17 @@ Deno.serve(async (req) => {
     if (action === "list_auth_info") {
       const { user_ids } = body;
       if (!Array.isArray(user_ids)) return json({ error: "missing_params" }, 400);
+      // Isolamento club: si possono leggere solo gli account del proprio club.
+      const { data: membri, error: m_err } = await admin
+        .from("utenti_club")
+        .select("user_id")
+        .eq("club_id", club_id)
+        .in("user_id", user_ids);
+      if (m_err) return json({ error: "lookup_failed", detail: m_err.message }, 500);
       const result: Record<string, { email: string | null; last_sign_in_at: string | null }> = {};
       // paginate listUsers
       let page = 1;
-      const set = new Set(user_ids);
+      const set = new Set((membri ?? []).map((m: { user_id: string }) => m.user_id));
       while (set.size > 0 && page < 20) {
         const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
         if (error) break;
