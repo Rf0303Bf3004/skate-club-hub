@@ -17,25 +17,9 @@
     "data_nascita": "Geburtsdatum",
     "in_regola": "In Ordnung",
     "non_richiesta": "Für diese Rolle ist keine Qualifikation erforderlich",
-    "segnalazione": {
-      "monitrice_senza_gs": "Leiterin ohne G+S-Qualifikation",
-      "eta_insufficiente": "Erreicht das von G+S geforderte Alter von 17 Jahren nicht",
-      "scaduto": "G+S-Anerkennung am {{data}} abgelaufen",
-      "in_scadenza": "G+S-Anerkennung läuft am {{data}} ab",
-      "esame_scaduto": "G+S-Prüfung nicht abgelegt: Frist {{data}}, {{giorni}} Tage überfällig",
-      "esame_vicino": "G+S-Prüfung bis {{data}} abzulegen: noch {{giorni}} Tage",
-      "esame_previsto": "G+S-Prüfung bis {{data}} vorgesehen ({{giorni}} Tage)",
-      "senza_termine": "Ohne G+S-Qualifikation und ohne Frist, sie zu erwerben"
-    },
     "inizio_attivita": "Beginn der Tätigkeit im Club",
     "termine_esame": "Frist für die G+S-Prüfung",
-    "termine_calcolato": "Berechnet: 12 Monate ab Tätigkeitsbeginn ({{data}})",
     "termine_manuale": "Frist manuell gesetzt",
-    "termine": "Frist G+S-Prüfung",
-    "restano_giorni_one": "noch {{count}} Tag",
-    "restano_giorni_other": "noch {{count}} Tage",
-    "scaduto_da_giorni_one": "seit {{count}} Tag überfällig",
-    "scaduto_da_giorni_other": "seit {{count}} Tagen überfällig",
     "paese": "Land",
     "paese_non_dichiarato": "Nicht angegeben",
     "referto_errore": "Die G+S-Situation konnte nicht gelesen werden.",
@@ -52,10 +36,7 @@
   "lista": {},
   "promemoria": {
     "titolo": "Ausstehende G+S-Prüfungen",
-    "senza_termine": "Keine Frist gesetzt",
-    "personale_titolo": "Deine G+S-Qualifikation",
-    "personale_testo": "Du musst die G+S-Prüfung bis zum {{data}} ablegen.",
-    "personale_scaduto": "Die Frist für deine G+S-Prüfung war der {{data}}."
+    "personale_titolo": "Deine G+S-Qualifikation"
   },
   "specialita": {
     "label": "Spezialisierung",

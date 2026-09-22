@@ -17,25 +17,9 @@
     "data_nascita": "Date of birth",
     "in_regola": "Compliant",
     "non_richiesta": "No qualification required for this role",
-    "segnalazione": {
-      "monitrice_senza_gs": "Monitor without G+S qualification",
-      "eta_insufficiente": "Does not reach the 17 years required by G+S",
-      "scaduto": "G+S certificate expired on {{data}}",
-      "in_scadenza": "G+S certificate expiring on {{data}}",
-      "esame_scaduto": "G+S exam not taken: deadline {{data}}, {{giorni}} days overdue",
-      "esame_vicino": "G+S exam to be taken by {{data}}: {{giorni}} days left",
-      "esame_previsto": "G+S exam due by {{data}} ({{giorni}} days)",
-      "senza_termine": "No G+S qualification and no date by which to obtain it"
-    },
     "inizio_attivita": "Start of activity in the club",
     "termine_esame": "Deadline for the G+S exam",
-    "termine_calcolato": "Calculated: 12 months from the start of activity ({{data}})",
     "termine_manuale": "Deadline set manually",
-    "termine": "G+S exam deadline",
-    "restano_giorni_one": "{{count}} day left",
-    "restano_giorni_other": "{{count}} days left",
-    "scaduto_da_giorni_one": "overdue by {{count}} day",
-    "scaduto_da_giorni_other": "overdue by {{count}} days",
     "paese": "Country",
     "paese_non_dichiarato": "Not declared",
     "referto_errore": "The G+S status could not be loaded.",
@@ -52,10 +36,7 @@
   "lista": {},
   "promemoria": {
     "titolo": "G+S exams still to be taken",
-    "senza_termine": "No deadline set",
-    "personale_titolo": "Your G+S qualification",
-    "personale_testo": "You must take the G+S exam by {{data}}.",
-    "personale_scaduto": "The deadline for your G+S exam was {{data}}."
+    "personale_titolo": "Your G+S qualification"
   },
   "specialita": {
     "label": "Specialisation",
