@@ -35,7 +35,15 @@
     "restano_giorni_one": "noch {{count}} Tag",
     "restano_giorni_other": "noch {{count}} Tage",
     "scaduto_da_giorni_one": "seit {{count}} Tag überfällig",
-    "scaduto_da_giorni_other": "seit {{count}} Tagen überfällig"
+    "scaduto_da_giorni_other": "seit {{count}} Tagen überfällig",
+    "paese": "Land",
+    "paese_non_dichiarato": "Nicht angegeben",
+    "referto_errore": "Die G+S-Situation konnte nicht gelesen werden.",
+    "referto_in_corso": "G+S-Situation wird geladen…",
+    "referto_assente": "Diese Person erscheint nicht im G+S-Bericht.",
+    "riprova": "Erneut versuchen",
+    "riepilogo_fuori_regola_one": "{{count}} Staff-Mitglied ohne gültige G+S-Regelung",
+    "riepilogo_fuori_regola_other": "{{count}} Staff-Mitglieder ohne gültige G+S-Regelung"
   },
   "badge": {},
   "lista": {},

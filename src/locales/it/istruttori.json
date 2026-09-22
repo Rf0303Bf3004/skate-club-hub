@@ -235,7 +235,15 @@
     "restano_giorni_one": "restano {{count}} giorno",
     "restano_giorni_other": "restano {{count}} giorni",
     "scaduto_da_giorni_one": "scaduto da {{count}} giorno",
-    "scaduto_da_giorni_other": "scaduto da {{count}} giorni"
+    "scaduto_da_giorni_other": "scaduto da {{count}} giorni",
+    "paese": "Paese",
+    "paese_non_dichiarato": "Non dichiarato",
+    "referto_errore": "Non è stato possibile leggere la situazione G+S.",
+    "referto_in_corso": "Lettura della situazione G+S in corso…",
+    "referto_assente": "Questa persona non compare nel referto G+S.",
+    "riprova": "Riprova",
+    "riepilogo_fuori_regola_one": "{{count}} membro dello staff fuori regola con G+S",
+    "riepilogo_fuori_regola_other": "{{count}} membri dello staff fuori regola con G+S"
   },
   "promemoria": {
     "titolo": "Esami G+S da sostenere",
