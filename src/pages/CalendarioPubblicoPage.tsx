@@ -561,7 +561,14 @@ const CalendarioPubblicoPage: React.FC = () => {
             {giorno_selezionato && (
               <Card>
                 <CardContent className="space-y-2 p-3">
-                  <p className="text-sm font-semibold capitalize">{format_data_lunga(giorno_selezionato)}</p>
+                  <p className="text-sm font-semibold capitalize">
+                    {format_data_lunga(giorno_selezionato, {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
                   {righe_giorno_selezionato.length === 0 ? (
                     <p className="py-3 text-sm text-muted-foreground">{t("giorno_vuoto")}</p>
                   ) : (
