@@ -45,6 +45,9 @@
     "riepilogo_fuori_regola_one": "{{count}} staff member not compliant with G+S",
     "riepilogo_fuori_regola_other": "{{count}} staff members not compliant with G+S"
   },
+  "monitore": {
+    "vedi_ore_compenso": "View hours and compensation"
+  },
   "badge": {},
   "lista": {},
   "promemoria": {

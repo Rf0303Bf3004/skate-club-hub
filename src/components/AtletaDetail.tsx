@@ -278,7 +278,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const [confirm_verifica, set_confirm_verifica] = useState(false);
   const { session } = useAuth();
   const query_client = useQueryClient();
-  const { puo_gestire_sportivo } = usePermessiAzione();
+  const { puo_gestire_sportivo, puo_vedere_costi_istruttori } = usePermessiAzione();
   const can_verificare = puo_gestire_sportivo;
 
   // Nome utente che ha verificato (se presente)
@@ -449,6 +449,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const { data: fatture = [] } = use_fatture();
   const { data: lezioni = [] } = use_lezioni_private();
   const { data: istruttori = [] } = use_istruttori();
+  const istruttore_collegato = istruttori.find((i: any) => i.linked_atleta_id === a.id);
   const { data: adesioni = [] } = use_adesioni_atleta();
   const atleta_attivo = a.attivo !== false;
 
@@ -1389,6 +1390,17 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   <p className="text-[11px] text-muted-foreground">
                     {td("detail.compenso_hint")}
                   </p>
+                )}
+                {istruttore_collegato && puo_vedere_costi_istruttori && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => navigate(`/istruttori?monitore=${a.id}`)}
+                  >
+                    {td("detail.vedi_ore_compenso")}
+                  </Button>
                 )}
               </div>
             </div>

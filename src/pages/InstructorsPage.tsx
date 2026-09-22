@@ -1666,7 +1666,7 @@ const InstructorsPage: React.FC = () => {
   const { t } = useI18n();
   const { t: ti } = useTranslation("istruttori");
   const navigate = useNavigate();
-  const { puo_gestire_sportivo, puo_creare_accessi } = usePermessiAzione();
+  const { puo_gestire_sportivo, puo_creare_accessi, puo_vedere_costi_istruttori } = usePermessiAzione();
   const { data: istruttori = [], isLoading } = use_istruttori();
   // Referto G+S: la regola sta nel database. Un errore non diventa mai "tutti in regola".
   const referto_gs_query = use_referto_gs();
@@ -1796,13 +1796,19 @@ const InstructorsPage: React.FC = () => {
   const [id_url_usato, set_id_url_usato] = useState(false);
   useEffect(() => {
     if (id_url_usato || selected_id) return;
+    const monitore_url = new URLSearchParams(window.location.search).get("monitore");
+    if (monitore_url && monitori_atleti.some((atleta: any) => atleta.id === monitore_url)) {
+      set_id_url_usato(true);
+      set_selected_monitore_id(monitore_url);
+      return;
+    }
     const id_url = new URLSearchParams(window.location.search).get("id");
     if (!id_url) return;
     const trovato = istruttori.find((i: any) => i.id === id_url);
     if (!trovato) return;
     set_id_url_usato(true);
     open_detail(trovato);
-  }, [istruttori, id_url_usato, selected_id]);
+  }, [istruttori, monitori_atleti, id_url_usato, selected_id]);
 
   const add_slot = (giorno: string) => {
     set_disp_local((prev) => ({
@@ -2402,7 +2408,7 @@ const InstructorsPage: React.FC = () => {
                     );
                   })()}
 
-                  {(liv === "monitrice" || liv === "aiuto_monitrice") && linked_atleta && puo_gestire_sportivo && (
+                  {(liv === "monitrice" || liv === "aiuto_monitrice") && linked_atleta && puo_vedere_costi_istruttori && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -2412,7 +2418,7 @@ const InstructorsPage: React.FC = () => {
                         set_selected_monitore_id(linked_atleta.id);
                       }}
                     >
-                      {ti("monitore.vedi_ore_compenso") || "Ore pista e compenso"}
+                      {ti("monitore.vedi_ore_compenso")}
                     </Button>
                   )}
                 </div>
