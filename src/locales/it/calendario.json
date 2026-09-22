@@ -1,0 +1,19 @@
+{
+  "titolo": "Calendario del club",
+  "intro": "Inserisci il codice che ti ha dato il club.",
+  "campo_label": "Codice",
+  "campo_placeholder": "XX-XXXX-XXXX",
+  "apri": "Apri il calendario",
+  "cambia_codice": "Cambia codice",
+  "codice_non_riconosciuto": "Codice non riconosciuto.",
+  "troppi_tentativi": "Hai provato troppe volte. Riprova fra un po'.",
+  "errore_lettura": "Non siamo riusciti a leggere il calendario.",
+  "riprova": "Riprova",
+  "caricamento": "Caricamento in corso…",
+  "mese_precedente": "Mese precedente",
+  "mese_successivo": "Mese successivo",
+  "stagione": "Stagione {{nome}}",
+  "mese_vuoto": "In questo mese il club non ha pubblicato attività.",
+  "nessun_mese": "Il club non ha ancora pubblicato attività.",
+  "nota": "Nota"
+}

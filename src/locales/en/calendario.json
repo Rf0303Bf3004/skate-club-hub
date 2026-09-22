@@ -1,0 +1,19 @@
+{
+  "titolo": "Club calendar",
+  "intro": "Enter the code the club gave you.",
+  "campo_label": "Code",
+  "campo_placeholder": "XX-XXXX-XXXX",
+  "apri": "Open the calendar",
+  "cambia_codice": "Change code",
+  "codice_non_riconosciuto": "Code not recognised.",
+  "troppi_tentativi": "Too many attempts. Please try again in a while.",
+  "errore_lettura": "We could not load the calendar.",
+  "riprova": "Try again",
+  "caricamento": "Loading…",
+  "mese_precedente": "Previous month",
+  "mese_successivo": "Next month",
+  "stagione": "Season {{nome}}",
+  "mese_vuoto": "The club has not published any activity for this month.",
+  "nessun_mese": "The club has not published any activity yet.",
+  "nota": "Note"
+}
