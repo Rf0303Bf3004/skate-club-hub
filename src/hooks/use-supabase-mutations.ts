@@ -358,6 +358,7 @@ export function use_upsert_istruttore() {
         ...(data.data_nascita !== undefined ? { data_nascita: data.data_nascita } : {}),
         ...(data.data_inizio_attivita !== undefined ? { data_inizio_attivita: data.data_inizio_attivita } : {}),
         ...(data.gs_termine_esame !== undefined ? { gs_termine_esame: data.gs_termine_esame } : {}),
+        ...(data.paese_iso !== undefined ? { paese_iso: data.paese_iso } : {}),
       };
 
       if (data.id) {

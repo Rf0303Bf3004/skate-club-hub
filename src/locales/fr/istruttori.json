@@ -35,7 +35,15 @@
     "restano_giorni_one": "il reste {{count}} jour",
     "restano_giorni_other": "il reste {{count}} jours",
     "scaduto_da_giorni_one": "échu depuis {{count}} jour",
-    "scaduto_da_giorni_other": "échu depuis {{count}} jours"
+    "scaduto_da_giorni_other": "échu depuis {{count}} jours",
+    "paese": "Pays",
+    "paese_non_dichiarato": "Non déclaré",
+    "referto_errore": "Impossible de lire la situation G+S.",
+    "referto_in_corso": "Lecture de la situation G+S en cours…",
+    "referto_assente": "Cette personne ne figure pas dans le rapport G+S.",
+    "riprova": "Réessayer",
+    "riepilogo_fuori_regola_one": "{{count}} membre du staff non conforme G+S",
+    "riepilogo_fuori_regola_other": "{{count}} membres du staff non conformes G+S"
   },
   "badge": {},
   "lista": {},

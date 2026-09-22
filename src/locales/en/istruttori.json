@@ -35,7 +35,15 @@
     "restano_giorni_one": "{{count}} day left",
     "restano_giorni_other": "{{count}} days left",
     "scaduto_da_giorni_one": "overdue by {{count}} day",
-    "scaduto_da_giorni_other": "overdue by {{count}} days"
+    "scaduto_da_giorni_other": "overdue by {{count}} days",
+    "paese": "Country",
+    "paese_non_dichiarato": "Not declared",
+    "referto_errore": "The G+S status could not be loaded.",
+    "referto_in_corso": "Loading the G+S status…",
+    "referto_assente": "This person is not in the G+S report.",
+    "riprova": "Try again",
+    "riepilogo_fuori_regola_one": "{{count}} staff member not compliant with G+S",
+    "riepilogo_fuori_regola_other": "{{count}} staff members not compliant with G+S"
   },
   "badge": {},
   "lista": {},

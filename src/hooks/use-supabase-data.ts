@@ -173,7 +173,7 @@ export function use_istruttori() {
         // contatti personali (email, telefono) sono hidden via column-level REVOKE; vengono recuperati
         // separatamente con le RPC get_istruttori_costi / get_istruttori_contatti e fusi solo se
         // l'utente ha i ruoli autorizzati (finance/admin o l'istruttore stesso).
-        supabase.from("istruttori").select("id,club_id,nome,cognome,colore,attivo,created_at,linked_atleta_id,livello_istruttore,stato_staff,note,tipo_contratto,specialita,user_id,foto_url,tag_nfc,codice_istruttore,qualifica_gs,numero_gs,gs_valido_fino,data_nascita,data_inizio_attivita,gs_termine_esame").eq("club_id", get_current_club_id()).order("cognome"),
+        supabase.from("istruttori").select("id,club_id,nome,cognome,colore,attivo,created_at,linked_atleta_id,livello_istruttore,stato_staff,note,tipo_contratto,specialita,user_id,foto_url,tag_nfc,codice_istruttore,qualifica_gs,numero_gs,gs_valido_fino,data_nascita,data_inizio_attivita,gs_termine_esame,paese_iso").eq("club_id", get_current_club_id()).order("cognome"),
         supabase.from("disponibilita_istruttori").select("*"),
         supabase.rpc("get_istruttori_costi", { p_club_id: get_current_club_id() } as any),
         supabase.rpc("get_istruttori_contatti" as any, { p_club_id: get_current_club_id() } as any),
@@ -219,6 +219,34 @@ export function use_istruttori() {
     },
   });
 }
+
+/**
+ * Referto Gioventù e Sport: la regola vive nella funzione SQL `referto_gs`,
+ * qui si legge soltanto quello che risponde. Un errore viene propagato:
+ * il punto d'uso deve distinguere "nessuna segnalazione" da "non lo so".
+ */
+export type RigaRefertoGs = {
+  esito: "OK" | "ATTENZIONE" | "DA SISTEMARE" | string;
+  chi: string;
+  ruolo: string;
+  qualifica: string;
+  motivo: string;
+  entro: string | null;
+};
+
+export function use_referto_gs() {
+  return useQuery({
+    enabled: !!get_current_club_id(),
+    queryKey: ["referto_gs", get_current_club_id()],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("referto_gs", { p_club: get_current_club_id() } as any);
+      if (error) throw error;
+      return (data ?? []) as RigaRefertoGs[];
+    },
+  });
+}
+
+
 
 // ─── Corsi ─────────────────────────────────────────────────
 export function use_corsi() {

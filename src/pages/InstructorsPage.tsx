@@ -11,7 +11,10 @@ import {
   use_lezioni_private,
   use_corsi,
   use_campi,
+  use_referto_gs,
+  type RigaRefertoGs,
 } from "@/hooks/use-supabase-data";
+import { PAESI } from "@/lib/territori";
 import { use_upsert_istruttore, use_save_disponibilita, use_elimina_istruttore } from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,12 +37,9 @@ import DateInput from "@/components/forms/DateInput";
 import { format_data_completa, format_data } from "@/lib/format-data";
 
 import {
-  segnalazioni_gs,
-  gravita_massima,
   termine_esame_gs,
   giorni_al_termine_gs,
   type QualificaGs,
-  type SegnalazioneGs,
 } from "@/lib/istruttore-gs";
 import { SPECIALIZZAZIONI_SUGGERITE, chiave_specializzazione } from "@/lib/istruttore-specialita";
 
@@ -199,6 +199,8 @@ const IstruttoreModal: React.FC<{
     data_nascita: istruttore?.data_nascita || "",
     data_inizio_attivita: istruttore?.data_inizio_attivita || "",
     gs_termine_esame: istruttore?.gs_termine_esame || "",
+    // Vuoto = paese non dichiarato: non va mai interpretato come Svizzera.
+    paese_iso: istruttore?.paese_iso || "",
   });
 
   const [confirm_delete, set_confirm_delete] = useState(false);
@@ -264,6 +266,7 @@ const IstruttoreModal: React.FC<{
       data_nascita: form.data_nascita || null,
       data_inizio_attivita: form.data_inizio_attivita || null,
       gs_termine_esame: form.qualifica_gs === "monitore_gs" ? null : form.gs_termine_esame || null,
+      paese_iso: form.paese_iso || null,
     });
   };
 
@@ -358,6 +361,20 @@ const IstruttoreModal: React.FC<{
           {/* Gioventù e Sport (G+S): qualifica unica fra tre alternative */}
           <div className="rounded-lg border border-border p-3 space-y-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("gs.titolo")}</p>
+            <Field label={t("gs.paese")}>
+              <select
+                value={form.paese_iso}
+                onChange={(e) => set_val("paese_iso", e.target.value)}
+                className={input_cls}
+              >
+                <option value="">{t("gs.paese_non_dichiarato")}</option>
+                {PAESI.map((p) => (
+                  <option key={p.code} value={p.code}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
             <Field label={t("gs.qualifica")}>
               <div className="space-y-1.5">
                 {(["nessuna", "monitore_gs", "coach_1418"] as QualificaGs[]).map((q) => (
@@ -1651,6 +1668,19 @@ const InstructorsPage: React.FC = () => {
   const navigate = useNavigate();
   const { puo_gestire_sportivo, puo_creare_accessi } = usePermessiAzione();
   const { data: istruttori = [], isLoading } = use_istruttori();
+  // Referto G+S: la regola sta nel database. Un errore non diventa mai "tutti in regola".
+  const referto_gs_query = use_referto_gs();
+  const referto_gs_by_chi = useMemo(() => {
+    const m = new Map<string, RigaRefertoGs>();
+    (referto_gs_query.data ?? []).forEach((r) => m.set((r.chi || "").trim().toLowerCase(), r));
+    return m;
+  }, [referto_gs_query.data]);
+  const riga_referto_gs = useCallback(
+    (i: any): RigaRefertoGs | undefined =>
+      referto_gs_by_chi.get(`${i?.cognome || ""} ${i?.nome || ""}`.trim().toLowerCase()),
+    [referto_gs_by_chi]
+  );
+  const gs_fuori_regola = (referto_gs_query.data ?? []).filter((r) => r.esito !== "OK").length;
   const { data: monitori_atleti = [] } = use_atleti_monitori();
   const { data: atleti_all = [] } = use_atleti();
   const { data: lezioni = [] } = use_lezioni_private();
@@ -1982,17 +2012,30 @@ const InstructorsPage: React.FC = () => {
               {/* Riquadro Gioventù e Sport: qualifica, numero, validità e segnalazioni */}
               {(() => {
                 const qualifica = (selected.qualifica_gs || "nessuna") as QualificaGs;
-                const liv_sel = selected.livello_istruttore || "istruttore";
-                const segnalazioni = segnalazioni_gs(selected, ti);
+                const riga_gs = riga_referto_gs(selected);
                 return (
                   <div className="bg-card rounded-xl shadow-card p-6 space-y-3 max-w-lg">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                       {ti("gs.titolo")}
                     </p>
                     <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">{ti("gs.paese")}</span>
+                      <span className="text-foreground">
+                        {selected.paese_iso
+                          ? (PAESI.find((p) => p.code === selected.paese_iso)?.label ?? selected.paese_iso)
+                          : ti("gs.paese_non_dichiarato")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{ti("gs.qualifica")}</span>
                       <span className="text-foreground">{ti(`gs.q_${qualifica}`)}</span>
                     </div>
+                    {selected.data_inizio_attivita && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{ti("gs.inizio_attivita")}</span>
+                        <span className="text-foreground">{format_data_completa(selected.data_inizio_attivita)}</span>
+                      </div>
+                    )}
                     {/* Con qualifica 'nessuna' numero e validità non esistono: non si mostrano affatto */}
                     {qualifica !== "nessuna" && (
                       <>
@@ -2030,28 +2073,29 @@ const InstructorsPage: React.FC = () => {
                       );
                     })()}
 
+                    {/* Esito calcolato dal database: qui non si deduce nulla. */}
                     <div className="pt-2 border-t border-border space-y-1.5">
-                      {segnalazioni.length === 0 ? (
-                        qualifica === "nessuna" && liv_sel === "aiuto_monitrice" ? (
-                          <p className="text-sm text-muted-foreground">{ti("gs.non_richiesta")}</p>
-                        ) : (
-                          <p className="text-sm text-emerald-700 dark:text-emerald-300">{ti("gs.in_regola")}</p>
-                        )
-                      ) : (
-                        segnalazioni.map((s: SegnalazioneGs, idx: number) => (
-                          <p
-                            key={idx}
-                            className={`text-sm ${
-                              s.gravita === "rosso"
-                                ? "text-destructive"
-                                : s.gravita === "ambra"
-                                  ? "text-amber-700 dark:text-amber-300"
-                                  : "text-muted-foreground"
-                            }`}
-                          >
-                            ● {s.testo}
-                          </p>
-                        ))
+                      {referto_gs_query.isError ? (
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm text-destructive">{ti("gs.referto_errore")}</p>
+                          <Button size="sm" variant="outline" onClick={() => referto_gs_query.refetch()}>
+                            {ti("gs.riprova")}
+                          </Button>
+                        </div>
+                      ) : !referto_gs_query.isSuccess ? (
+                        <p className="text-sm text-muted-foreground">{ti("gs.referto_in_corso")}</p>
+                      ) : !riga_gs ? (
+                        <p className="text-sm text-muted-foreground">{ti("gs.referto_assente")}</p>
+                      ) : riga_gs.esito === "OK" ? null : (
+                        <p
+                          className={`text-sm ${
+                            riga_gs.esito === "DA SISTEMARE"
+                              ? "text-destructive"
+                              : "text-amber-700 dark:text-amber-300"
+                          }`}
+                        >
+                          ● {riga_gs.motivo}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -2237,6 +2281,20 @@ const InstructorsPage: React.FC = () => {
           ))}
         </div>
 
+        {/* Riepilogo G+S: una riga sola. Un errore non diventa mai "tutti in regola". */}
+        {referto_gs_query.isError ? (
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <span>{ti("gs.referto_errore")}</span>
+            <Button size="sm" variant="outline" onClick={() => referto_gs_query.refetch()}>
+              {ti("gs.riprova")}
+            </Button>
+          </div>
+        ) : referto_gs_query.isSuccess && gs_fuori_regola > 0 ? (
+          <div className="rounded-lg border border-amber-300 bg-amber-100 px-3 py-2 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
+            {ti("gs.riepilogo_fuori_regola", { count: gs_fuori_regola })}
+          </div>
+        ) : null}
+
         <SearchableListLayout
           search={search_istruttori}
           on_search_change={set_search_istruttori}
@@ -2328,22 +2386,18 @@ const InstructorsPage: React.FC = () => {
                       </span>
                     </div>
                   </div>
-                  {/* Segnalazione G+S: rossa se grave, altrimenti ambra; testo della prima segnalazione */}
+                  {/* Esito G+S dal referto del database: rosso se DA SISTEMARE, ambra se ATTENZIONE */}
                   {(() => {
-                    const segn = segnalazioni_gs(i, ti);
-                    const gravita = gravita_massima(segn);
-                    if (!gravita) return null;
-                    const prima = segn.find((s) => s.gravita === gravita) ?? segn[0];
+                    const riga = riga_referto_gs(i);
+                    if (!riga || riga.esito === "OK") return null;
                     const cls =
-                      gravita === "rosso"
+                      riga.esito === "DA SISTEMARE"
                         ? "bg-destructive/10 text-destructive border-destructive/30"
-                        : gravita === "ambra"
-                          ? "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-700"
-                          : "bg-muted text-muted-foreground border-border";
+                        : "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-700";
                     return (
                       <div className={`mt-3 flex items-start gap-2 rounded-lg border px-2.5 py-1.5 text-xs ${cls}`}>
                         <span className="leading-4">●</span>
-                        <span className="leading-4">{prima.testo}</span>
+                        <span className="leading-4">{riga.motivo}</span>
                       </div>
                     );
                   })()}

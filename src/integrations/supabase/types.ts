@@ -5156,6 +5156,7 @@ export type Database = {
           nome: string
           note: string | null
           numero_gs: string | null
+          paese_iso: string | null
           qualifica_gs: string
           specialita: string | null
           stato_staff: Database["public"]["Enums"]["stato_staff_enum"]
@@ -5188,6 +5189,7 @@ export type Database = {
           nome?: string
           note?: string | null
           numero_gs?: string | null
+          paese_iso?: string | null
           qualifica_gs?: string
           specialita?: string | null
           stato_staff?: Database["public"]["Enums"]["stato_staff_enum"]
@@ -5220,6 +5222,7 @@ export type Database = {
           nome?: string
           note?: string | null
           numero_gs?: string | null
+          paese_iso?: string | null
           qualifica_gs?: string
           specialita?: string | null
           stato_staff?: Database["public"]["Enums"]["stato_staff_enum"]
@@ -10513,6 +10516,17 @@ export type Database = {
       ragione_sociale_fatturazione: {
         Args: { p_atleta: string; p_override?: string }
         Returns: string
+      }
+      referto_gs: {
+        Args: { p_club?: string }
+        Returns: {
+          chi: string
+          entro: string
+          esito: string
+          motivo: string
+          qualifica: string
+          ruolo: string
+        }[]
       }
       referto_iscrizioni: {
         Args: { p_club_id?: string }
