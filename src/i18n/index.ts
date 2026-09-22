@@ -19,6 +19,7 @@ import it_portale from '@/locales/it/portale.json';
 import it_corsi from '@/locales/it/corsi.json';
 import it_istruttori from '@/locales/it/istruttori.json';
 import it_planning from '@/locales/it/planning.json';
+import it_calendario from '@/locales/it/calendario.json';
 
 import fr_common from '@/locales/fr/common.json';
 import fr_atleti from '@/locales/fr/atleti.json';
@@ -34,6 +35,7 @@ import fr_errors from '@/locales/fr/errors.json';
 import fr_portale from '@/locales/fr/portale.json';
 import fr_istruttori from '@/locales/fr/istruttori.json';
 import fr_planning from '@/locales/fr/planning.json';
+import fr_calendario from '@/locales/fr/calendario.json';
 
 import de_common from '@/locales/de/common.json';
 import de_atleti from '@/locales/de/atleti.json';
@@ -49,6 +51,7 @@ import de_errors from '@/locales/de/errors.json';
 import de_portale from '@/locales/de/portale.json';
 import de_istruttori from '@/locales/de/istruttori.json';
 import de_planning from '@/locales/de/planning.json';
+import de_calendario from '@/locales/de/calendario.json';
 
 import en_common from '@/locales/en/common.json';
 import en_atleti from '@/locales/en/atleti.json';
@@ -64,6 +67,7 @@ import en_errors from '@/locales/en/errors.json';
 import en_portale from '@/locales/en/portale.json';
 import en_istruttori from '@/locales/en/istruttori.json';
 import en_planning from '@/locales/en/planning.json';
+import en_calendario from '@/locales/en/calendario.json';
 
 export const NAMESPACES = [
   'common',
@@ -83,6 +87,7 @@ export const NAMESPACES = [
   'corsi',
   'istruttori',
   'planning',
+  'calendario',
 ] as const;
 
 export const SUPPORTED_LOCALES = ['it', 'de', 'fr', 'rm', 'en'] as const;
@@ -94,25 +99,25 @@ const resources = {
     onboarding: it_onboarding, settings: it_settings, communications: it_communications,
     events: it_events, mobile: it_mobile, validation: it_validation, errors: it_errors,
     segreteria: it_segreteria, superadmin: it_superadmin, portale: it_portale,
-    corsi: it_corsi, istruttori: it_istruttori, planning: it_planning,
+    corsi: it_corsi, istruttori: it_istruttori, planning: it_planning, calendario: it_calendario,
   },
   fr: {
     common: fr_common, atleti: fr_atleti, fatture: fr_fatture, dashboard: fr_dashboard,
     onboarding: fr_onboarding, settings: fr_settings, communications: fr_communications,
     events: fr_events, mobile: fr_mobile, validation: fr_validation, errors: fr_errors,
-    portale: fr_portale, istruttori: fr_istruttori, planning: fr_planning,
+    portale: fr_portale, istruttori: fr_istruttori, planning: fr_planning, calendario: fr_calendario,
   },
   de: {
     common: de_common, atleti: de_atleti, fatture: de_fatture, dashboard: de_dashboard,
     onboarding: de_onboarding, settings: de_settings, communications: de_communications,
     events: de_events, mobile: de_mobile, validation: de_validation, errors: de_errors,
-    portale: de_portale, istruttori: de_istruttori, planning: de_planning,
+    portale: de_portale, istruttori: de_istruttori, planning: de_planning, calendario: de_calendario,
   },
   en: {
     common: en_common, atleti: en_atleti, fatture: en_fatture, dashboard: en_dashboard,
     onboarding: en_onboarding, settings: en_settings, communications: en_communications,
     events: en_events, mobile: en_mobile, validation: en_validation, errors: en_errors,
-    portale: en_portale, istruttori: en_istruttori, planning: en_planning,
+    portale: en_portale, istruttori: en_istruttori, planning: en_planning, calendario: en_calendario,
   },
   // RM mantenuto come slot per retrocompatibilità; fallback a IT finché non popolato.
   rm: {},

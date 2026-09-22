@@ -74,6 +74,7 @@ import AssenzeStaffPage from "@/pages/AssenzeStaffPage";
 
 import ConvenzionePubblicaPage from "@/pages/ConvenzionePubblicaPage";
 import CampoOspitePubblicoPage from "@/pages/CampoOspitePubblicoPage";
+import CalendarioPubblicoPage from "@/pages/CalendarioPubblicoPage";
 import PortaleLoginPage from "@/pages/portale/PortaleLoginPage";
 import PortaleLayout from "@/pages/portale/PortaleLayout";
 import PortaleHomePage from "@/pages/portale/PortaleHomePage";
@@ -254,6 +255,16 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
       <BrowserRouter>
         <Routes>
           <Route path="/campo-ospite/:token" element={<CampoOspitePubblicoPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
+  if (path === "/calendario") {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/calendario" element={<CalendarioPubblicoPage />} />
         </Routes>
       </BrowserRouter>
     );
