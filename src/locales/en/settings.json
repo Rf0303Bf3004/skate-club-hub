@@ -26,7 +26,8 @@
       "planning_giornaliero": "📅 Daily planning (Activity grid)",
       "ghiaccio_planning": "Activities and Planning",
       "auguri_compleanno": "🎂 Birthday wishes",
-      "codice_pista": "Rink tablet code"
+      "codice_pista": "Rink tablet code",
+      "calendario_pubblico": "Public calendar"
     },
     "fields": {
       "auguri_compleanno_attivo": "Birthday wishes to families",
@@ -56,6 +57,23 @@
       "errore_lettura": "Could not read the hourly costs: please try again.",
       "nessuna_stagione": "No season configured: the hourly cost belongs to a season.",
       "caricamento": "Loading the hourly cost…"
+    },
+    "calendario_pubblico": {
+      "spiegazione": "An address with the club name: it opens with no code and no login, even without the app.",
+      "cosa_si_vede": "It shows times, activities and rink. No athlete names and no instructor names.",
+      "interruttore": "Public calendar on",
+      "spento_nota": "The calendar is off: anyone opening the address reads that it is not available.",
+      "senza_indirizzo": "This club does not have a public address yet.",
+      "copia": "Copy the address",
+      "copiato": "Address copied",
+      "copia_fallita": "We could not copy the address.",
+      "acceso": "Public calendar turned on",
+      "spento": "Public calendar turned off",
+      "errore_lettura": "We could not read the public address. Please try again shortly.",
+      "caricamento": "Reading the address…",
+      "qr_alt": "QR code of the public calendar address",
+      "qr_istruzione": "Print the QR code and put it up: anyone who scans it opens the calendar straight away.",
+      "differenza_pista": "The rink tablet QR code is a key and must not be shared; this one can be put up."
     }
   },
   "seasons": {

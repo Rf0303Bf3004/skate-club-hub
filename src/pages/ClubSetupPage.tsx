@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { use_stagione_attiva } from "@/lib/stagione-attiva";
 import { use_club, use_setup_club, use_stagioni, use_atleti, use_istruttori } from "@/hooks/use-supabase-data";
 import CodicePistaSection from "@/components/setup/CodicePistaSection";
+import CalendarioPubblicoSection from "@/components/setup/CalendarioPubblicoSection";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -611,6 +612,7 @@ const ClubSetupPage: React.FC = () => {
       { id: "stagione", label: t("club.sezioni.stagione") },
       { id: "banca", label: t("club.sezioni.dati_bancari") },
       { id: "pista", label: t("club.sezioni.codice_pista") },
+      { id: "calendario_pubblico", label: t("club.sezioni.calendario_pubblico") },
     ],
     automatismi: [
       { id: "medagliere", label: t("club.sezioni.medagliere") },
@@ -843,6 +845,16 @@ const ClubSetupPage: React.FC = () => {
         <SetupSection id="pista" titolo={t("club.sezioni.codice_pista")}>
           <CodicePistaSection
             codice={(club as any)?.codice_pista}
+            in_caricamento={loading_club}
+            errore={errore_club}
+          />
+        </SetupSection>
+
+        {/* Indirizzo pubblico del calendario */}
+        <SetupSection id="calendario_pubblico" titolo={t("club.sezioni.calendario_pubblico")}>
+          <CalendarioPubblicoSection
+            slug={(club as any)?.slug_pubblico}
+            attivo={(club as any)?.calendario_pubblico_attivo}
             in_caricamento={loading_club}
             errore={errore_club}
           />

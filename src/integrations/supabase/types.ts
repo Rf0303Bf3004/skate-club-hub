@@ -1379,6 +1379,7 @@ export type Database = {
           auguri_compleanno_last_run_date: string | null
           auguri_compleanno_orario_invio: number
           banner_onboarding_chiuso: boolean
+          calendario_pubblico_attivo: boolean
           cantone: string | null
           cap: string | null
           citta: string | null
@@ -1442,6 +1443,7 @@ export type Database = {
           auguri_compleanno_last_run_date?: string | null
           auguri_compleanno_orario_invio?: number
           banner_onboarding_chiuso?: boolean
+          calendario_pubblico_attivo?: boolean
           cantone?: string | null
           cap?: string | null
           citta?: string | null
@@ -1505,6 +1507,7 @@ export type Database = {
           auguri_compleanno_last_run_date?: string | null
           auguri_compleanno_orario_invio?: number
           banner_onboarding_chiuso?: boolean
+          calendario_pubblico_attivo?: boolean
           cantone?: string | null
           cap?: string | null
           citta?: string | null
@@ -9885,6 +9888,28 @@ export type Database = {
           stagione_da: string
         }[]
       }
+      calendario_pubblico_mesi_slug: {
+        Args: { p_slug: string }
+        Returns: {
+          club: string
+          mese: string
+          sessioni: number
+          stagione: string
+          stagione_a: string
+          stagione_da: string
+        }[]
+      }
+      calendario_pubblico_slug: {
+        Args: { p_a?: string; p_da?: string; p_slug: string }
+        Returns: {
+          attivita: string
+          club: string
+          data: string
+          ora_fine: string
+          ora_inizio: string
+          pista: string
+        }[]
+      }
       campo_club_ospitante: { Args: { p_campo: string }; Returns: string }
       cancel_corso_atleta: {
         Args: { p_atleta_id: string; p_corso_id: string }
@@ -10223,6 +10248,7 @@ export type Database = {
         Args: { p_settimana_id: string }
         Returns: number
       }
+      genera_slug_club: { Args: { p_nome: string }; Returns: string }
       get_atleti_impattati_da_planning: {
         Args: { p_planning_corso_id: string }
         Returns: {

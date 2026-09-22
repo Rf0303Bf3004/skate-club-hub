@@ -50,7 +50,8 @@
       "disponibilita_strutture": "Disponibilità strutture settimanale",
       "pulizia_ghiaccio": "🧹 Pulizia Ghiaccio",
       "tipo_pianificazione": "🗓️ Tipo di pianificazione disponibilità",
-      "codice_pista": "Codice del tablet di bordo pista"
+      "codice_pista": "Codice del tablet di bordo pista",
+      "calendario_pubblico": "Calendario pubblico"
     },
     "fields": {
       "logo_placeholder": "Logo",
@@ -174,6 +175,23 @@
       "errore_lettura": "Impossibile leggere i costi orari: riprova.",
       "nessuna_stagione": "Nessuna stagione configurata: il costo orario si lega a una stagione.",
       "caricamento": "Caricamento del costo orario…"
+    },
+    "calendario_pubblico": {
+      "spiegazione": "Un indirizzo con il nome del club: si apre senza codice e senza accesso, anche da chi non ha l'app.",
+      "cosa_si_vede": "Si vedono orari, attività e pista. Nessun nome di atleta e nessun nome di istruttore.",
+      "interruttore": "Calendario pubblico attivo",
+      "spento_nota": "Il calendario è spento: chi apre l'indirizzo legge che non è disponibile.",
+      "senza_indirizzo": "Questo club non ha ancora un indirizzo pubblico.",
+      "copia": "Copia l'indirizzo",
+      "copiato": "Indirizzo copiato",
+      "copia_fallita": "Non siamo riusciti a copiare l'indirizzo.",
+      "acceso": "Calendario pubblico acceso",
+      "spento": "Calendario pubblico spento",
+      "errore_lettura": "Non siamo riusciti a leggere l'indirizzo pubblico. Riprova fra poco.",
+      "caricamento": "Lettura dell'indirizzo…",
+      "qr_alt": "QR dell'indirizzo del calendario pubblico",
+      "qr_istruzione": "Stampa il QR e appendilo: chi lo inquadra apre subito il calendario.",
+      "differenza_pista": "Il QR del tablet di bordo pista è una chiave e non va diffuso; questo invece si può appendere."
     }
   },
   "seasons": {

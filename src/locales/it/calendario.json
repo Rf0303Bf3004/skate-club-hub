@@ -15,5 +15,6 @@
   "stagione": "Stagione {{nome}}",
   "mese_vuoto": "In questo mese il club non ha pubblicato attività.",
   "nessun_mese": "Il club non ha ancora pubblicato attività.",
-  "nota": "Nota"
+  "nota": "Nota",
+  "slug_non_disponibile": "Il calendario di questo club non è disponibile."
 }

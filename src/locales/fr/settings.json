@@ -26,7 +26,8 @@
       "planning_giornaliero": "📅 Planning quotidien (Grille des activités)",
       "ghiaccio_planning": "Activités et planning",
       "auguri_compleanno": "🎂 Vœux d'anniversaire",
-      "codice_pista": "Code de la tablette de bord de piste"
+      "codice_pista": "Code de la tablette de bord de piste",
+      "calendario_pubblico": "Calendrier public"
     },
     "fields": {
       "auguri_compleanno_attivo": "Vœux d'anniversaire aux familles",
@@ -56,6 +57,23 @@
       "errore_lettura": "Impossible de lire les coûts horaires : réessaie.",
       "nessuna_stagione": "Aucune saison configurée : le coût horaire est lié à une saison.",
       "caricamento": "Chargement du coût horaire…"
+    },
+    "calendario_pubblico": {
+      "spiegazione": "Une adresse avec le nom du club : elle s'ouvre sans code et sans connexion, même sans l'application.",
+      "cosa_si_vede": "On y voit les horaires, les activités et la patinoire. Aucun nom d'athlète ni d'entraîneur.",
+      "interruttore": "Calendrier public activé",
+      "spento_nota": "Le calendrier est éteint : qui ouvre l'adresse lit qu'il n'est pas disponible.",
+      "senza_indirizzo": "Ce club n'a pas encore d'adresse publique.",
+      "copia": "Copier l'adresse",
+      "copiato": "Adresse copiée",
+      "copia_fallita": "Nous n'avons pas pu copier l'adresse.",
+      "acceso": "Calendrier public activé",
+      "spento": "Calendrier public désactivé",
+      "errore_lettura": "Nous n'avons pas pu lire l'adresse publique. Réessayez dans un instant.",
+      "caricamento": "Lecture de l'adresse…",
+      "qr_alt": "QR de l'adresse du calendrier public",
+      "qr_istruzione": "Imprimez le QR et affichez-le : en le scannant, on ouvre directement le calendrier.",
+      "differenza_pista": "Le QR de la tablette au bord de la glace est une clé et ne doit pas être diffusé ; celui-ci peut être affiché."
     }
   },
   "seasons": {
