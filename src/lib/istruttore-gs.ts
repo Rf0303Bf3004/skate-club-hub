@@ -24,14 +24,6 @@ export interface IstruttoreGs {
   stato_staff?: string | null;
 }
 
-export interface SegnalazioneGs {
-  gravita: "rosso" | "ambra" | "info";
-  testo: string;
-}
-
-/** Traduttore iniettato: la funzione resta pura e senza dipendenze da React. */
-type Tradurre = (chiave: string, opzioni?: Record<string, unknown>) => string;
-
 /**
  * Il resto delle regole G+S (obbligo, termini, scadenze) vive nella funzione SQL
  * `referto_gs`: qui non si duplica nulla, si conservano solo i tipi condivisi.
