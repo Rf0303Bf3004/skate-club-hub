@@ -1382,6 +1382,7 @@ export type Database = {
           cantone: string | null
           cap: string | null
           citta: string | null
+          codice_calendario: string | null
           codice_fiscale: string | null
           codice_pista: string | null
           colore_primario: string | null
@@ -1444,6 +1445,7 @@ export type Database = {
           cantone?: string | null
           cap?: string | null
           citta?: string | null
+          codice_calendario?: string | null
           codice_fiscale?: string | null
           codice_pista?: string | null
           colore_primario?: string | null
@@ -1506,6 +1508,7 @@ export type Database = {
           cantone?: string | null
           cap?: string | null
           citta?: string | null
+          codice_calendario?: string | null
           codice_fiscale?: string | null
           codice_pista?: string | null
           colore_primario?: string | null
@@ -9860,6 +9863,17 @@ export type Database = {
           secondi_di_attesa: number
         }[]
       }
+      calendario_pubblico: {
+        Args: { p_a?: string; p_codice: string; p_da?: string }
+        Returns: {
+          attivita: string
+          club: string
+          data: string
+          ora_fine: string
+          ora_inizio: string
+          pista: string
+        }[]
+      }
       campo_club_ospitante: { Args: { p_campo: string }; Returns: string }
       cancel_corso_atleta: {
         Args: { p_atleta_id: string; p_corso_id: string }
@@ -10151,6 +10165,7 @@ export type Database = {
       }
       genera_auguri_compleanno: { Args: { p_data?: string }; Returns: number }
       genera_codice_atleta: { Args: never; Returns: string }
+      genera_codice_calendario: { Args: never; Returns: string }
       genera_codice_istruttore: { Args: never; Returns: string }
       genera_codice_pista: { Args: never; Returns: string }
       genera_codice_secondo_genitore: {
@@ -10482,6 +10497,19 @@ export type Database = {
         Args: { p_livello_target: string; p_test_id: string }
         Returns: number
       }
+      programma_atleta_pubblico: {
+        Args: { p_a?: string; p_codice: string; p_da?: string }
+        Returns: {
+          atleta: string
+          attivita: string
+          club: string
+          data: string
+          nota: string
+          ora_fine: string
+          ora_inizio: string
+          pista: string
+        }[]
+      }
       pulisci_errori_applicativi: { Args: never; Returns: number }
       pulisci_tentativi_accesso: { Args: never; Returns: number }
       puo_cancellare_atleta: {
@@ -10523,6 +10551,7 @@ export type Database = {
           chi: string
           entro: string
           esito: string
+          id: string
           motivo: string
           qualifica: string
           ruolo: string
@@ -10642,6 +10671,10 @@ export type Database = {
           p_stagione: string
         }
         Returns: undefined
+      }
+      rigenera_codice_calendario: {
+        Args: { p_club_id: string }
+        Returns: string
       }
       rigenera_codice_pista: { Args: { p_club_id: string }; Returns: string }
       righe_fatturabili_gare: {
