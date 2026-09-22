@@ -1955,7 +1955,7 @@ const InstructorsPage: React.FC = () => {
             </div>
           )}
 
-          <Tabs defaultValue="info">
+          <Tabs defaultValue={new URLSearchParams(window.location.search).get("tab") === "compenso" ? "compenso" : "info"}>
             <TabsList>
               <TabsTrigger value="info">{ti("dettaglio.tab_info")}</TabsTrigger>
               <TabsTrigger value="compenso">{ti("dettaglio.tab_compenso")}</TabsTrigger>
@@ -2412,7 +2412,7 @@ const InstructorsPage: React.FC = () => {
                         set_selected_monitore_id(linked_atleta.id);
                       }}
                     >
-                      {ti("monitore.vedi_ore_compenso") || "Ore pista e compenso"}
+                      {ti("monitore.vedi_ore_compenso")}
                     </Button>
                   )}
                 </div>

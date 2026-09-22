@@ -140,7 +140,8 @@
     "placeholder_ore": "es. 12.5",
     "note": "Note",
     "note_placeholder": "Note opzionali...",
-    "salva_ore": "💾 Salva ore"
+    "salva_ore": "💾 Salva ore",
+    "vedi_ore_compenso": "Vedi ore e compenso"
   },
   "dettaglio": {
     "vedi_scheda_atleta": "Vedi scheda atleta →",

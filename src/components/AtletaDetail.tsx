@@ -50,6 +50,7 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import CompensoStaffModal from "@/components/CompensoStaffModal";
 import FotoAtleta from "@/components/common/FotoAtleta";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import { useHasPermesso } from "@/hooks/usePermessi";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import ProgrammiMusicaliSection from "@/components/atleti/ProgrammiMusicaliSection";
 
@@ -279,6 +280,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const { session } = useAuth();
   const query_client = useQueryClient();
   const { puo_gestire_sportivo } = usePermessiAzione();
+  const puo_vedere_compensi = useHasPermesso("costi_istruttori");
   const can_verificare = puo_gestire_sportivo;
 
   // Nome utente che ha verificato (se presente)
@@ -449,6 +451,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const { data: fatture = [] } = use_fatture();
   const { data: lezioni = [] } = use_lezioni_private();
   const { data: istruttori = [] } = use_istruttori();
+  const istruttore_collegato = istruttori.find((i: any) => i.linked_atleta_id === a.id);
   const { data: adesioni = [] } = use_adesioni_atleta();
   const atleta_attivo = a.attivo !== false;
 
@@ -1389,6 +1392,17 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   <p className="text-[11px] text-muted-foreground">
                     {td("detail.compenso_hint")}
                   </p>
+                )}
+                {istruttore_collegato && puo_vedere_compensi && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => navigate(`/istruttori?id=${istruttore_collegato.id}&tab=compenso`)}
+                  >
+                    {td("detail.vedi_ore_compenso")}
+                  </Button>
                 )}
               </div>
             </div>
