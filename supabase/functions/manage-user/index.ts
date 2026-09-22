@@ -55,7 +55,13 @@ Deno.serve(async (req) => {
       .eq("club_id", club_id)
       .maybeSingle();
     if (c_err) return json({ error: "lookup_failed", detail: c_err.message }, 500);
-    if (!caller || !ALLOWED_CALLER_ROLES.includes(caller.ruolo)) {
+    // Appartenenza al club: requisito minimo per qualunque azione.
+    if (!caller) return json({ error: "forbidden" }, 403);
+    // Le azioni che creano/modificano/eliminano account restano riservate.
+    // La sola lettura delle email degli account del club è consentita a tutti
+    // i membri del club (la pagina Istruttori la usa per mostrare il legame
+    // scheda ↔ accesso) e non esce mai dal club del chiamante.
+    if (action !== "list_auth_info" && !ALLOWED_CALLER_ROLES.includes(caller.ruolo)) {
       return json({ error: "forbidden" }, 403);
     }
 
