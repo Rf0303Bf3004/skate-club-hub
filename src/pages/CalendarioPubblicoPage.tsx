@@ -441,7 +441,7 @@ const CalendarioPubblicoPage: React.FC = () => {
           </Card>
         ) : in_corso ? (
           <p className="py-8 text-center text-sm text-muted-foreground">{t("caricamento")}</p>
-        ) : mesi !== null && mesi.length === 0 ? (
+        ) : tipo !== "atleta" && mesi !== null && mesi.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">{t("nessun_mese")}</p>
         ) : per_giorno.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">{t("mese_vuoto")}</p>
