@@ -226,6 +226,7 @@ export function use_istruttori() {
  * il punto d'uso deve distinguere "nessuna segnalazione" da "non lo so".
  */
 export type RigaRefertoGs = {
+  id: string;
   esito: "OK" | "ATTENZIONE" | "DA SISTEMARE" | string;
   chi: string;
   ruolo: string;
