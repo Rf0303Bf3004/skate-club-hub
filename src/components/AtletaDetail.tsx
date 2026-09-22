@@ -1399,7 +1399,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                     variant="outline"
                     size="sm"
                     className="w-full"
-                    onClick={() => navigate(`/istruttori?id=${istruttore_collegato.id}&tab=compenso`)}
+                    onClick={() => navigate(`/istruttori?monitore=${a.id}`)}
                   >
                     {td("detail.vedi_ore_compenso")}
                   </Button>

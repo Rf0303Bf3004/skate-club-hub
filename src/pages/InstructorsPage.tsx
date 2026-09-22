@@ -1796,13 +1796,19 @@ const InstructorsPage: React.FC = () => {
   const [id_url_usato, set_id_url_usato] = useState(false);
   useEffect(() => {
     if (id_url_usato || selected_id) return;
+    const monitore_url = new URLSearchParams(window.location.search).get("monitore");
+    if (monitore_url && monitori_atleti.some((atleta: any) => atleta.id === monitore_url)) {
+      set_id_url_usato(true);
+      set_selected_monitore_id(monitore_url);
+      return;
+    }
     const id_url = new URLSearchParams(window.location.search).get("id");
     if (!id_url) return;
     const trovato = istruttori.find((i: any) => i.id === id_url);
     if (!trovato) return;
     set_id_url_usato(true);
     open_detail(trovato);
-  }, [istruttori, id_url_usato, selected_id]);
+  }, [istruttori, monitori_atleti, id_url_usato, selected_id]);
 
   const add_slot = (giorno: string) => {
     set_disp_local((prev) => ({
@@ -1955,7 +1961,7 @@ const InstructorsPage: React.FC = () => {
             </div>
           )}
 
-          <Tabs defaultValue={new URLSearchParams(window.location.search).get("tab") === "compenso" ? "compenso" : "info"}>
+          <Tabs defaultValue="info">
             <TabsList>
               <TabsTrigger value="info">{ti("dettaglio.tab_info")}</TabsTrigger>
               <TabsTrigger value="compenso">{ti("dettaglio.tab_compenso")}</TabsTrigger>
