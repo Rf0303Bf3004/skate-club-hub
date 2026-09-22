@@ -96,7 +96,9 @@ function iso_giorno(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-const CLASSI_LUOGO = ["bg-primary", "bg-accent"] as const;
+// Ghiaccio: barretta piena, blu freddo. Palestra: barretta vuota, solo contorno, arancione.
+// Forma e colore diversi: distinguibili anche da chi confonde i colori, su tema chiaro e scuro.
+const CLASSI_LUOGO = ["bg-blue-500", "border-2 border-orange-500 bg-background"] as const;
 
 const CalendarioPubblicoPage: React.FC = () => {
   const { t } = useTranslation("calendario");
@@ -546,7 +548,7 @@ const CalendarioPubblicoPage: React.FC = () => {
                           {lista.slice(0, 2).map((r, riga_indice) => (
                             <span
                               key={`${data}-${riga_indice}`}
-                              className={cn("h-1.5 w-3 max-w-[30%] rounded-full", classe_luogo.get(r.pista ?? "__senza_luogo"))}
+                              className={cn("h-2 w-3.5 max-w-[30%] shrink-0 rounded-full", classe_luogo.get(r.pista ?? "__senza_luogo"))}
                             />
                           ))}
                           {lista.length > 2 && <span className="text-[10px] font-medium leading-none text-muted-foreground">+{lista.length - 2}</span>}
