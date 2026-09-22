@@ -16,5 +16,10 @@
   "mese_vuoto": "In questo mese il club non ha pubblicato attività.",
   "nessun_mese": "Il club non ha ancora pubblicato attività.",
   "nota": "Nota",
-  "slug_non_disponibile": "Il calendario di questo club non è disponibile."
+  "slug_non_disponibile": "Il calendario di questo club non è disponibile.",
+  "apri_giorno_one": "{{data}}, {{count}} attività",
+  "apri_giorno_other": "{{data}}, {{count}} attività",
+  "giorno_vuoto": "In questo giorno non ci sono attività pubblicate.",
+  "legenda_luoghi": "Legenda dei luoghi",
+  "luogo_non_indicato": "Luogo non indicato"
 }

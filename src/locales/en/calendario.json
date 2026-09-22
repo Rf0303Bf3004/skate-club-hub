@@ -16,5 +16,10 @@
   "mese_vuoto": "The club has not published any activity for this month.",
   "nessun_mese": "The club has not published any activity yet.",
   "nota": "Note",
-  "slug_non_disponibile": "This club's calendar is not available."
+  "slug_non_disponibile": "This club's calendar is not available.",
+  "apri_giorno_one": "{{data}}, {{count}} activity",
+  "apri_giorno_other": "{{data}}, {{count}} activities",
+  "giorno_vuoto": "There are no published activities on this day.",
+  "legenda_luoghi": "Location key",
+  "luogo_non_indicato": "Location not specified"
 }

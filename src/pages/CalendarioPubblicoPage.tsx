@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { format_data_lunga, format_data } from "@/lib/format-data";
+import { cn } from "@/lib/utils";
 
 const CHIAVE_CODICE = "calendario_pubblico_codice";
 
@@ -91,6 +92,12 @@ function ora_breve(v: string | null): string {
   return (v ?? "").slice(0, 5);
 }
 
+function iso_giorno(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+const CLASSI_LUOGO = ["bg-primary", "bg-accent"] as const;
+
 const CalendarioPubblicoPage: React.FC = () => {
   const { t } = useTranslation("calendario");
   const { slug } = useParams<{ slug?: string }>();
@@ -122,6 +129,7 @@ const CalendarioPubblicoPage: React.FC = () => {
   const [righe_errore, set_righe_errore] = useState<TipoErrore | null>(null);
   const [righe_in_corso, set_righe_in_corso] = useState(false);
   const [intestazione, set_intestazione] = useState<{ titolo: string; sotto: string }>({ titolo: "", sotto: "" });
+  const [giorno_selezionato, set_giorno_selezionato] = useState<string | null>(null);
   const [ricarica, set_ricarica] = useState(0);
 
   const esci = useCallback(() => {
@@ -134,6 +142,7 @@ const CalendarioPubblicoPage: React.FC = () => {
     set_righe_errore(null);
     set_errore_codice(null);
     set_intestazione({ titolo: "", sotto: "" });
+    set_giorno_selezionato(null);
     set_mese(iso_mese(new Date()));
   }, []);
 
@@ -339,6 +348,60 @@ const CalendarioPubblicoPage: React.FC = () => {
     return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [righe]);
 
+  const righe_per_giorno = useMemo(() => new Map(per_giorno), [per_giorno]);
+
+  useEffect(() => {
+    if (righe === null) {
+      set_giorno_selezionato(null);
+      return;
+    }
+    const primo_giorno_attivo = per_giorno[0]?.[0] ?? null;
+    set_giorno_selezionato((corrente) =>
+      corrente?.startsWith(mese.slice(0, 7)) ? corrente : primo_giorno_attivo,
+    );
+  }, [mese, per_giorno, righe]);
+
+  const celle_mese = useMemo(() => {
+    const primo = new Date(`${mese}T00:00:00`);
+    const giorni_nel_mese = new Date(primo.getFullYear(), primo.getMonth() + 1, 0).getDate();
+    const riempimento_iniziale = (primo.getDay() + 6) % 7;
+    const celle: Array<string | null> = Array.from({ length: riempimento_iniziale }, () => null);
+    for (let giorno = 1; giorno <= giorni_nel_mese; giorno += 1) {
+      celle.push(iso_giorno(new Date(primo.getFullYear(), primo.getMonth(), giorno)));
+    }
+    while (celle.length % 7 !== 0) celle.push(null);
+    return celle;
+  }, [mese]);
+
+  const iniziali_giorni = useMemo(() => {
+    const lunedi = new Date(2026, 0, 5);
+    return Array.from({ length: 7 }, (_, indice) =>
+      format_data(new Date(2026, 0, lunedi.getDate() + indice), { weekday: "narrow" }),
+    );
+  }, [t]);
+
+  const luoghi = useMemo(() => {
+    const distinti = new Map<string, string>();
+    (righe ?? []).forEach((r) => {
+      const chiave = r.pista ?? "__senza_luogo";
+      if (!distinti.has(chiave)) distinti.set(chiave, r.pista ?? t("luogo_non_indicato"));
+    });
+    return Array.from(distinti.entries()).map(([chiave, etichetta], indice) => ({
+      chiave,
+      etichetta,
+      classe: CLASSI_LUOGO[indice % CLASSI_LUOGO.length],
+    }));
+  }, [righe, t]);
+
+  const classe_luogo = useMemo(
+    () => new Map(luoghi.map((luogo) => [luogo.chiave, luogo.classe])),
+    [luoghi],
+  );
+  const righe_giorno_selezionato = giorno_selezionato
+    ? righe_per_giorno.get(giorno_selezionato) ?? []
+    : [];
+  const oggi = iso_giorno(new Date());
+
   const messaggio_errore = (e: TipoErrore) =>
     e === "freno" ? t("troppi_tentativi") : e === "codice" ? t("codice_non_riconosciuto") : t("errore_lettura");
 
@@ -446,33 +509,101 @@ const CalendarioPubblicoPage: React.FC = () => {
         ) : per_giorno.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">{t("mese_vuoto")}</p>
         ) : (
-          <div className="space-y-3">
-            {per_giorno.map(([data, lista]) => (
-              <Card key={data}>
+          <div className="space-y-4">
+            <div>
+              <div className="grid grid-cols-7" aria-hidden="true">
+                {iniziali_giorni.map((iniziale, indice) => (
+                  <div key={indice} className="py-2 text-center text-xs font-semibold uppercase text-muted-foreground">
+                    {iniziale}
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 overflow-hidden rounded-md border border-border bg-border gap-px">
+                {celle_mese.map((data, indice) => {
+                  if (!data) return <div key={`vuota-${indice}`} className="aspect-square min-h-10 bg-muted/30" aria-hidden="true" />;
+                  const lista = righe_per_giorno.get(data) ?? [];
+                  const selezionato = data === giorno_selezionato;
+                  const odierno = data === oggi;
+                  return (
+                    <Button
+                      key={data}
+                      type="button"
+                      variant="ghost"
+                      onClick={() => set_giorno_selezionato(data)}
+                      aria-pressed={selezionato}
+                      aria-label={t("apri_giorno", { data: format_data_lunga(data), count: lista.length })}
+                      className={cn(
+                        "relative h-auto min-h-10 aspect-square min-w-0 flex-col justify-start gap-1 rounded-none bg-background px-1 py-1.5 hover:bg-muted",
+                        selezionato && "z-10 bg-primary/10 ring-2 ring-inset ring-primary hover:bg-primary/10",
+                        !selezionato && odierno && "ring-1 ring-inset ring-muted-foreground/60",
+                      )}
+                    >
+                      <span className={cn("text-sm leading-none", odierno && "font-bold", !odierno && "font-normal")}>
+                        {Number(data.slice(-2))}
+                      </span>
+                      {lista.length > 0 && (
+                        <span className="flex max-w-full items-center justify-center gap-0.5" aria-hidden="true">
+                          {lista.slice(0, 2).map((r, riga_indice) => (
+                            <span
+                              key={`${data}-${riga_indice}`}
+                              className={cn("h-1.5 w-3 max-w-[30%] rounded-full", classe_luogo.get(r.pista ?? "__senza_luogo"))}
+                            />
+                          ))}
+                          {lista.length > 2 && <span className="text-[10px] font-medium leading-none text-muted-foreground">+{lista.length - 2}</span>}
+                        </span>
+                      )}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {giorno_selezionato && (
+              <Card>
                 <CardContent className="space-y-2 p-3">
-                  <p className="text-sm font-semibold capitalize">{format_data_lunga(data)}</p>
-                  <ul className="space-y-2">
-                    {lista.map((r, i) => (
-                      <li key={`${data}-${i}`} className="rounded-lg bg-muted/50 px-3 py-2">
-                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                          <span className="font-mono text-sm font-semibold">
-                            {ora_breve(r.ora_inizio)}–{ora_breve(r.ora_fine)}
-                          </span>
-                          <span className="text-sm">{r.attivita}</span>
-                          {r.pista && <span className="text-xs text-muted-foreground">{r.pista}</span>}
-                        </div>
-                        {r.nota && (
-                          <p className="mt-1 rounded bg-primary/10 px-2 py-1 text-xs text-foreground">
-                            <span className="font-semibold">{t("nota")}: </span>
-                            {r.nota}
-                          </p>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="text-sm font-semibold capitalize">
+                    {format_data_lunga(giorno_selezionato, {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+                  {righe_giorno_selezionato.length === 0 ? (
+                    <p className="py-3 text-sm text-muted-foreground">{t("giorno_vuoto")}</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {righe_giorno_selezionato.map((r, i) => (
+                        <li key={`${giorno_selezionato}-${i}`} className="rounded-lg bg-muted/50 px-3 py-2">
+                          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                            <span className="font-mono text-sm font-semibold">
+                              {ora_breve(r.ora_inizio)}–{ora_breve(r.ora_fine)}
+                            </span>
+                            <span className="text-sm">{r.attivita}</span>
+                            {r.pista && <span className="text-xs text-muted-foreground">{r.pista}</span>}
+                          </div>
+                          {r.nota && (
+                            <p className="mt-1 rounded bg-primary/10 px-2 py-1 text-xs text-foreground">
+                              <span className="font-semibold">{t("nota")}: </span>
+                              {r.nota}
+                            </p>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </CardContent>
               </Card>
-            ))}
+            )}
+
+            <div className="space-y-2 border-t border-border pt-3" aria-label={t("legenda_luoghi")}>
+              {luoghi.map((luogo) => (
+                <div key={luogo.chiave} className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className={cn("h-2 w-5 shrink-0 rounded-full", luogo.classe)} aria-hidden="true" />
+                  <span>{luogo.etichetta}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
