@@ -260,11 +260,12 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (path === "/calendario") {
+  if (path === "/calendario" || path.startsWith("/calendario/")) {
     return (
       <BrowserRouter>
         <Routes>
           <Route path="/calendario" element={<CalendarioPubblicoPage />} />
+          <Route path="/calendario/:slug" element={<CalendarioPubblicoPage />} />
         </Routes>
       </BrowserRouter>
     );

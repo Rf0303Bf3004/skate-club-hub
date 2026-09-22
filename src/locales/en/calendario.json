@@ -15,5 +15,6 @@
   "stagione": "Season {{nome}}",
   "mese_vuoto": "The club has not published any activity for this month.",
   "nessun_mese": "The club has not published any activity yet.",
-  "nota": "Note"
+  "nota": "Note",
+  "slug_non_disponibile": "This club's calendar is not available."
 }

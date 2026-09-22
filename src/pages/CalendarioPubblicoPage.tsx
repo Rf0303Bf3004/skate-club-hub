@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -92,14 +93,25 @@ function ora_breve(v: string | null): string {
 
 const CalendarioPubblicoPage: React.FC = () => {
   const { t } = useTranslation("calendario");
+  const { slug } = useParams<{ slug?: string }>();
 
   const [campo, set_campo] = useState("");
   const [codice, set_codice] = useState<string>(() => leggi_codice_salvato());
   const [errore_codice, set_errore_codice] = useState<TipoErrore | null>(null);
 
-  const tipo = codice.startsWith("CA-") ? "club" : codice.startsWith("AT-") ? "atleta" : null;
+  /** Con lo slug nell'indirizzo non si digita nessun codice. */
+  const tipo: "slug" | "club" | "atleta" | null = slug
+    ? "slug"
+    : codice.startsWith("CA-")
+      ? "club"
+      : codice.startsWith("AT-")
+        ? "atleta"
+        : null;
 
-  // --- mesi disponibili (solo vista club) ---
+  /** Il club dello slug non esiste o ha spento il calendario pubblico. */
+  const [slug_non_disponibile, set_slug_non_disponibile] = useState(false);
+
+  // --- mesi disponibili ---
   const [mesi, set_mesi] = useState<RigaMese[] | null>(null);
   const [mesi_errore, set_mesi_errore] = useState<TipoErrore | null>(null);
   const [mesi_in_corso, set_mesi_in_corso] = useState(false);
@@ -121,30 +133,38 @@ const CalendarioPubblicoPage: React.FC = () => {
     set_mesi_errore(null);
     set_righe_errore(null);
     set_errore_codice(null);
+    set_intestazione({ titolo: "", sotto: "" });
     set_mese(iso_mese(new Date()));
   }, []);
 
-  // Carica i mesi disponibili per la vista club.
+  // Carica i mesi disponibili per club e slug: è il database a dire dove
+  // finisce l'attività pubblicata, e le frecce si fermano lì.
   useEffect(() => {
-    if (tipo !== "club") {
-      set_mesi(null);
-      set_mesi_errore(null);
-      return;
-    }
+    if (!tipo || tipo === "atleta") return;
     let annullato = false;
     set_mesi_in_corso(true);
     set_mesi_errore(null);
+    set_slug_non_disponibile(false);
     (async () => {
-      const { data, error } = await supabase.rpc("calendario_pubblico_mesi", { p_codice: codice });
+      const res =
+        tipo === "slug"
+          ? await supabase.rpc("calendario_pubblico_mesi_slug", { p_slug: slug })
+          : await supabase.rpc("calendario_pubblico_mesi", { p_codice: codice });
+      const data: unknown = res.data;
+      const error: unknown = res.error;
       if (annullato) return;
       set_mesi_in_corso(false);
       if (error) {
         const tipo_err = tipo_errore(error);
         set_mesi(null);
         if (tipo_err === "codice") {
-          set_errore_codice("codice");
-          dimentica_codice();
-          set_codice("");
+          if (tipo === "slug") {
+            set_slug_non_disponibile(true);
+          } else {
+            set_errore_codice("codice");
+            dimentica_codice();
+            set_codice("");
+          }
         } else {
           set_mesi_errore(tipo_err);
         }
@@ -159,34 +179,44 @@ const CalendarioPubblicoPage: React.FC = () => {
           : lista.find((m) => m.mese > oggi)?.mese ?? lista[lista.length - 1].mese;
         set_mese(scelto);
       }
+      if (lista.length > 0) {
+        set_intestazione((prev) => ({
+          titolo: lista[0].club ?? prev.titolo,
+          sotto: lista[0].stagione ? t("stagione", { nome: lista[0].stagione }) : prev.sotto,
+        }));
+      }
     })();
     return () => {
       annullato = true;
     };
-  }, [tipo, codice, ricarica]);
+  }, [tipo, codice, slug, ricarica, t]);
 
-  // Carica le righe del mese selezionato.
+  // Vista atleta: la funzione del database risponde al massimo su 62 giorni,
+  // quindi si leggono il mese precedente, quello mostrato e il successivo.
+  // I mesi trovati sono gli unici su cui le frecce si muovono.
   useEffect(() => {
-    if (!tipo) {
-      set_righe(null);
-      return;
-    }
-    if (tipo === "club" && (mesi === null || mesi.length === 0)) {
-      set_righe(null);
-      return;
-    }
+    if (tipo !== "atleta") return;
     let annullato = false;
     set_righe_in_corso(true);
     set_righe_errore(null);
     (async () => {
-      const fn = tipo === "club" ? "calendario_pubblico" : "programma_atleta_pubblico";
-      const { data, error } = await supabase.rpc(fn, {
-        p_codice: codice,
-        p_da: mese,
-        p_a: ultimo_giorno(mese),
-      });
+      const precedente = sposta_mese(mese, -1);
+      const successivo = sposta_mese(mese, 1);
+      const [prima, dopo] = await Promise.all([
+        supabase.rpc("programma_atleta_pubblico", {
+          p_codice: codice,
+          p_da: precedente,
+          p_a: ultimo_giorno(mese),
+        }),
+        supabase.rpc("programma_atleta_pubblico", {
+          p_codice: codice,
+          p_da: mese,
+          p_a: ultimo_giorno(successivo),
+        }),
+      ]);
       if (annullato) return;
       set_righe_in_corso(false);
+      const error = prima.error ?? dopo.error;
       if (error) {
         const tipo_err = tipo_errore(error);
         set_righe(null);
@@ -199,46 +229,104 @@ const CalendarioPubblicoPage: React.FC = () => {
         }
         return;
       }
-      const lista = (data ?? []) as RigaSessione[];
-      set_righe(lista);
-      if (tipo === "club") {
-        const info = mesi?.[0];
-        set_intestazione({
-          titolo: info?.club ?? lista[0]?.club ?? "",
-          sotto: info?.stagione ? t("stagione", { nome: info.stagione }) : "",
-        });
-      } else {
-        set_intestazione({
-          titolo: lista[0]?.atleta ?? "",
-          sotto: lista[0]?.club ?? "",
-        });
-      }
+      const tutte = [
+        ...((prima.data ?? []) as RigaSessione[]),
+        ...((dopo.data ?? []) as RigaSessione[]),
+      ];
+      const prefisso = mese.slice(0, 7);
+      const del_mese = ((dopo.data ?? []) as RigaSessione[]).filter((r) => r.data.startsWith(prefisso));
+      set_righe(del_mese);
+      const trovati = new Map<string, number>();
+      tutte.forEach((r) => {
+        const m = `${r.data.slice(0, 7)}-01`;
+        trovati.set(m, (trovati.get(m) ?? 0) + 1);
+      });
+      set_mesi((prev) => {
+        const unione = new Map<string, number>();
+        (prev ?? []).forEach((r) => unione.set(r.mese, r.sessioni));
+        trovati.forEach((n, m) => unione.set(m, n));
+        return Array.from(unione.entries())
+          .sort((x, y) => x[0].localeCompare(y[0]))
+          .map(([m, n]) => ({
+            club: null,
+            stagione: null,
+            stagione_da: null,
+            stagione_a: null,
+            mese: m,
+            sessioni: n,
+          }));
+      });
+      // Un mese vuoto non deve cancellare l'intestazione già mostrata.
+      const riferimento = del_mese[0] ?? tutte[0];
+      set_intestazione((prev) => ({
+        titolo: riferimento?.atleta ?? prev.titolo,
+        sotto: riferimento?.club ?? prev.sotto,
+      }));
     })();
     return () => {
       annullato = true;
     };
-  }, [tipo, codice, mese, mesi, ricarica, t]);
+  }, [tipo, codice, mese, ricarica]);
 
-  const mesi_disponibili = useMemo(() => (mesi ?? []).map((m) => m.mese), [mesi]);
-  const puo_indietro =
-    tipo === "club"
-      ? mesi_disponibili.some((m) => m < mese)
-      : true;
-  const puo_avanti =
-    tipo === "club"
-      ? mesi_disponibili.some((m) => m > mese)
-      : true;
-
-  const vai = (delta: number) => {
-    if (tipo === "club") {
-      const candidati = delta < 0
-        ? mesi_disponibili.filter((m) => m < mese)
-        : mesi_disponibili.filter((m) => m > mese);
-      if (candidati.length === 0) return;
-      set_mese(delta < 0 ? candidati[candidati.length - 1] : candidati[0]);
+  // Carica le righe del mese selezionato (club e slug).
+  useEffect(() => {
+    if (!tipo || tipo === "atleta") return;
+    if (mesi === null || mesi.length === 0) {
+      set_righe(null);
       return;
     }
-    set_mese(sposta_mese(mese, delta));
+    let annullato = false;
+    set_righe_in_corso(true);
+    set_righe_errore(null);
+    (async () => {
+      const parametri =
+        tipo === "slug"
+          ? { p_slug: slug, p_da: mese, p_a: ultimo_giorno(mese) }
+          : { p_codice: codice, p_da: mese, p_a: ultimo_giorno(mese) };
+      const fn = tipo === "slug" ? "calendario_pubblico_slug" : "calendario_pubblico";
+      const { data, error } = await supabase.rpc(fn, parametri as never);
+      if (annullato) return;
+      set_righe_in_corso(false);
+      if (error) {
+        const tipo_err = tipo_errore(error);
+        set_righe(null);
+        if (tipo_err === "codice") {
+          if (tipo === "slug") {
+            set_slug_non_disponibile(true);
+          } else {
+            set_errore_codice("codice");
+            dimentica_codice();
+            set_codice("");
+          }
+        } else {
+          set_righe_errore(tipo_err);
+        }
+        return;
+      }
+      const lista = (data ?? []) as RigaSessione[];
+      set_righe(lista);
+      // Un mese vuoto non deve cancellare l'intestazione già mostrata.
+      const info = mesi?.[0];
+      set_intestazione((prev) => ({
+        titolo: info?.club ?? lista[0]?.club ?? prev.titolo,
+        sotto: info?.stagione ? t("stagione", { nome: info.stagione }) : prev.sotto,
+      }));
+    })();
+    return () => {
+      annullato = true;
+    };
+  }, [tipo, codice, slug, mese, mesi, ricarica, t]);
+
+  const mesi_disponibili = useMemo(() => (mesi ?? []).map((m) => m.mese), [mesi]);
+  const puo_indietro = mesi_disponibili.some((m) => m < mese);
+  const puo_avanti = mesi_disponibili.some((m) => m > mese);
+
+  const vai = (delta: number) => {
+    const candidati = delta < 0
+      ? mesi_disponibili.filter((m) => m < mese)
+      : mesi_disponibili.filter((m) => m > mese);
+    if (candidati.length === 0) return;
+    set_mese(delta < 0 ? candidati[candidati.length - 1] : candidati[0]);
   };
 
   const per_giorno = useMemo(() => {
@@ -253,6 +341,19 @@ const CalendarioPubblicoPage: React.FC = () => {
 
   const messaggio_errore = (e: TipoErrore) =>
     e === "freno" ? t("troppi_tentativi") : e === "codice" ? t("codice_non_riconosciuto") : t("errore_lettura");
+
+  // --- indirizzo con nome del club non valido o calendario spento ---
+  if (tipo === "slug" && slug_non_disponibile) {
+    return (
+      <div className="min-h-screen bg-muted/30 px-4 py-10">
+        <div className="mx-auto w-full max-w-sm text-center">
+          <CalendarDays className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+          <h1 className="text-lg font-semibold">{t("titolo")}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{t("slug_non_disponibile")}</p>
+        </div>
+      </div>
+    );
+  }
 
   // --- schermata del codice ---
   if (!tipo) {
@@ -340,7 +441,7 @@ const CalendarioPubblicoPage: React.FC = () => {
           </Card>
         ) : in_corso ? (
           <p className="py-8 text-center text-sm text-muted-foreground">{t("caricamento")}</p>
-        ) : tipo === "club" && mesi !== null && mesi.length === 0 ? (
+        ) : mesi !== null && mesi.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">{t("nessun_mese")}</p>
         ) : per_giorno.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">{t("mese_vuoto")}</p>
@@ -375,11 +476,13 @@ const CalendarioPubblicoPage: React.FC = () => {
           </div>
         )}
 
-        <div className="pt-2 text-center">
-          <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={esci}>
-            {t("cambia_codice")}
-          </Button>
-        </div>
+        {tipo !== "slug" && (
+          <div className="pt-2 text-center">
+            <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={esci}>
+              {t("cambia_codice")}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

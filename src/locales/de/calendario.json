@@ -15,5 +15,6 @@
   "stagione": "Saison {{nome}}",
   "mese_vuoto": "Für diesen Monat hat der Club nichts veröffentlicht.",
   "nessun_mese": "Der Club hat noch nichts veröffentlicht.",
-  "nota": "Hinweis"
+  "nota": "Hinweis",
+  "slug_non_disponibile": "Der Kalender dieses Clubs ist nicht verfügbar."
 }
