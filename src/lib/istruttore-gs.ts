@@ -32,12 +32,6 @@ export interface SegnalazioneGs {
 /** Traduttore iniettato: la funzione resta pura e senza dipendenze da React. */
 type Tradurre = (chiave: string, opzioni?: Record<string, unknown>) => string;
 
-/** Età minima G+S calcolata per anno civile: anno corrente meno anno di nascita. */
-export const ETA_MINIMA_GS = 17;
-
-/** Giorni entro cui un riconoscimento in scadenza va segnalato in ambra. */
-export const GIORNI_PREAVVISO_GS = 90;
-
 /**
  * Il resto delle regole G+S (obbligo, termini, scadenze) vive nella funzione SQL
  * `referto_gs`: qui non si duplica nulla, si conservano solo i tipi condivisi.
