@@ -16,5 +16,10 @@
   "mese_vuoto": "Für diesen Monat hat der Club nichts veröffentlicht.",
   "nessun_mese": "Der Club hat noch nichts veröffentlicht.",
   "nota": "Hinweis",
-  "slug_non_disponibile": "Der Kalender dieses Clubs ist nicht verfügbar."
+  "slug_non_disponibile": "Der Kalender dieses Clubs ist nicht verfügbar.",
+  "apri_giorno_one": "{{data}}, {{count}} Aktivität",
+  "apri_giorno_other": "{{data}}, {{count}} Aktivitäten",
+  "giorno_vuoto": "Für diesen Tag sind keine Aktivitäten veröffentlicht.",
+  "legenda_luoghi": "Legende der Orte",
+  "luogo_non_indicato": "Ort nicht angegeben"
 }
