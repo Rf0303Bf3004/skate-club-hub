@@ -6,7 +6,6 @@ import { useI18n } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
 import {
   use_istruttori,
-  use_atleti_monitori,
   use_atleti,
   use_lezioni_private,
   use_corsi,
@@ -1667,7 +1666,6 @@ const InstructorsPage: React.FC = () => {
     [referto_gs_by_id]
   );
   const gs_fuori_regola = (referto_gs_query.data ?? []).filter((r) => r.esito !== "OK").length;
-  const { data: monitori_atleti = [] } = use_atleti_monitori();
   const { data: atleti_all = [] } = use_atleti();
   const { data: lezioni = [] } = use_lezioni_private();
   const { data: corsi = [] } = use_corsi();
@@ -1725,9 +1723,6 @@ const InstructorsPage: React.FC = () => {
     });
     return list;
   }, [istruttori, active_filter, search_istruttori]);
-  const monitori = monitori_atleti.filter((a: any) => a.ruolo_pista === "monitore");
-  const aiuto_monitori = monitori_atleti.filter((a: any) => a.ruolo_pista === "aiuto_monitore");
-
   const handle_save = async (data: any) => {
     try {
       await upsert.mutateAsync(data);
@@ -1783,7 +1778,7 @@ const InstructorsPage: React.FC = () => {
   useEffect(() => {
     if (id_url_usato || selected_id) return;
     const monitore_url = new URLSearchParams(window.location.search).get("monitore");
-    if (monitore_url && monitori_atleti.some((atleta: any) => atleta.id === monitore_url)) {
+    if (monitore_url && atleti_by_id.has(monitore_url)) {
       set_id_url_usato(true);
       set_selected_monitore_id(monitore_url);
       return;
@@ -1794,7 +1789,7 @@ const InstructorsPage: React.FC = () => {
     if (!trovato) return;
     set_id_url_usato(true);
     open_detail(trovato);
-  }, [istruttori, monitori_atleti, id_url_usato, selected_id]);
+  }, [istruttori, atleti_by_id, id_url_usato, selected_id]);
 
   const add_slot = (giorno: string) => {
     set_disp_local((prev) => ({
@@ -1821,7 +1816,7 @@ const InstructorsPage: React.FC = () => {
   };
 
   const selected = istruttori_veri.find((i: any) => i.id === selected_id);
-  const selected_monitore = monitori_atleti.find((a: any) => a.id === selected_monitore_id);
+  const selected_monitore = selected_monitore_id ? atleti_by_id.get(selected_monitore_id) : undefined;
 
   const diff_fasce = useMemo(() => {
     const norm = (disp: any) => {
