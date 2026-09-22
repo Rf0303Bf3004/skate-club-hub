@@ -36,11 +36,7 @@ import { ore_distinte_per_data, ore_reali_senza_sovrapposizioni } from "@/lib/av
 import DateInput from "@/components/forms/DateInput";
 import { format_data_completa, format_data } from "@/lib/format-data";
 
-import {
-  termine_esame_gs,
-  giorni_al_termine_gs,
-  type QualificaGs,
-} from "@/lib/istruttore-gs";
+import { type QualificaGs } from "@/lib/istruttore-gs";
 import { SPECIALIZZAZIONI_SUGGERITE, chiave_specializzazione } from "@/lib/istruttore-specialita";
 
 
@@ -423,18 +419,8 @@ const IstruttoreModal: React.FC<{
             {form.qualifica_gs !== "monitore_gs" && (
               <Field label={t("gs.termine_esame")}>
                 <DateInput value={form.gs_termine_esame} onChange={(v) => set_val("gs_termine_esame", v)} />
-                {form.gs_termine_esame ? (
+                {form.gs_termine_esame && (
                   <p className="text-xs text-muted-foreground">{t("gs.termine_manuale")}</p>
-                ) : (
-                  form.data_inizio_attivita && (
-                    <p className="text-xs text-muted-foreground">
-                      {t("gs.termine_calcolato", {
-                        data: format_data_completa(
-                          termine_esame_gs({ data_inizio_attivita: form.data_inizio_attivita })?.data
-                        ),
-                      })}
-                    </p>
-                  )
                 )}
               </Field>
             )}
@@ -2061,24 +2047,6 @@ const InstructorsPage: React.FC = () => {
                         <span className="text-foreground">{format_data_completa(selected.data_nascita)}</span>
                       </div>
                     )}
-                    {/* Termine dell'esame G+S con il conto alla rovescia in parole */}
-                    {(() => {
-                      const termine = termine_esame_gs(selected);
-                      if (!termine) return null;
-                      const giorni = giorni_al_termine_gs(selected) ?? 0;
-                      return (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{ti("gs.termine")}</span>
-                          <span className="text-foreground">
-                            {format_data_completa(termine.data)} ·{" "}
-                            {giorni < 0
-                              ? ti("gs.scaduto_da_giorni", { count: Math.abs(giorni) })
-                              : ti("gs.restano_giorni", { count: giorni })}
-                          </span>
-                        </div>
-                      );
-                    })()}
-
                     {/* Esito calcolato dal database: qui non si deduce nulla. */}
                     <div className="pt-2 border-t border-border space-y-1.5">
                       {referto_gs_query.isError ? (

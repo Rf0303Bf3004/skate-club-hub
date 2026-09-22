@@ -218,25 +218,9 @@
     "data_nascita": "Data di nascita",
     "in_regola": "In regola",
     "non_richiesta": "Nessuna qualifica richiesta per questo ruolo",
-    "segnalazione": {
-      "monitrice_senza_gs": "Monitrice senza qualifica G+S",
-      "eta_insufficiente": "Non raggiunge i 17 anni richiesti da G+S",
-      "scaduto": "Riconoscimento G+S scaduto il {{data}}",
-      "in_scadenza": "Riconoscimento G+S in scadenza il {{data}}",
-      "esame_scaduto": "Esame G+S non sostenuto: termine {{data}}, in ritardo di {{giorni}} giorni",
-      "esame_vicino": "Esame G+S da sostenere entro il {{data}}: restano {{giorni}} giorni",
-      "esame_previsto": "Esame G+S previsto entro il {{data}} ({{giorni}} giorni)",
-      "senza_termine": "Senza qualifica G+S e senza una data entro cui darla"
-    },
     "inizio_attivita": "Inizio attività nel club",
     "termine_esame": "Termine per l'esame G+S",
-    "termine_calcolato": "Calcolato: 12 mesi dall'inizio attività ({{data}})",
     "termine_manuale": "Termine impostato a mano",
-    "termine": "Termine esame G+S",
-    "restano_giorni_one": "restano {{count}} giorno",
-    "restano_giorni_other": "restano {{count}} giorni",
-    "scaduto_da_giorni_one": "scaduto da {{count}} giorno",
-    "scaduto_da_giorni_other": "scaduto da {{count}} giorni",
     "paese": "Paese",
     "paese_non_dichiarato": "Non dichiarato",
     "referto_errore": "Non è stato possibile leggere la situazione G+S.",
@@ -248,10 +232,7 @@
   },
   "promemoria": {
     "titolo": "Esami G+S da sostenere",
-    "senza_termine": "Nessun termine fissato",
-    "personale_titolo": "La tua qualifica G+S",
-    "personale_testo": "Devi sostenere l'esame G+S entro il {{data}}.",
-    "personale_scaduto": "Il termine per il tuo esame G+S era il {{data}}."
+    "personale_titolo": "La tua qualifica G+S"
   },
   "specialita": {
     "label": "Specializzazione",
