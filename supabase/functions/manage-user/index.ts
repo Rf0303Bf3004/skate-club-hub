@@ -55,7 +55,13 @@ Deno.serve(async (req) => {
       .eq("club_id", club_id)
       .maybeSingle();
     if (c_err) return json({ error: "lookup_failed", detail: c_err.message }, 500);
-    if (!caller || !ALLOWED_CALLER_ROLES.includes(caller.ruolo)) {
+    // Appartenenza al club: requisito minimo per qualunque azione.
+    if (!caller) return json({ error: "forbidden" }, 403);
+    // Le azioni che creano/modificano/eliminano account restano riservate.
+    // La sola lettura delle email degli account del club è consentita a tutti
+    // i membri del club (la pagina Istruttori la usa per mostrare il legame
+    // scheda ↔ accesso) e non esce mai dal club del chiamante.
+    if (action !== "list_auth_info" && !ALLOWED_CALLER_ROLES.includes(caller.ruolo)) {
       return json({ error: "forbidden" }, 403);
     }
 
@@ -123,10 +129,17 @@ Deno.serve(async (req) => {
     if (action === "list_auth_info") {
       const { user_ids } = body;
       if (!Array.isArray(user_ids)) return json({ error: "missing_params" }, 400);
+      // Isolamento club: si possono leggere solo gli account del proprio club.
+      const { data: membri, error: m_err } = await admin
+        .from("utenti_club")
+        .select("user_id")
+        .eq("club_id", club_id)
+        .in("user_id", user_ids);
+      if (m_err) return json({ error: "lookup_failed", detail: m_err.message }, 500);
       const result: Record<string, { email: string | null; last_sign_in_at: string | null }> = {};
       // paginate listUsers
       let page = 1;
-      const set = new Set(user_ids);
+      const set = new Set((membri ?? []).map((m: { user_id: string }) => m.user_id));
       while (set.size > 0 && page < 20) {
         const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
         if (error) break;
