@@ -9874,6 +9874,17 @@ export type Database = {
           pista: string
         }[]
       }
+      calendario_pubblico_mesi: {
+        Args: { p_codice: string }
+        Returns: {
+          club: string
+          mese: string
+          sessioni: number
+          stagione: string
+          stagione_a: string
+          stagione_da: string
+        }[]
+      }
       campo_club_ospitante: { Args: { p_campo: string }; Returns: string }
       cancel_corso_atleta: {
         Args: { p_atleta_id: string; p_corso_id: string }
