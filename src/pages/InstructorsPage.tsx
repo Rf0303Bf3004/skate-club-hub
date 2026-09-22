@@ -1666,7 +1666,7 @@ const InstructorsPage: React.FC = () => {
   const { t } = useI18n();
   const { t: ti } = useTranslation("istruttori");
   const navigate = useNavigate();
-  const { puo_gestire_sportivo, puo_creare_accessi } = usePermessiAzione();
+  const { puo_gestire_sportivo, puo_creare_accessi, puo_vedere_costi_istruttori } = usePermessiAzione();
   const { data: istruttori = [], isLoading } = use_istruttori();
   // Referto G+S: la regola sta nel database. Un errore non diventa mai "tutti in regola".
   const referto_gs_query = use_referto_gs();
@@ -2408,7 +2408,7 @@ const InstructorsPage: React.FC = () => {
                     );
                   })()}
 
-                  {(liv === "monitrice" || liv === "aiuto_monitrice") && linked_atleta && puo_gestire_sportivo && (
+                  {(liv === "monitrice" || liv === "aiuto_monitrice") && linked_atleta && puo_vedere_costi_istruttori && (
                     <Button
                       variant="outline"
                       size="sm"

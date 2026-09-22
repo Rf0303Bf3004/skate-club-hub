@@ -40,6 +40,16 @@ export const RUOLI_PIANIFICAZIONE: RuoloUtente[] = [
 
 export const RUOLI_FATTURE: RuoloUtente[] = ["superadmin", "admin", "presidente", "segreteria"];
 
+/** Specchio dei ruoli ammessi da get_istruttori_costi(). */
+export const RUOLI_COSTI_ISTRUTTORI: RuoloUtente[] = [
+  "superadmin",
+  "admin",
+  "presidente",
+  "vicepresidente",
+  "segreteria",
+  "dt",
+];
+
 /** Specchio di user_is_presidenza() del database (presidente + vicepresidente), con admin e superadmin. */
 export const RUOLI_SOLO_PRESIDENTE: RuoloUtente[] = ["superadmin", "admin", "presidente", "vicepresidente"];
 
@@ -74,6 +84,9 @@ export function puo_pianificare(ruolo?: string | null) {
 export function puo_gestire_fatture(ruolo?: string | null) {
   return has(RUOLI_FATTURE, ruolo);
 }
+export function puo_vedere_costi_istruttori(ruolo?: string | null) {
+  return has(RUOLI_COSTI_ISTRUTTORI, ruolo);
+}
 export function solo_presidente(ruolo?: string | null) {
   return has(RUOLI_SOLO_PRESIDENTE, ruolo);
 }
@@ -96,6 +109,7 @@ export interface PermessiAzione {
   puo_configurare_club: boolean;
   puo_pianificare: boolean;
   puo_gestire_fatture: boolean;
+  puo_vedere_costi_istruttori: boolean;
   solo_presidente: boolean;
   puo_creare_accessi: boolean;
   puo_gestire_musica: boolean;
@@ -115,6 +129,7 @@ export function usePermessiAzione(): PermessiAzione {
       puo_configurare_club: puo_configurare_club(ruolo),
       puo_pianificare: puo_pianificare(ruolo),
       puo_gestire_fatture: puo_gestire_fatture(ruolo),
+      puo_vedere_costi_istruttori: puo_vedere_costi_istruttori(ruolo),
       solo_presidente: solo_presidente(ruolo),
       puo_creare_accessi: puo_creare_accessi(ruolo),
       puo_gestire_musica: puo_gestire_musica(ruolo),
