@@ -510,5 +510,12 @@
       "col_categoria": "Category",
       "legenda_classifica": "▲ and bold = club skaters."
     }
+  },
+  "widget_medagliere": {
+    "errore": "The competition results could not be read. This does not mean there are none.",
+    "riprova": "Try again",
+    "caricamento": "Loading results…",
+    "stagione_label": "Season",
+    "tutte_stagioni": "All seasons"
   }
 }

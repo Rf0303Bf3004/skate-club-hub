@@ -510,5 +510,12 @@
       "col_categoria": "Kategorie",
       "legenda_classifica": "▲ und Fettdruck = Läuferinnen des Clubs."
     }
+  },
+  "widget_medagliere": {
+    "errore": "Die Wettkampfergebnisse konnten nicht gelesen werden. Das heißt nicht, dass es keine gibt.",
+    "riprova": "Erneut versuchen",
+    "caricamento": "Ergebnisse werden geladen…",
+    "stagione_label": "Saison",
+    "tutte_stagioni": "Alle Saisons"
   }
 }

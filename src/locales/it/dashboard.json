@@ -176,7 +176,12 @@
     "col_athlete": "Atleta",
     "col_other": "Altre",
     "col_score": "Punteggio",
-    "footer_top": "Top {{limit}} di {{total}} atleti — vedi pagina Gare per il medagliere completo"
+    "footer_top": "Top {{limit}} di {{total}} atleti — vedi pagina Gare per il medagliere completo",
+    "errore": "Non è stato possibile leggere i risultati delle gare. Non significa che non ce ne siano.",
+    "riprova": "Riprova",
+    "caricamento": "Caricamento dei risultati…",
+    "stagione_label": "Stagione",
+    "tutte_stagioni": "Tutte le stagioni"
   },
   "president": {
     "areas": {

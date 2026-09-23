@@ -510,5 +510,12 @@
       "col_categoria": "Catégorie",
       "legenda_classifica": "▲ et gras = patineuses du club."
     }
+  },
+  "widget_medagliere": {
+    "errore": "Impossible de lire les résultats des compétitions. Cela ne signifie pas qu'il n'y en a pas.",
+    "riprova": "Réessayer",
+    "caricamento": "Chargement des résultats…",
+    "stagione_label": "Saison",
+    "tutte_stagioni": "Toutes les saisons"
   }
 }
