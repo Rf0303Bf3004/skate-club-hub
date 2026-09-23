@@ -180,7 +180,10 @@
     "richiesta_in_attesa": "⏳ Richiesta in attesa",
     "richiedi_iscrizione": "📨 Richiedi iscrizione",
     "errore_corsi": "Non è stato possibile caricare i corsi. Non significa che non ce ne siano.",
-    "riprova": "Riprova"
+    "riprova": "Riprova",
+    "corsi_errore_codice": "Questo codice non è valido. Controlla il link che ti ha mandato il club.",
+    "corsi_vuoto_livello": "Per il livello di {{nome}} non ci sono corsi aperti in questo momento.",
+    "club_label": "Club"
   },
   "accesso": {
     "riga": "Accesso di {{nome}}",

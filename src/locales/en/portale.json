@@ -26,7 +26,10 @@
   },
   "atleta_page": {
     "errore_corsi": "The courses could not be loaded. This does not mean there are none.",
-    "riprova": "Try again"
+    "riprova": "Try again",
+    "corsi_errore_codice": "This code is not valid. Please check the link the club sent you.",
+    "corsi_vuoto_livello": "For {{nome}}'s level there are no open courses at the moment.",
+    "club_label": "Club"
   },
   "corsi": {
     "errore": "The courses could not be loaded. This does not mean there are none.",
