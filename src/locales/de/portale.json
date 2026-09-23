@@ -120,7 +120,17 @@
     "tab_fatture": "Rechnungen",
     "tab_iscriviti": "Anmelden",
     "telefono": "Telefon",
-    "validita": "Gültigkeit"
+    "validita": "Gültigkeit",
+    "tab_palmares": "Erfolge",
+    "errore_calendario": "Der Kalender konnte nicht geladen werden. Das heißt nicht, dass es keine Termine gibt.",
+    "errore_fatture": "Die Rechnungen konnten nicht geladen werden. Das heißt nicht, dass es keine gibt.",
+    "errore_palmares": "Die Wettkampfergebnisse konnten nicht geladen werden. Das heißt nicht, dass es keine gibt.",
+    "palmares_titolo": "Erfolge von {{nome}}",
+    "palmares_vuoto": "Keine Wettkämpfe erfasst",
+    "stagione_in_corso": "Laufende Saison",
+    "partecipazioni": "Wettkämpfe",
+    "miglior_punteggio": "Beste Punktzahl",
+    "miglior_posizione": "Beste Platzierung"
   },
   "corsi": {
     "errore": "Die Kurse konnten nicht geladen werden. Das heißt nicht, dass es keine gibt.",
