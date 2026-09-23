@@ -12,6 +12,7 @@ import { AlertCircle, CheckCircle2, Loader2, Send } from "lucide-react";
 import { type ArticoloContratto } from "@/lib/contratto-adesione";
 
 import { format_data } from "@/lib/format-data";
+import { use_aiuto_cap } from "@/hooks/use-aiuto-cap";
 const CANTONI_CH = [
   "AG","AI","AR","BE","BL","BS","FR","GE","GL","GR","JU","LU","NE","NW","OW","SG","SH","SO","SZ","TG","TI","UR","VD","VS","ZG","ZH",
 ];
@@ -59,7 +60,7 @@ const IscrivitiPage: React.FC = () => {
     nome: "", cognome: "", data_nascita: "", sesso: "",
     genitore1_nome: "", genitore1_cognome: "", genitore1_email: "", genitore1_telefono: "",
     genitore1_indirizzo: "", genitore1_cap: "", genitore1_citta: "", genitore1_cantone: "", genitore1_paese_iso: "CH",
-    esperienza: "", livello_dichiarato: "", note_famiglia: "",
+    esperienza: "", club_provenienza: "", livello_dichiarato: "", note_famiglia: "",
     consenso_foto_video: false, partecipa_gare: false, intende_test_livello: false,
   });
   const [contratto_ok, set_contratto_ok] = useState(false);
@@ -69,6 +70,38 @@ const IscrivitiPage: React.FC = () => {
 
 
   const set_val = (k: string, v: any) => set_form((p) => ({ ...p, [k]: v }));
+
+  // Aiuto CAP (solo Svizzera): propone località e cantone senza sovrascrivere.
+  const localita_cap = use_aiuto_cap(
+    form.genitore1_cap,
+    form.genitore1_paese_iso,
+    { citta: form.genitore1_citta, cantone: form.genitore1_cantone },
+    (patch) =>
+      set_form((p) => ({
+        ...p,
+        ...(patch.citta !== undefined ? { genitore1_citta: patch.citta } : {}),
+        ...(patch.cantone !== undefined ? { genitore1_cantone: patch.cantone } : {}),
+      })),
+  );
+
+  // Suggerimenti per il club di provenienza: è solo un aiuto, se la lettura
+  // fallisce il campo resta scrivibile a mano.
+  const [club_suggeriti, set_club_suggeriti] = useState<{ nome: string; citta: string | null }[]>([]);
+  useEffect(() => {
+    let vivo = true;
+    supabase
+      .from("elenco_club")
+      .select("nome, citta")
+      .order("nome")
+      .then(({ data, error }) => {
+        if (!vivo) return;
+        if (error) { console.warn("[IscrivitiPage] elenco_club", error.message); return; }
+        set_club_suggeriti(
+          (data ?? []).flatMap((r) => (r.nome ? [{ nome: r.nome, citta: r.citta }] : [])),
+        );
+      });
+    return () => { vivo = false; };
+  }, []);
 
   useEffect(() => {
     let vivo = true;
@@ -238,10 +271,19 @@ const IscrivitiPage: React.FC = () => {
               </Campo>
             </div>
             <Campo label="CAP">
-              <Input className="h-11" value={form.genitore1_cap} onChange={(e) => set_val("genitore1_cap", e.target.value)} />
+              <Input className="h-11" inputMode="numeric" value={form.genitore1_cap} onChange={(e) => set_val("genitore1_cap", e.target.value)} />
             </Campo>
             <Campo label="Località">
-              <Input className="h-11" value={form.genitore1_citta} onChange={(e) => set_val("genitore1_citta", e.target.value)} />
+              <Input
+                className="h-11"
+                list="localita_cap"
+                value={form.genitore1_citta}
+                onChange={(e) => set_val("genitore1_citta", e.target.value)}
+                placeholder={localita_cap.length > 1 ? "Scegli la località" : undefined}
+              />
+              <datalist id="localita_cap">
+                {localita_cap.map((l) => <option key={l} value={l} />)}
+              </datalist>
             </Campo>
             <Campo label="Cantone">
               <select
@@ -276,6 +318,18 @@ const IscrivitiPage: React.FC = () => {
               onChange={(e) => set_val("esperienza", e.target.value)}
               placeholder="Racconta in poche righe se ha già pattinato, dove e per quanto tempo."
             />
+          </Campo>
+          <Campo label="Viene da un altro club?">
+            <Input
+              className="h-11"
+              list="club_provenienza"
+              value={form.club_provenienza}
+              onChange={(e) => set_val("club_provenienza", e.target.value)}
+              placeholder="Lascia vuoto se non viene da nessun club"
+            />
+            <datalist id="club_provenienza">
+              {club_suggeriti.map((c) => <option key={c.nome} value={c.nome}>{c.citta ?? ""}</option>)}
+            </datalist>
           </Campo>
           <Campo label="Livello dichiarato">
             <select

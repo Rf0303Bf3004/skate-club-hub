@@ -338,6 +338,7 @@ const SchedaDomanda: React.FC<{ d: Domanda; puo_gestire: boolean }> = ({ d, puo_
         <Gruppo titolo={kd("sez_dichiara")}>
           <Voce label={kd("livello_dichiarato")} valore={d.livello_dichiarato} vuoto={nv} />
           <Voce label={kd("esperienza")} valore={d.esperienza} vuoto={nv} multilinea />
+          <Voce label={kd("club_provenienza")} valore={d.club_provenienza} vuoto={nv} />
           <Voce label={kd("note_famiglia")} valore={d.note_famiglia} vuoto={nv} multilinea />
         </Gruppo>
         <div className="space-y-4">
