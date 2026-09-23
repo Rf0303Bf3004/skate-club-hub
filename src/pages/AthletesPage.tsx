@@ -226,7 +226,7 @@ const AtletaModal: React.FC<{
     if (!info) return;
     set_form((p) => ({
       ...p,
-      [citta_key]: String((p as any)[citta_key] ?? "").trim() || info.citta,
+      [citta_key]: String((p as any)[citta_key] ?? "").trim() || (info.localita.length === 1 ? info.localita[0] : ""),
       [cantone_key]: String((p as any)[cantone_key] ?? "").trim() || info.cantone,
     }));
   }, [form]);
