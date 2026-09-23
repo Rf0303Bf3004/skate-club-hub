@@ -191,6 +191,9 @@ const PortaleAtletaPage: React.FC = () => {
   }
 
   const nome_completo = `${atleta.nome} ${atleta.cognome}`.trim();
+  // Riga di riepilogo in testa alla scheda Iscriviti: nome, club, categoria e livello
+  // letti dalla prima riga della RPC `corsi_atleta_pubblico`.
+  const riga_riepilogo = corsi_disponibili[0] ?? null;
   const iniziali = `${atleta.nome?.[0] ?? ""}${atleta.cognome?.[0] ?? ""}`.toUpperCase();
 
   const tabs: { key: TabKey; label: string; icon: any }[] = [
