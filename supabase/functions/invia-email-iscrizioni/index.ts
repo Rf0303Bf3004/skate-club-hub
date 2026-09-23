@@ -331,3 +331,130 @@ Deno.serve(async (req) => {
     return json({ error: (e as Error).message }, 500);
   }
 });
+
+// ── Coda benvenuto (lato server) ─────────────────────────────────────────
+const MAX_TENTATIVI = 5;
+
+async function elabora_coda_benvenuto(admin: any) {
+  const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  const provider_ok = !!RESEND_API_KEY && !!LOVABLE_API_KEY;
+
+  const { data: righe, error } = await admin.rpc("prendi_benvenuti_da_inviare", { p_limite: 20 });
+  if (error) {
+    console.error("[coda_benvenuto] presa in carico", error);
+    return { ok: false, error: "presa_in_carico_fallita" };
+  }
+
+  const esito = async (domanda_id: string, stato: string, motivo: string | null) => {
+    const patch: Record<string, unknown> = { mail_benvenuto_stato: stato, mail_benvenuto_motivo: motivo };
+    if (stato === "inviata") patch.mail_benvenuto_inviata_at = new Date().toISOString();
+    const { error: u_err } = await admin.from("domande_iscrizione").update(patch).eq("id", domanda_id);
+    if (u_err) console.error("[coda_benvenuto] esito non scritto", domanda_id, u_err);
+  };
+
+  const registra = async (club_id: string, payload: Record<string, unknown>) => {
+    const { error: r_err } = await admin.from("comunicazioni").insert({
+      club_id,
+      tipo_destinatari: "per_atleta",
+      stato: "inviata",
+      categoria: "inviata",
+      inviata_at: new Date().toISOString(),
+      tipo: "benvenuto_iscrizione",
+      ...payload,
+    });
+    if (r_err) console.error("[coda_benvenuto] registro comunicazione", r_err);
+  };
+
+  let inviate = 0, fallite = 0;
+  for (const r of (righe ?? []) as any[]) {
+    const ultimo = Number(r.tentativi ?? 0) >= MAX_TENTATIVI;
+    // Guasto temporaneo: resta in coda finché ci sono tentativi.
+    const guasto = async (motivo: string, dettaglio: string) => {
+      fallite++;
+      await esito(r.domanda_id, ultimo ? "fallita" : "da_inviare", motivo);
+      if (ultimo) {
+        await registra(r.club_id, {
+          atleta_id: r.atleta_id,
+          stato: "fallita",
+          sotto_tipo: motivo,
+          tipo_destinatari: "staff", // mai alla famiglia
+          titolo: "Benvenuto NON inviato",
+          testo: dettaglio.slice(0, 1000),
+        });
+      }
+    };
+
+    const { data: a, error: a_err } = await admin
+      .from("atleti")
+      .select("id, nome, cognome, codice_atleta")
+      .eq("id", r.atleta_id)
+      .eq("club_id", r.club_id)
+      .maybeSingle();
+    if (a_err || !a) { await guasto("atleta_non_trovato", "Atleta non trovata"); continue; }
+    const nome_completo = `${a.nome ?? ""} ${a.cognome ?? ""}`.trim();
+
+    const { data: club } = await admin.from("clubs").select("nome").eq("id", r.club_id).maybeSingle();
+    const club_nome = club?.nome ?? "Il tuo club";
+
+    const { data: emails, error: e_err } = await admin.rpc("email_comunicazioni_atleta", { p_atleta: a.id });
+    if (e_err) { await guasto("lettura_indirizzi_fallita", e_err.message); continue; }
+    let destinatari = ((emails ?? []) as string[]).filter((x) => !!x && x.includes("@"));
+    const email_domanda = String(r.email_domanda ?? "").trim();
+    if (destinatari.length === 0 && email_domanda.includes("@")) destinatari = [email_domanda];
+
+    if (destinatari.length === 0) {
+      fallite++;
+      await esito(r.domanda_id, "senza_indirizzo", "senza_email");
+      await registra(r.club_id, {
+        atleta_id: a.id, stato: "fallita", sotto_tipo: "senza_email", tipo_destinatari: "staff",
+        titolo: `Benvenuto NON inviato — ${nome_completo}`,
+        testo: "Benvenuto non inviato: nessun indirizzo email della famiglia.",
+      });
+      continue;
+    }
+    if (!provider_ok) {
+      await guasto("provider_email_non_configurato", "Benvenuto non inviato: invio email non configurato.");
+      continue;
+    }
+
+    const livello = String(r.livello ?? "").trim();
+    const oggetto = `Iscrizione confermata — ${club_nome}`;
+    const html = `<div style="font-family:sans-serif;color:#0f172a">
+      <h2>Benvenuta in ${esc(club_nome)}</h2>
+      <p>L'iscrizione di <strong>${esc(nome_completo)}</strong> è confermata.</p>
+      ${livello ? `<p>Livello assegnato: <strong>${esc(livello)}</strong></p>` : ""}
+      <p>Codice di accesso: <strong style="font-family:monospace;font-size:18px;letter-spacing:2px">${esc(a.codice_atleta ?? "")}</strong></p>
+      <p>Con questo codice si entra nel portale delle famiglie su <a href="${BASE_APP}">${BASE_APP}</a> e si accede all'app del club, dove trovi calendario, comunicazioni e fatture.</p>
+    </div>`;
+
+    const resp = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+        "X-Connection-Api-Key": RESEND_API_KEY!,
+      },
+      body: JSON.stringify({
+        from: `${club_nome} <iscrizioni@send.icearena.ch>`,
+        to: destinatari, subject: oggetto, html,
+      }),
+    }).catch((e) => e as Error);
+    if (resp instanceof Error || !resp.ok) {
+      const dettaglio = resp instanceof Error ? resp.message : `[${resp.status}] ${await resp.text()}`;
+      await guasto("invio_fallito", `Benvenuto non inviato a ${destinatari.join(", ")}: ${dettaglio}`);
+      continue;
+    }
+    inviate++;
+    await esito(r.domanda_id, "inviata", null);
+    await registra(r.club_id, {
+      titolo: oggetto,
+      testo: `Benvenuto e codice di accesso. Inviato a: ${destinatari.join(", ")}`,
+      atleta_id: a.id,
+    });
+  }
+
+  const { error: d_err } = await admin.rpc("disarma_riprova_benvenuto_se_vuota");
+  if (d_err) console.error("[coda_benvenuto] disarmo", d_err);
+  return { ok: true, prese: (righe ?? []).length, inviate, fallite };
+}
