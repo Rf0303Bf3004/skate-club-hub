@@ -113,3 +113,11 @@ export function fmt_date_long(d: DateInput, fallback: string = "—"): string {
     year: "numeric",
   }, fallback);
 }
+
+/** Giorno di calendario (AAAA-MM-GG) per esteso: «martedì 29.09.2026», nella lingua corrente. */
+export function format_giorno_esteso(iso: string | null | undefined, fallback: string = "—"): string {
+  if (!iso) return fallback;
+  const d = new Date(`${iso.slice(0, 10)}T00:00:00`);
+  if (isNaN(d.getTime())) return fallback;
+  return `${format_data(d, { weekday: "long" })} ${format_data(d, { day: "2-digit", month: "2-digit", year: "numeric" })}`;
+}

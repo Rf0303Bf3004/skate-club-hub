@@ -1111,6 +1111,8 @@ export function use_crea_comunicazione() {
       };
 
       const urgente = data.urgente === true;
+      // Giorno di calendario scelto nel modulo (AAAA-MM-GG, già composto in ora locale).
+      const data_evento: string | null = data.data_evento || null;
 
       // Atleti specifici (selezione esplicita) → lista in atleti_ids (gestita dal trigger)
       if (
@@ -1126,6 +1128,7 @@ export function use_crea_comunicazione() {
           tipo_destinatari: "atleti",
           atleti_ids: ids,
           urgente,
+          data_evento,
           ...fk_evento,
         });
         if (error) throw error;
@@ -1145,6 +1148,7 @@ export function use_crea_comunicazione() {
             testo: data.testo,
             tipo_destinatari: "manuale",
             urgente,
+            data_evento,
             ...fk_evento,
           })
           .select("id")
@@ -1179,6 +1183,7 @@ export function use_crea_comunicazione() {
             testo: data.testo,
             tipo_destinatari: "manuale",
             urgente,
+            data_evento,
             ...fk_evento,
           })
           .select("id")
@@ -1219,6 +1224,7 @@ export function use_crea_comunicazione() {
             // 'manuale' evita che il trigger ripopoli su tutto il club.
             tipo_destinatari: "manuale",
             urgente,
+            data_evento,
             ...fk_evento,
           })
           .select("id")
@@ -1240,6 +1246,7 @@ export function use_crea_comunicazione() {
         corso_id: data.corso_id || null,
         atleta_id: data.atleta_id || null,
         urgente,
+        data_evento,
         ...fk_evento,
       });
       if (error) throw error;
