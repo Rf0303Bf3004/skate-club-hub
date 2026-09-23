@@ -58,8 +58,8 @@ const IscrivitiPage: React.FC = () => {
   const [form, set_form] = useState<Record<string, any>>({
     nome: "", cognome: "", data_nascita: "", sesso: "",
     genitore1_nome: "", genitore1_cognome: "", genitore1_email: "", genitore1_telefono: "",
-    genitore1_indirizzo: "", genitore1_cap: "", genitore1_citta: "", genitore1_cantone: "",
-    esperienza: "", livello_dichiarato: "",
+    genitore1_indirizzo: "", genitore1_cap: "", genitore1_citta: "", genitore1_cantone: "", genitore1_paese_iso: "CH",
+    esperienza: "", livello_dichiarato: "", note_famiglia: "",
     consenso_foto_video: false, partecipa_gare: false, intende_test_livello: false,
   });
   const [contratto_ok, set_contratto_ok] = useState(false);
@@ -253,6 +253,16 @@ const IscrivitiPage: React.FC = () => {
                 {CANTONI_CH.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </Campo>
+            <Campo label="Paese">
+              <select
+                className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm"
+                value={form.genitore1_paese_iso}
+                onChange={(e) => set_val("genitore1_paese_iso", e.target.value)}
+              >
+                <option value="CH">Svizzera</option>
+                <option value="IT">Italia</option>
+              </select>
+            </Campo>
           </div>
         </section>
 
@@ -276,6 +286,14 @@ const IscrivitiPage: React.FC = () => {
               <option value="">—</option>
               {livelli.map((l) => <option key={l} value={l}>{l}</option>)}
             </select>
+          </Campo>
+          <Campo label="Note per il club">
+            <Textarea
+              rows={3}
+              value={form.note_famiglia}
+              onChange={(e) => set_val("note_famiglia", e.target.value)}
+              placeholder="Qualcosa che il club deve sapere (salute, orari, richieste particolari)."
+            />
           </Campo>
           <p className="text-xs text-muted-foreground">
             Indicazione di massima: il livello lo assegna il club dopo averla vista in pista.
