@@ -240,7 +240,7 @@ Deno.serve(async (req) => {
           atleta_id: a.id,
           stato: "fallita",
           inviata_at: null,
-          motivo_fallimento: motivo,
+          sotto_tipo: motivo,
         });
       };
       if (destinatari.length === 0) {
