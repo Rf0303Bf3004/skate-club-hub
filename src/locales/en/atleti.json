@@ -327,7 +327,17 @@
         "ricevuta_il": "Received on {{data}}",
         "eta_anni_one": "{{count}} year",
         "eta_anni_other": "{{count}} years"
-      }
+      },
+      "rimanda_benvenuto": "Resend welcome email",
+      "benvenuto_senza_email": "Welcome email NOT sent: the family has no email address.",
+      "benvenuto_provider": "Welcome email NOT sent: email sending is not configured.",
+      "benvenuto_fallito": "Welcome email NOT sent: sending failed.",
+      "benvenuto_mai": "No welcome email sending recorded",
+      "benvenuto_inviato_il": "Welcome email sent on {{quando}}",
+      "benvenuto_fallito_il": "{{quando}} — {{motivo}}",
+      "approvate_recenti": "Approved in the last 30 days",
+      "approvate_errore": "Approved applications and email results could not be loaded.",
+      "riprova": "Try again"
     }
   },
   "anagrafica": {

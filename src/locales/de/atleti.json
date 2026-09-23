@@ -327,7 +327,17 @@
         "ricevuta_il": "Eingegangen am {{data}}",
         "eta_anni_one": "{{count}} Jahr",
         "eta_anni_other": "{{count}} Jahre"
-      }
+      },
+      "rimanda_benvenuto": "Willkommens-E-Mail erneut senden",
+      "benvenuto_senza_email": "Willkommens-E-Mail NICHT gesendet: die Familie hat keine E-Mail-Adresse.",
+      "benvenuto_provider": "Willkommens-E-Mail NICHT gesendet: der E-Mail-Versand ist nicht eingerichtet.",
+      "benvenuto_fallito": "Willkommens-E-Mail NICHT gesendet: der Versand ist fehlgeschlagen.",
+      "benvenuto_mai": "Kein Versand der Willkommens-E-Mail registriert",
+      "benvenuto_inviato_il": "Willkommens-E-Mail gesendet am {{quando}}",
+      "benvenuto_fallito_il": "{{quando}} — {{motivo}}",
+      "approvate_recenti": "In den letzten 30 Tagen genehmigt",
+      "approvate_errore": "Genehmigte Anträge und E-Mail-Ergebnisse konnten nicht geladen werden.",
+      "riprova": "Erneut versuchen"
     }
   },
   "anagrafica": {
