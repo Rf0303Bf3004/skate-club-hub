@@ -318,7 +318,7 @@ export function use_rimanda_benvenuto() {
   const invalida = use_invalida();
   return useMutation({
     mutationFn: async (domanda_id: string) => {
-      const { error } = await supabase.rpc("rimanda_mail_benvenuto" as any, { p_domanda: domanda_id });
+      const { error } = await supabase.rpc("rimanda_mail_benvenuto", { p_domanda: domanda_id });
       if (error) throw error;
     },
     onSettled: invalida,
@@ -358,14 +358,14 @@ export function use_domande_approvate_recenti() {
       const { data, error } = await supabase
         .from("domande_iscrizione")
         .select(
-          "id, nome, cognome, atleta_id, gestita_il, mail_benvenuto_stato, mail_benvenuto_motivo, mail_benvenuto_tentativi, mail_benvenuto_ultimo_tentativo, mail_benvenuto_inviata_at" as any,
+          "id, nome, cognome, atleta_id, gestita_il, mail_benvenuto_stato, mail_benvenuto_motivo, mail_benvenuto_tentativi, mail_benvenuto_ultimo_tentativo, mail_benvenuto_inviata_at",
         )
         .eq("club_id", club_id)
         .eq("stato", "approvata")
         .gte("gestita_il", da)
         .order("gestita_il", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as DomandaApprovata[];
+      return (data ?? []).map((r) => ({ ...r, mail_benvenuto_stato: r.mail_benvenuto_stato as StatoMailBenvenuto }));
     },
   });
 }
