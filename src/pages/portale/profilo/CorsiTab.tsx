@@ -88,11 +88,10 @@ const CorsiTab: React.FC = () => {
     queryKey: ["portale_corsi", session?.atleta.id],
     enabled: !!session,
     queryFn: () => carica_corsi(session as PortaleSession),
-    meta: { onError: undefined },
   });
 
   React.useEffect(() => {
-    if (query.isError) segnala_errore("CorsiTab", t("corsi.errore"), query.error, { gravita: "avviso" } as any);
+    if (query.isError) segnala_errore("CorsiTab", t("corsi.errore"), query.error, undefined, "avviso");
   }, [query.isError]);
 
   const richiedi = async (corso: any) => {
