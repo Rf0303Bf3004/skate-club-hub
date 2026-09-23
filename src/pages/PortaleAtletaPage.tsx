@@ -156,10 +156,10 @@ const PortaleAtletaPage: React.FC = () => {
   };
 
   const handle_richiedi_iscrizione = async (corso: any) => {
-    set_busy_id(corso.id);
+    set_busy_id(corso.corso_id);
     try {
-      await call_portale(token, "richiedi_iscrizione", { corso_id: corso.id });
-      set_richieste_inviate((prev) => new Set([...prev, corso.id]));
+      await call_portale(token, "richiedi_iscrizione", { corso_id: corso.corso_id });
+      set_richieste_inviate((prev) => new Set([...prev, corso.corso_id]));
       toast({ title: t("atleta_page.richiesta_inviata_titolo"), description: t("atleta_page.richiesta_inviata_desc", { nome_corso: corso.nome }) });
     } catch (err: any) {
       toast({ title: t("atleta_page.errore"), description: err?.message, variant: "destructive" });
