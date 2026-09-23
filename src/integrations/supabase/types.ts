@@ -10023,6 +10023,29 @@ export type Database = {
           trovati: number
         }[]
       }
+      corsi_atleta_pubblico: {
+        Args: { p_codice: string }
+        Returns: {
+          atleta: string
+          categoria: string
+          club: string
+          corso_id: string
+          costo_annuale: number
+          costo_mensile: number
+          giorno: string
+          iscritto: boolean
+          livello: string
+          livello_richiesto: string
+          nome: string
+          ora_fine: string
+          ora_inizio: string
+          percorso: string
+          richiede_approvazione: boolean
+          richiesta_in_attesa: boolean
+          salto_livello: boolean
+          tipo: string
+        }[]
+      }
       corsi_per_atleta: {
         Args: { p_atleta_id: string }
         Returns: {
