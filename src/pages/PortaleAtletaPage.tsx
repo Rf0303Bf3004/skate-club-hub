@@ -53,7 +53,8 @@ const PortaleAtletaPage: React.FC = () => {
   const [iscrizioni_attive, set_iscrizioni_attive] = useState<Set<string>>(new Set());
   const [richieste_inviate, set_richieste_inviate] = useState<Set<string>>(new Set());
   const [busy_id, set_busy_id] = useState<string | null>(null);
-  const [errore_corsi, set_errore_corsi] = useState(false);
+  // Errore della lettura corsi: distinto dallo stato vuoto, con o senza possibilità di riprovare.
+  const [errore_corsi, set_errore_corsi] = useState<{ messaggio: string; riprovabile: boolean } | null>(null);
   const [corsi_caricati, set_corsi_caricati] = useState(false);
   const [tentativo_corsi, set_tentativo_corsi] = useState(0);
 
