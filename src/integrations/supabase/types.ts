@@ -2976,6 +2976,11 @@ export type Database = {
           intende_test_livello: boolean
           livello_assegnato: string | null
           livello_dichiarato: string | null
+          mail_benvenuto_inviata_at: string | null
+          mail_benvenuto_motivo: string | null
+          mail_benvenuto_stato: string | null
+          mail_benvenuto_tentativi: number
+          mail_benvenuto_ultimo_tentativo: string | null
           nome: string
           note_famiglia: string | null
           note_risposta: string | null
@@ -3011,6 +3016,11 @@ export type Database = {
           intende_test_livello?: boolean
           livello_assegnato?: string | null
           livello_dichiarato?: string | null
+          mail_benvenuto_inviata_at?: string | null
+          mail_benvenuto_motivo?: string | null
+          mail_benvenuto_stato?: string | null
+          mail_benvenuto_tentativi?: number
+          mail_benvenuto_ultimo_tentativo?: string | null
           nome: string
           note_famiglia?: string | null
           note_risposta?: string | null
@@ -3046,6 +3056,11 @@ export type Database = {
           intende_test_livello?: boolean
           livello_assegnato?: string | null
           livello_dichiarato?: string | null
+          mail_benvenuto_inviata_at?: string | null
+          mail_benvenuto_motivo?: string | null
+          mail_benvenuto_stato?: string | null
+          mail_benvenuto_tentativi?: number
+          mail_benvenuto_ultimo_tentativo?: string | null
           nome?: string
           note_famiglia?: string | null
           note_risposta?: string | null
@@ -9870,6 +9885,7 @@ export type Database = {
         }[]
       }
       archivia_comunicazioni_vecchie: { Args: never; Returns: number }
+      arma_riprova_benvenuto: { Args: never; Returns: undefined }
       arrotonda_chf: { Args: { p: number }; Returns: number }
       assenze_dichiarate: {
         Args: { p_al: string; p_dal: string }
@@ -10099,6 +10115,7 @@ export type Database = {
         Args: { p_assente?: boolean; p_planning_id: string }
         Returns: undefined
       }
+      disarma_riprova_benvenuto_se_vuota: { Args: never; Returns: boolean }
       documenti_oltre_conservazione: {
         Args: { p_anni?: number; p_club?: string }
         Returns: {
@@ -10562,6 +10579,17 @@ export type Database = {
           titolo: string
         }[]
       }
+      prendi_benvenuti_da_inviare: {
+        Args: { p_limite?: number }
+        Returns: {
+          atleta_id: string
+          club_id: string
+          domanda_id: string
+          email_domanda: string
+          livello: string
+          tentativi: number
+        }[]
+      }
       prezzo_test_livello: {
         Args: { p_livello_target: string; p_test_id: string }
         Returns: number
@@ -10796,6 +10824,10 @@ export type Database = {
           voce: string
         }[]
       }
+      rimanda_mail_benvenuto: {
+        Args: { p_domanda: string }
+        Returns: undefined
+      }
       rinnovo_da_confermare: {
         Args: never
         Returns: {
@@ -10909,6 +10941,7 @@ export type Database = {
         Args: { p_fattura: string; p_motivo: string }
         Returns: string
       }
+      sveglia_coda_benvenuto: { Args: never; Returns: undefined }
       swiss_qr_payload: {
         Args: { p_fattura: string }
         Returns: {
