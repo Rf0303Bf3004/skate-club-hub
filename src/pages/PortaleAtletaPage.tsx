@@ -48,6 +48,9 @@ const PortaleAtletaPage: React.FC = () => {
   const [iscrizioni_attive, set_iscrizioni_attive] = useState<Set<string>>(new Set());
   const [richieste_inviate, set_richieste_inviate] = useState<Set<string>>(new Set());
   const [busy_id, set_busy_id] = useState<string | null>(null);
+  const [errore_corsi, set_errore_corsi] = useState(false);
+  const [corsi_caricati, set_corsi_caricati] = useState(false);
+  const [tentativo_corsi, set_tentativo_corsi] = useState(0);
 
   const { traduci } = use_contenuti_traduzioni(
     "comunicazioni",
@@ -87,16 +90,24 @@ const PortaleAtletaPage: React.FC = () => {
           const d = await call_portale(token, "fatture");
           set_fatture(d.fatture ?? []);
         } else if (tab === "iscrivi") {
-          const d = await call_portale(token, "corsi");
-          set_corsi_disponibili(d.corsi ?? []);
-          set_iscrizioni_attive(new Set(d.iscrizioni_attive ?? []));
-          set_richieste_inviate(new Set(d.richieste ?? []));
+          set_errore_corsi(false);
+          set_corsi_caricati(false);
+          try {
+            const d = await call_portale(token, "corsi");
+            set_corsi_disponibili(d.corsi ?? []);
+            set_iscrizioni_attive(new Set(d.iscrizioni_attive ?? []));
+            set_richieste_inviate(new Set(d.richieste ?? []));
+            set_corsi_caricati(true);
+          } catch (err) {
+            console.error("Errore caricamento corsi", err);
+            set_errore_corsi(true);
+          }
         }
       } catch (err) {
         console.error("Errore caricamento tab", err);
       }
     })();
-  }, [tab, atleta, token]);
+  }, [tab, atleta, token, tentativo_corsi]);
 
   const handle_rsvp = async (destinatario_id: string, risposta: "si" | "no") => {
     set_busy_id(destinatario_id);
@@ -367,7 +378,16 @@ const PortaleAtletaPage: React.FC = () => {
             <p className="text-xs text-muted-foreground">
               {t("atleta_page.corsi_disponibili_desc")}
             </p>
-            {corsi_disponibili.length === 0 ? (
+            {errore_corsi ? (
+              <div className="bg-card border border-destructive/40 rounded-xl p-4 space-y-2 text-sm">
+                <p className="text-destructive font-medium">{t("atleta_page.errore_corsi")}</p>
+                <Button size="sm" variant="outline" onClick={() => set_tentativo_corsi((n) => n + 1)}>
+                  {t("atleta_page.riprova")}
+                </Button>
+              </div>
+            ) : !corsi_caricati ? (
+              <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+            ) : corsi_disponibili.length === 0 ? (
               <EmptyState icon={Trophy} text={t("atleta_page.nessun_corso_disponibile")} />
             ) : (
               corsi_disponibili.map((corso) => {
