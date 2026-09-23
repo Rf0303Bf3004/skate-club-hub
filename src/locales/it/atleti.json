@@ -921,7 +921,12 @@
       "benvenuto_fallito_il": "{{quando}} — {{motivo}}",
       "approvate_recenti": "Approvate negli ultimi 30 giorni",
       "approvate_errore": "Non è stato possibile leggere le domande approvate e l'esito delle mail.",
-      "riprova": "Riprova"
+      "riprova": "Riprova",
+      "benvenuto_in_coda": "Mail di conferma in coda: la spedisce il server tra pochi secondi.",
+      "benvenuto_in_riprova_one": "Mail non ancora partita ({{motivo}}): nuovo tentativo tra qualche minuto ({{count}} tentativo finora).",
+      "benvenuto_in_riprova_other": "Mail non ancora partita ({{motivo}}): nuovo tentativo tra qualche minuto ({{count}} tentativi finora).",
+      "approvata_il": "approvata il {{quando}}",
+      "benvenuto_stato_sotto": "La mail di conferma alla famiglia parte in automatico. Il suo stato compare in «Approvate negli ultimi 30 giorni»."
     },
     "prove": {
       "sottotitolo": "Le famiglie che hanno chiesto di venire a provare dalla pagina pubblica.",

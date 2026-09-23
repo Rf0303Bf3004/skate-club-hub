@@ -337,7 +337,12 @@
       "benvenuto_fallito_il": "{{quando}} — {{motivo}}",
       "approvate_recenti": "Approuvées ces 30 derniers jours",
       "approvate_errore": "Impossible de lire les demandes approuvées et le résultat des e-mails.",
-      "riprova": "Réessayer"
+      "riprova": "Réessayer",
+      "benvenuto_in_coda": "E-mail de confirmation en file d'attente : le serveur l'envoie dans quelques secondes.",
+      "benvenuto_in_riprova_one": "E-mail pas encore envoyé ({{motivo}}) : nouvel essai dans quelques minutes ({{count}} essai jusqu'ici).",
+      "benvenuto_in_riprova_other": "E-mail pas encore envoyé ({{motivo}}) : nouvel essai dans quelques minutes ({{count}} essais jusqu'ici).",
+      "approvata_il": "approuvée le {{quando}}",
+      "benvenuto_stato_sotto": "L'e-mail de confirmation à la famille part automatiquement. Son état apparaît dans « Approuvées ces 30 derniers jours »."
     }
   },
   "anagrafica": {

@@ -337,7 +337,12 @@
       "benvenuto_fallito_il": "{{quando}} — {{motivo}}",
       "approvate_recenti": "Approved in the last 30 days",
       "approvate_errore": "Approved applications and email results could not be loaded.",
-      "riprova": "Try again"
+      "riprova": "Try again",
+      "benvenuto_in_coda": "Confirmation email queued: the server will send it in a few seconds.",
+      "benvenuto_in_riprova_one": "Email not sent yet ({{motivo}}): retrying in a few minutes ({{count}} attempt so far).",
+      "benvenuto_in_riprova_other": "Email not sent yet ({{motivo}}): retrying in a few minutes ({{count}} attempts so far).",
+      "approvata_il": "approved on {{quando}}",
+      "benvenuto_stato_sotto": "The confirmation email to the family is sent automatically. Its status appears under “Approved in the last 30 days”."
     }
   },
   "anagrafica": {

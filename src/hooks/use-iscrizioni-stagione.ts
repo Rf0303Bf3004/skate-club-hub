@@ -290,7 +290,6 @@ export function use_approva_domanda() {
       livello: string;
       categoria: string | null;
       note: string | null;
-      email_famiglia?: string | null;
     }) => {
       const { data, error } = await supabase.rpc("approva_domanda_iscrizione" as any, {
         p_domanda: p.domanda_id,

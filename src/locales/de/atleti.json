@@ -337,7 +337,12 @@
       "benvenuto_fallito_il": "{{quando}} — {{motivo}}",
       "approvate_recenti": "In den letzten 30 Tagen genehmigt",
       "approvate_errore": "Genehmigte Anträge und E-Mail-Ergebnisse konnten nicht geladen werden.",
-      "riprova": "Erneut versuchen"
+      "riprova": "Erneut versuchen",
+      "benvenuto_in_coda": "Bestätigungs-E-Mail in der Warteschlange: der Server sendet sie in wenigen Sekunden.",
+      "benvenuto_in_riprova_one": "E-Mail noch nicht versendet ({{motivo}}): neuer Versuch in einigen Minuten (bisher {{count}} Versuch).",
+      "benvenuto_in_riprova_other": "E-Mail noch nicht versendet ({{motivo}}): neuer Versuch in einigen Minuten (bisher {{count}} Versuche).",
+      "approvata_il": "genehmigt am {{quando}}",
+      "benvenuto_stato_sotto": "Die Bestätigungs-E-Mail an die Familie wird automatisch versendet. Ihr Status erscheint unter „In den letzten 30 Tagen genehmigt“."
     }
   },
   "anagrafica": {
