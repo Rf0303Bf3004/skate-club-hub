@@ -1,37 +1,49 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { Loader2, User, Calendar as CalIcon, FileText, Trophy, BookOpen, AlertCircle, Check } from "lucide-react";
+import { Loader2, User, Calendar as CalIcon, FileText, Trophy, BookOpen, AlertCircle, Check, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { use_contenuti_traduzioni } from "@/hooks/use-contenuti-traduzioni";
 import { formatta_livelli_corso, is_apertura_totale, livello_dichiarato } from "@/lib/livelli-corso";
+import DateInput from "@/components/forms/DateInput";
 
 import { format_data } from "@/lib/format-data";
-// Portale pubblico mobile-first: l'identificativo è il `codice_atleta` (AT-XXXX-XXXX),
-// lo stesso usato dall'app mobile genitori. L'elenco dei corsi NON passa più dall'edge
-// function `portale-atleta`: legge direttamente la RPC `corsi_atleta_pubblico` con il
-// client pubblico, così non dipende da ridistribuzioni di funzioni.
-
+// Portale pubblico mobile-first: l'identificativo è il `codice_atleta` (AT-XXXX-XXXX).
+// Avvisi, risposte, corsi, richieste di iscrizione e lezioni private leggono e scrivono
+// direttamente con le funzioni del database `*_pubblico` (client anon): il Publish le
+// porta sempre aggiornate. Restano sull'edge function `portale-atleta` solo `init`
+// (intestazione e dati anagrafici), `calendario` e `fatture`, non coperte da funzioni DB.
 
 import { supabase } from "@/lib/supabase";
 import { segnala_errore } from "@/lib/errori";
 
-type TabKey = "dati" | "calendario" | "comunicazioni" | "fatture" | "iscrivi";
+type TabKey = "dati" | "calendario" | "comunicazioni" | "fatture" | "iscrivi" | "private";
 
 const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/portale-atleta`;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
-async function call_portale(token: string, action: string, extra: Record<string, unknown> = {}) {
+// Solo per init / calendario / fatture: nessuna funzione DB equivalente esiste.
+async function call_portale(token: string, action: "init" | "calendario" | "fatture") {
   const res = await fetch(FN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` },
-    body: JSON.stringify({ token, action, ...extra }),
+    body: JSON.stringify({ token, action }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
   return data;
+}
+
+type ErroreLettura = { messaggio: string; riprovabile: boolean };
+const CODICI_CON_MESSAGGIO_DB = new Set(["53400", "23505", "P0001", "22023"]);
+const FASCE = ["mattina", "pomeriggio", "sera"] as const;
+
+function oggi_iso(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 const PortaleAtletaPage: React.FC = () => {
@@ -52,16 +64,33 @@ const PortaleAtletaPage: React.FC = () => {
   const [corsi_disponibili, set_corsi_disponibili] = useState<any[]>([]);
   const [iscrizioni_attive, set_iscrizioni_attive] = useState<Set<string>>(new Set());
   const [richieste_inviate, set_richieste_inviate] = useState<Set<string>>(new Set());
+  const [private_righe, set_private_righe] = useState<any[]>([]);
+  const [istruttori, set_istruttori] = useState<{ istruttore_id: string; nome: string }[]>([]);
   const [busy_id, set_busy_id] = useState<string | null>(null);
-  // Errore della lettura corsi: distinto dallo stato vuoto, con o senza possibilità di riprovare.
-  const [errore_corsi, set_errore_corsi] = useState<{ messaggio: string; riprovabile: boolean } | null>(null);
-  const [corsi_caricati, set_corsi_caricati] = useState(false);
-  const [tentativo_corsi, set_tentativo_corsi] = useState(0);
+  // Stato della lettura della scheda aperta (avvisi, corsi, private): tre stati distinti.
+  const [errore_lettura, set_errore_lettura] = useState<ErroreLettura | null>(null);
+  const [caricato, set_caricato] = useState(false);
+  const [tentativo, set_tentativo] = useState(0);
+
+  // Modulo lezione privata
+  const [lp_data, set_lp_data] = useState("");
+  const [lp_fascia, set_lp_fascia] = useState("");
+  const [lp_istruttore, set_lp_istruttore] = useState("");
+  const [lp_note, set_lp_note] = useState("");
+  const [lp_invio, set_lp_invio] = useState(false);
 
   const { traduci } = use_contenuti_traduzioni(
     "comunicazioni",
-    comunicazioni.map((c: any) => c?.comunicazioni?.id).filter(Boolean),
+    comunicazioni.map((c: any) => c?.comunicazione_id).filter(Boolean),
   );
+
+  /** Traduce un errore delle funzioni DB in un messaggio per la famiglia. */
+  const interpreta_errore = (err: any, generico: string): ErroreLettura => {
+    const codice = err?.code ?? null;
+    if (codice === "P0002") return { messaggio: t("atleta_page.corsi_errore_codice"), riprovabile: false };
+    if (codice && CODICI_CON_MESSAGGIO_DB.has(codice)) return { messaggio: err?.message || generico, riprovabile: false };
+    return { messaggio: generico, riprovabile: true };
+  };
 
   useEffect(() => {
     (async () => {
@@ -84,72 +113,79 @@ const PortaleAtletaPage: React.FC = () => {
 
   useEffect(() => {
     if (!atleta) return;
+    let annullato = false;
+    set_errore_lettura(null);
+    set_caricato(false);
     (async () => {
-      try {
-        if (tab === "calendario") {
-          const d = await call_portale(token, "calendario");
-          set_eventi_calendario(d.eventi ?? []);
-        } else if (tab === "comunicazioni") {
-          const d = await call_portale(token, "comunicazioni");
-          set_comunicazioni(d.comunicazioni ?? []);
-        } else if (tab === "fatture") {
-          const d = await call_portale(token, "fatture");
-          set_fatture(d.fatture ?? []);
-        } else if (tab === "iscrivi") {
-          set_errore_corsi(null);
-          set_corsi_caricati(false);
-          try {
-            // Lista corsi letta direttamente dal database (RPC pubblica), non dall'edge function.
-            const { data, error } = await supabase.rpc("corsi_atleta_pubblico", { p_codice: token });
-            if (error) throw error;
-            const righe = data ?? [];
-            set_corsi_disponibili(righe);
-            set_iscrizioni_attive(new Set(righe.filter((r: any) => r.iscritto).map((r: any) => r.corso_id)));
-            set_richieste_inviate(new Set(righe.filter((r: any) => r.richiesta_in_attesa).map((r: any) => r.corso_id)));
-            set_corsi_caricati(true);
-          } catch (err: any) {
-            console.error("Errore caricamento corsi", err);
-            set_corsi_disponibili([]);
-            set_corsi_caricati(true);
-            const codice = err?.code ?? null;
-            if (codice === "P0002") {
-              // Codice non riconosciuto: non serve riprovare, il link è quello sbagliato.
-              set_errore_corsi({ messaggio: t("atleta_page.corsi_errore_codice"), riprovabile: false });
-            } else if (codice === "53400") {
-              // Troppi tentativi: mostro la frase del database, che dice già quanto aspettare.
-              set_errore_corsi({ messaggio: err?.message || t("atleta_page.errore_corsi"), riprovabile: false });
-            } else {
-              set_errore_corsi({ messaggio: t("atleta_page.errore_corsi"), riprovabile: true });
-            }
-            await segnala_errore(
-              "PortaleAtletaPage",
-              codice === "P0002" ? t("atleta_page.corsi_errore_codice") : t("atleta_page.errore_corsi"),
-              err,
-              { tab: "iscrivi", token_presente: !!token },
-              "avviso",
-            );
-          }
+      if (tab === "calendario" || tab === "fatture") {
+        try {
+          const d = await call_portale(token, tab);
+          if (tab === "calendario") set_eventi_calendario(d.eventi ?? []);
+          else set_fatture(d.fatture ?? []);
+        } catch (err) {
+          console.error("Errore caricamento tab", err);
         }
-      } catch (err) {
-        console.error("Errore caricamento tab", err);
+        return;
+      }
+      if (tab === "dati") return;
+      const generico =
+        tab === "comunicazioni" ? t("atleta_page.errore_avvisi")
+        : tab === "private" ? t("atleta_page.errore_private")
+        : t("atleta_page.errore_corsi");
+      try {
+        if (tab === "comunicazioni") {
+          const { data, error } = await supabase.rpc("comunicazioni_atleta_pubblico", { p_codice: token });
+          if (error) throw error;
+          if (!annullato) set_comunicazioni((data ?? []) as any[]);
+        } else if (tab === "iscrivi") {
+          const { data, error } = await supabase.rpc("corsi_atleta_pubblico", { p_codice: token });
+          if (error) throw error;
+          const righe = (data ?? []) as any[];
+          if (annullato) return;
+          set_corsi_disponibili(righe);
+          set_iscrizioni_attive(new Set(righe.filter((r) => r.iscritto).map((r) => r.corso_id)));
+          set_richieste_inviate(new Set(righe.filter((r) => r.richiesta_in_attesa).map((r) => r.corso_id)));
+        } else if (tab === "private") {
+          const [lp, ist] = await Promise.all([
+            supabase.rpc("lezioni_private_atleta_pubblico", { p_codice: token }),
+            supabase.rpc("istruttori_club_pubblico", { p_codice: token }),
+          ]);
+          if (lp.error) throw lp.error;
+          if (ist.error) throw ist.error;
+          if (annullato) return;
+          set_private_righe((lp.data ?? []) as any[]);
+          set_istruttori((ist.data ?? []) as any[]);
+        }
+        if (!annullato) set_caricato(true);
+      } catch (err: any) {
+        if (annullato) return;
+        const esito = interpreta_errore(err, generico);
+        set_errore_lettura(esito);
+        await segnala_errore("PortaleAtletaPage", esito.messaggio, err, { tab, token_presente: !!token }, "avviso");
       }
     })();
-  }, [tab, atleta, token, tentativo_corsi]);
+    return () => { annullato = true; };
+  }, [tab, atleta, token, tentativo]);
 
   const handle_rsvp = async (destinatario_id: string, risposta: "si" | "no") => {
     set_busy_id(destinatario_id);
     try {
-      await call_portale(token, "rsvp", { destinatario_id, risposta });
+      const { error } = await supabase.rpc("rsvp_atleta_pubblico", {
+        p_codice: token, p_destinatario: destinatario_id, p_risposta: risposta,
+      });
+      if (error) throw error;
       set_comunicazioni((prev) =>
         prev.map((c) =>
-          c.id === destinatario_id
+          c.destinatario_id === destinatario_id
             ? { ...c, rsvp_risposta: risposta, rsvp_at: new Date().toISOString() }
             : c,
         ),
       );
       toast({ title: t("atleta_page.risposta_inviata", { risposta: risposta === "si" ? t("atleta_page.si") : t("atleta_page.no") }) });
     } catch (err: any) {
-      toast({ title: t("atleta_page.errore"), description: err?.message, variant: "destructive" });
+      const esito = interpreta_errore(err, t("atleta_page.errore_rsvp"));
+      toast({ title: t("atleta_page.errore"), description: esito.messaggio, variant: "destructive" });
+      segnala_errore("PortaleAtletaPage", esito.messaggio, err, { azione: "rsvp" }, "avviso");
     } finally {
       set_busy_id(null);
     }
@@ -158,14 +194,51 @@ const PortaleAtletaPage: React.FC = () => {
   const handle_richiedi_iscrizione = async (corso: any) => {
     set_busy_id(corso.corso_id);
     try {
-      await call_portale(token, "richiedi_iscrizione", { corso_id: corso.corso_id });
+      const { error } = await supabase.rpc("richiedi_iscrizione_pubblica", { p_codice: token, p_corso: corso.corso_id });
+      if (error) throw error;
       set_richieste_inviate((prev) => new Set([...prev, corso.corso_id]));
       toast({ title: t("atleta_page.richiesta_inviata_titolo"), description: t("atleta_page.richiesta_inviata_desc", { nome_corso: corso.nome }) });
     } catch (err: any) {
-      toast({ title: t("atleta_page.errore"), description: err?.message, variant: "destructive" });
+      const esito = interpreta_errore(err, t("atleta_page.errore_richiesta"));
+      toast({ title: t("atleta_page.errore"), description: esito.messaggio, variant: "destructive" });
+      segnala_errore("PortaleAtletaPage", esito.messaggio, err, { azione: "richiedi_iscrizione" }, "avviso");
     } finally {
       set_busy_id(null);
     }
+  };
+
+  const lp_data_valida = !!lp_data && lp_data >= oggi_iso();
+
+  const handle_richiedi_privata = async () => {
+    if (!lp_data_valida) return;
+    set_lp_invio(true);
+    try {
+      const { error } = await supabase.rpc("richiedi_lezione_privata_pubblica", {
+        p_codice: token,
+        p_data: lp_data,
+        p_fascia: lp_fascia || null,
+        p_note: lp_note.trim() || null,
+        p_istruttore: lp_istruttore || null,
+      } as any);
+      if (error) throw error;
+      toast({ title: t("atleta_page.privata_inviata") });
+      set_lp_data(""); set_lp_fascia(""); set_lp_istruttore(""); set_lp_note("");
+      set_tentativo((n) => n + 1);
+    } catch (err: any) {
+      const esito = interpreta_errore(err, t("atleta_page.errore_richiesta"));
+      toast({ title: t("atleta_page.errore"), description: esito.messaggio, variant: "destructive" });
+      segnala_errore("PortaleAtletaPage", esito.messaggio, err, { azione: "richiedi_privata" }, "avviso");
+    } finally {
+      set_lp_invio(false);
+    }
+  };
+
+  const testo_prezzo = (corso: any): { importo: string | null; suffisso: string } => {
+    const mensile = Number(corso.costo_mensile);
+    const annuale = Number(corso.costo_annuale);
+    if (mensile > 0) return { importo: `CHF ${mensile.toFixed(2)}`, suffisso: t("atleta_page.mese_suffisso") };
+    if (annuale > 0) return { importo: `CHF ${annuale.toFixed(2)}`, suffisso: t("atleta_page.anno_suffisso") };
+    return { importo: null, suffisso: t("atleta_page.prezzo_da_definire") };
   };
 
   if (loading) {
@@ -202,6 +275,7 @@ const PortaleAtletaPage: React.FC = () => {
     { key: "comunicazioni", label: t("atleta_page.tab_avvisi"), icon: BookOpen },
     { key: "fatture", label: t("atleta_page.tab_fatture"), icon: FileText },
     { key: "iscrivi", label: t("atleta_page.tab_iscriviti"), icon: Trophy },
+    { key: "private", label: t("atleta_page.tab_private"), icon: GraduationCap },
   ];
 
   return (
@@ -325,26 +399,39 @@ const PortaleAtletaPage: React.FC = () => {
         {tab === "comunicazioni" && (
           <div className="space-y-3">
             <h2 className="text-sm font-bold text-foreground">{t("atleta_page.avvisi_dal_club")}</h2>
-            {comunicazioni.length === 0 ? (
+            {errore_lettura ? (
+              <BoxErrore errore={errore_lettura} etichetta={t("atleta_page.riprova")} on_riprova={() => set_tentativo((n) => n + 1)} />
+            ) : !caricato ? (
+              <Caricamento />
+            ) : comunicazioni.length === 0 ? (
               <EmptyState icon={BookOpen} text={t("atleta_page.nessun_avviso")} />
             ) : (
               comunicazioni.map((c) => {
-                const com = c.comunicazioni;
-                const richiede_rsvp = com?.richiede_rsvp;
                 const gia_risposto = !!c.rsvp_risposta;
+                const scaduta = !!c.rsvp_scadenza && new Date(c.rsvp_scadenza).getTime() < Date.now();
                 return (
-                  <div key={c.id} className="bg-card border border-border rounded-xl p-4 shadow-card">
+                  <div key={c.destinatario_id} className={`bg-card border rounded-xl p-4 shadow-card ${c.urgente ? "border-destructive border-2" : "border-border"}`}>
+                    {c.urgente && (
+                      <Badge variant="destructive" className="mb-2">{t("atleta_page.urgente")}</Badge>
+                    )}
                     <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <h3 className="text-sm font-bold text-foreground">{traduci(com?.id, "titolo", com?.titolo)}</h3>
+                      <h3 className="text-sm font-bold text-foreground">{traduci(c.comunicazione_id, "titolo", c.titolo)}</h3>
                       <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                        {format_data(new Date(c.creato_at), { day: "2-digit", month: "2-digit", year: "numeric" })}
+                        {c.creato_at ? format_data(new Date(c.creato_at), { day: "2-digit", month: "2-digit", year: "numeric" }) : ""}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {traduci(com?.id, "testo", com?.testo || com?.corpo)}
+                      {traduci(c.comunicazione_id, "testo", c.testo)}
                     </p>
-                    {richiede_rsvp && (
-                      <div className="mt-3 pt-3 border-t border-border">
+                    {c.richiede_rsvp && (
+                      <div className="mt-3 pt-3 border-t border-border space-y-2">
+                        {c.rsvp_scadenza && (
+                          <p className={`text-xs ${scaduta ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+                            {t(scaduta ? "atleta_page.rsvp_scaduta" : "atleta_page.rsvp_entro", {
+                              data: format_data(new Date(c.rsvp_scadenza), { day: "2-digit", month: "2-digit", year: "numeric" }),
+                            })}
+                          </p>
+                        )}
                         {gia_risposto ? (
                           <div className="flex items-center gap-2 text-sm">
                             <Check className="w-4 h-4 text-success" />
@@ -354,10 +441,10 @@ const PortaleAtletaPage: React.FC = () => {
                           </div>
                         ) : (
                           <div className="flex gap-2">
-                            <Button size="sm" className="flex-1 bg-success hover:bg-success/90 text-white" onClick={() => handle_rsvp(c.id, "si")} disabled={busy_id === c.id}>
+                            <Button size="sm" className="flex-1 bg-success hover:bg-success/90 text-success-foreground" onClick={() => handle_rsvp(c.destinatario_id, "si")} disabled={scaduta || busy_id === c.destinatario_id}>
                               {t("atleta_page.si_partecipo")}
                             </Button>
-                            <Button size="sm" variant="outline" className="flex-1" onClick={() => handle_rsvp(c.id, "no")} disabled={busy_id === c.id}>
+                            <Button size="sm" variant="outline" className="flex-1" onClick={() => handle_rsvp(c.destinatario_id, "no")} disabled={scaduta || busy_id === c.destinatario_id}>
                               {t("atleta_page.no_button")}
                             </Button>
                           </div>
@@ -408,17 +495,10 @@ const PortaleAtletaPage: React.FC = () => {
             <p className="text-xs text-muted-foreground">
               {t("atleta_page.corsi_disponibili_desc")}
             </p>
-            {errore_corsi ? (
-              <div className="bg-card border border-destructive/40 rounded-xl p-4 space-y-2 text-sm">
-                <p className="text-destructive font-medium">{errore_corsi.messaggio}</p>
-                {errore_corsi.riprovabile && (
-                  <Button size="sm" variant="outline" onClick={() => set_tentativo_corsi((n) => n + 1)}>
-                    {t("atleta_page.riprova")}
-                  </Button>
-                )}
-              </div>
-            ) : !corsi_caricati ? (
-              <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+            {errore_lettura ? (
+              <BoxErrore errore={errore_lettura} etichetta={t("atleta_page.riprova")} on_riprova={() => set_tentativo((n) => n + 1)} />
+            ) : !caricato ? (
+              <Caricamento />
             ) : (
               <>
                 {riga_riepilogo && (
@@ -437,6 +517,8 @@ const PortaleAtletaPage: React.FC = () => {
                   corsi_disponibili.map((corso) => {
                     const gia_iscritto = iscrizioni_attive.has(corso.corso_id);
                     const richiesta = richieste_inviate.has(corso.corso_id);
+                    const prezzo = testo_prezzo(corso);
+                    const posti = corso.posti_liberi == null ? null : Number(corso.posti_liberi);
                     return (
                   <div key={corso.corso_id} className="bg-card border border-border rounded-xl p-4 shadow-card">
                     <div className="flex items-start justify-between gap-3 mb-2">
@@ -447,6 +529,17 @@ const PortaleAtletaPage: React.FC = () => {
                           {corso.ora_inizio && ` · ${corso.ora_inizio.slice(0, 5)}`}
                           {corso.ora_fine && ` - ${corso.ora_fine.slice(0, 5)}`}
                         </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {t("atleta_page.istruttore_label")}: {corso.istruttori || t("atleta_page.istruttore_da_definire")}
+                        </p>
+                        {posti != null && (
+                          <p className={`text-xs mt-0.5 ${posti <= 0 ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+                            {posti <= 0 ? t("atleta_page.completo") : t("atleta_page.posti_liberi", { count: posti })}
+                          </p>
+                        )}
+                        {corso.richiede_approvazione && (
+                          <p className="text-xs text-warning mt-0.5">{t("atleta_page.serve_approvazione")}</p>
+                        )}
                         {livello_dichiarato(corso.livello_richiesto) && !is_apertura_totale(corso.livello_richiesto) && (
                           <Badge variant="outline" className="mt-2 text-[10px]">
                             {t("atleta_page.livello_label")}: {formatta_livelli_corso(corso.livello_richiesto, t_corsi)}
@@ -454,8 +547,8 @@ const PortaleAtletaPage: React.FC = () => {
                         )}
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-primary tabular-nums">CHF {Number(corso.costo_mensile || 0).toFixed(2)}</p>
-                        <p className="text-[10px] text-muted-foreground">{t("atleta_page.mese_suffisso")}</p>
+                        {prezzo.importo && <p className="text-sm font-bold text-primary tabular-nums">{prezzo.importo}</p>}
+                        <p className="text-[10px] text-muted-foreground">{prezzo.suffisso}</p>
                       </div>
                     </div>
                     {gia_iscritto ? (
@@ -477,6 +570,91 @@ const PortaleAtletaPage: React.FC = () => {
             )}
           </div>
         )}
+        {tab === "private" && (
+          <div className="space-y-3">
+            <h2 className="text-sm font-bold text-foreground">{t("atleta_page.private_titolo")}</h2>
+            {errore_lettura ? (
+              <BoxErrore errore={errore_lettura} etichetta={t("atleta_page.riprova")} on_riprova={() => set_tentativo((n) => n + 1)} />
+            ) : !caricato ? (
+              <Caricamento />
+            ) : (
+              <>
+                {private_righe.length === 0 ? (
+                  <EmptyState icon={GraduationCap} text={t("atleta_page.private_vuoto")} />
+                ) : (
+                  [...private_righe]
+                    .sort((x, y) => Number(y.genere === "richiesta" && y.stato === "in_attesa") - Number(x.genere === "richiesta" && x.stato === "in_attesa"))
+                    .map((r) => {
+                      const in_attesa = r.genere === "richiesta" && r.stato === "in_attesa";
+                      return (
+                        <div key={`${r.genere}-${r.riga_id}`} className={`bg-card border rounded-xl p-4 shadow-card ${in_attesa ? "border-warning border-2" : "border-border"}`}>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-foreground">
+                                {r.genere === "richiesta" ? t("atleta_page.privata_richiesta") : t("atleta_page.privata_lezione")}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {r.data ? format_data(new Date(r.data + "T00:00:00"), { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
+                                {r.ora_inizio && ` · ${r.ora_inizio.slice(0, 5)}`}
+                                {r.ora_fine && ` - ${r.ora_fine.slice(0, 5)}`}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {t("atleta_page.istruttore_label")}: {r.istruttore || t("atleta_page.indifferente")}
+                              </p>
+                              {r.note && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{r.note}</p>}
+                              {r.note_risposta && (
+                                <p className="text-xs text-foreground mt-1 whitespace-pre-wrap">{t("atleta_page.risposta_club")}: {r.note_risposta}</p>
+                              )}
+                            </div>
+                            <div className="text-right space-y-1">
+                              {r.stato && (
+                                <Badge variant="outline" className={in_attesa ? "bg-warning/15 text-warning border-warning/30" : ""}>
+                                  {t(`atleta_page.stato_${r.stato}`, { defaultValue: r.stato })}
+                                </Badge>
+                              )}
+                              {Number(r.costo) > 0 && <p className="text-xs font-bold tabular-nums">CHF {Number(r.costo).toFixed(2)}</p>}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                )}
+
+                <div className="bg-card border border-border rounded-xl p-4 shadow-card space-y-3">
+                  <h3 className="text-sm font-bold text-foreground">{t("atleta_page.privata_nuova")}</h3>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">{t("atleta_page.privata_data")}</label>
+                    <DateInput value={lp_data} onChange={set_lp_data} min_year={new Date().getFullYear()} max_year={new Date().getFullYear() + 1} />
+                    {lp_data && !lp_data_valida && (
+                      <p className="text-xs text-destructive">{t("atleta_page.privata_data_passata")}</p>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">{t("atleta_page.privata_fascia")}</label>
+                    <select className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm" value={lp_fascia} onChange={(e) => set_lp_fascia(e.target.value)}>
+                      <option value="">{t("atleta_page.indifferente")}</option>
+                      {FASCE.map((f) => <option key={f} value={f}>{t(`atleta_page.fascia_${f}`)}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">{t("atleta_page.istruttore_label")}</label>
+                    <select className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm" value={lp_istruttore} onChange={(e) => set_lp_istruttore(e.target.value)}>
+                      <option value="">{t("atleta_page.indifferente")}</option>
+                      {istruttori.map((i) => <option key={i.istruttore_id} value={i.istruttore_id}>{i.nome}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">{t("atleta_page.privata_note")}</label>
+                    <Textarea value={lp_note} onChange={(e) => set_lp_note(e.target.value)} rows={3} />
+                  </div>
+                  <Button className="w-full" size="sm" disabled={!lp_data_valida || lp_invio} onClick={handle_richiedi_privata}>
+                    {lp_invio ? <Loader2 className="w-4 h-4 animate-spin" /> : t("atleta_page.privata_invia")}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );
@@ -494,6 +672,17 @@ const EmptyState: React.FC<{ icon: any; text: string }> = ({ icon: Icon, text })
     <Icon className="w-10 h-10 text-muted-foreground/50 mx-auto mb-2" />
     <p className="text-sm text-muted-foreground">{text}</p>
   </div>
+);
+
+const BoxErrore: React.FC<{ errore: ErroreLettura; etichetta: string; on_riprova: () => void }> = ({ errore, etichetta, on_riprova }) => (
+  <div className="bg-card border border-destructive/40 rounded-xl p-4 space-y-2 text-sm">
+    <p className="text-destructive font-medium">{errore.messaggio}</p>
+    {errore.riprovabile && <Button size="sm" variant="outline" onClick={on_riprova}>{etichetta}</Button>}
+  </div>
+);
+
+const Caricamento: React.FC = () => (
+  <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
 );
 
 export default PortaleAtletaPage;

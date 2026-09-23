@@ -9894,6 +9894,15 @@ export type Database = {
           planning_id: string
         }[]
       }
+      atleta_da_codice_pubblico: {
+        Args: { p_codice: string; p_origine: string }
+        Returns: {
+          club_id: string
+          cognome: string
+          id: string
+          nome: string
+        }[]
+      }
       attesa_prima_di_riprovare: {
         Args: { p_origine: string }
         Returns: {
@@ -9996,6 +10005,25 @@ export type Database = {
           telefono: string
         }[]
       }
+      comunicazioni_atleta_pubblico: {
+        Args: { p_codice: string }
+        Returns: {
+          archiviata: boolean
+          categoria: string
+          comunicazione_id: string
+          creato_at: string
+          destinatario_id: string
+          letto_at: string
+          richiede_rsvp: boolean
+          rsvp_at: string
+          rsvp_risposta: string
+          rsvp_scadenza: string
+          testo: string
+          tipo: string
+          titolo: string
+          urgente: boolean
+        }[]
+      }
       conferma_rinnovo: {
         Args: { p_atleta: string; p_da?: string; p_stagione: string }
         Returns: undefined
@@ -10027,6 +10055,7 @@ export type Database = {
         Args: { p_codice: string }
         Returns: {
           atleta: string
+          capienza_max: number
           categoria: string
           club: string
           corso_id: string
@@ -10034,12 +10063,15 @@ export type Database = {
           costo_mensile: number
           giorno: string
           iscritto: boolean
+          istruttori: string
           livello: string
           livello_richiesto: string
           nome: string
           ora_fine: string
           ora_inizio: string
           percorso: string
+          posti_liberi: number
+          posti_occupati: number
           richiede_approvazione: boolean
           richiesta_in_attesa: boolean
           salto_livello: boolean
@@ -10410,6 +10442,13 @@ export type Database = {
         Args: { p_sessione_id: string }
         Returns: boolean
       }
+      istruttori_club_pubblico: {
+        Args: { p_codice: string }
+        Returns: {
+          istruttore_id: string
+          nome: string
+        }[]
+      }
       lancia_controlli_notturni: {
         Args: never
         Returns: {
@@ -10422,6 +10461,23 @@ export type Database = {
       lezione_privata_appartiene_al_club: {
         Args: { _club_id: string; _lezione_id: string }
         Returns: boolean
+      }
+      lezioni_private_atleta_pubblico: {
+        Args: { p_codice: string }
+        Returns: {
+          costo: number
+          creato_at: string
+          data: string
+          durata_minuti: number
+          genere: string
+          istruttore: string
+          note: string
+          note_risposta: string
+          ora_fine: string
+          ora_inizio: string
+          riga_id: string
+          stato: string
+        }[]
       }
       migra_atleta: {
         Args: {
@@ -10752,6 +10808,20 @@ export type Database = {
         Args: { p_anno: number; p_istruttore_id: string; p_mese: number }
         Returns: undefined
       }
+      richiedi_iscrizione_pubblica: {
+        Args: { p_codice: string; p_corso: string; p_note?: string }
+        Returns: string
+      }
+      richiedi_lezione_privata_pubblica: {
+        Args: {
+          p_codice: string
+          p_data: string
+          p_fascia?: string
+          p_istruttore?: string
+          p_note?: string
+        }
+        Returns: string
+      }
       richiedi_prova: {
         Args: {
           p_cognome: string
@@ -10889,6 +10959,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      rsvp_atleta_pubblico: {
+        Args: { p_codice: string; p_destinatario: string; p_risposta: string }
+        Returns: boolean
       }
       ruoli_avviso_staff: {
         Args: { p_sotto_tipo: string; p_tipo: string }
