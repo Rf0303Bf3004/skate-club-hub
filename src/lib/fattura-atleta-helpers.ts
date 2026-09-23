@@ -1,3 +1,4 @@
+import { format_local_iso } from "@/lib/planning-occorrenze";
 import { supabase } from "@/lib/supabase";
 import type { FatturaAtletaData, FatturaAtletaRiga, FatturaQrData } from "@/lib/fattura-atleta-pdf";
 import { genera_qr_data_url } from "@/lib/qr";
@@ -145,7 +146,7 @@ export function build_pdf_data(
   return {
     numero: fattura.numero || fattura.id.slice(0, 8),
     periodo: fattura.periodo || undefined,
-    data_emissione: fattura.data_emissione || new Date().toISOString().slice(0, 10),
+    data_emissione: fattura.data_emissione || format_local_iso(new Date()),
     data_scadenza: fattura.data_scadenza,
     tipo_documento: fattura.tipo_documento ?? null,
     righe,
