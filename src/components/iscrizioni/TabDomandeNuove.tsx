@@ -18,7 +18,10 @@ import {
   use_rifiuta_domanda,
   use_invia_email_iscrizioni,
   use_rigenera_token_iscrizioni,
+  use_domande_approvate_recenti,
+  invia_benvenuto,
   type Domanda,
+  type EsitoBenvenuto,
 } from "@/hooks/use-iscrizioni-stagione";
 import { format_data, format_data_ora } from "@/lib/format-data";
 import { CATEGORIE, LIVELLI_AMATORI, LIVELLI_CARRIERA, get_categoria_label } from "@/lib/atleta-livello";
@@ -154,6 +157,99 @@ const Voce: React.FC<{ label: string; valore: string | null | undefined; vuoto: 
   );
 };
 
+type Traduci = (s: string, o?: any) => string;
+
+/** Frase leggibile per l'esito della mail di benvenuto. */
+function testo_esito_benvenuto(e: EsitoBenvenuto, k: Traduci): string {
+  if (e.stato === "inviata") return k("domande.benvenuto_inviato");
+  if (e.stato === "senza_email") return k("domande.benvenuto_senza_email");
+  if (e.stato === "provider_non_configurato") return k("domande.benvenuto_provider");
+  return k("domande.benvenuto_fallito");
+}
+
+/** Il riquadro dell'approvazione può chiudersi: l'esito si dice anche con un avviso. */
+function avvisa_esito_benvenuto(e: EsitoBenvenuto, nome: string, k: Traduci) {
+  if (e.stato === "inviata") {
+    toast({ title: k("domande.approvata_titolo", { nome }), description: k("domande.benvenuto_inviato") });
+  } else {
+    toast({ title: k("domande.approvata_titolo", { nome }), description: testo_esito_benvenuto(e, k), variant: "destructive" });
+  }
+}
+
+/** Approvate di recente con l'esito della mail di benvenuto e il «rimanda». */
+const ApprovateRecenti: React.FC<{ puo_gestire: boolean }> = ({ puo_gestire }) => {
+  const { t } = useTranslation("atleti");
+  const k = (s: string, o?: any) => t(`iscrizioni_stagione.${s}`, o as any) as string;
+  const q = use_domande_approvate_recenti();
+  const [in_corso, set_in_corso] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (q.isError) segnala_errore("TabDomandeNuove", k("domande.approvate_recenti"), q.error, undefined, "avviso");
+  }, [q.isError]);
+
+  if (q.isError) {
+    return (
+      <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 flex items-center justify-between gap-3">
+        <span>{k("domande.approvate_errore")}</span>
+        <Button size="sm" variant="outline" onClick={() => q.refetch()}>{k("domande.riprova")}</Button>
+      </div>
+    );
+  }
+  if (!q.isSuccess || q.data.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-border p-4 space-y-2">
+      <p className="text-[10px] font-bold uppercase tracking-[1.4px] text-muted-foreground">{k("domande.approvate_recenti")}</p>
+      <ul className="divide-y divide-border">
+        {q.data.map((r) => {
+          const b = r.benvenuto;
+          const ok = b?.stato === "inviata";
+          const testo = !b
+            ? k("domande.benvenuto_mai")
+            : ok
+              ? k("domande.benvenuto_inviato_il", { quando: format_data_ora(new Date(b.quando)) })
+              : k("domande.benvenuto_fallito_il", {
+                  quando: format_data_ora(new Date(b.quando)),
+                  motivo: b.motivo === "senza_email"
+                    ? k("domande.benvenuto_senza_email")
+                    : b.motivo === "provider_email_non_configurato"
+                      ? k("domande.benvenuto_provider")
+                      : k("domande.benvenuto_fallito"),
+                });
+          return (
+            <li key={r.id} className="py-2 flex flex-wrap items-center gap-3 text-sm">
+              <span className="font-medium flex-1 min-w-[160px]">{r.nome} {r.cognome}</span>
+              <span className={ok ? "text-emerald-700" : "text-destructive"}>{testo}</span>
+              {!ok && puo_gestire && r.atleta_id && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  disabled={in_corso === r.id}
+                  onClick={async () => {
+                    set_in_corso(r.id);
+                    const e = await invia_benvenuto({
+                      atleta_id: r.atleta_id as string,
+                      livello: r.livello_assegnato ?? "",
+                      email_famiglia: r.genitore1_email ?? "",
+                    });
+                    set_in_corso(null);
+                    avvisa_esito_benvenuto(e, `${r.nome} ${r.cognome}`, k);
+                    q.refetch();
+                  }}
+                >
+                  <Mail className="w-4 h-4" />
+                  {k("domande.rimanda_benvenuto")}
+                </Button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+};
+
 const SchedaDomanda: React.FC<{ d: Domanda; puo_gestire: boolean }> = ({ d, puo_gestire }) => {
   const { t } = useTranslation("atleti");
   const k = (s: string, o?: any) => t(`iscrizioni_stagione.${s}`, o as any) as string;
@@ -168,7 +264,7 @@ const SchedaDomanda: React.FC<{ d: Domanda; puo_gestire: boolean }> = ({ d, puo_
   const [errore_categoria, set_errore_categoria] = useState<string | null>(null);
   const [nota, set_nota] = useState("");
   const [dialog_rifiuto, set_dialog_rifiuto] = useState(false);
-  const [esito, set_esito] = useState<{ atleta_id: string; codice_atleta: string } | null>(null);
+  const [esito, set_esito] = useState<{ atleta_id: string; codice_atleta: string; benvenuto: EsitoBenvenuto } | null>(null);
   const [benvenuto_inviato, set_benvenuto_inviato] = useState(false);
   const [rifiutata, set_rifiutata] = useState(false);
   const [avviso_inviato, set_avviso_inviato] = useState(false);
@@ -198,8 +294,11 @@ const SchedaDomanda: React.FC<{ d: Domanda; puo_gestire: boolean }> = ({ d, puo_
         livello,
         categoria,
         note: nota.trim() || null,
+        email_famiglia: d.genitore1_email ?? "",
       });
       set_esito(r);
+      set_benvenuto_inviato(r.benvenuto.stato === "inviata");
+      avvisa_esito_benvenuto(r.benvenuto, `${d.nome} ${d.cognome}`, k);
     } catch (e) {
       // Il database rifiuta l'approvazione senza livello: lo diciamo con parole
       // normali sotto la tendina, non come errore tecnico.
@@ -234,32 +333,29 @@ const SchedaDomanda: React.FC<{ d: Domanda; puo_gestire: boolean }> = ({ d, puo_
             codice_atleta: esito.codice_atleta,
           }}
         />
-        <Button
-          variant="outline"
-          className="gap-1.5"
-          disabled={email.isPending || benvenuto_inviato}
-          onClick={async () => {
-            try {
-              const r = await email.mutateAsync({
-                tipo: "benvenuto",
+        <p className={benvenuto_inviato ? "text-sm text-emerald-800" : "text-sm text-destructive font-medium"}>
+          {benvenuto_inviato ? k("domande.benvenuto_inviato") : testo_esito_benvenuto(esito.benvenuto, k)}
+        </p>
+        {!benvenuto_inviato && (
+          <Button
+            variant="outline"
+            className="gap-1.5"
+            disabled={email.isPending}
+            onClick={async () => {
+              const r = await invia_benvenuto({
                 atleta_id: esito.atleta_id,
                 livello,
                 email_famiglia: d.genitore1_email ?? "",
               });
-              if (r.inviati > 0) {
-                set_benvenuto_inviato(true);
-                toast({ title: k("domande.benvenuto_inviato") });
-              } else {
-                toast({ title: k("domande.senza_email"), variant: "destructive" });
-              }
-            } catch (e) {
-              segnala_errore("TabDomandeNuove", k("domande.invia_benvenuto"), e);
-            }
-          }}
-        >
-          <Mail className="w-4 h-4" />
-          {benvenuto_inviato ? k("domande.benvenuto_inviato") : k("domande.invia_benvenuto")}
-        </Button>
+              set_esito({ ...esito, benvenuto: r });
+              set_benvenuto_inviato(r.stato === "inviata");
+              avvisa_esito_benvenuto(r, `${d.nome} ${d.cognome}`, k);
+            }}
+          >
+            <Mail className="w-4 h-4" />
+            {k("domande.rimanda_benvenuto")}
+          </Button>
+        )}
       </div>
     );
   }
@@ -474,6 +570,8 @@ const TabDomandeNuove: React.FC<{ puo_gestire: boolean }> = ({ puo_gestire }) =>
       {(domande.data ?? []).map((d) => (
         <SchedaDomanda key={d.id} d={d} puo_gestire={puo_gestire} />
       ))}
+
+      <ApprovateRecenti puo_gestire={puo_gestire} />
     </div>
   );
 };
