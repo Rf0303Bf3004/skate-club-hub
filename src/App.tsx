@@ -97,12 +97,185 @@ import { usePistaSession } from "@/lib/pista-sessione";
 import { accedi_pista_con_codice, cancella_codice_pista, chiudi_sessione_pista, leggi_codice_pista } from "@/lib/pista-codice";
 
 
+/**
+ * Le pagine pubbliche non appartengono a nessuna sessione — né al tablet
+ * della pista né a quella amministrativa — quindi nessun gate di dispositivo
+ * le deve intercettare. L'elenco sta qui in un posto solo: PublicRoutes lo
+ * usa per scegliere le rotte e PistaGate per lasciarle passare, così i due
+ * non possono divergere.
+ */
+interface GruppoPercorsoPubblico {
+  corrisponde: (path: string) => boolean;
+  rotte: React.ReactNode;
+}
+
+const PERCORSI_PUBBLICI: GruppoPercorsoPubblico[] = [
+  {
+    corrisponde: (p) => p === "/portale-atleta" || p.startsWith("/portale-atleta/"),
+    rotte: (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/portale-atleta" element={<PortaleAtletaPage />} />
+          <Route path="/portale-atleta/:token" element={<PortaleAtletaPage />} />
+        </Routes>
+      </BrowserRouter>
+    ),
+  },
+  {
+    corrisponde: (p) => p.startsWith("/carica-foto/"),
+    rotte: (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/carica-foto/:codice_atleta" element={<CaricaFotoPage />} />
+        </Routes>
+      </BrowserRouter>
+    ),
+  },
+  {
+    corrisponde: (p) => p.startsWith("/iscrizione/"),
+    rotte: (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/iscrizione/:codice_atleta" element={<IscrizioneAtletaPage />} />
+        </Routes>
+      </BrowserRouter>
+    ),
+  },
+  {
+    corrisponde: (p) => p.startsWith("/iscriviti/"),
+    rotte: (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/iscriviti/:token" element={<IscrivitiPage />} />
+        </Routes>
+      </BrowserRouter>
+    ),
+  },
+  {
+    corrisponde: (p) => p.startsWith("/prova/"),
+    rotte: (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/prova/:slug" element={<ProvaGratuitaPage />} />
+        </Routes>
+      </BrowserRouter>
+    ),
+  },
+  {
+    corrisponde: (p) => p.startsWith("/campo-ospite/"),
+    rotte: (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/campo-ospite/:token" element={<CampoOspitePubblicoPage />} />
+        </Routes>
+      </BrowserRouter>
+    ),
+  },
+  {
+    corrisponde: (p) => p === "/calendario" || p.startsWith("/calendario/"),
+    rotte: (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/calendario" element={<CalendarioPubblicoPage />} />
+          <Route path="/calendario/:slug" element={<CalendarioPubblicoPage />} />
+        </Routes>
+      </BrowserRouter>
+    ),
+  },
+  {
+    corrisponde: (p) => p === "/pista-login",
+    rotte: (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/pista-login" element={<PistaLoginPage />} />
+        </Routes>
+      </BrowserRouter>
+    ),
+  },
+  {
+    corrisponde: (p) => p.startsWith("/c/"),
+    rotte: (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/c/:token" element={<ConvenzionePubblicaPage />} />
+        </Routes>
+      </BrowserRouter>
+    ),
+  },
+  {
+    corrisponde: (p) =>
+      p === "/mio-club" || p.startsWith("/mio-club/") ||
+      p === "/portale" || p.startsWith("/portale/") ||
+      p === "/portale-recovery" || p === "/reset-password",
+    rotte: (
+      <BrowserRouter>
+        <Routes>
+          {/* Redirect permanente da vecchio /portale → /mio-club */}
+          <Route path="/portale" element={<Navigate to="/mio-club" replace />} />
+          <Route path="/portale/home" element={<Navigate to="/mio-club/home" replace />} />
+          <Route path="/portale/calendario" element={<Navigate to="/mio-club/calendario" replace />} />
+          <Route path="/portale/eventi" element={<Navigate to="/mio-club/eventi" replace />} />
+          <Route path="/portale/notizie" element={<Navigate to="/mio-club/notizie" replace />} />
+          <Route path="/portale/profilo" element={<Navigate to="/mio-club/profilo" replace />} />
+          <Route path="/portale/profilo/atleta" element={<Navigate to="/mio-club/profilo/atleta" replace />} />
+          <Route path="/portale/profilo/corsi" element={<Navigate to="/mio-club/profilo/corsi" replace />} />
+          <Route path="/portale/profilo/fatture" element={<Navigate to="/mio-club/profilo/fatture" replace />} />
+          <Route path="/portale/profilo/convenzioni" element={<Navigate to="/mio-club/profilo/convenzioni" replace />} />
+
+          <Route path="/mio-club" element={<PortaleLoginPage />} />
+          <Route path="/portale-recovery" element={<RecoveryPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/mio-club" element={<PortaleLayout />}>
+            <Route path="home" element={<PortaleHomePage />} />
+            <Route path="calendario" element={<PortaleCalendarioPage />} />
+            <Route path="eventi" element={<PortaleEventiPage />} />
+            <Route path="notizie" element={<PortaleNotiziePage />} />
+            <Route path="profilo" element={<PortaleProfiloPage />}>
+              <Route path="atleta" element={<AtletaTab />} />
+              <Route path="corsi" element={<CorsiTab />} />
+              <Route path="fatture" element={<FattureTab />} />
+              <Route path="fatture/:id" element={<FatturaDetailPage />} />
+              <Route path="convenzioni" element={<ConvenzioniTab />} />
+            </Route>
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    ),
+  },
+  {
+    corrisponde: (p) => p === "/registrati",
+    rotte: (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/registrati" element={<RegisterClubPage />} />
+        </Routes>
+      </BrowserRouter>
+    ),
+  },
+  {
+    corrisponde: (p) => p === "/termini" || p === "/privacy",
+    rotte: (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/termini" element={<LegalPlaceholderPage titolo="Termini e Condizioni" />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+        </Routes>
+      </BrowserRouter>
+    ),
+  },
+];
+
+/** Vero se l'indirizzo aperto è una pagina pubblica: nessun gate la intercetta. */
+const e_percorso_pubblico = (path: string): boolean =>
+  PERCORSI_PUBBLICI.some((g) => g.corrisponde(path));
+
 const queryClient = new QueryClient();
 
 /**
  * Sessione «pista»: il tablet entra con il codice del club e resta sulla pista.
  * Non ha riga in utenti_club, quindi non esiste per l'amministrazione:
- * qualunque altra rotta riporta a /pista.
+ * qualunque altra rotta riporta a /pista. Fanno eccezione le pagine
+ * pubbliche (PERCORSI_PUBBLICI), che passano oltre senza essere intercettate.
  */
 const PistaGate = ({ children }: { children: React.ReactNode }) => {
   const { is_pista, is_loading } = usePistaSession();
@@ -176,6 +349,14 @@ const PistaGate = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
+  // Le pagine pubbliche non appartengono al tablet della pista: passano
+  // oltre anche con la sessione pista attiva. Gli effetti su /pista-login
+  // dichiarati sopra restano in ogni caso (cancellazione del codice e
+  // chiusura della sessione del tablet).
+  if (typeof window !== "undefined" && e_percorso_pubblico(window.location.pathname)) {
+    return <>{children}</>;
+  }
+
   if (!is_pista) return <>{children}</>;
 
   return (
@@ -202,157 +383,12 @@ const PistaGate = ({ children }: { children: React.ReactNode }) => {
 };
 
 // Pagine pubbliche (no auth) gestite prima del gate di autenticazione.
+// La scelta della rotta legge la stessa lista PERCORSI_PUBBLICI usata da
+// PistaGate, così l'elenco esiste in un posto solo e i due non divergono.
 const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
   const path = typeof window !== "undefined" ? window.location.pathname : "";
-  if (path === "/portale-atleta" || path.startsWith("/portale-atleta/")) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/portale-atleta" element={<PortaleAtletaPage />} />
-          <Route path="/portale-atleta/:token" element={<PortaleAtletaPage />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-  if (path.startsWith("/carica-foto/")) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/carica-foto/:codice_atleta" element={<CaricaFotoPage />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-  if (path.startsWith("/iscrizione/")) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/iscrizione/:codice_atleta" element={<IscrizioneAtletaPage />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-  if (path.startsWith("/iscriviti/")) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/iscriviti/:token" element={<IscrivitiPage />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-  if (path.startsWith("/prova/")) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/prova/:slug" element={<ProvaGratuitaPage />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-  if (path.startsWith("/campo-ospite/")) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/campo-ospite/:token" element={<CampoOspitePubblicoPage />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-
-  if (path === "/calendario" || path.startsWith("/calendario/")) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/calendario" element={<CalendarioPubblicoPage />} />
-          <Route path="/calendario/:slug" element={<CalendarioPubblicoPage />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-
-  if (path === "/pista-login") {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/pista-login" element={<PistaLoginPage />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-
-
-  if (path.startsWith("/c/")) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/c/:token" element={<ConvenzionePubblicaPage />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-
-
-  if (
-    path === "/mio-club" || path.startsWith("/mio-club/") ||
-    path === "/portale" || path.startsWith("/portale/") ||
-    path === "/portale-recovery" || path === "/reset-password"
-  ) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          {/* Redirect permanente da vecchio /portale → /mio-club */}
-          <Route path="/portale" element={<Navigate to="/mio-club" replace />} />
-          <Route path="/portale/home" element={<Navigate to="/mio-club/home" replace />} />
-          <Route path="/portale/calendario" element={<Navigate to="/mio-club/calendario" replace />} />
-          <Route path="/portale/eventi" element={<Navigate to="/mio-club/eventi" replace />} />
-          <Route path="/portale/notizie" element={<Navigate to="/mio-club/notizie" replace />} />
-          <Route path="/portale/profilo" element={<Navigate to="/mio-club/profilo" replace />} />
-          <Route path="/portale/profilo/atleta" element={<Navigate to="/mio-club/profilo/atleta" replace />} />
-          <Route path="/portale/profilo/corsi" element={<Navigate to="/mio-club/profilo/corsi" replace />} />
-          <Route path="/portale/profilo/fatture" element={<Navigate to="/mio-club/profilo/fatture" replace />} />
-          <Route path="/portale/profilo/convenzioni" element={<Navigate to="/mio-club/profilo/convenzioni" replace />} />
-
-          <Route path="/mio-club" element={<PortaleLoginPage />} />
-          <Route path="/portale-recovery" element={<RecoveryPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/mio-club" element={<PortaleLayout />}>
-            <Route path="home" element={<PortaleHomePage />} />
-            <Route path="calendario" element={<PortaleCalendarioPage />} />
-            <Route path="eventi" element={<PortaleEventiPage />} />
-            <Route path="notizie" element={<PortaleNotiziePage />} />
-            <Route path="profilo" element={<PortaleProfiloPage />}>
-              <Route path="atleta" element={<AtletaTab />} />
-              <Route path="corsi" element={<CorsiTab />} />
-              <Route path="fatture" element={<FattureTab />} />
-              <Route path="fatture/:id" element={<FatturaDetailPage />} />
-              <Route path="convenzioni" element={<ConvenzioniTab />} />
-            </Route>
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-  if (path === "/registrati") {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/registrati" element={<RegisterClubPage />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-  if (path === "/termini" || path === "/privacy") {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/termini" element={<LegalPlaceholderPage titolo="Termini e Condizioni" />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-  return <>{children}</>;
+  const gruppo = PERCORSI_PUBBLICI.find((g) => g.corrisponde(path));
+  return gruppo ? <>{gruppo.rotte}</> : <>{children}</>;
 };
 
 const SmartHome = () => {

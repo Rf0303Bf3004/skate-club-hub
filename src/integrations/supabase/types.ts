@@ -10082,6 +10082,10 @@ export type Database = {
         }[]
       }
       duplica_fattura: { Args: { p_fattura: string }; Returns: string }
+      elimina_atleta_definitivamente: {
+        Args: { p_atleta: string; p_motivo?: string }
+        Returns: Json
+      }
       elimina_atleti_ospiti_scaduti: {
         Args: { p_simula?: boolean }
         Returns: {
