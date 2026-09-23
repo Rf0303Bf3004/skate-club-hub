@@ -438,7 +438,7 @@ const PortaleAtletaPage: React.FC = () => {
                     const gia_iscritto = iscrizioni_attive.has(corso.corso_id);
                     const richiesta = richieste_inviate.has(corso.corso_id);
                     return (
-                  <div key={corso.id} className="bg-card border border-border rounded-xl p-4 shadow-card">
+                  <div key={corso.corso_id} className="bg-card border border-border rounded-xl p-4 shadow-card">
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-bold text-foreground">{corso.nome}</h3>
