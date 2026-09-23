@@ -407,20 +407,34 @@ const PortaleAtletaPage: React.FC = () => {
             </p>
             {errore_corsi ? (
               <div className="bg-card border border-destructive/40 rounded-xl p-4 space-y-2 text-sm">
-                <p className="text-destructive font-medium">{t("atleta_page.errore_corsi")}</p>
-                <Button size="sm" variant="outline" onClick={() => set_tentativo_corsi((n) => n + 1)}>
-                  {t("atleta_page.riprova")}
-                </Button>
+                <p className="text-destructive font-medium">{errore_corsi.messaggio}</p>
+                {errore_corsi.riprovabile && (
+                  <Button size="sm" variant="outline" onClick={() => set_tentativo_corsi((n) => n + 1)}>
+                    {t("atleta_page.riprova")}
+                  </Button>
+                )}
               </div>
             ) : !corsi_caricati ? (
               <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
-            ) : corsi_disponibili.length === 0 ? (
-              <EmptyState icon={Trophy} text={t("atleta_page.nessun_corso_disponibile")} />
             ) : (
-              corsi_disponibili.map((corso) => {
-                const gia_iscritto = iscrizioni_attive.has(corso.id);
-                const richiesta = richieste_inviate.has(corso.id);
-                return (
+              <>
+                {riga_riepilogo && (
+                  <div className="bg-card border border-border rounded-xl p-4 shadow-card">
+                    <dl className="space-y-2 text-sm">
+                      <Row label={t("atleta_page.nome")}>{riga_riepilogo.atleta}</Row>
+                      <Row label={t("atleta_page.club_label")}>{riga_riepilogo.club}</Row>
+                      <Row label={t("atleta_page.categoria")}>{riga_riepilogo.categoria || "—"}</Row>
+                      <Row label={t("atleta_page.livello_label")}>{riga_riepilogo.livello || "—"}</Row>
+                    </dl>
+                  </div>
+                )}
+                {corsi_disponibili.length === 0 ? (
+                  <EmptyState icon={Trophy} text={t("atleta_page.corsi_vuoto_livello", { nome: nome_completo })} />
+                ) : (
+                  corsi_disponibili.map((corso) => {
+                    const gia_iscritto = iscrizioni_attive.has(corso.corso_id);
+                    const richiesta = richieste_inviate.has(corso.corso_id);
+                    return (
                   <div key={corso.id} className="bg-card border border-border rounded-xl p-4 shadow-card">
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="flex-1 min-w-0">
