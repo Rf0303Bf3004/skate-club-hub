@@ -71,7 +71,8 @@ Deno.serve(async (req) => {
 
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!RESEND_API_KEY || !LOVABLE_API_KEY) {
+    const provider_ok = !!RESEND_API_KEY && !!LOVABLE_API_KEY;
+    if (!provider_ok && tipo !== "benvenuto") {
       return json({
         error: "provider_email_non_configurato",
         messaggio: "L'invio delle email non è configurato: nessun messaggio è stato spedito.",
@@ -230,7 +231,31 @@ Deno.serve(async (req) => {
       let destinatari = ((emails ?? []) as string[]).filter((x) => !!x && x.includes("@"));
       const email_domanda = String((body as any)?.email_famiglia ?? "").trim();
       if (destinatari.length === 0 && email_domanda.includes("@")) destinatari = [email_domanda];
-      if (destinatari.length === 0) return json({ ok: false, senza_email: 1, inviati: 0 });
+      // Ogni esito del benvenuto resta scritto: anche quando non parte.
+      const registra_fallito = async (motivo: string, dettaglio: string) => {
+        await registra({
+          testo: dettaglio,
+          tipo: "benvenuto_iscrizione",
+          atleta_id: a.id,
+          stato: "fallita",
+          sotto_tipo: motivo,
+          // L'avviso del mancato invio va allo staff, MAI alla famiglia:
+          // con tipo_destinatari "staff" il database non la consegna all'atleta.
+          tipo_destinatari: "staff",
+          titolo: `Benvenuto NON inviato — ${a.nome ?? ""} ${a.cognome ?? ""}`.trim(),
+        });
+      };
+      if (destinatari.length === 0) {
+        await registra_fallito("senza_email", "Benvenuto non inviato: nessun indirizzo email della famiglia.");
+        return json({ ok: false, senza_email: 1, inviati: 0, motivo: "senza_email" });
+      }
+      if (!provider_ok) {
+        await registra_fallito("provider_email_non_configurato", "Benvenuto non inviato: invio email non configurato.");
+        return json({
+          error: "provider_email_non_configurato",
+          messaggio: "L'invio delle email non è configurato: nessun messaggio è stato spedito.",
+        }, 503);
+      }
 
       const livello = String((body as any)?.livello ?? "").trim();
       const nome_completo = `${a.nome ?? ""} ${a.cognome ?? ""}`.trim();
@@ -246,6 +271,7 @@ Deno.serve(async (req) => {
       try {
         await spedisci(destinatari, oggetto, html);
       } catch (err) {
+        await registra_fallito("invio_fallito", `Benvenuto non inviato a ${destinatari.join(", ")}: ${(err as Error).message}`.slice(0, 1000));
         return json({ error: "invio_fallito", dettaglio: (err as Error).message }, 502);
       }
       const registrato = await registra({

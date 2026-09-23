@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useOutletContext } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -8,47 +9,90 @@ import { toast } from "sonner";
 import type { PortaleSession } from "@/lib/portale-auth";
 import { useTranslation } from "react-i18next";
 import RichiestePrivateSezione from "@/components/portale/RichiestePrivateSezione";
-
+import { segnala_errore } from "@/lib/errori";
 import { format_data } from "@/lib/format-data";
-const CorsiTab: React.FC = () => {
-  const ctx = useOutletContext<{ session?: PortaleSession }>() as any;
-  const session = ctx?.session as PortaleSession | undefined;
-  const { t } = useTranslation("portale");
-  const [loading, set_loading] = useState(true);
-  const [corsi, set_corsi] = useState<any[]>([]);
-  const [iscr, set_iscr] = useState<Set<string>>(new Set());
-  const [richieste, set_richieste] = useState<Set<string>>(new Set());
-  const [privates, set_privates] = useState<any[]>([]);
 
-  const [livelli_autorizzati, set_livelli_autorizzati] = React.useState<Set<string>>(new Set());
+interface DatiCorsi {
+  miei: any[];
+  disponibili: any[];
+  richieste: Set<string>;
+  privates: any[];
+}
 
-  const load = async () => {
-    if (!session) return;
-    const oggi = new Date().toISOString().slice(0, 10);
-    const [c, i, r, lp, pa] = await Promise.all([
-      supabase.from("corsi").select("*").eq("club_id", session.atleta.club_id).eq("attivo", true).order("nome"),
-      supabase.from("iscrizioni_corsi").select("corso_id").eq("atleta_id", session.atleta.id).eq("attiva", true),
-      supabase.from("richieste_iscrizione").select("corso_id").eq("atleta_id", session.atleta.id).eq("stato", "in_attesa"),
-      supabase.from("lezioni_private_atlete").select("lezione_id, lezioni_private(*)").eq("atleta_id", session.atleta.id),
-      (supabase.from as any)("percorsi_atleta")
-        .select("livello_in_preparazione_id, livelli_extra_autorizzati_ids")
-        .eq("atleta_id", session.atleta.id)
-        .eq("attivo", true),
-    ]);
-    set_corsi(c.data ?? []);
-    set_iscr(new Set((i.data ?? []).map((x: any) => x.corso_id)));
-    set_richieste(new Set((r.data ?? []).map((x: any) => x.corso_id)));
-    set_privates(((lp.data ?? []) as any[]).map((x) => x.lezioni_private).filter((l) => l && !l.annullata && l.data >= oggi));
-    const autorizzati = new Set<string>();
-    ((pa as any)?.data ?? []).forEach((p: any) => {
-      if (p.livello_in_preparazione_id) autorizzati.add(p.livello_in_preparazione_id);
-      (p.livelli_extra_autorizzati_ids ?? []).forEach((id: string) => autorizzati.add(id));
-    });
-    set_livelli_autorizzati(autorizzati);
-    set_loading(false);
+/**
+ * Corsi proposti all'atleta: la regola è UNA sola, quella del database
+ * (`valuta_iscrizione`). Qui non si filtra per livello in nessun altro modo.
+ */
+async function carica_corsi(session: PortaleSession): Promise<DatiCorsi> {
+  const oggi = new Date().toISOString().slice(0, 10);
+  const club_id = session.atleta.club_id;
+  const atleta_id = session.atleta.id;
+
+  const { data: stag, error: st_err } = await supabase
+    .from("stagioni").select("id").eq("club_id", club_id).eq("attiva", true).maybeSingle();
+  if (st_err) throw st_err;
+
+  const [c, i, r, lp] = await Promise.all([
+    stag
+      ? supabase.from("corsi").select("*").eq("club_id", club_id).eq("stagione_id", stag.id).eq("attivo", true).order("nome")
+      : Promise.resolve({ data: [] as any[], error: null }),
+    supabase.from("iscrizioni_corsi").select("corso_id").eq("atleta_id", atleta_id).eq("attiva", true),
+    supabase.from("richieste_iscrizione").select("corso_id").eq("atleta_id", atleta_id).eq("stato", "in_attesa"),
+    supabase.from("lezioni_private_atlete").select("lezione_id, lezioni_private(*)").eq("atleta_id", atleta_id),
+  ]);
+  for (const res of [c, i, r, lp]) if (res.error) throw res.error;
+
+  const corsi = (c.data ?? []) as any[];
+  const iscr = new Set(((i.data ?? []) as any[]).map((x) => x.corso_id));
+  const richieste = new Set(((r.data ?? []) as any[]).map((x) => x.corso_id));
+
+  const candidati = corsi.filter((x) => !iscr.has(x.id));
+  const esiti = await Promise.all(
+    candidati.map(async (corso) => {
+      const { data, error } = await supabase.rpc("valuta_iscrizione", {
+        p_atleta_id: atleta_id,
+        p_corso_id: corso.id,
+      });
+      if (error) throw error;
+      const riga = Array.isArray(data) ? data[0] : data;
+      return riga?.conforme === true || richieste.has(corso.id) ? corso : null;
+    }),
+  );
+
+  // I miei corsi possono essere anche di altre stagioni ancora attive: si leggono a parte.
+  let miei = corsi.filter((x) => iscr.has(x.id));
+  const mancanti = [...iscr].filter((id) => !miei.some((m) => m.id === id));
+  if (mancanti.length > 0) {
+    const { data: altri, error } = await supabase.from("corsi").select("*").in("id", mancanti).eq("attivo", true);
+    if (error) throw error;
+    miei = [...miei, ...((altri ?? []) as any[])];
+  }
+
+  return {
+    miei,
+    disponibili: esiti.filter(Boolean) as any[],
+    richieste,
+    privates: ((lp.data ?? []) as any[])
+      .map((x) => x.lezioni_private)
+      .filter((l) => l && !l.annullata && l.data >= oggi),
   };
+}
 
-  useEffect(() => { load(); }, [session?.atleta.id]);
+const CorsiTab: React.FC = () => {
+  const ctx = useOutletContext<{ session?: PortaleSession }>();
+  const session = ctx?.session;
+  const { t } = useTranslation("portale");
+  const qc = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ["portale_corsi", session?.atleta.id],
+    enabled: !!session,
+    queryFn: () => carica_corsi(session as PortaleSession),
+  });
+
+  React.useEffect(() => {
+    if (query.isError) segnala_errore("CorsiTab", t("corsi.errore"), query.error, undefined, "avviso");
+  }, [query.isError]);
 
   const richiedi = async (corso: any) => {
     if (!session) return;
@@ -58,17 +102,27 @@ const CorsiTab: React.FC = () => {
       corso_id: corso.id,
       stato: "in_attesa",
     });
-    if (error) { toast.error(error.message); return; }
-    toast.success("Richiesta inviata");
-    load();
+    if (error) {
+      segnala_errore("CorsiTab", t("corsi.richiedi"), error);
+      return;
+    }
+    toast.success(t("corsi.richiesta_ok"));
+    qc.invalidateQueries({ queryKey: ["portale_corsi", session.atleta.id] });
   };
 
-  if (loading) return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-sky-500" /></div>;
+  if (query.isError) {
+    return (
+      <div className="bg-white border border-red-200 rounded-2xl p-6 text-center space-y-3">
+        <p className="text-sm text-red-700">{t("corsi.errore")}</p>
+        <Button size="sm" variant="outline" onClick={() => query.refetch()}>{t("corsi.riprova")}</Button>
+      </div>
+    );
+  }
+  if (!query.isSuccess) {
+    return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-sky-500" /></div>;
+  }
 
-  const miei = corsi.filter((c) => iscr.has(c.id));
-  const disponibili = corsi.filter((c) =>
-    !iscr.has(c.id) && c.livello_id && livelli_autorizzati.has(c.livello_id),
-  );
+  const { miei, disponibili, richieste, privates } = query.data;
 
   return (
     <Tabs defaultValue="miei">
@@ -93,7 +147,7 @@ const CorsiTab: React.FC = () => {
       <TabsContent value="priv" className="space-y-3 mt-4">
         {privates.length === 0 ? <Empty text={t("corsi.nessuno")} /> : privates.map((l) => (
           <div key={l.id} className="bg-white border border-slate-200 rounded-2xl p-4">
-            <p className="font-semibold text-slate-800">Lezione privata</p>
+            <p className="font-semibold text-slate-800">{t("corsi.lezione_privata")}</p>
             <p className="text-sm text-slate-500">
               {format_data(new Date(l.data + "T00:00:00"))} · {l.ora_inizio?.slice(0,5)}–{l.ora_fine?.slice(0,5)}
             </p>
@@ -107,7 +161,7 @@ const CorsiTab: React.FC = () => {
   );
 };
 
-const CorsoCard: React.FC<{ corso: any; stato: "iscritto" | "richiesta" | "libero"; on_richiedi?: () => void; t: any }> = ({ corso, stato, on_richiedi, t }) => (
+const CorsoCard: React.FC<{ corso: any; stato: "iscritto" | "richiesta" | "libero"; on_richiedi?: () => void; t: (k: string) => string }> = ({ corso, stato, on_richiedi, t }) => (
   <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-3">
     <div className="flex-1 min-w-0">
       <p className="font-semibold text-slate-800">{corso.nome}</p>

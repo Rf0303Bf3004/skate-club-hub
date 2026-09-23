@@ -911,7 +911,17 @@
         "ricevuta_il": "Ricevuta il {{data}}",
         "eta_anni_one": "{{count}} anno",
         "eta_anni_other": "{{count}} anni"
-      }
+      },
+      "rimanda_benvenuto": "Rimanda la mail di benvenuto",
+      "benvenuto_senza_email": "Mail di benvenuto NON inviata: la famiglia non ha un indirizzo email.",
+      "benvenuto_provider": "Mail di benvenuto NON inviata: l'invio delle email non è configurato.",
+      "benvenuto_fallito": "Mail di benvenuto NON inviata: l'invio non è riuscito.",
+      "benvenuto_mai": "Nessun invio registrato della mail di benvenuto",
+      "benvenuto_inviato_il": "Mail di benvenuto inviata il {{quando}}",
+      "benvenuto_fallito_il": "{{quando}} — {{motivo}}",
+      "approvate_recenti": "Approvate negli ultimi 30 giorni",
+      "approvate_errore": "Non è stato possibile leggere le domande approvate e l'esito delle mail.",
+      "riprova": "Riprova"
     },
     "prove": {
       "sottotitolo": "Le famiglie che hanno chiesto di venire a provare dalla pagina pubblica.",

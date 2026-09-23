@@ -103,7 +103,11 @@
     "nessuno": "Nessun corso",
     "iscritto": "Iscritto",
     "richiesta_inviata": "Richiesta inviata",
-    "richiedi": "Richiedi iscrizione"
+    "richiedi": "Richiedi iscrizione",
+    "errore": "Non è stato possibile caricare i corsi. Non significa che non ce ne siano.",
+    "riprova": "Riprova",
+    "richiesta_ok": "Richiesta inviata",
+    "lezione_privata": "Lezione privata"
   },
   "fatture": {
     "filtro_tutte": "Tutte",
@@ -174,7 +178,9 @@
     "mese_suffisso": "/mese",
     "gia_iscritto": "Già iscritto",
     "richiesta_in_attesa": "⏳ Richiesta in attesa",
-    "richiedi_iscrizione": "📨 Richiedi iscrizione"
+    "richiedi_iscrizione": "📨 Richiedi iscrizione",
+    "errore_corsi": "Non è stato possibile caricare i corsi. Non significa che non ce ne siano.",
+    "riprova": "Riprova"
   },
   "accesso": {
     "riga": "Accesso di {{nome}}",

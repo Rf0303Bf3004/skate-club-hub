@@ -290,6 +290,7 @@ export function use_approva_domanda() {
       livello: string;
       categoria: string | null;
       note: string | null;
+      email_famiglia?: string | null;
     }) => {
       const { data, error } = await supabase.rpc("approva_domanda_iscrizione" as any, {
         p_domanda: p.domanda_id,
@@ -300,9 +301,109 @@ export function use_approva_domanda() {
       if (error) throw error;
       const riga = (Array.isArray(data) ? data[0] : data) as any;
       if (!riga?.atleta_id) throw new Error("approvazione_senza_atleta");
-      return { atleta_id: String(riga.atleta_id), codice_atleta: String(riga.codice_atleta ?? "") };
+      const atleta_id = String(riga.atleta_id);
+      // La mail di conferma parte da sola, subito dopo l'approvazione: non
+      // dipende da un bottone. L'esito (anche il fallimento) resta scritto nel
+      // registro comunicazioni dalla funzione di invio. Un invio fallito NON
+      // annulla l'approvazione: si riporta a chi ha approvato.
+      const benvenuto = await invia_benvenuto({
+        atleta_id,
+        livello: p.livello,
+        email_famiglia: p.email_famiglia ?? "",
+      });
+      return { atleta_id, codice_atleta: String(riga.codice_atleta ?? ""), benvenuto };
     },
-    onSuccess: invalida,
+    onSettled: invalida,
+  });
+}
+
+export type EsitoBenvenuto =
+  | { stato: "inviata" }
+  | { stato: "senza_email" }
+  | { stato: "provider_non_configurato" }
+  | { stato: "fallita"; motivo: string };
+
+/** Invia la mail di benvenuto e traduce la risposta in un esito leggibile. Non lancia. */
+export async function invia_benvenuto(p: {
+  atleta_id: string;
+  livello: string;
+  email_famiglia: string;
+}): Promise<EsitoBenvenuto> {
+  try {
+    const { data, error } = await supabase.functions.invoke("invia-email-iscrizioni", {
+      body: { tipo: "benvenuto", ...p },
+    });
+    const d = (data ?? {}) as any;
+    if (error) {
+      // Le risposte non-2xx arrivano come errore: se ne legge il corpo per il motivo.
+      let corpo: any = null;
+      try { corpo = await (error as any)?.context?.json?.(); } catch { corpo = null; }
+      if (corpo?.error === "provider_email_non_configurato") return { stato: "provider_non_configurato" };
+      return { stato: "fallita", motivo: String(corpo?.error ?? (error as any)?.message ?? "errore") };
+    }
+    if (d.error === "provider_email_non_configurato") return { stato: "provider_non_configurato" };
+    if (d.error) return { stato: "fallita", motivo: String(d.error) };
+    if (Number(d.senza_email ?? 0) > 0) return { stato: "senza_email" };
+    if (Number(d.inviati ?? 0) > 0) return { stato: "inviata" };
+    return { stato: "fallita", motivo: "nessun_invio" };
+  } catch (e) {
+    return { stato: "fallita", motivo: (e as Error)?.message ?? "errore" };
+  }
+}
+
+export interface DomandaApprovata {
+  id: string;
+  nome: string;
+  cognome: string;
+  genitore1_email: string | null;
+  livello_assegnato: string | null;
+  atleta_id: string | null;
+  gestita_il: string | null;
+  /** Ultimo esito della mail di benvenuto; null = nessun tentativo registrato. */
+  benvenuto: { stato: string; quando: string; motivo: string | null } | null;
+}
+
+/**
+ * Domande approvate negli ultimi 30 giorni con l'esito della mail di benvenuto,
+ * letto dal registro comunicazioni: una famiglia avvisata e una mai avvisata
+ * non si confondono.
+ */
+export function use_domande_approvate_recenti() {
+  const club_id = get_current_club_id();
+  return useQuery({
+    queryKey: ["domande_iscrizione", club_id, "approvate_recenti"],
+    enabled: !!club_id,
+    staleTime: 0,
+    queryFn: async (): Promise<DomandaApprovata[]> => {
+      const da = new Date(Date.now() - 30 * 86400000).toISOString();
+      const { data, error } = await supabase
+        .from("domande_iscrizione")
+        .select("id, nome, cognome, genitore1_email, livello_assegnato, atleta_id, gestita_il")
+        .eq("club_id", club_id)
+        .eq("stato", "approvata")
+        .gte("gestita_il", da)
+        .order("gestita_il", { ascending: false });
+      if (error) throw error;
+      const righe = (data ?? []) as any[];
+      const ids = righe.map((r) => r.atleta_id).filter(Boolean) as string[];
+      const esiti = new Map<string, { stato: string; quando: string; motivo: string | null }>();
+      if (ids.length > 0) {
+        const { data: com, error: c_err } = await supabase
+          .from("comunicazioni")
+          .select("atleta_id, stato, sotto_tipo, created_at")
+          .eq("club_id", club_id)
+          .eq("tipo", "benvenuto_iscrizione")
+          .in("atleta_id", ids)
+          .order("created_at", { ascending: false });
+        if (c_err) throw c_err;
+        for (const c of (com ?? []) as any[]) {
+          if (!esiti.has(c.atleta_id)) {
+            esiti.set(c.atleta_id, { stato: c.stato, quando: c.created_at, motivo: c.sotto_tipo ?? null });
+          }
+        }
+      }
+      return righe.map((r) => ({ ...r, benvenuto: r.atleta_id ? esiti.get(r.atleta_id) ?? null : null }));
+    },
   });
 }
 
