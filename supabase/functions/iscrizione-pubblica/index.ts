@@ -188,6 +188,7 @@ Deno.serve(async (req) => {
       genitore1_paese_iso: paese && PAESI_OK.includes(paese) ? paese : "CH",
       livello_dichiarato: livello && LIVELLI_OK.includes(livello) ? livello : null,
       esperienza: clean(dati.esperienza, 2000),
+      club_provenienza: clean(dati.club_provenienza, 120),
       note_famiglia: clean(dati.note_famiglia, 2000),
       consenso_foto_video: !!dati.consenso_foto_video,
       partecipa_gare: !!dati.partecipa_gare,

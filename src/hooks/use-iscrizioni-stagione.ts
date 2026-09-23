@@ -49,6 +49,7 @@ export interface Domanda {
   contratto_accettato_at: string | null;
   livello_dichiarato: string | null;
   esperienza: string | null;
+  club_provenienza: string | null;
   note_famiglia: string | null;
   consenso_foto_video: boolean | null;
   partecipa_gare: boolean | null;

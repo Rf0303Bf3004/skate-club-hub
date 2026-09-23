@@ -1,3 +1,4 @@
+import { use_aiuto_cap } from "@/hooks/use-aiuto-cap";
 import React, { useEffect, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -92,6 +93,14 @@ const AtletaTab: React.FC = () => {
     indirizzo: "", cap: "", citta: "", cantone: "", telefono: "",
     genitore_email: "", genitore_telefono: "",
   });
+
+  // Aiuto CAP svizzero: stesso comportamento del modulo di iscrizione.
+  const localita_cap = use_aiuto_cap(
+    form.cap,
+    atleta?.paese_iso ?? "CH",
+    { citta: form.citta, cantone: form.cantone },
+    (patch) => set_form((f) => ({ ...f, ...patch })),
+  );
 
   // Quale genitore si sta modificando lo dice prima di tutto la sessione (il codice
   // usato per entrare): chi è entrato col secondo codice non può finire a scrivere
@@ -261,7 +270,10 @@ const AtletaTab: React.FC = () => {
               </div>
               <div className="col-span-2">
                 <Label htmlFor="citta">Città</Label>
-                <Input id="citta" value={form.citta} onChange={(e) => set_form((f) => ({ ...f, citta: e.target.value }))} />
+                <Input id="citta" list="portale_localita_cap" value={form.citta} onChange={(e) => set_form((f) => ({ ...f, citta: e.target.value }))} />
+                <datalist id="portale_localita_cap">
+                  {localita_cap.map((l) => <option key={l} value={l} />)}
+                </datalist>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
