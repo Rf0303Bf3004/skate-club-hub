@@ -10,7 +10,9 @@ import { formatta_livelli_corso, is_apertura_totale, livello_dichiarato } from "
 
 import { format_data } from "@/lib/format-data";
 // Portale pubblico mobile-first: l'identificativo è il `codice_atleta` (AT-XXXX-XXXX),
-// lo stesso usato dall'app mobile genitori. Tutte le query passano dall'edge function `portale-atleta`.
+// lo stesso usato dall'app mobile genitori. L'elenco dei corsi NON passa più dall'edge
+// function `portale-atleta`: legge direttamente la RPC `corsi_atleta_pubblico` con il
+// client pubblico, così non dipende da ridistribuzioni di funzioni.
 
 
 type TabKey = "dati" | "calendario" | "comunicazioni" | "fatture" | "iscrivi";
