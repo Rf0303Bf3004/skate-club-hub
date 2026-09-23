@@ -30,6 +30,15 @@
   },
   "corsi": {
     "errore": "Die Kurse konnten nicht geladen werden. Das heißt nicht, dass es keine gibt.",
-    "riprova": "Erneut versuchen"
+    "riprova": "Erneut versuchen",
+    "miei": "Meine Kurse",
+    "disponibili": "Verfügbar",
+    "lezioni_private": "Privatstunden",
+    "nessuno": "Keine Kurse",
+    "iscritto": "Angemeldet",
+    "richiesta_inviata": "Anfrage gesendet",
+    "richiedi": "Anfragen",
+    "richiesta_ok": "Anfrage gesendet",
+    "lezione_privata": "Privatstunde"
   }
 }

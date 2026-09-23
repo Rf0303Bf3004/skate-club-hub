@@ -105,7 +105,9 @@
     "richiesta_inviata": "Richiesta inviata",
     "richiedi": "Richiedi iscrizione",
     "errore": "Non è stato possibile caricare i corsi. Non significa che non ce ne siano.",
-    "riprova": "Riprova"
+    "riprova": "Riprova",
+    "richiesta_ok": "Richiesta inviata",
+    "lezione_privata": "Lezione privata"
   },
   "fatture": {
     "filtro_tutte": "Tutte",

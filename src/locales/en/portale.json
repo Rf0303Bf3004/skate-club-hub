@@ -30,6 +30,15 @@
   },
   "corsi": {
     "errore": "The courses could not be loaded. This does not mean there are none.",
-    "riprova": "Try again"
+    "riprova": "Try again",
+    "miei": "My courses",
+    "disponibili": "Available",
+    "lezioni_private": "Private lessons",
+    "nessuno": "No courses",
+    "iscritto": "Enrolled",
+    "richiesta_inviata": "Request sent",
+    "richiedi": "Request",
+    "richiesta_ok": "Request sent",
+    "lezione_privata": "Private lesson"
   }
 }
