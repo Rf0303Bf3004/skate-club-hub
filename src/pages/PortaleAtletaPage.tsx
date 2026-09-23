@@ -462,13 +462,15 @@ const PortaleAtletaPage: React.FC = () => {
                     ) : richiesta ? (
                       <Button disabled variant="outline" className="w-full" size="sm">{t("atleta_page.richiesta_in_attesa")}</Button>
                     ) : (
-                      <Button className="w-full" size="sm" onClick={() => handle_richiedi_iscrizione(corso)} disabled={busy_id === corso.id}>
-                        {busy_id === corso.id ? <Loader2 className="w-4 h-4 animate-spin" /> : t("atleta_page.richiedi_iscrizione")}
+                      <Button className="w-full" size="sm" onClick={() => handle_richiedi_iscrizione(corso)} disabled={busy_id === corso.corso_id}>
+                        {busy_id === corso.corso_id ? <Loader2 className="w-4 h-4 animate-spin" /> : t("atleta_page.richiedi_iscrizione")}
                       </Button>
                     )}
                   </div>
                 );
-              })
+                  })
+                )}
+              </>
             )}
           </div>
         )}
