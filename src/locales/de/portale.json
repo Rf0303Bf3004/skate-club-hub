@@ -23,5 +23,13 @@
     "errore_salvataggio": "Ihre Antwort konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
     "dati_non_pronti": "Warten Sie vor der Antwort, bis die Anmeldung geprüft wurde.",
     "riprova": "Erneut versuchen"
+  },
+  "atleta_page": {
+    "errore_corsi": "Die Kurse konnten nicht geladen werden. Das heißt nicht, dass es keine gibt.",
+    "riprova": "Erneut versuchen"
+  },
+  "corsi": {
+    "errore": "Die Kurse konnten nicht geladen werden. Das heißt nicht, dass es keine gibt.",
+    "riprova": "Erneut versuchen"
   }
 }

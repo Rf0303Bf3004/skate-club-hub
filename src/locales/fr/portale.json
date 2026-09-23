@@ -23,5 +23,13 @@
     "errore_salvataggio": "Impossible d'enregistrer votre réponse. Réessayez.",
     "dati_non_pronti": "Attendez la vérification de l'inscription avant de répondre.",
     "riprova": "Réessayer"
+  },
+  "atleta_page": {
+    "errore_corsi": "Impossible de charger les cours. Cela ne signifie pas qu'il n'y en a pas.",
+    "riprova": "Réessayer"
+  },
+  "corsi": {
+    "errore": "Impossible de charger les cours. Cela ne signifie pas qu'il n'y en a pas.",
+    "riprova": "Réessayer"
   }
 }

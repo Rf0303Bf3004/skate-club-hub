@@ -23,5 +23,13 @@
     "errore_salvataggio": "We could not record your answer. Please try again.",
     "dati_non_pronti": "Wait for the registration check before answering.",
     "riprova": "Try again"
+  },
+  "atleta_page": {
+    "errore_corsi": "The courses could not be loaded. This does not mean there are none.",
+    "riprova": "Try again"
+  },
+  "corsi": {
+    "errore": "The courses could not be loaded. This does not mean there are none.",
+    "riprova": "Try again"
   }
 }
