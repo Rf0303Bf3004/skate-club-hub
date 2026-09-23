@@ -19,9 +19,8 @@ import {
   use_invia_email_iscrizioni,
   use_rigenera_token_iscrizioni,
   use_domande_approvate_recenti,
-  invia_benvenuto,
+  use_rimanda_benvenuto,
   type Domanda,
-  type EsitoBenvenuto,
 } from "@/hooks/use-iscrizioni-stagione";
 import { format_data, format_data_ora } from "@/lib/format-data";
 import { CATEGORIE, LIVELLI_AMATORI, LIVELLI_CARRIERA, get_categoria_label } from "@/lib/atleta-livello";
@@ -159,29 +158,19 @@ const Voce: React.FC<{ label: string; valore: string | null | undefined; vuoto: 
 
 type Traduci = (s: string, o?: any) => string;
 
-/** Frase leggibile per l'esito della mail di benvenuto. */
-function testo_esito_benvenuto(e: EsitoBenvenuto, k: Traduci): string {
-  if (e.stato === "inviata") return k("domande.benvenuto_inviato");
-  if (e.stato === "senza_email") return k("domande.benvenuto_senza_email");
-  if (e.stato === "provider_non_configurato") return k("domande.benvenuto_provider");
+/** Motivo leggibile scritto dal server sulla domanda. */
+function testo_motivo(motivo: string | null, k: Traduci): string {
+  if (motivo === "senza_email") return k("domande.benvenuto_senza_email");
+  if (motivo === "provider_email_non_configurato") return k("domande.benvenuto_provider");
   return k("domande.benvenuto_fallito");
 }
 
-/** Il riquadro dell'approvazione può chiudersi: l'esito si dice anche con un avviso. */
-function avvisa_esito_benvenuto(e: EsitoBenvenuto, nome: string, k: Traduci) {
-  if (e.stato === "inviata") {
-    toast({ title: k("domande.approvata_titolo", { nome }), description: k("domande.benvenuto_inviato") });
-  } else {
-    toast({ title: k("domande.approvata_titolo", { nome }), description: testo_esito_benvenuto(e, k), variant: "destructive" });
-  }
-}
-
-/** Approvate di recente con l'esito della mail di benvenuto e il «rimanda». */
+/** Una riga per ogni approvazione, con lo stato della mail registrato nel database. */
 const ApprovateRecenti: React.FC<{ puo_gestire: boolean }> = ({ puo_gestire }) => {
   const { t } = useTranslation("atleti");
   const k = (s: string, o?: any) => t(`iscrizioni_stagione.${s}`, o as any) as string;
   const q = use_domande_approvate_recenti();
-  const [in_corso, set_in_corso] = useState<string | null>(null);
+  const rimanda = use_rimanda_benvenuto();
 
   React.useEffect(() => {
     if (q.isError) segnala_errore("TabDomandeNuove", k("domande.approvate_recenti"), q.error, undefined, "avviso");
@@ -202,40 +191,54 @@ const ApprovateRecenti: React.FC<{ puo_gestire: boolean }> = ({ puo_gestire }) =
       <p className="text-[10px] font-bold uppercase tracking-[1.4px] text-muted-foreground">{k("domande.approvate_recenti")}</p>
       <ul className="divide-y divide-border">
         {q.data.map((r) => {
-          const b = r.benvenuto;
-          const ok = b?.stato === "inviata";
-          const testo = !b
-            ? k("domande.benvenuto_mai")
-            : ok
-              ? k("domande.benvenuto_inviato_il", { quando: format_data_ora(new Date(b.quando)) })
-              : k("domande.benvenuto_fallito_il", {
-                  quando: format_data_ora(new Date(b.quando)),
-                  motivo: b.motivo === "senza_email"
-                    ? k("domande.benvenuto_senza_email")
-                    : b.motivo === "provider_email_non_configurato"
-                      ? k("domande.benvenuto_provider")
-                      : k("domande.benvenuto_fallito"),
-                });
+          const s = r.mail_benvenuto_stato;
+          const quando_tentativo = r.mail_benvenuto_ultimo_tentativo
+            ? format_data_ora(new Date(r.mail_benvenuto_ultimo_tentativo))
+            : null;
+          let testo: string;
+          let classe = "text-destructive";
+          if (s === "inviata") {
+            testo = k("domande.benvenuto_inviato_il", {
+              quando: format_data_ora(new Date(r.mail_benvenuto_inviata_at ?? r.mail_benvenuto_ultimo_tentativo ?? "")),
+            });
+            classe = "text-emerald-700";
+          } else if (s === "da_inviare") {
+            testo = r.mail_benvenuto_motivo
+              ? k("domande.benvenuto_in_riprova", {
+                  motivo: testo_motivo(r.mail_benvenuto_motivo, k),
+                  count: r.mail_benvenuto_tentativi,
+                })
+              : k("domande.benvenuto_in_coda");
+            classe = "text-amber-700";
+          } else if (s === "senza_indirizzo" || s === "fallita") {
+            testo = k("domande.benvenuto_fallito_il", {
+              quando: quando_tentativo ?? "—",
+              motivo: testo_motivo(r.mail_benvenuto_motivo, k),
+            });
+          } else {
+            testo = k("domande.benvenuto_mai");
+          }
+          const puo_rimandare = puo_gestire && s !== "inviata" && s !== "da_inviare";
           return (
             <li key={r.id} className="py-2 flex flex-wrap items-center gap-3 text-sm">
               <span className="font-medium flex-1 min-w-[160px]">{r.nome} {r.cognome}</span>
-              <span className={ok ? "text-emerald-700" : "text-destructive"}>{testo}</span>
-              {!ok && puo_gestire && r.atleta_id && (
+              <span className="text-xs text-muted-foreground">
+                {r.gestita_il ? k("domande.approvata_il", { quando: format_data_ora(new Date(r.gestita_il)) }) : null}
+              </span>
+              <span className={classe}>{testo}</span>
+              {puo_rimandare && (
                 <Button
                   size="sm"
                   variant="outline"
                   className="gap-1.5"
-                  disabled={in_corso === r.id}
+                  disabled={rimanda.isPending}
                   onClick={async () => {
-                    set_in_corso(r.id);
-                    const e = await invia_benvenuto({
-                      atleta_id: r.atleta_id as string,
-                      livello: r.livello_assegnato ?? "",
-                      email_famiglia: r.genitore1_email ?? "",
-                    });
-                    set_in_corso(null);
-                    avvisa_esito_benvenuto(e, `${r.nome} ${r.cognome}`, k);
-                    q.refetch();
+                    try {
+                      await rimanda.mutateAsync(r.id);
+                      toast({ title: k("domande.benvenuto_in_coda") });
+                    } catch (e) {
+                      segnala_errore("TabDomandeNuove", k("domande.rimanda_benvenuto"), e, { domanda_id: r.id });
+                    }
                   }}
                 >
                   <Mail className="w-4 h-4" />
