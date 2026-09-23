@@ -98,7 +98,16 @@ function iso_giorno(d: Date): string {
 
 // Ghiaccio: barretta piena, blu freddo. Palestra: barretta vuota, solo contorno, arancione.
 // Forma e colore diversi: distinguibili anche da chi confonde i colori, su tema chiaro e scuro.
-const CLASSI_LUOGO = ["bg-blue-500", "border-2 border-orange-500 bg-background"] as const;
+// Il colore dipende dal tipo di luogo, non dall'ordine di apparizione:
+// ghiaccio = barretta blu piena, palestra/fuori ghiaccio = barretta arancione vuota.
+// Il calendario pubblico riceve solo il nome del luogo, quindi il tipo si
+// riconosce dal nome; tutto ciò che non è palestra conta come ghiaccio.
+const CLASSE_GHIACCIO = "bg-blue-500";
+const CLASSE_PALESTRA = "border-2 border-orange-500 bg-background";
+const PAROLE_PALESTRA = /palestra|gym|off[\s-]?ice|fitness|salle|turnhalle|kraftraum|pesi|spinning|atletica/i;
+function classe_per_luogo(pista: string | null): string {
+  return pista && PAROLE_PALESTRA.test(pista) ? CLASSE_PALESTRA : CLASSE_GHIACCIO;
+}
 
 const CalendarioPubblicoPage: React.FC = () => {
   const { t } = useTranslation("calendario");
@@ -388,10 +397,10 @@ const CalendarioPubblicoPage: React.FC = () => {
       const chiave = r.pista ?? "__senza_luogo";
       if (!distinti.has(chiave)) distinti.set(chiave, r.pista ?? t("luogo_non_indicato"));
     });
-    return Array.from(distinti.entries()).map(([chiave, etichetta], indice) => ({
+    return Array.from(distinti.entries()).map(([chiave, etichetta]) => ({
       chiave,
       etichetta,
-      classe: CLASSI_LUOGO[indice % CLASSI_LUOGO.length],
+      classe: classe_per_luogo(chiave === "__senza_luogo" ? null : chiave),
     }));
   }, [righe, t]);
 
