@@ -13,7 +13,10 @@
     "recipients": "Destinataires",
     "linked_event_type": "Type d'événement lié",
     "send_now": "Envoyer la communication aux familles maintenant",
-    "linked_event_hint": "La communication sera liée à l'événement : l'app mobile affichera le bouton « S'inscrire » en ligne."
+    "linked_event_hint": "La communication sera liée à l'événement : l'app mobile affichera le bouton « S'inscrire » en ligne.",
+    "event_date": "Date de l'événement",
+    "event_date_hint": "Le jour dont parle le message. Les familles le verront écrit en entier, par ex. « mardi 29.09.2026 ».",
+    "event_date_clear": "Retirer la date"
   },
   "recipients": {
     "all_club": "Tout le club",

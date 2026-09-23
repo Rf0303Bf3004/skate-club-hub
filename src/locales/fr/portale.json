@@ -134,5 +134,8 @@
     "richiedi": "Demander",
     "richiesta_ok": "Demande envoyée",
     "lezione_privata": "Leçon privée"
+  },
+  "notizie": {
+    "quando": "Quand : {{data}}"
   }
 }
