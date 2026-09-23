@@ -41,6 +41,12 @@ export interface Domanda {
   genitore1_cognome: string | null;
   genitore1_email: string | null;
   genitore1_telefono: string | null;
+  genitore1_indirizzo: string | null;
+  genitore1_cap: string | null;
+  genitore1_citta: string | null;
+  genitore1_cantone: string | null;
+  genitore1_paese_iso: string | null;
+  contratto_accettato_at: string | null;
   livello_dichiarato: string | null;
   esperienza: string | null;
   note_famiglia: string | null;
