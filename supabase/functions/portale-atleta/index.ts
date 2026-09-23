@@ -166,16 +166,34 @@ Deno.serve(async (req) => {
 
 
     if (action === "corsi") {
-      const { data: corsi } = await admin
-        .from("corsi").select("*").eq("club_id", club_id).eq("attivo", true).order("nome");
-      const { data: isc } = await admin
-        .from("iscrizioni_corsi").select("corso_id, attiva").eq("atleta_id", atleta_id);
-      const { data: ric } = await admin
-        .from("richieste_iscrizione").select("corso_id, stato").eq("atleta_id", atleta_id).eq("stato", "in_attesa");
+      // Proposta dei corsi: la regola è UNA sola, quella del database
+      // (valuta_iscrizione). Qui non si filtra per livello in nessun altro modo.
+      const { data: stag, error: st_err } = await admin
+        .from("stagioni").select("id").eq("club_id", club_id).eq("attiva", true).maybeSingle();
+      if (st_err) { console.error("[portale-atleta] stagione err", st_err); return json({ error: "db_error" }, 500); }
+      if (!stag) return json({ corsi: [], iscrizioni_attive: [], richieste: [], stagione_attiva: false });
+      const [c_res, i_res, r_res] = await Promise.all([
+        admin.from("corsi").select("*").eq("club_id", club_id).eq("stagione_id", stag.id).eq("attivo", true).order("nome"),
+        admin.from("iscrizioni_corsi").select("corso_id, attiva").eq("atleta_id", atleta_id),
+        admin.from("richieste_iscrizione").select("corso_id, stato").eq("atleta_id", atleta_id).eq("stato", "in_attesa"),
+      ]);
+      const err = c_res.error ?? i_res.error ?? r_res.error;
+      if (err) { console.error("[portale-atleta] corsi err", err); return json({ error: "db_error" }, 500); }
+      const iscritti = new Set((i_res.data ?? []).filter((x: any) => x.attiva !== false).map((x: any) => x.corso_id));
+      const richiesti = new Set((r_res.data ?? []).map((x: any) => x.corso_id));
+      const proposti: any[] = [];
+      for (const c of c_res.data ?? []) {
+        if (iscritti.has(c.id) || richiesti.has(c.id)) { proposti.push(c); continue; }
+        const { data: val, error: val_err } = await admin.rpc("valuta_iscrizione", { p_atleta_id: atleta_id, p_corso_id: c.id });
+        if (val_err) { console.error("[portale-atleta] valuta err", val_err); return json({ error: "db_error" }, 500); }
+        const riga = Array.isArray(val) ? val[0] : val;
+        if (riga?.conforme) proposti.push(c);
+      }
       return json({
-        corsi: corsi ?? [],
-        iscrizioni_attive: (isc ?? []).filter((x: any) => x.attiva !== false).map((x: any) => x.corso_id),
-        richieste: (ric ?? []).map((x: any) => x.corso_id),
+        corsi: proposti,
+        iscrizioni_attive: [...iscritti],
+        richieste: [...richiesti],
+        stagione_attiva: true,
       });
     }
 
@@ -202,6 +220,10 @@ Deno.serve(async (req) => {
       const { data: corso } = await admin
         .from("corsi").select("id, club_id, nome").eq("id", corso_id).maybeSingle();
       if (!corso || corso.club_id !== club_id) return json({ error: "forbidden" }, 403);
+      const { data: val, error: val_err } = await admin.rpc("valuta_iscrizione", { p_atleta_id: atleta_id, p_corso_id: corso_id });
+      if (val_err) { console.error("[portale-atleta] valuta err", val_err); return json({ error: "db_error" }, 500); }
+      const esito = Array.isArray(val) ? val[0] : val;
+      if (!esito?.conforme) return json({ error: "livello_non_conforme" }, 400);
       const { error } = await admin.from("richieste_iscrizione").insert({
         club_id, atleta_id, corso_id, stato: "in_attesa",
         note_richiesta: `Richiesta inviata dal portale per ${atleta.nome} ${atleta.cognome}`,
