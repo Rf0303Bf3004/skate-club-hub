@@ -10,8 +10,13 @@ import { formatta_livelli_corso, is_apertura_totale, livello_dichiarato } from "
 
 import { format_data } from "@/lib/format-data";
 // Portale pubblico mobile-first: l'identificativo è il `codice_atleta` (AT-XXXX-XXXX),
-// lo stesso usato dall'app mobile genitori. Tutte le query passano dall'edge function `portale-atleta`.
+// lo stesso usato dall'app mobile genitori. L'elenco dei corsi NON passa più dall'edge
+// function `portale-atleta`: legge direttamente la RPC `corsi_atleta_pubblico` con il
+// client pubblico, così non dipende da ridistribuzioni di funzioni.
 
+
+import { supabase } from "@/lib/supabase";
+import { segnala_errore } from "@/lib/errori";
 
 type TabKey = "dati" | "calendario" | "comunicazioni" | "fatture" | "iscrivi";
 
@@ -48,7 +53,8 @@ const PortaleAtletaPage: React.FC = () => {
   const [iscrizioni_attive, set_iscrizioni_attive] = useState<Set<string>>(new Set());
   const [richieste_inviate, set_richieste_inviate] = useState<Set<string>>(new Set());
   const [busy_id, set_busy_id] = useState<string | null>(null);
-  const [errore_corsi, set_errore_corsi] = useState(false);
+  // Errore della lettura corsi: distinto dallo stato vuoto, con o senza possibilità di riprovare.
+  const [errore_corsi, set_errore_corsi] = useState<{ messaggio: string; riprovabile: boolean } | null>(null);
   const [corsi_caricati, set_corsi_caricati] = useState(false);
   const [tentativo_corsi, set_tentativo_corsi] = useState(0);
 
@@ -90,17 +96,38 @@ const PortaleAtletaPage: React.FC = () => {
           const d = await call_portale(token, "fatture");
           set_fatture(d.fatture ?? []);
         } else if (tab === "iscrivi") {
-          set_errore_corsi(false);
+          set_errore_corsi(null);
           set_corsi_caricati(false);
           try {
-            const d = await call_portale(token, "corsi");
-            set_corsi_disponibili(d.corsi ?? []);
-            set_iscrizioni_attive(new Set(d.iscrizioni_attive ?? []));
-            set_richieste_inviate(new Set(d.richieste ?? []));
+            // Lista corsi letta direttamente dal database (RPC pubblica), non dall'edge function.
+            const { data, error } = await supabase.rpc("corsi_atleta_pubblico", { p_codice: token });
+            if (error) throw error;
+            const righe = data ?? [];
+            set_corsi_disponibili(righe);
+            set_iscrizioni_attive(new Set(righe.filter((r: any) => r.iscritto).map((r: any) => r.corso_id)));
+            set_richieste_inviate(new Set(righe.filter((r: any) => r.richiesta_in_attesa).map((r: any) => r.corso_id)));
             set_corsi_caricati(true);
-          } catch (err) {
+          } catch (err: any) {
             console.error("Errore caricamento corsi", err);
-            set_errore_corsi(true);
+            set_corsi_disponibili([]);
+            set_corsi_caricati(true);
+            const codice = err?.code ?? null;
+            if (codice === "P0002") {
+              // Codice non riconosciuto: non serve riprovare, il link è quello sbagliato.
+              set_errore_corsi({ messaggio: t("atleta_page.corsi_errore_codice"), riprovabile: false });
+            } else if (codice === "53400") {
+              // Troppi tentativi: mostro la frase del database, che dice già quanto aspettare.
+              set_errore_corsi({ messaggio: err?.message || t("atleta_page.errore_corsi"), riprovabile: false });
+            } else {
+              set_errore_corsi({ messaggio: t("atleta_page.errore_corsi"), riprovabile: true });
+            }
+            await segnala_errore(
+              "PortaleAtletaPage",
+              codice === "P0002" ? t("atleta_page.corsi_errore_codice") : t("atleta_page.errore_corsi"),
+              err,
+              { tab: "iscrivi", token_presente: !!token },
+              "avviso",
+            );
           }
         }
       } catch (err) {
@@ -129,10 +156,10 @@ const PortaleAtletaPage: React.FC = () => {
   };
 
   const handle_richiedi_iscrizione = async (corso: any) => {
-    set_busy_id(corso.id);
+    set_busy_id(corso.corso_id);
     try {
-      await call_portale(token, "richiedi_iscrizione", { corso_id: corso.id });
-      set_richieste_inviate((prev) => new Set([...prev, corso.id]));
+      await call_portale(token, "richiedi_iscrizione", { corso_id: corso.corso_id });
+      set_richieste_inviate((prev) => new Set([...prev, corso.corso_id]));
       toast({ title: t("atleta_page.richiesta_inviata_titolo"), description: t("atleta_page.richiesta_inviata_desc", { nome_corso: corso.nome }) });
     } catch (err: any) {
       toast({ title: t("atleta_page.errore"), description: err?.message, variant: "destructive" });
@@ -164,6 +191,9 @@ const PortaleAtletaPage: React.FC = () => {
   }
 
   const nome_completo = `${atleta.nome} ${atleta.cognome}`.trim();
+  // Riga di riepilogo in testa alla scheda Iscriviti: nome, club, categoria e livello
+  // letti dalla prima riga della RPC `corsi_atleta_pubblico`.
+  const riga_riepilogo = corsi_disponibili[0] ?? null;
   const iniziali = `${atleta.nome?.[0] ?? ""}${atleta.cognome?.[0] ?? ""}`.toUpperCase();
 
   const tabs: { key: TabKey; label: string; icon: any }[] = [
@@ -380,21 +410,35 @@ const PortaleAtletaPage: React.FC = () => {
             </p>
             {errore_corsi ? (
               <div className="bg-card border border-destructive/40 rounded-xl p-4 space-y-2 text-sm">
-                <p className="text-destructive font-medium">{t("atleta_page.errore_corsi")}</p>
-                <Button size="sm" variant="outline" onClick={() => set_tentativo_corsi((n) => n + 1)}>
-                  {t("atleta_page.riprova")}
-                </Button>
+                <p className="text-destructive font-medium">{errore_corsi.messaggio}</p>
+                {errore_corsi.riprovabile && (
+                  <Button size="sm" variant="outline" onClick={() => set_tentativo_corsi((n) => n + 1)}>
+                    {t("atleta_page.riprova")}
+                  </Button>
+                )}
               </div>
             ) : !corsi_caricati ? (
               <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
-            ) : corsi_disponibili.length === 0 ? (
-              <EmptyState icon={Trophy} text={t("atleta_page.nessun_corso_disponibile")} />
             ) : (
-              corsi_disponibili.map((corso) => {
-                const gia_iscritto = iscrizioni_attive.has(corso.id);
-                const richiesta = richieste_inviate.has(corso.id);
-                return (
-                  <div key={corso.id} className="bg-card border border-border rounded-xl p-4 shadow-card">
+              <>
+                {riga_riepilogo && (
+                  <div className="bg-card border border-border rounded-xl p-4 shadow-card">
+                    <dl className="space-y-2 text-sm">
+                      <Row label={t("atleta_page.nome")}>{riga_riepilogo.atleta}</Row>
+                      <Row label={t("atleta_page.club_label")}>{riga_riepilogo.club}</Row>
+                      <Row label={t("atleta_page.categoria")}>{riga_riepilogo.categoria || "—"}</Row>
+                      <Row label={t("atleta_page.livello_label")}>{riga_riepilogo.livello || "—"}</Row>
+                    </dl>
+                  </div>
+                )}
+                {corsi_disponibili.length === 0 ? (
+                  <EmptyState icon={Trophy} text={t("atleta_page.corsi_vuoto_livello", { nome: nome_completo })} />
+                ) : (
+                  corsi_disponibili.map((corso) => {
+                    const gia_iscritto = iscrizioni_attive.has(corso.corso_id);
+                    const richiesta = richieste_inviate.has(corso.corso_id);
+                    return (
+                  <div key={corso.corso_id} className="bg-card border border-border rounded-xl p-4 shadow-card">
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-bold text-foreground">{corso.nome}</h3>
@@ -421,13 +465,15 @@ const PortaleAtletaPage: React.FC = () => {
                     ) : richiesta ? (
                       <Button disabled variant="outline" className="w-full" size="sm">{t("atleta_page.richiesta_in_attesa")}</Button>
                     ) : (
-                      <Button className="w-full" size="sm" onClick={() => handle_richiedi_iscrizione(corso)} disabled={busy_id === corso.id}>
-                        {busy_id === corso.id ? <Loader2 className="w-4 h-4 animate-spin" /> : t("atleta_page.richiedi_iscrizione")}
+                      <Button className="w-full" size="sm" onClick={() => handle_richiedi_iscrizione(corso)} disabled={busy_id === corso.corso_id}>
+                        {busy_id === corso.corso_id ? <Loader2 className="w-4 h-4 animate-spin" /> : t("atleta_page.richiedi_iscrizione")}
                       </Button>
                     )}
                   </div>
                 );
-              })
+                  })
+                )}
+              </>
             )}
           </div>
         )}

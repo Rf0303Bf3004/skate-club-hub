@@ -26,7 +26,10 @@
   },
   "atleta_page": {
     "errore_corsi": "Impossible de charger les cours. Cela ne signifie pas qu'il n'y en a pas.",
-    "riprova": "Réessayer"
+    "riprova": "Réessayer",
+    "corsi_errore_codice": "Ce code n'est pas valide. Vérifie le lien que le club t'a envoyé.",
+    "corsi_vuoto_livello": "Pour le niveau de {{nome}}, il n'y a aucun cours ouvert en ce moment.",
+    "club_label": "Club"
   },
   "corsi": {
     "errore": "Impossible de charger les cours. Cela ne signifie pas qu'il n'y en a pas.",
