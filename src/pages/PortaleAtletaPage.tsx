@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { Loader2, User, Calendar as CalIcon, FileText, Trophy, BookOpen, AlertCircle, Check, GraduationCap } from "lucide-react";
+import { Loader2, User, Calendar as CalIcon, FileText, Trophy, BookOpen, AlertCircle, Check, GraduationCap, Medal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,30 +12,13 @@ import DateInput from "@/components/forms/DateInput";
 
 import { format_data } from "@/lib/format-data";
 // Portale pubblico mobile-first: l'identificativo è il `codice_atleta` (AT-XXXX-XXXX).
-// Avvisi, risposte, corsi, richieste di iscrizione e lezioni private leggono e scrivono
-// direttamente con le funzioni del database `*_pubblico` (client anon): il Publish le
-// porta sempre aggiornate. Restano sull'edge function `portale-atleta` solo `init`
-// (intestazione e dati anagrafici), `calendario` e `fatture`, non coperte da funzioni DB.
+// Tutto passa dalle funzioni del database `*_pubblico` / `*_pubblica` (client anon):
+// nessuna edge function, quindi il Publish porta sempre la versione aggiornata.
 
 import { supabase } from "@/lib/supabase";
 import { segnala_errore } from "@/lib/errori";
 
-type TabKey = "dati" | "calendario" | "comunicazioni" | "fatture" | "iscrivi" | "private";
-
-const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/portale-atleta`;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
-
-// Solo per init / calendario / fatture: nessuna funzione DB equivalente esiste.
-async function call_portale(token: string, action: "init" | "calendario" | "fatture") {
-  const res = await fetch(FN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` },
-    body: JSON.stringify({ token, action }),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-  return data;
-}
+type TabKey = "dati" | "calendario" | "comunicazioni" | "fatture" | "iscrivi" | "private" | "palmares";
 
 type ErroreLettura = { messaggio: string; riprovabile: boolean };
 const CODICI_CON_MESSAGGIO_DB = new Set(["53400", "23505", "P0001", "22023"]);
@@ -54,7 +37,6 @@ const PortaleAtletaPage: React.FC = () => {
   const token = token_param || search_params.get("token") || "";
   const [loading, set_loading] = useState(true);
   const [atleta, set_atleta] = useState<any | null>(null);
-  const [club, set_club] = useState<any | null>(null);
   const [errore, set_errore] = useState<string | null>(null);
   const [tab, set_tab] = useState<TabKey>("dati");
 
@@ -65,6 +47,7 @@ const PortaleAtletaPage: React.FC = () => {
   const [iscrizioni_attive, set_iscrizioni_attive] = useState<Set<string>>(new Set());
   const [richieste_inviate, set_richieste_inviate] = useState<Set<string>>(new Set());
   const [private_righe, set_private_righe] = useState<any[]>([]);
+  const [palmares, set_palmares] = useState<any[]>([]);
   const [istruttori, set_istruttori] = useState<{ istruttore_id: string; nome: string }[]>([]);
   const [busy_id, set_busy_id] = useState<string | null>(null);
   // Stato della lettura della scheda aperta (avvisi, corsi, private): tre stati distinti.
@@ -100,11 +83,19 @@ const PortaleAtletaPage: React.FC = () => {
         return;
       }
       try {
-        const data = await call_portale(token, "init");
-        set_atleta(data.atleta);
-        set_club(data.club);
+        const { data, error } = await supabase.rpc("scheda_atleta_pubblica", { p_codice: token });
+        if (error) throw error;
+        const riga = Array.isArray(data) ? data[0] : data;
+        if (!riga) throw Object.assign(new Error("scheda_vuota"), { code: "P0002" });
+        set_atleta(riga);
       } catch (err: any) {
-        set_errore(err?.message === "invalid_token" ? t("atleta_page.link_non_valido_scaduto") : t("atleta_page.errore_caricamento"));
+        const codice = err?.code ?? null;
+        set_errore(
+          codice === "P0002" ? t("atleta_page.corsi_errore_codice")
+          : codice === "53400" ? (err?.message || t("atleta_page.errore_caricamento"))
+          : t("atleta_page.errore_caricamento"),
+        );
+        if (codice !== "P0002") segnala_errore("PortaleAtletaPage", t("atleta_page.errore_caricamento"), err, { azione: "scheda" });
       } finally {
         set_loading(false);
       }
@@ -117,23 +108,28 @@ const PortaleAtletaPage: React.FC = () => {
     set_errore_lettura(null);
     set_caricato(false);
     (async () => {
-      if (tab === "calendario" || tab === "fatture") {
-        try {
-          const d = await call_portale(token, tab);
-          if (tab === "calendario") set_eventi_calendario(d.eventi ?? []);
-          else set_fatture(d.fatture ?? []);
-        } catch (err) {
-          console.error("Errore caricamento tab", err);
-        }
-        return;
-      }
       if (tab === "dati") return;
       const generico =
         tab === "comunicazioni" ? t("atleta_page.errore_avvisi")
         : tab === "private" ? t("atleta_page.errore_private")
+        : tab === "calendario" ? t("atleta_page.errore_calendario")
+        : tab === "fatture" ? t("atleta_page.errore_fatture")
+        : tab === "palmares" ? t("atleta_page.errore_palmares")
         : t("atleta_page.errore_corsi");
       try {
-        if (tab === "comunicazioni") {
+        if (tab === "calendario") {
+          const { data, error } = await supabase.rpc("calendario_atleta_pubblico", { p_codice: token, p_giorni: 60 });
+          if (error) throw error;
+          if (!annullato) set_eventi_calendario((data ?? []) as any[]);
+        } else if (tab === "fatture") {
+          const { data, error } = await supabase.rpc("fatture_atleta_pubblico", { p_codice: token });
+          if (error) throw error;
+          if (!annullato) set_fatture((data ?? []) as any[]);
+        } else if (tab === "palmares") {
+          const { data, error } = await supabase.rpc("palmares_atleta_pubblico", { p_codice: token });
+          if (error) throw error;
+          if (!annullato) set_palmares((data ?? []) as any[]);
+        } else if (tab === "comunicazioni") {
           const { data, error } = await supabase.rpc("comunicazioni_atleta_pubblico", { p_codice: token });
           if (error) throw error;
           if (!annullato) set_comunicazioni((data ?? []) as any[]);
@@ -276,6 +272,7 @@ const PortaleAtletaPage: React.FC = () => {
     { key: "fatture", label: t("atleta_page.tab_fatture"), icon: FileText },
     { key: "iscrivi", label: t("atleta_page.tab_iscriviti"), icon: Trophy },
     { key: "private", label: t("atleta_page.tab_private"), icon: GraduationCap },
+    { key: "palmares", label: t("atleta_page.tab_palmares"), icon: Medal },
   ];
 
   return (
@@ -288,7 +285,7 @@ const PortaleAtletaPage: React.FC = () => {
           <div className="flex-1 min-w-0">
             <p className="text-xs uppercase tracking-wider text-primary-foreground/70">{t("atleta_page.header_titolo")}</p>
             <h1 className="text-base sm:text-lg font-bold truncate">{nome_completo}</h1>
-            {club?.nome && <p className="text-xs text-primary-foreground/80 truncate">{club.nome}</p>}
+            {atleta.club_nome && <p className="text-xs text-primary-foreground/80 truncate">{atleta.club_nome}</p>}
           </div>
         </div>
       </header>
@@ -328,35 +325,39 @@ const PortaleAtletaPage: React.FC = () => {
                     ? format_data(new Date(atleta.data_nascita + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" })
                     : "—"}
                 </Row>
-                <Row label={t("atleta_page.luogo_nascita")}>{atleta.luogo_nascita || "—"}</Row>
-                <Row label={t("atleta_page.indirizzo")}>{atleta.indirizzo || "—"}</Row>
+                <Row label={t("atleta_page.indirizzo")}>
+                  {[atleta.indirizzo, [atleta.cap, atleta.citta].filter(Boolean).join(" "), atleta.cantone].filter(Boolean).join(", ") || "—"}
+                </Row>
                 <Row label={t("atleta_page.telefono")}>{atleta.telefono || "—"}</Row>
-                <Row label={t("atleta_page.codice_fiscale")}>{atleta.codice_fiscale || "—"}</Row>
+                <Row label={t("atleta_page.categoria")}>{atleta.categoria || "—"}</Row>
               </dl>
             </div>
 
             <div className="bg-card border border-border rounded-xl p-4 shadow-card">
               <h2 className="text-sm font-bold text-foreground mb-3">{t("atleta_page.livello_tecnico")}</h2>
               <div className="flex flex-wrap gap-2">
-                {atleta.percorso_amatori && <Badge variant="outline">{t("atleta_page.amatori_label")}: {atleta.percorso_amatori}</Badge>}
-                {atleta.carriera_artistica && <Badge variant="outline">{t("atleta_page.artistica_label")}: {atleta.carriera_artistica}</Badge>}
-                {atleta.carriera_stile && <Badge variant="outline">{t("atleta_page.stile_label")}: {atleta.carriera_stile}</Badge>}
-                {!atleta.percorso_amatori && !atleta.carriera_artistica && !atleta.carriera_stile && (
+                {atleta.livello_amatori && <Badge variant="outline">{t("atleta_page.amatori_label")}: {atleta.livello_amatori}</Badge>}
+                {atleta.livello_artistica && <Badge variant="outline">{t("atleta_page.artistica_label")}: {atleta.livello_artistica}</Badge>}
+                {atleta.livello_stile && <Badge variant="outline">{t("atleta_page.stile_label")}: {atleta.livello_stile}</Badge>}
+                {!atleta.livello_amatori && !atleta.livello_artistica && !atleta.livello_stile && atleta.livello_attuale && (
+                  <Badge variant="outline">{atleta.livello_attuale}</Badge>
+                )}
+                {!atleta.livello_amatori && !atleta.livello_artistica && !atleta.livello_stile && !atleta.livello_attuale && (
                   <p className="text-sm text-muted-foreground">{t("atleta_page.nessun_livello")}</p>
                 )}
               </div>
             </div>
 
-            {(atleta.licenza_sis_numero || atleta.licenza_sis_disciplina) && (
+            {(atleta.licenza_numero || atleta.licenza_disciplina) && (
               <div className="bg-card border border-border rounded-xl p-4 shadow-card">
                 <h2 className="text-sm font-bold text-foreground mb-3">{t("atleta_page.licenza_sis_titolo")}</h2>
                 <dl className="space-y-2 text-sm">
-                  <Row label={t("atleta_page.numero")}>{atleta.licenza_sis_numero || "—"}</Row>
-                  <Row label={t("atleta_page.disciplina")}>{atleta.licenza_sis_disciplina || "—"}</Row>
-                  <Row label={t("atleta_page.categoria")}>{atleta.licenza_sis_categoria || "—"}</Row>
+                  <Row label={t("atleta_page.numero")}>{atleta.licenza_numero || "—"}</Row>
+                  <Row label={t("atleta_page.disciplina")}>{atleta.licenza_disciplina || "—"}</Row>
+                  <Row label={t("atleta_page.categoria")}>{atleta.licenza_categoria || "—"}</Row>
                   <Row label={t("atleta_page.validita")}>
-                    {atleta.licenza_sis_validita_a
-                      ? format_data(new Date(atleta.licenza_sis_validita_a + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" })
+                    {atleta.licenza_validita
+                      ? format_data(new Date(String(atleta.licenza_validita).slice(0, 10) + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" })
                       : "—"}
                   </Row>
                 </dl>
@@ -368,7 +369,11 @@ const PortaleAtletaPage: React.FC = () => {
         {tab === "calendario" && (
           <div className="space-y-3">
             <h2 className="text-sm font-bold text-foreground">{t("atleta_page.prossimi_impegni")}</h2>
-            {eventi_calendario.length === 0 ? (
+            {errore_lettura ? (
+              <BoxErrore errore={errore_lettura} etichetta={t("atleta_page.riprova")} on_riprova={() => set_tentativo((n) => n + 1)} />
+            ) : !caricato ? (
+              <Caricamento />
+            ) : eventi_calendario.length === 0 ? (
               <EmptyState icon={CalIcon} text={t("atleta_page.nessun_impegno_futuro")} />
             ) : (
               eventi_calendario.map((e, i) => (
@@ -389,6 +394,7 @@ const PortaleAtletaPage: React.FC = () => {
                       {e.ora_fine && ` - ${e.ora_fine.slice(0, 5)}`}
                     </p>
                     {e.luogo && <p className="text-xs text-muted-foreground mt-0.5 truncate">📍 {e.luogo}</p>}
+                    {e.nota && <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">{e.nota}</p>}
                   </div>
                 </div>
               ))
@@ -461,11 +467,15 @@ const PortaleAtletaPage: React.FC = () => {
         {tab === "fatture" && (
           <div className="space-y-3">
             <h2 className="text-sm font-bold text-foreground">{t("atleta_page.le_tue_fatture")}</h2>
-            {fatture.length === 0 ? (
+            {errore_lettura ? (
+              <BoxErrore errore={errore_lettura} etichetta={t("atleta_page.riprova")} on_riprova={() => set_tentativo((n) => n + 1)} />
+            ) : !caricato ? (
+              <Caricamento />
+            ) : fatture.length === 0 ? (
               <EmptyState icon={FileText} text={t("atleta_page.nessuna_fattura")} />
             ) : (
               fatture.map((f) => (
-                <div key={f.id} className="bg-card border border-border rounded-xl p-4 shadow-card">
+                <div key={f.fattura_id} className="bg-card border border-border rounded-xl p-4 shadow-card">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-muted-foreground">{f.numero || t("atleta_page.fattura_label")}</p>
@@ -652,6 +662,37 @@ const PortaleAtletaPage: React.FC = () => {
                   </Button>
                 </div>
               </>
+            )}
+          </div>
+        )}
+        {tab === "palmares" && (
+          <div className="space-y-3">
+            <h2 className="text-sm font-bold text-foreground">{t("atleta_page.palmares_titolo", { nome: nome_completo })}</h2>
+            {errore_lettura ? (
+              <BoxErrore errore={errore_lettura} etichetta={t("atleta_page.riprova")} on_riprova={() => set_tentativo((n) => n + 1)} />
+            ) : !caricato ? (
+              <Caricamento />
+            ) : palmares.length === 0 ? (
+              <EmptyState icon={Medal} text={t("atleta_page.palmares_vuoto")} />
+            ) : (
+              palmares.map((r) => (
+                <div key={r.stagione} className={`bg-card rounded-xl p-4 shadow-card border ${r.stagione_attiva ? "border-primary border-2" : "border-border"}`}>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <h3 className="text-sm font-bold text-foreground">{r.stagione}</h3>
+                    {r.stagione_attiva && <Badge>{t("atleta_page.stagione_in_corso")}</Badge>}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center mb-2">
+                    <div><p className="text-lg">🥇</p><p className="text-sm font-bold tabular-nums">{r.oro ?? 0}</p></div>
+                    <div><p className="text-lg">🥈</p><p className="text-sm font-bold tabular-nums">{r.argento ?? 0}</p></div>
+                    <div><p className="text-lg">🥉</p><p className="text-sm font-bold tabular-nums">{r.bronzo ?? 0}</p></div>
+                  </div>
+                  <dl className="space-y-1 text-sm">
+                    <Row label={t("atleta_page.partecipazioni")}>{r.partecipazioni ?? 0}</Row>
+                    <Row label={t("atleta_page.miglior_punteggio")}>{r.miglior_punteggio != null ? Number(r.miglior_punteggio).toFixed(2) : "—"}</Row>
+                    <Row label={t("atleta_page.miglior_posizione")}>{r.miglior_posizione != null ? `${r.miglior_posizione}°` : "—"}</Row>
+                  </dl>
+                </div>
+              ))
             )}
           </div>
         )}
