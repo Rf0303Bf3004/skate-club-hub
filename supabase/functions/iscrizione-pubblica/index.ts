@@ -42,6 +42,7 @@ const LIVELLI_OK = [
 ];
 
 const SESSI_OK = ["F", "M"];
+const PAESI_OK = ["CH", "IT"];
 const CANTONI_CH = [
   "AG","AI","AR","BE","BL","BS","FR","GE","GL","GR","JU","LU","NE","NW","OW","SG","SH","SO","SZ","TG","TI","UR","VD","VS","ZG","ZH",
 ];
@@ -167,6 +168,7 @@ Deno.serve(async (req) => {
     const sesso = clean(dati.sesso, 1);
     const cantone = clean(dati.genitore1_cantone, 2);
     const livello = clean(dati.livello_dichiarato, 30);
+    const paese = clean(dati.genitore1_paese_iso, 2)?.toUpperCase() ?? null;
 
     const { error: ins_err } = await admin.from("domande_iscrizione").insert({
       club_id: club.id,
@@ -183,6 +185,7 @@ Deno.serve(async (req) => {
       genitore1_cap: clean(dati.genitore1_cap, 10),
       genitore1_citta: clean(dati.genitore1_citta, 120),
       genitore1_cantone: cantone && CANTONI_CH.includes(cantone) ? cantone : null,
+      genitore1_paese_iso: paese && PAESI_OK.includes(paese) ? paese : "CH",
       livello_dichiarato: livello && LIVELLI_OK.includes(livello) ? livello : null,
       esperienza: clean(dati.esperienza, 2000),
       note_famiglia: clean(dati.note_famiglia, 2000),

@@ -20,6 +20,7 @@ import {
   use_rigenera_token_iscrizioni,
   type Domanda,
 } from "@/hooks/use-iscrizioni-stagione";
+import { format_data, format_data_ora } from "@/lib/format-data";
 import { CATEGORIE, LIVELLI_AMATORI, LIVELLI_CARRIERA, get_categoria_label } from "@/lib/atleta-livello";
 
 const LIVELLI_ASSEGNABILI = ["Pulcini", ...LIVELLI_AMATORI, ...LIVELLI_CARRIERA];
@@ -131,6 +132,28 @@ const LinkPubblico: React.FC<{ token: string | null; puo_gestire: boolean }> = (
   );
 };
 
+const Gruppo: React.FC<{ titolo: string; children: React.ReactNode }> = ({ titolo, children }) => (
+  <div className="rounded-lg border border-border p-3 space-y-1.5">
+    <p className="text-[10px] font-bold uppercase tracking-[1.4px] text-muted-foreground">{titolo}</p>
+    <dl className="space-y-1">{children}</dl>
+  </div>
+);
+
+/** Un campo vuoto non si nasconde: si mostra «non indicato» in grigio. */
+const Voce: React.FC<{ label: string; valore: string | null | undefined; vuoto: string; multilinea?: boolean }> = ({
+  label, valore, vuoto, multilinea,
+}) => {
+  const v = typeof valore === "string" ? valore.trim() : "";
+  return (
+    <div className="grid grid-cols-[minmax(0,40%)_1fr] gap-2 text-sm">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className={v ? `text-foreground break-words ${multilinea ? "whitespace-pre-line" : ""}` : "text-muted-foreground/70 italic"}>
+        {v || vuoto}
+      </dd>
+    </div>
+  );
+};
+
 const SchedaDomanda: React.FC<{ d: Domanda; puo_gestire: boolean }> = ({ d, puo_gestire }) => {
   const { t } = useTranslation("atleti");
   const k = (s: string, o?: any) => t(`iscrizioni_stagione.${s}`, o as any) as string;
@@ -151,6 +174,9 @@ const SchedaDomanda: React.FC<{ d: Domanda; puo_gestire: boolean }> = ({ d, puo_
   const [avviso_inviato, set_avviso_inviato] = useState(false);
 
   const eta = eta_da(d.data_nascita);
+  const kd = (s: string, o?: any) => k(`domande.dettaglio.${s}`, o);
+  const nv = kd("non_indicato");
+  const si_no = (v: boolean | null) => (v == null ? null : v ? kd("si") : kd("no"));
 
   const on_approva = async () => {
     set_errore_livello(null);
@@ -276,39 +302,59 @@ const SchedaDomanda: React.FC<{ d: Domanda; puo_gestire: boolean }> = ({ d, puo_
   return (
     <div className="rounded-xl border border-border bg-card p-5 space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="text-base font-semibold text-foreground">
-            {d.cognome} {d.nome}
-          </h3>
-          <p className="text-xs text-muted-foreground">
-            {eta != null ? k("domande.eta", { count: eta }) : k("domande.eta_sconosciuta")}
-            {d.data_nascita ? ` · ${d.data_nascita}` : ""}
-          </p>
+        <h3 className="text-base font-semibold text-foreground">
+          {d.cognome} {d.nome}
+        </h3>
+        <p className="text-xs text-muted-foreground">
+          {kd("ricevuta_il", { data: format_data_ora(d.created_at) })}
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <Gruppo titolo={kd("sez_atleta")}>
+          <Voce label={kd("nome")} valore={d.nome} vuoto={nv} />
+          <Voce label={kd("cognome")} valore={d.cognome} vuoto={nv} />
+          <Voce
+            label={kd("data_nascita")}
+            valore={d.data_nascita ? `${format_data(`${d.data_nascita}T00:00:00`)}${eta != null ? ` · ${kd("eta_anni", { count: eta })}` : ""}` : null}
+            vuoto={nv}
+          />
+          <Voce label={kd("sesso")} valore={d.sesso === "F" || d.sesso === "M" ? kd(`sesso_${d.sesso}`) : d.sesso} vuoto={nv} />
+        </Gruppo>
+        <Gruppo titolo={kd("sez_famiglia")}>
+          <Voce label={kd("genitore")} valore={[d.genitore1_nome, d.genitore1_cognome].filter(Boolean).join(" ") || null} vuoto={nv} />
+          <Voce label={kd("email")} valore={d.genitore1_email} vuoto={nv} />
+          <Voce label={kd("telefono")} valore={d.genitore1_telefono} vuoto={nv} />
+          <Voce label={kd("indirizzo")} valore={d.genitore1_indirizzo} vuoto={nv} />
+          <Voce label={kd("cap")} valore={d.genitore1_cap} vuoto={nv} />
+          <Voce label={kd("localita")} valore={d.genitore1_citta} vuoto={nv} />
+          <Voce label={kd("cantone")} valore={d.genitore1_cantone} vuoto={nv} />
+          <Voce
+            label={kd("paese")}
+            valore={d.genitore1_paese_iso === "CH" || d.genitore1_paese_iso === "IT" ? kd(`paese_${d.genitore1_paese_iso}`) : d.genitore1_paese_iso}
+            vuoto={nv}
+          />
+        </Gruppo>
+        <Gruppo titolo={kd("sez_dichiara")}>
+          <Voce label={kd("livello_dichiarato")} valore={d.livello_dichiarato} vuoto={nv} />
+          <Voce label={kd("esperienza")} valore={d.esperienza} vuoto={nv} multilinea />
+          <Voce label={kd("note_famiglia")} valore={d.note_famiglia} vuoto={nv} multilinea />
+        </Gruppo>
+        <div className="space-y-4">
+          <Gruppo titolo={kd("sez_scelte")}>
+            <Voce label={kd("consenso_foto_video")} valore={si_no(d.consenso_foto_video)} vuoto={nv} />
+            <Voce label={kd("partecipa_gare")} valore={si_no(d.partecipa_gare)} vuoto={nv} />
+            <Voce label={kd("intende_test_livello")} valore={si_no(d.intende_test_livello)} vuoto={nv} />
+          </Gruppo>
+          <Gruppo titolo={kd("sez_contratto")}>
+            <Voce
+              label={kd("contratto")}
+              valore={d.contratto_accettato_at ? kd("contratto_accettato", { data: format_data_ora(d.contratto_accettato_at) }) : kd("contratto_non_accettato")}
+              vuoto={nv}
+            />
+          </Gruppo>
         </div>
-        {d.livello_dichiarato && (
-          <Badge className="text-sm">{k("domande.livello_dichiarato")}: {d.livello_dichiarato}</Badge>
-        )}
       </div>
-
-      <div className="text-sm text-muted-foreground space-y-1">
-        <p>
-          {k("domande.genitore")}: {[d.genitore1_nome, d.genitore1_cognome].filter(Boolean).join(" ")}
-        </p>
-        <p>{d.genitore1_email} {d.genitore1_telefono ? `· ${d.genitore1_telefono}` : ""}</p>
-      </div>
-
-      {d.esperienza && (
-        <p className="text-sm">
-          <span className="font-medium">{k("domande.esperienza")}: </span>
-          {d.esperienza}
-        </p>
-      )}
-      {d.note_famiglia && (
-        <p className="text-sm">
-          <span className="font-medium">{k("domande.note_famiglia")}: </span>
-          {d.note_famiglia}
-        </p>
-      )}
 
       {puo_gestire && (
         <div className="border-t border-border pt-4 space-y-3">
