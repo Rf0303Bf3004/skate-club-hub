@@ -172,11 +172,17 @@
     "season_fallback": "stagione",
     "empty": "Nessun risultato registrato.",
     "empty_season": "Nessun risultato registrato per la stagione {{stagione}}.",
-    "athletes_count": "{{count}} atleti",
     "col_athlete": "Atleta",
     "col_other": "Altre",
     "col_score": "Punteggio",
-    "footer_top": "Top {{limit}} di {{total}} atleti — vedi pagina Gare per il medagliere completo"
+    "footer_top": "Top {{limit}} di {{total}} atleti — vedi pagina Gare per il medagliere completo",
+    "errore": "Non è stato possibile leggere i risultati delle gare. Non significa che non ce ne siano.",
+    "riprova": "Riprova",
+    "caricamento": "Caricamento dei risultati…",
+    "stagione_label": "Stagione",
+    "tutte_stagioni": "Tutte le stagioni",
+    "athletes_count_one": "{{count}} atleta",
+    "athletes_count_other": "{{count}} atleti"
   },
   "president": {
     "areas": {

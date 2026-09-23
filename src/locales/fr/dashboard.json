@@ -510,5 +510,22 @@
       "col_categoria": "Catégorie",
       "legenda_classifica": "▲ et gras = patineuses du club."
     }
+  },
+  "widget_medagliere": {
+    "errore": "Impossible de lire les résultats des compétitions. Cela ne signifie pas qu'il n'y en a pas.",
+    "riprova": "Réessayer",
+    "caricamento": "Chargement des résultats…",
+    "stagione_label": "Saison",
+    "tutte_stagioni": "Toutes les saisons",
+    "title": "Médaillier {{stagione}}",
+    "season_fallback": "saison",
+    "empty": "Aucun résultat enregistré.",
+    "empty_season": "Aucun résultat enregistré pour la saison {{stagione}}.",
+    "athletes_count_one": "{{count}} athlète",
+    "athletes_count_other": "{{count}} athlètes",
+    "col_athlete": "Athlète",
+    "col_other": "Autres",
+    "col_score": "Score",
+    "footer_top": "Top {{limit}} sur {{total}} athlètes — voir la page Compétitions pour le médaillier complet"
   }
 }

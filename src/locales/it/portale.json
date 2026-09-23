@@ -221,7 +221,17 @@
     "fascia_sera": "Sera",
     "privata_note": "Note",
     "privata_invia": "Invia richiesta",
-    "privata_inviata": "Richiesta inviata al club"
+    "privata_inviata": "Richiesta inviata al club",
+    "tab_palmares": "Palmarès",
+    "errore_calendario": "Non è stato possibile caricare il calendario. Non significa che non ci siano impegni.",
+    "errore_fatture": "Non è stato possibile caricare le fatture. Non significa che non ce ne siano.",
+    "errore_palmares": "Non è stato possibile caricare i risultati delle gare. Non significa che non ce ne siano.",
+    "palmares_titolo": "Palmarès di {{nome}}",
+    "palmares_vuoto": "Nessuna gara registrata",
+    "stagione_in_corso": "Stagione in corso",
+    "partecipazioni": "Gare disputate",
+    "miglior_punteggio": "Miglior punteggio",
+    "miglior_posizione": "Miglior piazzamento"
   },
   "accesso": {
     "riga": "Accesso di {{nome}}",

@@ -510,5 +510,22 @@
       "col_categoria": "Kategorie",
       "legenda_classifica": "▲ und Fettdruck = Läuferinnen des Clubs."
     }
+  },
+  "widget_medagliere": {
+    "errore": "Die Wettkampfergebnisse konnten nicht gelesen werden. Das heißt nicht, dass es keine gibt.",
+    "riprova": "Erneut versuchen",
+    "caricamento": "Ergebnisse werden geladen…",
+    "stagione_label": "Saison",
+    "tutte_stagioni": "Alle Saisons",
+    "title": "Medaillenspiegel {{stagione}}",
+    "season_fallback": "Saison",
+    "empty": "Keine Ergebnisse erfasst.",
+    "empty_season": "Keine Ergebnisse für die Saison {{stagione}} erfasst.",
+    "athletes_count_one": "{{count}} Athletin",
+    "athletes_count_other": "{{count}} Athletinnen",
+    "col_athlete": "Athlet/in",
+    "col_other": "Andere",
+    "col_score": "Punkte",
+    "footer_top": "Top {{limit}} von {{total}} Athlet/innen — vollständiger Medaillenspiegel auf der Seite Wettkämpfe"
   }
 }

@@ -120,7 +120,17 @@
     "tab_fatture": "Invoices",
     "tab_iscriviti": "Register",
     "telefono": "Phone",
-    "validita": "Valid until"
+    "validita": "Valid until",
+    "tab_palmares": "Results",
+    "errore_calendario": "The calendar could not be loaded. This does not mean there are no activities.",
+    "errore_fatture": "The invoices could not be loaded. This does not mean there are none.",
+    "errore_palmares": "The competition results could not be loaded. This does not mean there are none.",
+    "palmares_titolo": "{{nome}}'s results",
+    "palmares_vuoto": "No competitions recorded",
+    "stagione_in_corso": "Current season",
+    "partecipazioni": "Competitions",
+    "miglior_punteggio": "Best score",
+    "miglior_posizione": "Best placing"
   },
   "corsi": {
     "errore": "The courses could not be loaded. This does not mean there are none.",

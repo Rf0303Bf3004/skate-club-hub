@@ -9912,6 +9912,18 @@ export type Database = {
           secondi_di_attesa: number
         }[]
       }
+      calendario_atleta_pubblico: {
+        Args: { p_codice: string; p_giorni?: number }
+        Returns: {
+          data: string
+          luogo: string
+          nota: string
+          ora_fine: string
+          ora_inizio: string
+          tipo: string
+          titolo: string
+        }[]
+      }
       calendario_pubblico: {
         Args: { p_a?: string; p_codice: string; p_da?: string }
         Returns: {
@@ -10259,6 +10271,19 @@ export type Database = {
           valuta: string
         }[]
       }
+      fatture_atleta_pubblico: {
+        Args: { p_codice: string }
+        Returns: {
+          data_emissione: string
+          descrizione: string
+          fattura_id: string
+          importo: number
+          numero: string
+          pagata: boolean
+          stato: string
+          tipo: string
+        }[]
+      }
       finestre_libere_istruttori: {
         Args: {
           p_a?: string
@@ -10546,6 +10571,19 @@ export type Database = {
       numero_iva_ben_formato: {
         Args: { p_numero: string; p_paese?: string }
         Returns: boolean
+      }
+      palmares_atleta_pubblico: {
+        Args: { p_codice: string }
+        Returns: {
+          argento: number
+          bronzo: number
+          miglior_posizione: number
+          miglior_punteggio: number
+          oro: number
+          partecipazioni: number
+          stagione: string
+          stagione_attiva: boolean
+        }[]
       }
       passa_stagione: {
         Args: { p_nuova: string; p_vecchia: string }
@@ -10975,6 +11013,31 @@ export type Database = {
       ruoli_che_gestiscono_gare: { Args: { p_club: string }; Returns: string[] }
       ruoli_direzione_club: { Args: { p_club: string }; Returns: string[] }
       ruolo_in: { Args: { p_ruoli: string[] }; Returns: boolean }
+      scheda_atleta_pubblica: {
+        Args: { p_codice: string }
+        Returns: {
+          atleta_id: string
+          cantone: string
+          cap: string
+          categoria: string
+          citta: string
+          club_id: string
+          club_nome: string
+          cognome: string
+          data_nascita: string
+          indirizzo: string
+          licenza_categoria: string
+          licenza_disciplina: string
+          licenza_numero: string
+          licenza_validita: string
+          livello_amatori: string
+          livello_artistica: string
+          livello_attuale: string
+          livello_stile: string
+          nome: string
+          telefono: string
+        }[]
+      }
       seed_dashboard_cards_default: {
         Args: { p_club: string }
         Returns: number
