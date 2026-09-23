@@ -10,6 +10,7 @@ import { type ArticoloContratto, type DatiContratto } from "@/lib/contratto-ades
 import { get_livello_display } from "@/lib/atleta-livello";
 
 import { format_data } from "@/lib/format-data";
+import { use_aiuto_cap } from "@/hooks/use-aiuto-cap";
 const MAX_BYTES = 2 * 1024 * 1024;
 const TIPI_OK = ["image/jpeg", "image/jpg", "image/png"];
 
@@ -118,6 +119,19 @@ const IscrizioneAtletaPage: React.FC = () => {
 
 
   const set_val = (k: string, v: any) => set_form((p) => ({ ...p, [k]: v }));
+
+  // Aiuto CAP svizzero (questo modulo non chiede il paese: si assume la Svizzera).
+  const localita_cap = use_aiuto_cap(
+    form.genitore1_cap,
+    "CH",
+    { citta: form.genitore1_citta ?? "", cantone: form.genitore1_cantone ?? "" },
+    (patch) =>
+      set_form((p) => ({
+        ...p,
+        ...(patch.citta !== undefined ? { genitore1_citta: patch.citta } : {}),
+        ...(patch.cantone !== undefined ? { genitore1_cantone: patch.cantone } : {}),
+      })),
+  );
 
   useEffect(() => {
     let vivo = true;
@@ -449,7 +463,10 @@ const IscrizioneAtletaPage: React.FC = () => {
               <Input className="h-11" value={form.genitore1_cap} onChange={(e) => set_val("genitore1_cap", e.target.value)} />
             </Campo>
             <Campo label="Città">
-              <Input className="h-11" value={form.genitore1_citta} onChange={(e) => set_val("genitore1_citta", e.target.value)} />
+              <Input className="h-11" list="iscr_localita_cap" value={form.genitore1_citta} onChange={(e) => set_val("genitore1_citta", e.target.value)} />
+              <datalist id="iscr_localita_cap">
+                {localita_cap.map((l) => <option key={l} value={l} />)}
+              </datalist>
             </Campo>
             <Campo label="Cantone">
               <select
