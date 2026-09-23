@@ -44,6 +44,15 @@ Deno.serve(async (req) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
+    // 0) Coda delle mail di benvenuto: svegliata dal database dopo
+    // un'approvazione. Non serve un utente: spedisce solo le righe che il
+    // database ha messo "da_inviare", a indirizzi già registrati. Chiamarla
+    // senza motivo non produce nulla di nuovo.
+    const corpo_iniziale = await req.clone().json().catch(() => ({}));
+    if (String((corpo_iniziale as any)?.tipo ?? "") === "coda_benvenuto") {
+      return json(await elabora_coda_benvenuto(admin));
+    }
+
     // 1) Identità: solo staff del club.
     const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
     if (!token) return json({ error: "unauthorized" }, 401);
