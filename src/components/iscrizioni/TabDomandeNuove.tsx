@@ -267,8 +267,7 @@ const SchedaDomanda: React.FC<{ d: Domanda; puo_gestire: boolean }> = ({ d, puo_
   const [errore_categoria, set_errore_categoria] = useState<string | null>(null);
   const [nota, set_nota] = useState("");
   const [dialog_rifiuto, set_dialog_rifiuto] = useState(false);
-  const [esito, set_esito] = useState<{ atleta_id: string; codice_atleta: string; benvenuto: EsitoBenvenuto } | null>(null);
-  const [benvenuto_inviato, set_benvenuto_inviato] = useState(false);
+  const [esito, set_esito] = useState<{ atleta_id: string; codice_atleta: string } | null>(null);
   const [rifiutata, set_rifiutata] = useState(false);
   const [avviso_inviato, set_avviso_inviato] = useState(false);
 
@@ -297,11 +296,9 @@ const SchedaDomanda: React.FC<{ d: Domanda; puo_gestire: boolean }> = ({ d, puo_
         livello,
         categoria,
         note: nota.trim() || null,
-        email_famiglia: d.genitore1_email ?? "",
       });
       set_esito(r);
-      set_benvenuto_inviato(r.benvenuto.stato === "inviata");
-      avvisa_esito_benvenuto(r.benvenuto, `${d.nome} ${d.cognome}`, k);
+      toast({ title: k("domande.approvata_titolo", { nome: `${d.nome} ${d.cognome}` }), description: k("domande.benvenuto_in_coda") });
     } catch (e) {
       // Il database rifiuta l'approvazione senza livello: lo diciamo con parole
       // normali sotto la tendina, non come errore tecnico.
@@ -336,29 +333,7 @@ const SchedaDomanda: React.FC<{ d: Domanda; puo_gestire: boolean }> = ({ d, puo_
             codice_atleta: esito.codice_atleta,
           }}
         />
-        <p className={benvenuto_inviato ? "text-sm text-emerald-800" : "text-sm text-destructive font-medium"}>
-          {benvenuto_inviato ? k("domande.benvenuto_inviato") : testo_esito_benvenuto(esito.benvenuto, k)}
-        </p>
-        {!benvenuto_inviato && (
-          <Button
-            variant="outline"
-            className="gap-1.5"
-            disabled={email.isPending}
-            onClick={async () => {
-              const r = await invia_benvenuto({
-                atleta_id: esito.atleta_id,
-                livello,
-                email_famiglia: d.genitore1_email ?? "",
-              });
-              set_esito({ ...esito, benvenuto: r });
-              set_benvenuto_inviato(r.stato === "inviata");
-              avvisa_esito_benvenuto(r, `${d.nome} ${d.cognome}`, k);
-            }}
-          >
-            <Mail className="w-4 h-4" />
-            {k("domande.rimanda_benvenuto")}
-          </Button>
-        )}
+        <p className="text-sm text-muted-foreground">{k("domande.benvenuto_stato_sotto")}</p>
       </div>
     );
   }
