@@ -31,11 +31,12 @@ async function carica_corsi(session: PortaleSession): Promise<DatiCorsi> {
   const { data: stag, error: st_err } = await supabase
     .from("stagioni").select("id").eq("club_id", club_id).eq("attiva", true).maybeSingle();
   if (st_err) throw st_err;
+  // Stagione non trovata (o non leggibile con questo accesso): è un guasto,
+  // non «nessun corso». Si mostra l'errore con Riprova, mai la lista vuota.
+  if (!stag) throw new Error("stagione_attiva_non_leggibile");
 
   const [c, i, r, lp] = await Promise.all([
-    stag
-      ? supabase.from("corsi").select("*").eq("club_id", club_id).eq("stagione_id", stag.id).eq("attivo", true).order("nome")
-      : Promise.resolve({ data: [] as any[], error: null }),
+    supabase.from("corsi").select("*").eq("club_id", club_id).eq("stagione_id", stag.id).eq("attivo", true).order("nome"),
     supabase.from("iscrizioni_corsi").select("corso_id").eq("atleta_id", atleta_id).eq("attiva", true),
     supabase.from("richieste_iscrizione").select("corso_id").eq("atleta_id", atleta_id).eq("stato", "in_attesa"),
     supabase.from("lezioni_private_atlete").select("lezione_id, lezioni_private(*)").eq("atleta_id", atleta_id),
