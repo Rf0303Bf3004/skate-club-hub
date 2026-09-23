@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { Building2, Users, TrendingUp, Wallet, FileText, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 
 function periodo_corrente_str(): string {
   const d = new Date();
@@ -88,7 +89,7 @@ const SuperAdminBillingDashboardPage: React.FC = () => {
   const [confirming, set_confirming] = useState(false);
   const periodo = periodo_corrente_str();
   const mese_corrente = new Date().getMonth() + 1;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = format_local_iso(new Date());
 
   const { data: clubs = [] } = useQuery({
     queryKey: ["sa_clubs_v2"],
@@ -167,7 +168,7 @@ const SuperAdminBillingDashboardPage: React.FC = () => {
     try {
       const scadenza = new Date();
       scadenza.setDate(scadenza.getDate() + 30);
-      const data_scadenza = scadenza.toISOString().slice(0, 10);
+      const data_scadenza = format_local_iso(scadenza);
 
       const da_inserire = anteprima_righe
         .filter((r) => !r.esiste && r.totale > 0)

@@ -14,12 +14,13 @@ import { ArrowLeft, FileText, Send, CheckCircle2, Pencil, Plus, Trash2, Download
 import { toast } from "@/hooks/use-toast";
 import { FatturaClubDocument, type FatturaClubData, type FatturaRiga } from "@/lib/fattura-club-pdf";
 import { use_fornitore_completo } from "@/hooks/use-fornitore-piattaforma";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 
 const SuperAdminFatturaDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = format_local_iso(new Date());
   const { fornitore } = use_fornitore_completo();
 
   const [open_preview, set_open_preview] = useState(false);

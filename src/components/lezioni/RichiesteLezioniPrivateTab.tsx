@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import ApprovaRichiestaDialog from "@/components/lezioni/ApprovaRichiestaDialog";
 
 import { format_data } from "@/lib/format-data";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 export interface RichiestaLezione {
   id: string;
   club_id: string;
@@ -100,7 +101,7 @@ const RichiesteLezioniPrivateTab: React.FC<Props> = ({
   const [approva_richiesta, set_approva_richiesta] = useState<RichiestaLezione | null>(null);
 
   const lezioni_rich = use_lezioni_per_richiesta();
-  const oggi = new Date().toISOString().slice(0, 10);
+  const oggi = format_local_iso(new Date());
   const conteggio_lezioni = useMemo(() => {
     const m = new Map<string, { totale: number; passate: number }>();
     for (const l of lezioni_rich.data ?? []) {

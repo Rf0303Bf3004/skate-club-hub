@@ -34,6 +34,7 @@ import { get_livello_display } from '@/lib/atleta-livello';
 
 
 import { format_data } from "@/lib/format-data";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 function build_templates(t: (key: string) => string) {
   return [
     {
@@ -151,7 +152,7 @@ const CommunicationsPage: React.FC = () => {
 
   React.useEffect(() => {
     if (!modal_open) return;
-    const today_iso = new Date().toISOString().split('T')[0];
+    const today_iso = format_local_iso(new Date());
     const club_id = get_current_club_id();
     (async () => {
       const [g_res, ev_res, tl_res] = await Promise.all([
@@ -996,7 +997,7 @@ const CommunicationsPage: React.FC = () => {
                         mode="single"
                         selected={giorno_data ? new Date(`${giorno_data}T00:00:00`) : undefined}
                         onSelect={(date) => {
-                          set_giorno_data(date ? date.toISOString().split('T')[0] : '');
+                          set_giorno_data(date ? format_local_iso(date) : '');
                           reset_recipient_preview();
                         }}
                         initialFocus
@@ -1034,7 +1035,7 @@ const CommunicationsPage: React.FC = () => {
                           mode="single"
                           selected={istruttore_data ? new Date(`${istruttore_data}T00:00:00`) : undefined}
                           onSelect={(date) => {
-                            set_istruttore_data(date ? date.toISOString().split('T')[0] : '');
+                            set_istruttore_data(date ? format_local_iso(date) : '');
                             reset_recipient_preview();
                           }}
                           initialFocus

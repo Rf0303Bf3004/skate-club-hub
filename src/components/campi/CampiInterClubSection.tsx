@@ -76,6 +76,7 @@ import {
   FileText,
   Pencil,
 } from "lucide-react";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 
 const fmt_date = (d: string | null) =>
   d ? format_data(new Date(d + "T00:00:00"), { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
@@ -1049,8 +1050,8 @@ const DialogInvitaClub: React.FC<{
         club_id: modalita_invito === "esistente" ? form.club_id || null : null,
         club_esterno_nome: modalita_invito === "esterno" ? form.club_esterno_nome.trim() || null : null,
         quota_club: form.quota_club === "" ? null : Number(form.quota_club),
-        valido_dal: form.valido_dal || campo.data_inizio || new Date().toISOString().slice(0, 10),
-        valido_al: form.valido_al || campo.data_fine || new Date().toISOString().slice(0, 10),
+        valido_dal: form.valido_dal || campo.data_inizio || format_local_iso(new Date()),
+        valido_al: form.valido_al || campo.data_fine || format_local_iso(new Date()),
       },
       {
         onSuccess: () => {

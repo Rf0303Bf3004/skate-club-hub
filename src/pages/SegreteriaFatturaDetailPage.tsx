@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import ConfirmButton from "@/components/common/ConfirmButton";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 
 type AzioneFattura = "annulla" | "sostituisci" | "storna";
 
@@ -135,7 +136,7 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
   async function cambia_stato(nuovo: string) {
     if (!f) return;
     const patch: any = { stato: nuovo };
-    if (nuovo === "pagata") patch.data_pagamento = new Date().toISOString().slice(0, 10);
+    if (nuovo === "pagata") patch.data_pagamento = format_local_iso(new Date());
     const res = await supabase.from("fatture").update(patch).eq("id", f.id).select("id");
     const ok = await verifica_scrittura("SegreteriaFatturaDetailPage", `Cambio stato fattura in ${nuovo}`, res, { fattura_id: f.id });
     if (!ok) return;

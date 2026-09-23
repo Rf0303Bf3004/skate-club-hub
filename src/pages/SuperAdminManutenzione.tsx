@@ -11,6 +11,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { format_data, format_ora } from "@/lib/format-data";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 interface Club {
   id: string;
   nome: string;
@@ -87,7 +88,7 @@ const SuperAdminManutenzione: React.FC = () => {
       esegui: async (cid) => {
         const un_anno_fa = new Date();
         un_anno_fa.setFullYear(un_anno_fa.getFullYear() - 1);
-        let q = supabase.from("presenze").delete({ count: "exact" }).lt("data", un_anno_fa.toISOString().split("T")[0]);
+        let q = supabase.from("presenze").delete({ count: "exact" }).lt("data", format_local_iso(un_anno_fa));
         if (cid) q = q.eq("club_id", cid);
         const { error, count } = await q;
         if (error) throw error;
@@ -184,7 +185,7 @@ const SuperAdminManutenzione: React.FC = () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `backup_${club?.nome?.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.csv`;
+        a.download = `backup_${club?.nome?.replace(/\s+/g, "_")}_${format_local_iso(new Date())}.csv`;
         a.click();
         URL.revokeObjectURL(url);
         return t("manutenzione.op.export.result", { nome: club?.nome });

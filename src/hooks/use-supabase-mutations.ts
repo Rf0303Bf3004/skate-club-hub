@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import i18n from "@/i18n";
 import { segnala_errore } from "@/lib/errori";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 
 function cid() {
   return get_current_club_id();
@@ -249,7 +250,7 @@ export function use_upsert_atleta() {
         !data.id || (livello_attuale_precedente && livello_attuale_precedente !== livello_attuale_nuovo);
 
       if (livello_cambiato && atleta_id) {
-        const oggi = new Date().toISOString().slice(0, 10);
+        const oggi = format_local_iso(new Date());
         // Chiudi voce attiva precedente
         await supabase
           .from("storico_livelli_atleta")
@@ -909,7 +910,7 @@ export function use_segna_fattura_pagata() {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from("fatture")
-        .update({ pagata: true, data_pagamento: new Date().toISOString().split("T")[0] })
+        .update({ pagata: true, data_pagamento: format_local_iso(new Date()) })
         .eq("id", id);
       if (error) throw error;
     },

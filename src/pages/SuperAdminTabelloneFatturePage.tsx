@@ -15,6 +15,7 @@ import { Send } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
 import { FatturaClubDocument, type FatturaClubData, type FatturaRiga } from "@/lib/fattura-club-pdf";
 import { use_fornitore_completo, type FornitoreCompleto } from "@/hooks/use-fornitore-piattaforma";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 
 type FatturaClubRow = {
   id: string; club_id: string; periodo: string; importo_chf: number;
@@ -34,7 +35,7 @@ const SuperAdminTabelloneFatturePage: React.FC = () => {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { fornitore } = use_fornitore_completo();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = format_local_iso(new Date());
   const [anno, set_anno] = useState<number>(new Date().getFullYear());
   const [solo_non_pagati, set_solo_np] = useState(false);
   const [search, set_search] = useState("");

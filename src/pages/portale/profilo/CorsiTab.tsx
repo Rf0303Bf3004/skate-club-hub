@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import RichiestePrivateSezione from "@/components/portale/RichiestePrivateSezione";
 import { segnala_errore } from "@/lib/errori";
 import { format_data } from "@/lib/format-data";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 
 interface DatiCorsi {
   miei: any[];
@@ -24,7 +25,7 @@ interface DatiCorsi {
  * (`valuta_iscrizione`). Qui non si filtra per livello in nessun altro modo.
  */
 async function carica_corsi(session: PortaleSession): Promise<DatiCorsi> {
-  const oggi = new Date().toISOString().slice(0, 10);
+  const oggi = format_local_iso(new Date());
   const club_id = session.atleta.club_id;
   const atleta_id = session.atleta.id;
 

@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { norm_giorno } from "@/lib/availability";
 import { use_stagione_attiva } from "@/lib/stagione-attiva";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 
 
 // ─── Club & Setup ──────────────────────────────────────────
@@ -485,7 +486,7 @@ export function use_campi() {
 
 // ─── Presenze ──────────────────────────────────────────────
 export function use_presenze(data?: string) {
-  const today = data || new Date().toISOString().split("T")[0];
+  const today = data || format_local_iso(new Date());
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,

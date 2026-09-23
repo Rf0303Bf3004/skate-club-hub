@@ -41,6 +41,7 @@ import {
 import { use_tariffe_test, LIVELLI_TARIFFA } from "@/components/setup/TariffeTestSection";
 
 import { format_data } from "@/lib/format-data";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 // ─── Tipi ───────────────────────────────────────────────────────────────
 type TestLivello = {
   id: string;
@@ -256,7 +257,7 @@ export default function TestLivelloPage() {
     queryKey: ["gare_calendario_test", club_id],
     enabled: !!club_id,
     queryFn: async () => {
-      const today = new Date().toISOString().split("T")[0];
+      const today = format_local_iso(new Date());
       const { data, error } = await supabase
         .from("gare_calendario")
         .select("id, nome, data, ora, luogo, club_ospitante")
@@ -310,7 +311,7 @@ export default function TestLivelloPage() {
 
   // Filtro Attivi (oggi/futuri o senza data) vs Passati/Archiviati (data < oggi).
   // Nota: nulla viene cancellato dal DB, è solo un filtro UI.
-  const today_iso = new Date().toISOString().split("T")[0];
+  const today_iso = format_local_iso(new Date());
   const get_data_test = (t: TestLivello): string | null => {
     if (t.tipo === "in_gara") return gare.find((g) => g.id === t.gara_id)?.data ?? t.data;
     return t.data;

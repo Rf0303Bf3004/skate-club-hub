@@ -13,6 +13,7 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { use_club, use_setup_club } from "@/hooks/use-supabase-data";
 import { FatturaAtletaDocument, type FatturaAtletaData } from "@/lib/fattura-atleta-pdf";
 import { FileText, Loader2 } from "lucide-react";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 
 const DEFAULT_ACCENTO = "#1e3a8a";
 
@@ -78,7 +79,7 @@ const FatturaLayoutSection: React.FC = () => {
     return {
       numero: `${(prefisso.trim() || "F-")}0001`,
       periodo: "Esempio",
-      data_emissione: new Date().toISOString().slice(0, 10),
+      data_emissione: format_local_iso(new Date()),
       data_scadenza: null,
       righe: [{ descrizione: "Corso di prova", quantita: 1, prezzo_unitario: 80, importo: 80 }],
       subtotale: 80,
