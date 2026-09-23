@@ -15,6 +15,9 @@ import { format_data } from "@/lib/format-data";
 // client pubblico, così non dipende da ridistribuzioni di funzioni.
 
 
+import { supabase } from "@/lib/supabase";
+import { segnala_errore } from "@/lib/errori";
+
 type TabKey = "dati" | "calendario" | "comunicazioni" | "fatture" | "iscrivi";
 
 const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/portale-atleta`;
