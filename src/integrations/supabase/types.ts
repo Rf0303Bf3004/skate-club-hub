@@ -1060,6 +1060,24 @@ export type Database = {
           },
         ]
       }
+      cap_svizzera: {
+        Row: {
+          cantone: string
+          cap: string
+          localita: string
+        }
+        Insert: {
+          cantone: string
+          cap: string
+          localita: string
+        }
+        Update: {
+          cantone?: string
+          cap?: string
+          localita?: string
+        }
+        Relationships: []
+      }
       capacita_corsi: {
         Row: {
           capacita_max: number
@@ -2935,6 +2953,7 @@ export type Database = {
         Row: {
           atleta_id: string | null
           club_id: string
+          club_provenienza: string | null
           cognome: string
           consenso_foto_video: boolean
           contratto_accettato_at: string | null
@@ -2969,6 +2988,7 @@ export type Database = {
         Insert: {
           atleta_id?: string | null
           club_id: string
+          club_provenienza?: string | null
           cognome: string
           consenso_foto_video?: boolean
           contratto_accettato_at?: string | null
@@ -3003,6 +3023,7 @@ export type Database = {
         Update: {
           atleta_id?: string | null
           club_id?: string
+          club_provenienza?: string | null
           cognome?: string
           consenso_foto_video?: boolean
           contratto_accettato_at?: string | null
@@ -9914,6 +9935,13 @@ export type Database = {
       cancel_corso_atleta: {
         Args: { p_atleta_id: string; p_corso_id: string }
         Returns: undefined
+      }
+      cerca_cap: {
+        Args: { p_cap: string }
+        Returns: {
+          cantone: string
+          localita: string
+        }[]
       }
       chiudi_accesso_assistenza: { Args: { p_id: string }; Returns: undefined }
       chiudi_campagna_iscrizioni: {
