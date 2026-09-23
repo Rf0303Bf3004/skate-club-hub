@@ -234,13 +234,15 @@ Deno.serve(async (req) => {
       // Ogni esito del benvenuto resta scritto: anche quando non parte.
       const registra_fallito = async (motivo: string, dettaglio: string) => {
         await registra({
-          titolo: `Iscrizione confermata — ${club_nome}`,
           testo: dettaglio,
           tipo: "benvenuto_iscrizione",
           atleta_id: a.id,
           stato: "fallita",
-          inviata_at: null,
           sotto_tipo: motivo,
+          // L'avviso del mancato invio va allo staff, MAI alla famiglia:
+          // con tipo_destinatari "staff" il database non la consegna all'atleta.
+          tipo_destinatari: "staff",
+          titolo: `Benvenuto NON inviato — ${a.nome ?? ""} ${a.cognome ?? ""}`.trim(),
         });
       };
       if (destinatari.length === 0) {
