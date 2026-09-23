@@ -33,7 +33,8 @@ import { is_apertura_totale, parse_livelli_corso } from '@/lib/livelli-corso';
 import { get_livello_display } from '@/lib/atleta-livello';
 
 
-import { format_data } from "@/lib/format-data";
+import { format_giorno_esteso, format_data } from "@/lib/format-data";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 function build_templates(t: (key: string) => string) {
   return [
     {
@@ -141,6 +142,7 @@ const CommunicationsPage: React.FC = () => {
   const [atleti_specifici_ids, set_atleti_specifici_ids] = useState<string[]>([]);
   const [atleta_search, set_atleta_search] = useState('');
   const [urgente, set_urgente] = useState(false);
+  const [data_evento, set_data_evento] = useState('');
 
   // Evento collegato (gara | gala | test | nessuno)
   const [tipo_evento_collegato, set_tipo_evento_collegato] = useState<'nessuno' | 'gara' | 'gala' | 'test'>('nessuno');
@@ -151,7 +153,7 @@ const CommunicationsPage: React.FC = () => {
 
   React.useEffect(() => {
     if (!modal_open) return;
-    const today_iso = new Date().toISOString().split('T')[0];
+    const today_iso = format_local_iso(new Date());
     const club_id = get_current_club_id();
     (async () => {
       const [g_res, ev_res, tl_res] = await Promise.all([
@@ -376,6 +378,7 @@ const CommunicationsPage: React.FC = () => {
     set_atleti_specifici_ids([]);
     set_atleta_search('');
     set_urgente(false);
+    set_data_evento('');
     set_modal_open(true);
   };
 
@@ -404,6 +407,7 @@ const CommunicationsPage: React.FC = () => {
     set_atleti_specifici_ids([]);
     set_atleta_search('');
     set_urgente(false);
+    set_data_evento('');
     set_step('form');
   };
 
@@ -418,6 +422,13 @@ const CommunicationsPage: React.FC = () => {
       set_is_resolving_recipients(false);
     }
   };
+
+  // Data dell'evento salvata in `data_evento`: quella scelta nel campo apposito,
+  // altrimenti il giorno usato per scegliere i destinatari.
+  const data_evento_effettiva =
+    data_evento ||
+    (tipo_destinatari === 'per_giorno' ? giorno_data : '') ||
+    (tipo_destinatari === 'per_istruttore' ? istruttore_data : '');
 
   const handle_submit = async () => {
     const final_titolo = fill_placeholders(titolo, placeholders);
@@ -440,6 +451,7 @@ const CommunicationsPage: React.FC = () => {
         evento_straordinario_id: tipo_evento_collegato === 'gala' ? evt_id : null,
         test_livello_id: tipo_evento_collegato === 'test' ? evt_id : null,
         urgente,
+        data_evento: data_evento_effettiva || null,
       });
       set_modal_open(false);
       return;
@@ -458,6 +470,7 @@ const CommunicationsPage: React.FC = () => {
       evento_straordinario_id: tipo_evento_collegato === 'gala' ? evt_id : null,
       test_livello_id: tipo_evento_collegato === 'test' ? evt_id : null,
       urgente,
+      data_evento: data_evento_effettiva || null,
     });
     set_modal_open(false);
   };
@@ -794,6 +807,35 @@ const CommunicationsPage: React.FC = () => {
                   readOnly={!!selected_template} />
               </div>
 
+              <div>
+                <Label className="text-xs">{t('form.event_date')}</Label>
+                <div className="flex gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn('flex-1 justify-start text-left font-normal', !data_evento_effettiva && 'text-muted-foreground')}>
+                        <CalendarIcon className="h-4 w-4" />
+                        {data_evento_effettiva ? format_giorno_esteso(data_evento_effettiva) : t('dialog.select_date')}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={data_evento_effettiva ? new Date(`${data_evento_effettiva}T00:00:00`) : undefined}
+                        onSelect={(date) => set_data_evento(date ? format_local_iso(date) : '')}
+                        initialFocus
+                        className={cn('p-3 pointer-events-auto')}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {data_evento && (
+                    <Button type="button" variant="ghost" size="icon" title={t('form.event_date_clear')} aria-label={t('form.event_date_clear')} onClick={() => set_data_evento('')}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">{t('form.event_date_hint')}</p>
+              </div>
+
               <TooltipProvider>
                 <div className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
                   <Tooltip>
@@ -996,7 +1038,7 @@ const CommunicationsPage: React.FC = () => {
                         mode="single"
                         selected={giorno_data ? new Date(`${giorno_data}T00:00:00`) : undefined}
                         onSelect={(date) => {
-                          set_giorno_data(date ? date.toISOString().split('T')[0] : '');
+                          set_giorno_data(date ? format_local_iso(date) : '');
                           reset_recipient_preview();
                         }}
                         initialFocus
@@ -1034,7 +1076,7 @@ const CommunicationsPage: React.FC = () => {
                           mode="single"
                           selected={istruttore_data ? new Date(`${istruttore_data}T00:00:00`) : undefined}
                           onSelect={(date) => {
-                            set_istruttore_data(date ? date.toISOString().split('T')[0] : '');
+                            set_istruttore_data(date ? format_local_iso(date) : '');
                             reset_recipient_preview();
                           }}
                           initialFocus

@@ -70,7 +70,8 @@
     "archivio": "Archivio",
     "archivia": "Archivia",
     "ripristina": "Ripristina",
-    "nessuna": "Nessuna notizia"
+    "nessuna": "Nessuna notizia",
+    "quando": "Quando: {{data}}"
   },
   "assenze": {
     "attesa": "Ti aspettiamo. Avvisaci solo se non puoi venire.",

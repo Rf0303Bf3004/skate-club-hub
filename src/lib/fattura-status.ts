@@ -1,3 +1,4 @@
+import { format_local_iso } from "@/lib/planning-occorrenze";
 // Stato derivato delle fatture lato applicativo.
 // Stati ammessi in banca dati: bozza, inviata, sollecitata, pagata, scaduta, annullata, stornata.
 
@@ -22,7 +23,7 @@ export function get_fattura_stato_ui(f: any, today_iso?: string): FatturaStatoUI
   if (f.stato === "stornata") return "stornata";
   if (f.pagata === true || f.stato === "pagata") return "pagata";
   if (f.stato === "bozza") return "bozza";
-  const today = today_iso || new Date().toISOString().split("T")[0];
+  const today = today_iso || format_local_iso(new Date());
   const scad = f.data_scadenza || f.scadenza;
   if (scad && String(scad) < today) return "scaduta";
   if (f.stato === "sollecitata") return "sollecitata";

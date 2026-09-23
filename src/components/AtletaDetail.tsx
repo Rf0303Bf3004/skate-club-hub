@@ -52,6 +52,7 @@ import FotoAtleta from "@/components/common/FotoAtleta";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import ProgrammiMusicaliSection from "@/components/atleti/ProgrammiMusicaliSection";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 
 interface Props {
   atleta: any;
@@ -406,8 +407,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     try {
       const club_id = await get_current_club_id();
       if (!club_id) throw new Error(td("detail.club_not_identified"));
-      const oggi = new Date().toISOString().slice(0, 10);
-      const scad = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+      const oggi = format_local_iso(new Date());
+      const scad = format_local_iso(new Date(Date.now() + 30 * 86400000));
       const { data, error } = await supabase
         .from("fatture")
         .insert({

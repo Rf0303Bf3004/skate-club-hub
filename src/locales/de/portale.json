@@ -134,5 +134,8 @@
     "richiedi": "Anfragen",
     "richiesta_ok": "Anfrage gesendet",
     "lezione_privata": "Privatstunde"
+  },
+  "notizie": {
+    "quando": "Wann: {{data}}"
   }
 }

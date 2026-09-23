@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 import { use_contenuti_traduzioni } from "@/hooks/use-contenuti-traduzioni";
 import { segnala_errore } from "@/lib/errori";
 
-import { format_data } from "@/lib/format-data";
+import { format_data, format_giorno_esteso } from "@/lib/format-data";
 interface Dest {
   id: string;
   archiviato_at: string | null;
@@ -28,6 +28,7 @@ interface Dest {
     corpo?: string | null;
     richiede_rsvp: boolean | null;
     rsvp_scadenza: string | null;
+    data_evento: string | null;
   } | null;
 }
 
@@ -50,7 +51,7 @@ const PortaleNotiziePage: React.FC = () => {
     const { data, error } = await supabase
       .from("comunicazioni_destinatari")
       .select(
-        "id, archiviato_at, creato_at, rsvp_risposta, rsvp_at, comunicazioni(id, titolo, testo, corpo, richiede_rsvp, rsvp_scadenza)",
+        "id, archiviato_at, creato_at, rsvp_risposta, rsvp_at, comunicazioni(id, titolo, testo, corpo, richiede_rsvp, rsvp_scadenza, data_evento)",
       )
       .eq("atleta_id", session.atleta.id)
       .order("creato_at", { ascending: false });
@@ -172,6 +173,11 @@ const PortaleNotiziePage: React.FC = () => {
               {is_archive ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
             </Button>
           </div>
+          {it.comunicazioni?.data_evento && (
+            <p className="text-sm font-semibold text-slate-800 mb-1">
+              {t("notizie.quando", { data: format_giorno_esteso(it.comunicazioni.data_evento) })}
+            </p>
+          )}
           <p className="text-sm text-slate-600 whitespace-pre-wrap">
             {traduci(it.comunicazioni?.id, "testo", it.comunicazioni?.testo ?? it.comunicazioni?.corpo ?? "")}
           </p>

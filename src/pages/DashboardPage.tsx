@@ -77,6 +77,7 @@ import { useDashboardCardsMatrix } from "@/hooks/usePermessi";
 import { card_visibile_di_default } from "@/config/dashboardCards";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import { get_fattura_stato_ui, fattura_chiusa } from "@/lib/fattura-status";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 
 // ─── Helpers ──────────────────────────────────────────────
 function normalize_giorno(value?: string): string {
@@ -1151,7 +1152,7 @@ const WidgetCompleanni: React.FC<{ atleti: any[] }> = ({ atleti }) => {
 // ─── Widget fatture in scadenza ────────────────────────────
 const WidgetFatture: React.FC<{ fatture: any[]; atleti: any[] }> = ({ fatture, atleti }) => {
   const { t: td } = useTranslation("dashboard");
-  const today = new Date().toISOString().split("T")[0];
+  const today = format_local_iso(new Date());
   const tra_7 = add_days(today, 7);
 
   const aperte = fatture.filter((f) => {
@@ -1311,7 +1312,7 @@ const DashboardPage: React.FC = () => {
   const { data: setup } = use_setup_club();
   const navigate = useNavigate();
   const [nuovo_evento_open, set_nuovo_evento_open] = useState(false);
-  const today = new Date().toISOString().split("T")[0];
+  const today = format_local_iso(new Date());
   const { data: presenze = [] } = use_presenze(today);
   const { data: presenze_corso = [] } = useQuery({
     queryKey: ["presenze_corso_oggi", today],
@@ -1380,13 +1381,13 @@ const DashboardPage: React.FC = () => {
   const active_corsi = corsi.filter((c) => c.stato === "attivo").length;
   const upcoming_gare = gare.filter((g) => days_until(g.data) >= 0);
   const next_gara = upcoming_gare.sort((a, b) => days_until(a.data) - days_until(b.data))[0];
-  const today_iso_aperte = new Date().toISOString().split("T")[0];
+  const today_iso_aperte = format_local_iso(new Date());
   const fatture_da_pagare = fatture.filter((f) => {
     const st = get_fattura_stato_ui(f, today_iso_aperte);
     return !fattura_chiusa(f) && st !== "pagata" && st !== "bozza";
   });
   const totale_fatture = fatture_da_pagare.reduce((s, f) => s + f.importo, 0);
-  const today_iso_kpi = new Date().toISOString().split("T")[0];
+  const today_iso_kpi = format_local_iso(new Date());
   const fatture_scadute_count = fatture_da_pagare.filter((f) => {
     const d = (f as any).data_scadenza || (f as any).scadenza;
     return d && String(d) < today_iso_kpi;

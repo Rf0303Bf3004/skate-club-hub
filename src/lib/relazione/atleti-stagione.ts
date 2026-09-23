@@ -1,3 +1,4 @@
+import { format_local_iso } from "@/lib/planning-occorrenze";
 // Conteggio delle atlete legato alla stagione scelta: un solo punto, usato da
 // paragraphGenerator, kpiData e dai moduli grafici. La stagione in corso si
 // conta viva di oggi; una stagione chiusa si legge dallo storico di quella
@@ -9,7 +10,7 @@ import type { Stagione } from "@/lib/relazione/moduli";
 /** La stagione è quella in corso se oggi cade fra le sue date. */
 export function stagione_in_corso(stag: Stagione): boolean {
   if (!stag?.data_inizio || !stag?.data_fine) return false;
-  const oggi = new Date().toISOString().slice(0, 10);
+  const oggi = format_local_iso(new Date());
   return oggi >= String(stag.data_inizio).slice(0, 10) && oggi <= String(stag.data_fine).slice(0, 10);
 }
 

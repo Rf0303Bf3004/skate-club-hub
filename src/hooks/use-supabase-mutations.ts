@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import i18n from "@/i18n";
 import { segnala_errore } from "@/lib/errori";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 
 function cid() {
   return get_current_club_id();
@@ -249,7 +250,7 @@ export function use_upsert_atleta() {
         !data.id || (livello_attuale_precedente && livello_attuale_precedente !== livello_attuale_nuovo);
 
       if (livello_cambiato && atleta_id) {
-        const oggi = new Date().toISOString().slice(0, 10);
+        const oggi = format_local_iso(new Date());
         // Chiudi voce attiva precedente
         await supabase
           .from("storico_livelli_atleta")
@@ -909,7 +910,7 @@ export function use_segna_fattura_pagata() {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from("fatture")
-        .update({ pagata: true, data_pagamento: new Date().toISOString().split("T")[0] })
+        .update({ pagata: true, data_pagamento: format_local_iso(new Date()) })
         .eq("id", id);
       if (error) throw error;
     },
@@ -1110,6 +1111,8 @@ export function use_crea_comunicazione() {
       };
 
       const urgente = data.urgente === true;
+      // Giorno di calendario scelto nel modulo (AAAA-MM-GG, già composto in ora locale).
+      const data_evento: string | null = data.data_evento || null;
 
       // Atleti specifici (selezione esplicita) → lista in atleti_ids (gestita dal trigger)
       if (
@@ -1125,6 +1128,7 @@ export function use_crea_comunicazione() {
           tipo_destinatari: "atleti",
           atleti_ids: ids,
           urgente,
+          data_evento,
           ...fk_evento,
         });
         if (error) throw error;
@@ -1144,6 +1148,7 @@ export function use_crea_comunicazione() {
             testo: data.testo,
             tipo_destinatari: "manuale",
             urgente,
+            data_evento,
             ...fk_evento,
           })
           .select("id")
@@ -1178,6 +1183,7 @@ export function use_crea_comunicazione() {
             testo: data.testo,
             tipo_destinatari: "manuale",
             urgente,
+            data_evento,
             ...fk_evento,
           })
           .select("id")
@@ -1218,6 +1224,7 @@ export function use_crea_comunicazione() {
             // 'manuale' evita che il trigger ripopoli su tutto il club.
             tipo_destinatari: "manuale",
             urgente,
+            data_evento,
             ...fk_evento,
           })
           .select("id")
@@ -1239,6 +1246,7 @@ export function use_crea_comunicazione() {
         corso_id: data.corso_id || null,
         atleta_id: data.atleta_id || null,
         urgente,
+        data_evento,
         ...fk_evento,
       });
       if (error) throw error;

@@ -13,6 +13,7 @@ import { get_fattura_stato_ui, get_fattura_stato_label } from "@/lib/fattura-sta
 import { use_segna_fattura_pagata, use_invia_email_fattura } from "@/hooks/use-supabase-mutations";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 
 type FatturaRow = {
   id: string;
@@ -113,7 +114,7 @@ const SegreteriaFatturePage: React.FC = () => {
   const atleti = data?.atleti ?? [];
   const fatture = data?.fatture ?? [];
 
-  const today_iso = oggi.toISOString().split("T")[0];
+  const today_iso = format_local_iso(oggi);
 
   // Indice: atleta_id -> mese (0-11) -> CellaMese
   const grid = useMemo(() => {

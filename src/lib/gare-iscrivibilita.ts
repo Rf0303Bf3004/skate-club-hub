@@ -1,4 +1,5 @@
 import { format_data } from "@/lib/format-data";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 /**
  * Regole di iscrivibilità a una gara per il portale genitori.
  *
@@ -52,7 +53,7 @@ export function get_livello_atleta(a: AtletaLivelloGara | null | undefined): str
 }
 
 export function oggi_iso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return format_local_iso(new Date());
 }
 
 export type GaraIscrivibilita = {

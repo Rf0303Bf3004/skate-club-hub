@@ -134,5 +134,8 @@
     "richiedi": "Request",
     "richiesta_ok": "Request sent",
     "lezione_privata": "Private lesson"
+  },
+  "notizie": {
+    "quando": "When: {{data}}"
   }
 }

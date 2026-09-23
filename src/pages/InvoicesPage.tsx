@@ -26,6 +26,7 @@ import NotaPermesso from "@/components/common/NotaPermesso";
 
 
 import { format_data } from "@/lib/format-data";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 // Valori di stato accettati nell'indirizzo: solo quelli veri del filtro.
 const STATI_URL = ["bozza", "inviata", "sollecitata", "pagata", "annullata", "stornata", "scaduta"];
 
@@ -119,7 +120,7 @@ const InvoicesPage: React.FC = () => {
     set_search_params(p, { replace: true });
   };
 
-  const today_iso = new Date().toISOString().split("T")[0];
+  const today_iso = format_local_iso(new Date());
 
 
   const get_atleta_name = (id: string) => {

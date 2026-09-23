@@ -13,7 +13,10 @@
     "recipients": "Recipients",
     "linked_event_type": "Linked event type",
     "send_now": "Send message to families now",
-    "linked_event_hint": "The message will be linked to the event: the mobile app will show the inline \"Register\" button."
+    "linked_event_hint": "The message will be linked to the event: the mobile app will show the inline \"Register\" button.",
+    "event_date": "Event date",
+    "event_date_hint": "The day the message is about. Families will see it written in full, e.g. “Tuesday 29.09.2026”.",
+    "event_date_clear": "Remove the date"
   },
   "recipients": {
     "all_club": "Whole club",

@@ -21,7 +21,10 @@
     "linked_event_type": "Tipo evento collegato",
     "send_now": "Invia subito comunicazione alle famiglie",
     "linked_event_hint": "La comunicazione verrà collegata all'evento: l'app mobile mostrerà il bottone \"Iscriviti\" inline.",
-    "date": "Data"
+    "date": "Data",
+    "event_date": "Data dell'evento",
+    "event_date_hint": "Il giorno di cui parla il messaggio. Le famiglie lo vedranno scritto per esteso, ad esempio «martedì 29.09.2026».",
+    "event_date_clear": "Togli la data"
   },
   "recipients": {
     "all_club": "Tutto il club",
@@ -234,4 +237,3 @@
     "saturazione_bassa_param": "Soglia saturazione"
   }
 }
-

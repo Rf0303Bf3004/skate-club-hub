@@ -67,6 +67,7 @@ import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
 
 import { format_data } from "@/lib/format-data";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 const GIORNI_DB = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 
 // Classifica un corso in una delle 4 colonne del protocollo di lavoro.
@@ -844,7 +845,7 @@ const TabPresenze: React.FC<{
   istruttori: any[];
 }> = ({ corso, tutti_atleti, tutti_monitori, istruttori }) => {
   const { t } = useTranslation("corsi");
-  const [data_sel, set_data_sel] = useState(new Date().toISOString().split("T")[0]);
+  const [data_sel, set_data_sel] = useState(format_local_iso(new Date()));
   const { data: presenze = [] } = use_presenze_corso(corso.id, data_sel);
   const upsert_presenza = use_upsert_presenza_corso();
 

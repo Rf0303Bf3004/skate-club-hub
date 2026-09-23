@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 
 import { format_ora } from "@/lib/format-data";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 const ts = (key: string, opts?: any) => i18n.t(`panel.${key}`, { ns: "superadmin", ...(opts || {}) }) as string;
 
 // ─── Tipi ─────────────────────────────────────────────────
@@ -548,7 +549,7 @@ const SuperAdminPage: React.FC = () => {
           .from("presenze")
           .delete({ count: "exact" })
           .eq("club_id", selected_club!)
-          .lt("data", un_anno_fa.toISOString().split("T")[0]);
+          .lt("data", format_local_iso(un_anno_fa));
         if (error) throw error;
         add_log(`✅ ${t("panel.action.presenze.log", { count, nome: selected_club_data?.nome })}`);
         toast({ title: `✅ ${t("panel.action.presenze.toast", { count })}` });

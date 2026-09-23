@@ -13,7 +13,10 @@
     "recipients": "Empfänger",
     "linked_event_type": "Verknüpfter Event-Typ",
     "send_now": "Mitteilung sofort an die Familien senden",
-    "linked_event_hint": "Die Mitteilung wird mit dem Event verknüpft: Die mobile App zeigt den Button \"Anmelden\" inline an."
+    "linked_event_hint": "Die Mitteilung wird mit dem Event verknüpft: Die mobile App zeigt den Button \"Anmelden\" inline an.",
+    "event_date": "Datum des Ereignisses",
+    "event_date_hint": "Der Tag, um den es in der Nachricht geht. Die Familien sehen ihn ausgeschrieben, z. B. «Dienstag, 29.09.2026».",
+    "event_date_clear": "Datum entfernen"
   },
   "recipients": {
     "all_club": "Ganzer Club",

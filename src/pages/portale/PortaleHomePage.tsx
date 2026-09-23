@@ -19,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 
 interface EventoProssimo {
   id: string;
@@ -113,8 +114,8 @@ const PortaleHomePage: React.FC = () => {
       try {
         set_loading(true);
         set_errore_prossimi(false);
-        const oggi = new Date().toISOString().slice(0, 10);
-        const fra14 = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+        const oggi = format_local_iso(new Date());
+        const fra14 = format_local_iso(new Date(Date.now() + 14 * 86400000));
         const { data, error } = await supabase
           .from("eventi_calendario" as any)
           .select("id, tipo, data, ora_inizio, ora_fine, nome_evento, luogo")

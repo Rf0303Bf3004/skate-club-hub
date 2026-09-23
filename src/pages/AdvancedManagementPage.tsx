@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 
 import { format_data } from "@/lib/format-data";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 const ta = (key: string, opts?: any) => i18n.t(`advanced.${key}`, { ns: "settings", ...(opts || {}) }) as string;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -120,7 +121,7 @@ const SezioneRicorrenze: React.FC<{
   const [conferma_open, set_conferma_open] = useState(false);
   const [ids_da_eliminare, set_ids_da_eliminare] = useState<string[]>([]);
 
-  const oggi = new Date().toISOString().split('T')[0];
+  const oggi = format_local_iso(new Date());
 
   const lezioni_istruttore = useMemo(() => {
     if (!istruttore_id) return [];

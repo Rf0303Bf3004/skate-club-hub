@@ -49,6 +49,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import i18n from "@/i18n";
 
 import { format_data } from "@/lib/format-data";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 const LIVELLI = [
   "Pulcini",
   "Stellina 1",
@@ -67,7 +68,7 @@ const MEDAGLIE = ["", "Oro", "Argento", "Bronzo"];
 
 // ─── Helpers ──────────────────────────────────────────────
 function is_passata(data: string): boolean {
-  return data < new Date().toISOString().split("T")[0];
+  return data < format_local_iso(new Date());
 }
 
 function countdown_label(data: string): { testo: string; colore: string } {

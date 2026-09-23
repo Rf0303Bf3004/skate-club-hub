@@ -19,13 +19,14 @@ import {
   getTelefonoPlaceholder,
   type paese_iso,
 } from "@/lib/territori";
+import { format_local_iso } from "@/lib/planning-occorrenze";
 
 const SuperAdminClubDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation("superadmin");
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = format_local_iso(new Date());
   const [prezzo, set_prezzo] = useState<number>(5);
   const [fee, set_fee] = useState<number>(50);
   const [mesi_fee, set_mesi_fee] = useState<number>(12);
