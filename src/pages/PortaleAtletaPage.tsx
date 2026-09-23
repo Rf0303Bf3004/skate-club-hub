@@ -96,17 +96,38 @@ const PortaleAtletaPage: React.FC = () => {
           const d = await call_portale(token, "fatture");
           set_fatture(d.fatture ?? []);
         } else if (tab === "iscrivi") {
-          set_errore_corsi(false);
+          set_errore_corsi(null);
           set_corsi_caricati(false);
           try {
-            const d = await call_portale(token, "corsi");
-            set_corsi_disponibili(d.corsi ?? []);
-            set_iscrizioni_attive(new Set(d.iscrizioni_attive ?? []));
-            set_richieste_inviate(new Set(d.richieste ?? []));
+            // Lista corsi letta direttamente dal database (RPC pubblica), non dall'edge function.
+            const { data, error } = await supabase.rpc("corsi_atleta_pubblico", { p_codice: token });
+            if (error) throw error;
+            const righe = data ?? [];
+            set_corsi_disponibili(righe);
+            set_iscrizioni_attive(new Set(righe.filter((r: any) => r.iscritto).map((r: any) => r.corso_id)));
+            set_richieste_inviate(new Set(righe.filter((r: any) => r.richiesta_in_attesa).map((r: any) => r.corso_id)));
             set_corsi_caricati(true);
-          } catch (err) {
+          } catch (err: any) {
             console.error("Errore caricamento corsi", err);
-            set_errore_corsi(true);
+            set_corsi_disponibili([]);
+            set_corsi_caricati(true);
+            const codice = err?.code ?? null;
+            if (codice === "P0002") {
+              // Codice non riconosciuto: non serve riprovare, il link è quello sbagliato.
+              set_errore_corsi({ messaggio: t("atleta_page.corsi_errore_codice"), riprovabile: false });
+            } else if (codice === "53400") {
+              // Troppi tentativi: mostro la frase del database, che dice già quanto aspettare.
+              set_errore_corsi({ messaggio: err?.message || t("atleta_page.errore_corsi"), riprovabile: false });
+            } else {
+              set_errore_corsi({ messaggio: t("atleta_page.errore_corsi"), riprovabile: true });
+            }
+            await segnala_errore(
+              "PortaleAtletaPage",
+              codice === "P0002" ? t("atleta_page.corsi_errore_codice") : t("atleta_page.errore_corsi"),
+              err,
+              { tab: "iscrivi", token_presente: !!token },
+              "avviso",
+            );
           }
         }
       } catch (err) {
