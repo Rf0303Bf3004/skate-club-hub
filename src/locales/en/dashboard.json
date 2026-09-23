@@ -516,6 +516,16 @@
     "riprova": "Try again",
     "caricamento": "Loading results…",
     "stagione_label": "Season",
-    "tutte_stagioni": "All seasons"
+    "tutte_stagioni": "All seasons",
+    "title": "Medal table {{stagione}}",
+    "season_fallback": "season",
+    "empty": "No results recorded.",
+    "empty_season": "No results recorded for the {{stagione}} season.",
+    "athletes_count_one": "{{count}} athlete",
+    "athletes_count_other": "{{count}} athletes",
+    "col_athlete": "Athlete",
+    "col_other": "Other",
+    "col_score": "Score",
+    "footer_top": "Top {{limit}} of {{total}} athletes — see the Competitions page for the full medal table"
   }
 }
