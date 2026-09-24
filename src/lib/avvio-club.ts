@@ -21,12 +21,23 @@ export interface RigaDiagnosi {
 /** Ruoli a cui si rivolgono lista di avvio e procedura guidata. */
 export const RUOLI_AVVIO_CLUB = ["presidente", "vicepresidente", "admin"];
 
-/** Destinazione di un controllo; `chiave` = onboarding.avvio.destinazioni.<chiave>, `aiuto` = onboarding.avvio.aiuto.<aiuto>. */
+/**
+ * Destinazione di un controllo; `chiave` = onboarding.avvio.destinazioni.<chiave>, `aiuto` = onboarding.avvio.aiuto.<aiuto>.
+ * `evidenzia` = id della SetupSection da segnare; già incluso in `to` come `&evidenzia=<id>`.
+ */
 export interface RottaAvvio {
   to: string;
   chiave: string;
   aiuto?: string;
+  evidenzia?: string;
 }
+
+/** Aggiunge la sezione da segnare alla destinazione. Solo per rotte /setup-club con `?tab=`. */
+const con_evidenzia = (r: RottaAvvio, evidenzia: string): RottaAvvio => ({
+  ...r,
+  to: `${r.to}&evidenzia=${evidenzia}`,
+  evidenzia,
+});
 
 const DATI_CLUB: RottaAvvio = { to: "/setup-club?tab=club", chiave: "dati_club" };
 const GHIACCIO: RottaAvvio = { to: "/setup-club?tab=ghiaccio", chiave: "ghiaccio" };
@@ -40,24 +51,26 @@ const ATLETI: RottaAvvio = { to: "/atleti", chiave: "atleti" };
  * Passo 11 conta le SCHEDE in `istruttori`, non gli accessi: porta a Istruttori.
  */
 const ROTTA_PER_PASSO: Record<number, RottaAvvio> = {
-  1: DATI_CLUB,
-  2: DATI_CLUB,
+  1: con_evidenzia(DATI_CLUB, "dati_club"), // nome, indirizzo, CAP, località
+  2: DATI_CLUB, // club_identity: nessuna sezione corrispondente
   3: { to: "/utenti", chiave: "utenti" },
   4: { to: "/ruoli-permessi", chiave: "ruoli_permessi" },
   6: STAGIONI,
   7: STAGIONI,
-  8: GHIACCIO,
-  9: GHIACCIO,
-  10: GHIACCIO,
+  8: con_evidenzia(GHIACCIO, "gh_risorse"), // risorse_strutture
+  9: con_evidenzia(GHIACCIO, "gh_disponibilita"), // disponibilita_ghiaccio
+  10: con_evidenzia(GHIACCIO, "gh_parametri"), // configurazione_ghiaccio
   11: { to: "/istruttori", chiave: "istruttori", aiuto: "istruttore_scheda" },
   12: { to: "/corsi", chiave: "corsi" },
   13: ATLETI,
   14: ATLETI,
   15: ATLETI,
-  16: FATTURAZIONE,
-  17: FATTURAZIONE,
-  18: FATTURAZIONE,
-  19: FATTURAZIONE,
+  16: FATTURAZIONE, // setup_club esiste: nessuna sezione singola
+  // IBAN e intestatario si compilano solo nella sezione «Dati bancari» della scheda Il club
+  17: con_evidenzia(DATI_CLUB, "banca"),
+  18: con_evidenzia(DATI_CLUB, "banca"),
+  // indirizzo, CAP, località del creditore = campi di «Dati del club»
+  19: con_evidenzia(DATI_CLUB, "dati_club"),
   20: FATTURAZIONE,
   21: { to: "/comunicazioni", chiave: "comunicazioni" },
   22: ATLETI,

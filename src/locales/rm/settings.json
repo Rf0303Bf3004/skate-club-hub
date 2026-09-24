@@ -2,6 +2,11 @@
   "club": {
     "sezioni": {
       "risorse_strutture": "Resursas e structuras"
+    },
+    "sezione": {
+      "passo_procedura": "Pass da la procedura guidada",
+      "campi_da_compilare_one": "{{count}} champ d'emplenir",
+      "campi_da_compilare_other": "{{count}} champs d'emplenir"
     }
   },
   "ghiaccio": {

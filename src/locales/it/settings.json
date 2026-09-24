@@ -206,6 +206,11 @@
       "errore_salvataggio": "La risorsa non è stata salvata. Quello che hai scritto è ancora qui: correggi o riprova.",
       "errore_lettura": "Non riesco a leggere le risorse del club. Non significa che non ce ne siano.",
       "riprova": "Riprova"
+    },
+    "sezione": {
+      "passo_procedura": "Passo della procedura guidata",
+      "campi_da_compilare_one": "{{count}} campo da compilare",
+      "campi_da_compilare_other": "{{count}} campi da compilare"
     }
   },
   "seasons": {
