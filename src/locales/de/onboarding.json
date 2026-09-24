@@ -107,6 +107,19 @@
     },
     "aiuto": {
       "istruttore_scheda": "Es braucht das Trainerprofil unter «Trainer»: Der Zugang unter «Benutzer» genügt nicht."
+    },
+    "destinazioni": {
+      "dati_club": "Clubdaten",
+      "utenti": "Benutzer",
+      "ruoli_permessi": "Rollen und Berechtigungen",
+      "stagioni": "Saisons",
+      "ghiaccio": "Eis",
+      "istruttori": "Trainer",
+      "corsi": "Kurse",
+      "atleti": "Athletinnen und Athleten",
+      "fatturazione": "Rechnungsstellung",
+      "comunicazioni": "Mitteilungen",
+      "setup_club": "Club-Einrichtung"
     }
   },
   "procedura": {
@@ -123,6 +136,7 @@
     "fatto": "Erledigt: {{controllo}}",
     "ricontrolla": "Erneut prüfen",
     "ricontrollo_in_corso": "Wird geprüft…",
-    "prossimo": "Als Nächstes:"
+    "prossimo": "Als Nächstes:",
+    "vai_a": "Zu {{destinazione}}"
   }
 }

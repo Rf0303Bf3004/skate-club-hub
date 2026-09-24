@@ -154,7 +154,7 @@ export default function AvvioClubPage() {
                       </div>
                       <Button asChild size="sm" variant={ok ? "ghost" : "default"} className="gap-1.5">
                         <Link to={rotta.to}>
-                          {t(`avvio.rotte.${rotta.chiave}`)} <ArrowRight className="w-3.5 h-3.5" />
+                          {t("procedura.vai_a", { destinazione: t(`avvio.destinazioni.${rotta.chiave}`) })} <ArrowRight className="w-3.5 h-3.5" />
                         </Link>
                       </Button>
                     </li>
