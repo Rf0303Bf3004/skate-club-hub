@@ -51,7 +51,8 @@
       "pulizia_ghiaccio": "🧹 Pulizia Ghiaccio",
       "tipo_pianificazione": "🗓️ Tipo di pianificazione disponibilità",
       "codice_pista": "Codice del tablet di bordo pista",
-      "calendario_pubblico": "Calendario pubblico"
+      "calendario_pubblico": "Calendario pubblico",
+      "risorse_strutture": "Risorse e strutture"
     },
     "fields": {
       "logo_placeholder": "Logo",
@@ -667,6 +668,7 @@
   },
   "ghiaccio": {
     "vuoto_risorse_per_disponibilita": "Prima aggiungi una pista o una palestra qui sopra: una fascia oraria deve dire a quale struttura si riferisce.",
-    "errore_risorse_per_disponibilita": "Non riesco a leggere le piste e le palestre del club, quindi la disponibilità resta bloccata."
+    "errore_risorse_per_disponibilita": "Non riesco a leggere le piste e le palestre del club, quindi la disponibilità resta bloccata.",
+    "lettura_risorse_in_corso": "Sto leggendo le piste e le palestre del club…"
   }
 }

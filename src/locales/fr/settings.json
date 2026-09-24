@@ -27,7 +27,8 @@
       "ghiaccio_planning": "Activités et planning",
       "auguri_compleanno": "🎂 Vœux d'anniversaire",
       "codice_pista": "Code de la tablette de bord de piste",
-      "calendario_pubblico": "Calendrier public"
+      "calendario_pubblico": "Calendrier public",
+      "risorse_strutture": "Ressources et installations"
     },
     "fields": {
       "auguri_compleanno_attivo": "Vœux d'anniversaire aux familles",
@@ -233,6 +234,7 @@
   },
   "ghiaccio": {
     "vuoto_risorse_per_disponibilita": "Ajoute d’abord une patinoire ou une salle ci-dessus : une plage horaire doit indiquer à quelle installation elle se rapporte.",
-    "errore_risorse_per_disponibilita": "Impossible de lire les patinoires et les salles du club : la disponibilité reste bloquée."
+    "errore_risorse_per_disponibilita": "Impossible de lire les patinoires et les salles du club : la disponibilité reste bloquée.",
+    "lettura_risorse_in_corso": "Lecture en cours des patinoires et des salles du club…"
   }
 }

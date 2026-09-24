@@ -1,6 +1,12 @@
 {
+  "club": {
+    "sezioni": {
+      "risorse_strutture": "Resursas e structuras"
+    }
+  },
   "ghiaccio": {
     "vuoto_risorse_per_disponibilita": "Agiunta l'emprim survart ina pista da glatsch u ina halla da gimnastica: ina perioda sto indicar a tge stabiliment ch'ella sa referescha.",
-    "errore_risorse_per_disponibilita": "Las pistas da glatsch e las hallas da gimnastica dal club na pon betg vegnir legidas, perquai resta la disponibilitad bloccada."
+    "errore_risorse_per_disponibilita": "Las pistas da glatsch e las hallas da gimnastica dal club na pon betg vegnir legidas, perquai resta la disponibilitad bloccada.",
+    "lettura_risorse_in_corso": "Jau legel actualmain las pistas da glatsch e las hallas da gimnastica dal club…"
   }
 }
