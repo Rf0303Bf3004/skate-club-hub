@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Home, Calendar, Sparkles, MessageSquare, User, LogOut, Menu, X, Plus, Loader2 } from "lucide-react";
+import { Home, Calendar, Sparkles, MessageSquare, User, LogOut, Menu, X, Plus, Loader2, Download, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -20,6 +20,13 @@ import {
   type PortaleSession,
 } from "@/lib/portale-auth";
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
+const INSTALLAZIONE_VISTA = "portale_installazione_vista";
+
 
 const PortaleLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -32,6 +39,8 @@ const PortaleLayout: React.FC = () => {
   const [codice, set_codice] = useState("");
   const [busy, set_busy] = useState(false);
   const [da_rimuovere, set_da_rimuovere] = useState<PortaleSession | null>(null);
+  const [invito_installazione, set_invito_installazione] = useState<"ios" | "android" | null>(null);
+  const [evento_installazione, set_evento_installazione] = useState<BeforeInstallPromptEvent | null>(null);
 
   // Con quale accesso si è entrati: si mostra solo se i genitori sono separati.
   const famiglia = useQuery({
@@ -75,6 +84,38 @@ const PortaleLayout: React.FC = () => {
       set_loading(false);
     })();
   }, [navigate, refresh_profili]);
+
+  useEffect(() => {
+    const standalone = window.matchMedia("(display-mode: standalone)").matches
+      || ("standalone" in navigator && (navigator as Navigator & { standalone?: boolean }).standalone === true);
+    if (standalone || window.localStorage.getItem(INSTALLAZIONE_VISTA)) return;
+
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    if (ios) {
+      set_invito_installazione("ios");
+      window.localStorage.setItem(INSTALLAZIONE_VISTA, "1");
+      return;
+    }
+
+    const on_before_install = (event: Event) => {
+      event.preventDefault();
+      set_evento_installazione(event as BeforeInstallPromptEvent);
+      set_invito_installazione("android");
+      window.localStorage.setItem(INSTALLAZIONE_VISTA, "1");
+    };
+    window.addEventListener("beforeinstallprompt", on_before_install);
+    return () => window.removeEventListener("beforeinstallprompt", on_before_install);
+  }, []);
+
+  const chiudi_invito_installazione = () => set_invito_installazione(null);
+
+  const installa_app = async () => {
+    if (!evento_installazione) return;
+    await evento_installazione.prompt();
+    await evento_installazione.userChoice;
+    set_evento_installazione(null);
+    set_invito_installazione(null);
+  };
 
   const handle_logout = async () => {
     await portale_logout();
@@ -129,7 +170,7 @@ const PortaleLayout: React.FC = () => {
 
   if (loading || !session) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-mobile flex items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-sky-500" />
       </div>
     );
@@ -147,9 +188,9 @@ const PortaleLayout: React.FC = () => {
     `${s.atleta.nome?.[0] ?? ""}${s.atleta.cognome?.[0] ?? ""}`.toUpperCase() || "?";
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-sky-50">
+    <div className="flex min-h-mobile bg-gradient-to-br from-slate-50 via-white to-sky-50">
       {open && <div className="fixed inset-0 bg-black/30 z-40 lg:hidden" onClick={() => set_open(false)} />}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col transform transition-transform duration-200 ease-out ${open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
+      <aside className={`fixed lg:static top-0 left-0 z-50 h-mobile lg:h-auto w-64 bg-white border-r border-slate-200 flex flex-col transform transition-transform duration-200 ease-out portale-aside-bottom ${open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
         <div className="p-5 flex items-center gap-3 border-b border-slate-200">
           <div className="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center font-bold">
             {iniziali_di(session)}
@@ -254,10 +295,40 @@ const PortaleLayout: React.FC = () => {
             {session.atleta.codice_atleta}
           </code>
         </header>
-        <main key={session.atleta.id} className="flex-1 p-4 lg:p-8 overflow-x-hidden">
+        <main key={session.atleta.id} className="flex-1 p-4 lg:p-8 overflow-x-hidden portale-main-bottom">
           <Outlet context={{ session }} />
         </main>
       </div>
+
+      {invito_installazione && (
+        <div className="fixed inset-x-3 portale-install-bottom z-30 lg:hidden rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
+          <div className="flex items-center gap-3">
+            {invito_installazione === "ios" ? <Share className="h-5 w-5 shrink-0 text-sky-600" /> : <Download className="h-5 w-5 shrink-0 text-sky-600" />}
+            <p className="min-w-0 flex-1 text-sm text-slate-700">
+              {t(invito_installazione === "ios" ? "installazione.iphone" : "installazione.android")}
+            </p>
+            {invito_installazione === "android" && (
+              <Button size="sm" onClick={installa_app}>{t("installazione.installa")}</Button>
+            )}
+            <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0" onClick={chiudi_invito_installazione} title={t("installazione.chiudi")} aria-label={t("installazione.chiudi")}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-slate-200 bg-white portale-bottom-nav lg:hidden" aria-label={t("menu.navigazione_principale")}>
+        {items.map((it) => (
+          <NavLink
+            key={it.to}
+            to={it.to}
+            className={({ isActive }) => `flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-[10px] font-semibold transition-colors ${isActive ? "text-sky-600" : "text-slate-500"}`}
+          >
+            <it.icon className="h-5 w-5" />
+            <span className="max-w-full truncate">{it.label}</span>
+          </NavLink>
+        ))}
+      </nav>
 
       {/* Dialog aggiunta profilo */}
       <Dialog open={dialog_open} onOpenChange={set_dialog_open}>
