@@ -11,4 +11,4 @@
 - [ ] Portale genitori: aggiungere manifesto, icone e invito installazione una tantum
 - [ ] Portale genitori: aggiungere barra di navigazione inferiore sotto 1024 px
 
-- [ ] Unificare il nome della procedura guidata, aggiungere ritorno a /avvio e verificare 5 traduzioni DB.
+- [x] Unificare il nome della procedura guidata, aggiungere ritorno a /avvio e verificare 5 traduzioni DB.
