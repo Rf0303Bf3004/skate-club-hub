@@ -680,7 +680,7 @@ const ClubSetupPage: React.FC = () => {
       { id: "gh_pianificazione", label: t("club.sezioni.tipo_pianificazione") },
       { id: "gh_disponibilita", label: t("club.sezioni.disponibilita_strutture") },
       ...(risorsa_is_ghiaccio ? [{ id: "gh_pulizia", label: t("club.sezioni.pulizia_ghiaccio") }] : []),
-      { id: "gh_risorse", label: "Risorse e strutture" },
+      { id: "gh_risorse", label: t("club.sezioni.risorse_strutture") },
     ],
     catalogo: [],
     fatturazione: [],
@@ -1197,7 +1197,7 @@ const ClubSetupPage: React.FC = () => {
 
         {/* ══ GHIACCIO E PLANNING ══ */}
         <TabsContent value="ghiaccio" className="space-y-4">
-        <SetupSection id="gh_risorse" titolo="Risorse e strutture">
+        <SetupSection id="gh_risorse" titolo={t("club.sezioni.risorse_strutture")}>
           <RisorseSection />
         </SetupSection>
 
@@ -1207,12 +1207,17 @@ const ClubSetupPage: React.FC = () => {
           titolo={t("club.sezioni.disponibilita_strutture")}
           mancanti={mancanti.disponibilita}
         >
-          {!risorse_lette ? (
+          {/* Tre stati, tre voci: in lettura → neutro grigio; fallita → rosso con «Riprova»; riuscita con 0 risorse → spiegazione. */}
+          {errore_risorse ? (
             <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mb-3 space-y-2">
               <p className="text-sm text-destructive">{t("ghiaccio.errore_risorse_per_disponibilita")}</p>
               <Button variant="outline" size="sm" disabled={risorse_in_lettura} onClick={() => void ricarica_risorse()}>
                 {t("club.azioni.riprova")}
               </Button>
+            </div>
+          ) : risorse_in_lettura || !risorse_lette ? (
+            <div className="bg-muted/40 border border-border rounded-lg p-3 mb-3">
+              <p className="text-sm text-muted-foreground">{t("ghiaccio.lettura_risorse_in_corso")}</p>
             </div>
           ) : risorse_attive.length === 0 ? (
             <div className="bg-muted/40 border border-border rounded-lg p-3 mb-3">
