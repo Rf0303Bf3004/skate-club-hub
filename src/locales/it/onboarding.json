@@ -167,5 +167,17 @@
       "fatturazione": "Fatturazione",
       "comunicazioni": "Comunicazioni"
     }
+  },
+  "procedura": {
+    "titolo": "Procedura guidata",
+    "passo": "Passo {{n}} di {{m}}",
+    "vai": "Vai",
+    "esci": "Esci dalla procedura guidata",
+    "riprendi": "Riprendi la procedura guidata",
+    "pronto": "Il club è pronto: tutti i controlli bloccanti sono a posto.",
+    "chiudi": "Chiudi",
+    "errore": "Non riesco a leggere i passi",
+    "caricamento": "Leggo i passi…",
+    "riprova": "Riprova"
   }
 }

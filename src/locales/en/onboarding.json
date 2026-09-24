@@ -104,5 +104,17 @@
       "fatturazione": "Invoicing",
       "comunicazioni": "Communications"
     }
+  },
+  "procedura": {
+    "titolo": "Guided setup",
+    "passo": "Step {{n}} of {{m}}",
+    "vai": "Go",
+    "esci": "Leave guided setup",
+    "riprendi": "Resume guided setup",
+    "pronto": "The club is ready: all blocking checks are done.",
+    "chiudi": "Close",
+    "errore": "The steps can't be read",
+    "caricamento": "Reading the steps…",
+    "riprova": "Try again"
   }
 }

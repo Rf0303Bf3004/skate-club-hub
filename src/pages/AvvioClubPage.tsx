@@ -1,9 +1,9 @@
 import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { CheckCircle2, AlertTriangle, XCircle, ArrowRight, RefreshCw } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { rotta_area, use_diagnosi_avvio, type RigaDiagnosi } from "@/lib/avvio-club";
+import { RiprendiProceduraButton } from "@/components/avvio/ProceduraGuidataBar";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -17,45 +17,6 @@ import { segnala_errore, messaggio_leggibile } from "@/lib/errori";
  * Le colonne `area`, `controllo` e `dettaglio` arrivano dal database in italiano
  * e non vengono tradotte; i testi della pagina passano da i18n (onboarding.avvio.*).
  */
-
-export interface RigaDiagnosi {
-  passo: number;
-  area: string;
-  controllo: string;
-  esito: string;
-  dettaglio: string | null;
-  blocca: boolean;
-}
-
-/** Lettura condivisa (stessa chiave) fra questa pagina e la home della presidenza. */
-export function use_diagnosi_avvio(club_id: string | undefined, enabled = true) {
-  return useQuery({
-    queryKey: ["diagnosi_avvio_club", club_id],
-    enabled: enabled && !!club_id,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("diagnosi_avvio_club" as any, { p_club: club_id });
-      if (error) throw error;
-      return (data ?? []) as RigaDiagnosi[];
-    },
-  });
-}
-
-export const ha_bloccanti_aperti = (righe: RigaDiagnosi[]) => righe.some((r) => r.blocca && r.esito !== "✓");
-
-// Stessa mappa di OnboardingBanner (le chiavi sono valori del database).
-const ROTTA_PER_AREA: Record<string, { to: string; chiave: string }> = {
-  Anagrafica: { to: "/setup-club", chiave: "setup_club" },
-  Accesso: { to: "/utenti", chiave: "utenti" },
-  Stagione: { to: "/setup-club", chiave: "date_stagione" },
-  Ghiaccio: { to: "/setup-club", chiave: "risorse" },
-  Offerta: { to: "/corsi", chiave: "corsi" },
-  Atleti: { to: "/atleti", chiave: "atleti" },
-  Fatturazione: { to: "/setup-club", chiave: "fatturazione" },
-  Comunicazioni: { to: "/comunicazioni", chiave: "comunicazioni" },
-  "App famiglie": { to: "/atleti", chiave: "atleti" },
-};
-
-const rotta_area = (area: string) => ROTTA_PER_AREA[area] ?? { to: "/setup-club", chiave: "setup_club" };
 
 const icona_esito = (esito: string) => {
   if (esito === "✓") return <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />;
@@ -109,7 +70,10 @@ export default function AvvioClubPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
-      {intestazione}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        {intestazione}
+        <RiprendiProceduraButton />
+      </div>
 
       {isPending && !isError && (
         <div className="space-y-3">

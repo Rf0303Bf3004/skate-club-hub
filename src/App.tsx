@@ -70,7 +70,9 @@ import SuperAdminConvenzioniPage from "@/pages/SuperAdminConvenzioniPage";
 import SuperAdminAppMobilePage from "@/pages/SuperAdminAppMobilePage";
 import SuperAdminTraduzioniPage from "@/pages/SuperAdminTraduzioniPage";
 import ConvenzioniSociPage from "@/pages/ConvenzioniSociPage";
-import AvvioClubPage, { use_diagnosi_avvio, ha_bloccanti_aperti } from "@/pages/AvvioClubPage";
+import AvvioClubPage from "@/pages/AvvioClubPage";
+import { use_diagnosi_avvio, ha_bloccanti_aperti } from "@/lib/avvio-club";
+import { RiprendiProceduraButton } from "@/components/avvio/ProceduraGuidataBar";
 import EsportazioniPage from "@/pages/EsportazioniPage";
 import AssenzeStaffPage from "@/pages/AssenzeStaffPage";
 
@@ -401,7 +403,14 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
  */
 const HomePresidenza = ({ club_id }: { club_id: string | undefined }) => {
   const diagnosi = use_diagnosi_avvio(club_id);
-  if (diagnosi.isSuccess && !ha_bloccanti_aperti(diagnosi.data)) return <PresidentDashboard />;
+  if (diagnosi.isSuccess && !ha_bloccanti_aperti(diagnosi.data)) {
+    return (
+      <>
+        <div className="flex justify-end mb-4"><RiprendiProceduraButton /></div>
+        <PresidentDashboard />
+      </>
+    );
+  }
   return <AvvioClubPage />;
 };
 

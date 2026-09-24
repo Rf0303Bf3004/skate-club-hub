@@ -7,6 +7,8 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import { useTranslation } from "react-i18next";
+import { rotta_area, type RigaDiagnosi } from "@/lib/avvio-club";
 
 /**
  * Lista di avvio del club, alimentata dalla funzione DB diagnosi_avvio_club(club_id).
@@ -14,30 +16,8 @@ import { usePermessiAzione } from "@/hooks/use-permessi-azione";
  * alla schermata dove risolverli. Si nasconde con la X (persistito su clubs).
  */
 
-interface RigaDiagnosi {
-  passo: number;
-  area: string;
-  controllo: string;
-  esito: string;
-  dettaglio: string | null;
-  blocca: boolean;
-}
-
-const ROTTA_PER_AREA: Record<string, { to: string; label: string }> = {
-  Anagrafica: { to: "/setup-club", label: "Setup del club" },
-  Accesso: { to: "/utenti", label: "Utenti e permessi" },
-  Stagione: { to: "/setup-club", label: "Date stagione" },
-  Ghiaccio: { to: "/setup-club", label: "Risorse e disponibilità" },
-  Offerta: { to: "/corsi", label: "Corsi e istruttori" },
-  Atleti: { to: "/atleti", label: "Atleti" },
-  Fatturazione: { to: "/setup-club", label: "Fatturazione" },
-  Comunicazioni: { to: "/comunicazioni", label: "Comunicazioni" },
-  "App famiglie": { to: "/atleti", label: "Atleti" },
-};
-
-const rotta_area = (area: string) => ROTTA_PER_AREA[area] ?? { to: "/setup-club", label: "Setup del club" };
-
 export default function OnboardingBanner() {
+  const { t } = useTranslation("onboarding");
   const { session } = useAuth();
   const club_id = session?.club_id;
   const { puo_configurare_club } = usePermessiAzione();
@@ -148,7 +128,7 @@ export default function OnboardingBanner() {
                     </div>
                     <Button asChild size="sm" variant={r.blocca ? "default" : "outline"} className="gap-1.5">
                       <Link to={rotta.to}>
-                        {rotta.label} <ArrowRight className="w-3.5 h-3.5" />
+                        {t(`avvio.rotte.${rotta.chiave}`)} <ArrowRight className="w-3.5 h-3.5" />
                       </Link>
                     </Button>
                   </li>
