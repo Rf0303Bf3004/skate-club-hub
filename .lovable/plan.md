@@ -1,16 +1,18 @@
-# Ritorno alla procedura guidata e nome unificato
+# Correggere il salvataggio iniziale della pista
 
-## Modifiche
-- Rendere il titolo della barra un collegamento a `/avvio`, salvo quando la pagina corrente è già `/avvio`.
-- Mostrare lo stesso collegamento anche durante caricamento o errore, usando la nuova etichetta `procedura.vedi_passi` come suggerimento.
-- Rinominare il titolo della pagina in «Procedura guidata» e sostituire le tre scritte manuali del menu con `common.menu.avvio_club`.
-- Lasciare invariati il pulsante finale `avvio.vai_alla_lista`, gli altri comandi della barra e il resto del menu superadmin.
+## Diagnosi confermata
+- La finestra “Nuova risorsa” invia già `tipo: "ghiaccio"` o `"palestra"`, quindi il vincolo sul tipo non è la causa.
+- Lo stato impossibile nasce nell’onboarding: il passo disponibilità inserisce direttamente in `disponibilita_ghiaccio` con `risorsa_id` nullo e non tenta mai di creare `risorse_strutture`.
 
-## Lingue e dati
-- Aggiornare italiano, tedesco, francese e inglese; creare i file romanci mancanti con le sole chiavi necessarie.
-- Allineare le tre chiavi in `traduzioni_ui` per tutte e cinque le lingue, senza altre modifiche al database.
+## Implementazione
+1. Nel passo pista dell’onboarding, raccogliere anche il nome della pista e validarlo prima di scrivere.
+2. Creare prima `risorse_strutture` con il club della sessione e `tipo: "ghiaccio"`; usare l’ID restituito per tutte le fasce.
+3. Se la risorsa fallisce, non scrivere fasce e mostrare il motivo reale. Se le fasce falliscono, rimuovere soltanto la risorsa appena creata come compensazione; se anche il ripristino fallisce, dichiarare esplicitamente il risultato parziale.
+4. Invalidare risorse, disponibilità e diagnosi dopo qualsiasi scrittura riuscita, anche quando il passo successivo fallisce.
+5. Conservare campi e passaggio in caso d’errore; mostrare il messaggio verde solo dopo entrambe le scritture.
+6. Aggiungere le etichette necessarie nelle cinque lingue e in `traduzioni_ui`, senza modificare schema, policy o funzioni.
 
 ## Verifica
-- Rileggere integralmente tutti i file modificati e controllare che non restino le tre scritte manuali.
-- Verificare in anteprima il collegamento da `/setup-club`, `/utenti` e `/stagioni`, il testo semplice su `/avvio`, e il menu per presidente e superadmin quando gli accessi sono disponibili.
-- Controllare che `traduzioni_ui` restituisca cinque righe per ciascuna delle tre chiavi e che il controllo dei tipi passi.
+- Controllo tipi, rilettura completa dei file modificati e prova dei tre esiti: risorsa fallita, fasce fallite con compensazione, successo completo.
+- Verifica che le query usino sempre il club della sessione e che nessuna disponibilità nuova abbia `risorsa_id` nullo.
+- La fascia orfana esistente resterà intatta. Riporterò tabella, ID e comando di rimozione proposto, da eseguire solo dopo conferma.
