@@ -1585,6 +1585,68 @@ export type Database = {
         }
         Relationships: []
       }
+      completamenti_saltati: {
+        Row: {
+          campo: string
+          club_id: string
+          entita: string
+          entita_id: string
+          id: string
+          motivo: string | null
+          saltato_da: string | null
+          saltato_il: string
+        }
+        Insert: {
+          campo: string
+          club_id: string
+          entita: string
+          entita_id: string
+          id?: string
+          motivo?: string | null
+          saltato_da?: string | null
+          saltato_il?: string
+        }
+        Update: {
+          campo?: string
+          club_id?: string
+          entita?: string
+          entita_id?: string
+          id?: string
+          motivo?: string | null
+          saltato_da?: string | null
+          saltato_il?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "completamenti_saltati_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "completamenti_saltati_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "completamenti_saltati_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "elenco_club"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "completamenti_saltati_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+        ]
+      }
       comunicazioni: {
         Row: {
           archiviata: boolean
