@@ -144,5 +144,28 @@
     "retry": "Riprova",
     "gate_error": "Non riesco a verificare se la configurazione del club è completa.",
     "save_error": "Salvataggio non riuscito"
+  },
+  "avvio": {
+    "titolo": "Avvio del club",
+    "sottotitolo": "Quello che serve perché il club possa lavorare",
+    "nessun_club": "Nessun club è collegato a questa sessione. Esci e rientra, poi riprova.",
+    "errore_titolo": "L'elenco dei controlli non è disponibile",
+    "errore_dettaglio": "Non significa che non ci sia lavoro in sospeso: semplicemente non sono riuscito a leggerlo.",
+    "errore_lettura": "Lettura dei controlli di avvio non riuscita",
+    "riprova": "Riprova",
+    "a_posto": "{{a_posto}} di {{totale}} a posto",
+    "bloccanti_one": "C'è 1 controllo bloccante da risolvere: il club non è pronto a lavorare finché non è a posto.",
+    "bloccanti_other": "Ci sono {{count}} controlli bloccanti da risolvere: il club non è pronto a lavorare finché non sono a posto.",
+    "vai_alla_lista": "Vai alla lista di avvio",
+    "rotte": {
+      "setup_club": "Setup del club",
+      "utenti": "Utenti e permessi",
+      "date_stagione": "Date stagione",
+      "risorse": "Risorse e disponibilità",
+      "corsi": "Corsi e istruttori",
+      "atleti": "Atleti",
+      "fatturazione": "Fatturazione",
+      "comunicazioni": "Comunicazioni"
+    }
   }
 }
