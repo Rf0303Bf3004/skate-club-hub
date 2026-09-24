@@ -7,3 +7,6 @@
 - [x] Portale famiglie: permettere conferma o rinuncia al rinnovo dalla home
 
 - [ ] Istruttori: rendere operativo e verificare il bottone ore e compenso
+- [ ] Portale genitori: correggere altezza mobile e zona sicura, verificando 6 messaggi a 390 px
+- [ ] Portale genitori: aggiungere manifesto, icone e invito installazione una tantum
+- [ ] Portale genitori: aggiungere barra di navigazione inferiore sotto 1024 px
