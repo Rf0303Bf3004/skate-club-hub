@@ -188,9 +188,38 @@ const ClubSetupPage: React.FC = () => {
   const tab_attivo = TAB_VALIDI.includes(tab_url) ? tab_url : "club";
   const [tab_in_attesa, set_tab_in_attesa] = useState<string | null>(null);
 
+  // Sezione indicata dalla procedura guidata (?evidenzia=<id>): il segno resta finché il parametro c'è.
+  const evidenzia = search_params.get("evidenzia") ?? "";
+  const scorso_a = useRef<string | null>(null);
+  useEffect(() => {
+    if (!evidenzia) {
+      scorso_a.current = null;
+      return;
+    }
+    const chiave = `${tab_attivo}|${evidenzia}`;
+    if (scorso_a.current === chiave) return; // si scorre solo all'arrivo
+    let tentativi = 0;
+    let frame = 0;
+    // Si aspetta che la scheda sia montata: finché l'elemento non esiste si riprova al fotogramma dopo.
+    const prova = () => {
+      const el = document.getElementById(`sez-${evidenzia}`);
+      if (el) {
+        scorso_a.current = chiave;
+        const ridotto = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        el.scrollIntoView({ block: "center", behavior: ridotto ? "auto" : "smooth" });
+        return;
+      }
+      if (++tentativi < 60) frame = requestAnimationFrame(prova);
+    };
+    frame = requestAnimationFrame(prova);
+    return () => cancelAnimationFrame(frame);
+  }, [evidenzia, tab_attivo]);
+
   const vai_a_tab = (v: string) => {
     const next = new URLSearchParams(search_params);
     next.set("tab", v);
+    // La sezione indicata dalla procedura sta nella scheda di partenza: cambiando scheda il segno cade.
+    next.delete("evidenzia");
     set_search_params(next, { replace: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -771,7 +800,7 @@ const ClubSetupPage: React.FC = () => {
         <TabsContent value="club" className="space-y-4">
 
         {/* Logo */}
-        <SetupSection id="logo" titolo={t("club.sezioni.logo")} mancanti={mancanti.logo}>
+        <SetupSection id="logo" evidenziata={evidenzia === "logo"} titolo={t("club.sezioni.logo")} mancanti={mancanti.logo}>
           <div className="flex items-center gap-6">
             <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-border flex items-center justify-center overflow-hidden bg-muted/30 flex-shrink-0">
               {current_logo ? (
@@ -797,7 +826,7 @@ const ClubSetupPage: React.FC = () => {
         </SetupSection>
 
         {/* Dati club */}
-        <SetupSection id="dati_club" titolo={t_old("dati_club")} mancanti={mancanti.dati_club}>
+        <SetupSection id="dati_club" evidenziata={evidenzia === "dati_club"} titolo={t_old("dati_club")} mancanti={mancanti.dati_club}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label={t_old("nome")} icon={<Hash className="w-3.5 h-3.5" />}>
               <Input value={get_val("nome")} onChange={(e) => set_val("nome", e.target.value)} />
@@ -853,7 +882,7 @@ const ClubSetupPage: React.FC = () => {
         </SetupSection>
 
         {/* Colore primario */}
-        <SetupSection id="colore" titolo={t("club.sezioni.colore_primario")}>
+        <SetupSection id="colore" evidenziata={evidenzia === "colore"} titolo={t("club.sezioni.colore_primario")}>
           <div className="flex items-center gap-4">
             <input
               type="color"
@@ -866,7 +895,7 @@ const ClubSetupPage: React.FC = () => {
         </SetupSection>
 
         {/* Descrizione */}
-        <SetupSection id="descrizione" titolo={t("club.sezioni.descrizione")} mancanti={mancanti.descrizione}>
+        <SetupSection id="descrizione" evidenziata={evidenzia === "descrizione"} titolo={t("club.sezioni.descrizione")} mancanti={mancanti.descrizione}>
           <textarea
             value={get_val("descrizione")}
             onChange={(e) => set_val("descrizione", e.target.value)}
@@ -877,7 +906,7 @@ const ClubSetupPage: React.FC = () => {
         </SetupSection>
 
         {/* Clausole aggiuntive al contratto di adesione */}
-        <SetupSection id="contratto" titolo={t("club.sezioni.clausole_contratto")}>
+        <SetupSection id="contratto" evidenziata={evidenzia === "contratto"} titolo={t("club.sezioni.clausole_contratto")}>
           <textarea
             value={get_val("clausole_contratto")}
             onChange={(e) => set_val("clausole_contratto", e.target.value)}
@@ -891,7 +920,7 @@ const ClubSetupPage: React.FC = () => {
         </SetupSection>
 
         {/* Date stagione */}
-        <SetupSection id="stagione" titolo={t("club.sezioni.stagione")} mancanti={mancanti.stagione}>
+        <SetupSection id="stagione" evidenziata={evidenzia === "stagione"} titolo={t("club.sezioni.stagione")} mancanti={mancanti.stagione}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label={t("club.fields.data_inizio_stagione")} icon={<Calendar className="w-3.5 h-3.5" />}>
               <Input
@@ -914,7 +943,7 @@ const ClubSetupPage: React.FC = () => {
         </SetupSection>
 
         {/* Codice del tablet di bordo pista */}
-        <SetupSection id="pista" titolo={t("club.sezioni.codice_pista")}>
+        <SetupSection id="pista" evidenziata={evidenzia === "pista"} titolo={t("club.sezioni.codice_pista")}>
           <CodicePistaSection
             codice={(club as any)?.codice_pista}
             in_caricamento={loading_club}
@@ -923,7 +952,7 @@ const ClubSetupPage: React.FC = () => {
         </SetupSection>
 
         {/* Indirizzo pubblico del calendario */}
-        <SetupSection id="calendario_pubblico" titolo={t("club.sezioni.calendario_pubblico")}>
+        <SetupSection id="calendario_pubblico" evidenziata={evidenzia === "calendario_pubblico"} titolo={t("club.sezioni.calendario_pubblico")}>
           <CalendarioPubblicoSection
             slug={(club as any)?.slug_pubblico}
             attivo={(club as any)?.calendario_pubblico_attivo}
@@ -934,7 +963,7 @@ const ClubSetupPage: React.FC = () => {
 
 
         {/* Dati bancari */}
-        <SetupSection id="banca" titolo={t("club.sezioni.dati_bancari")} mancanti={mancanti.banca}>
+        <SetupSection id="banca" evidenziata={evidenzia === "banca"} titolo={t("club.sezioni.dati_bancari")} mancanti={mancanti.banca}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label={t("club.fields.iban")} icon={<Hash className="w-3.5 h-3.5" />}>
               <Input
@@ -973,7 +1002,7 @@ const ClubSetupPage: React.FC = () => {
         <TabsContent value="automatismi" className="space-y-4">
 
         {/* Medagliere club — punti per posizione */}
-        <SetupSection id="medagliere" titolo={t("club.sezioni.medagliere")} descrizione={t("club.testi.medagliere_info")}>
+        <SetupSection id="medagliere" evidenziata={evidenzia === "medagliere"} titolo={t("club.sezioni.medagliere")} descrizione={t("club.testi.medagliere_info")}>
           {(() => {
             const default_punti: Record<string, number> = { "1": 10, "2": 7, "3": 5, "4": 3, "5": 2, "6": 1 };
             const current_punti: Record<string, number> =
@@ -1021,7 +1050,7 @@ const ClubSetupPage: React.FC = () => {
         </SetupSection>
 
         {/* Reminder automatici */}
-        <SetupSection id="reminder" titolo={t("club.sezioni.reminder")} descrizione={t("club.testi.reminder_info")}>
+        <SetupSection id="reminder" evidenziata={evidenzia === "reminder"} titolo={t("club.sezioni.reminder")} descrizione={t("club.testi.reminder_info")}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label={t("club.fields.reminder_allenamenti")}>
               <div className="flex items-center gap-2">
@@ -1164,6 +1193,7 @@ const ClubSetupPage: React.FC = () => {
         {/* Regole comunicazioni intelligenti */}
         <SetupSection
           id="comunicazioni"
+          evidenziata={evidenzia === "comunicazioni"}
           titolo={t("club.sezioni.comunicazioni_intelligenti")}
           descrizione={t("club.testi.comunicazioni_intelligenti_info")}
         >
@@ -1173,6 +1203,7 @@ const ClubSetupPage: React.FC = () => {
         {/* Messaggi predefiniti */}
         <SetupSection
           id="messaggi"
+          evidenziata={evidenzia === "messaggi"}
           titolo={t("club.sezioni.messaggi_predefiniti")}
           descrizione={t("club.testi.messaggi_predefiniti_info")}
         >
@@ -1180,7 +1211,7 @@ const ClubSetupPage: React.FC = () => {
         </SetupSection>
 
         {/* Modalità di gestione */}
-        <SetupSection id="modalita" titolo="Modalità di gestione">
+        <SetupSection id="modalita" evidenziata={evidenzia === "modalita"} titolo="Modalità di gestione">
           <ModalitaGestioneSection />
           <ModalitaGestioneSection
             area="fatturazione"
@@ -1197,13 +1228,14 @@ const ClubSetupPage: React.FC = () => {
 
         {/* ══ GHIACCIO E PLANNING ══ */}
         <TabsContent value="ghiaccio" className="space-y-4">
-        <SetupSection id="gh_risorse" titolo={t("club.sezioni.risorse_strutture")}>
+        <SetupSection id="gh_risorse" evidenziata={evidenzia === "gh_risorse"} titolo={t("club.sezioni.risorse_strutture")}>
           <RisorseSection />
         </SetupSection>
 
 
         <SetupSection
           id="gh_disponibilita"
+          evidenziata={evidenzia === "gh_disponibilita"}
           titolo={t("club.sezioni.disponibilita_strutture")}
           mancanti={mancanti.disponibilita}
         >
@@ -1307,7 +1339,7 @@ const ClubSetupPage: React.FC = () => {
 
 
         {risorsa_is_ghiaccio && (
-        <SetupSection id="gh_pulizia" titolo={t("club.sezioni.pulizia_ghiaccio")}>
+        <SetupSection id="gh_pulizia" evidenziata={evidenzia === "gh_pulizia"} titolo={t("club.sezioni.pulizia_ghiaccio")}>
           <fieldset disabled={!disponibilita_compilabile} className="space-y-4 disabled:opacity-50">
             {GIORNI.map((giorno) => {
               const slots = disp_pulizia_local[giorno] || [];
@@ -1352,7 +1384,7 @@ const ClubSetupPage: React.FC = () => {
         </SetupSection>
         )}
 
-        <SetupSection id="gh_parametri" titolo={t("club.sezioni.ghiaccio_planning")}>
+        <SetupSection id="gh_parametri" evidenziata={evidenzia === "gh_parametri"} titolo={t("club.sezioni.ghiaccio_planning")}>
         {loading_config && (
           <div className="bg-muted/40 border border-border rounded-lg p-3 mb-3">
             <p className="text-sm text-muted-foreground">{t("club.testi.config_ghiaccio_in_caricamento")}</p>
@@ -1430,7 +1462,7 @@ const ClubSetupPage: React.FC = () => {
         </div>
         </SetupSection>
 
-        <SetupSection id="gh_private" titolo={t("club.sezioni.lezioni_private")}>
+        <SetupSection id="gh_private" evidenziata={evidenzia === "gh_private"} titolo={t("club.sezioni.lezioni_private")}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label={t("club.fields.max_atleti_lezione_privata")}>
               <Input
@@ -1465,7 +1497,7 @@ const ClubSetupPage: React.FC = () => {
         </SetupSection>
 
 
-        <SetupSection id="gh_pianificazione" titolo={t("club.sezioni.tipo_pianificazione")}>
+        <SetupSection id="gh_pianificazione" evidenziata={evidenzia === "gh_pianificazione"} titolo={t("club.sezioni.tipo_pianificazione")}>
           <div className="max-w-sm">
 
             <Label className="text-xs text-muted-foreground">{t("club.fields.tipo_pianificazione")}</Label>
