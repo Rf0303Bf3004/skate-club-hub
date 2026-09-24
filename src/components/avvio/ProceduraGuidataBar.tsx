@@ -49,6 +49,13 @@ export default function ProceduraGuidataBar() {
   const righe = useMemo(() => diagnosi.data ?? [], [diagnosi.data]);
   const conteggio = useMemo(() => avanzamento_avvio(righe), [righe]);
   const corrente = useMemo(() => passo_corrente_avvio(righe), [righe]);
+  const righe_ordinate = useMemo(() => [...righe].sort((a, b) => a.passo - b.passo), [righe]);
+
+  // null = segue il passo corrente; un numero = l'utente sta scorrendo e la vista resta ferma.
+  const [passo_mostrato, set_passo_mostrato] = useState<number | null>(null);
+  useEffect(() => {
+    set_passo_mostrato(null);
+  }, [club_id]);
 
   // «Fatto: …» quando il PASSO CORRENTE cambia e quello di prima risulta ora ✓.
   // Si cerca fra tutte le righe: una riga risolta perde `blocca`, quindi non è più fra i bloccanti.
