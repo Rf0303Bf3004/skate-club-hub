@@ -102,7 +102,11 @@
       "corsi": "Courses and instructors",
       "atleti": "Athletes",
       "fatturazione": "Invoicing",
-      "comunicazioni": "Communications"
+      "comunicazioni": "Communications",
+      "istruttori": "Instructors"
+    },
+    "aiuto": {
+      "istruttore_scheda": "The instructor needs a profile under «Instructors»: a login created under «Users» isn't enough."
     }
   },
   "procedura": {

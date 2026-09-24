@@ -81,6 +81,12 @@
     "errori": {
       "federazione_lettura": "Der Verband des Clubs kann nicht gelesen werden: Das Feld bleibt gesperrt, damit er nicht überschrieben wird.",
       "federazione_salvataggio": "Verband nicht gespeichert"
+    },
+    "risorse": {
+      "nome_obbligatorio": "Der Name ist obligatorisch.",
+      "errore_salvataggio": "Die Ressource wurde nicht gespeichert. Ihre Eingaben sind noch da: korrigieren oder erneut versuchen.",
+      "errore_lettura": "Die Ressourcen des Clubs können nicht gelesen werden. Das heisst nicht, dass es keine gibt.",
+      "riprova": "Erneut versuchen"
     }
   },
   "seasons": {
@@ -201,7 +207,12 @@
     "title": "Benutzer",
     "invite": "Benutzer einladen",
     "role": "Rolle",
-    "last_access": "Letzter Zugriff"
+    "last_access": "Letzter Zugriff",
+    "scheda_istruttore": {
+      "avviso": "Sie haben den Zugang für {{nome}} erstellt. Damit die Person bei den Trainern des Clubs erscheint, braucht es auch ihr Profil.",
+      "crea": "Trainerprofil erstellen",
+      "chiudi": "Schliessen"
+    }
   },
   "nuova_stagione": {
     "step2": {

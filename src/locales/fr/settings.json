@@ -81,6 +81,12 @@
     "errori": {
       "federazione_lettura": "Impossible de lire la fédération du club : le champ reste bloqué pour ne pas l'écraser.",
       "federazione_salvataggio": "Fédération non enregistrée"
+    },
+    "risorse": {
+      "nome_obbligatorio": "Le nom est obligatoire.",
+      "errore_salvataggio": "La ressource n'a pas été enregistrée. Vos saisies sont toujours là : corrigez ou réessayez.",
+      "errore_lettura": "Impossible de lire les ressources du club. Cela ne veut pas dire qu'il n'y en a pas.",
+      "riprova": "Réessayer"
     }
   },
   "seasons": {
@@ -201,7 +207,12 @@
     "title": "Utilisateurs",
     "invite": "Inviter un utilisateur",
     "role": "Rôle",
-    "last_access": "Dernière connexion"
+    "last_access": "Dernière connexion",
+    "scheda_istruttore": {
+      "avviso": "Vous avez créé l'accès pour {{nome}}. Pour que la personne apparaisse parmi les moniteurs du club, il faut aussi sa fiche.",
+      "crea": "Créer la fiche moniteur",
+      "chiudi": "Fermer"
+    }
   },
   "nuova_stagione": {
     "step2": {

@@ -165,7 +165,11 @@
       "corsi": "Corsi e istruttori",
       "atleti": "Atleti",
       "fatturazione": "Fatturazione",
-      "comunicazioni": "Comunicazioni"
+      "comunicazioni": "Comunicazioni",
+      "istruttori": "Istruttori"
+    },
+    "aiuto": {
+      "istruttore_scheda": "Serve la scheda dell'istruttore in «Istruttori»: l'accesso creato in «Utenti» non basta."
     }
   },
   "procedura": {

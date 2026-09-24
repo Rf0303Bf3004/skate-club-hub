@@ -102,7 +102,11 @@
       "corsi": "Kurse und Trainer",
       "atleti": "Athletinnen und Athleten",
       "fatturazione": "Rechnungsstellung",
-      "comunicazioni": "Mitteilungen"
+      "comunicazioni": "Mitteilungen",
+      "istruttori": "Trainer"
+    },
+    "aiuto": {
+      "istruttore_scheda": "Es braucht das Trainerprofil unter «Trainer»: Der Zugang unter «Benutzer» genügt nicht."
     }
   },
   "procedura": {
