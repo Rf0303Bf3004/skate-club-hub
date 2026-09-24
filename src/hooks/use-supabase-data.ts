@@ -204,6 +204,8 @@ export function use_istruttori() {
           ...i,
           // true solo se la RPC ha restituito i contatti: distingue "nascosto" da "vuoto"
           contatti_visibili: contatti_map.has(i.id),
+          // true solo se la RPC ha restituito le tariffe: distingue "non lette" da "zero"
+          costi_visibili: costi_map.has(i.id),
           email: ct.email ?? null,
           telefono: ct.telefono ?? null,
 

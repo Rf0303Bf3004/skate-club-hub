@@ -30,6 +30,7 @@ import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import ConfirmButton from "@/components/common/ConfirmButton";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import CreaAccessoDialog from "@/components/istruttori/CreaAccessoDialog";
+import CosaMancaIstruttore, { type CampoMancanteIstruttore } from "@/components/istruttori/CosaMancaIstruttore";
 import { use_email_utenti_club } from "@/hooks/use-accessi-utenti";
 import { ore_distinte_per_data, ore_reali_senza_sovrapposizioni } from "@/lib/availability";
 import DateInput from "@/components/forms/DateInput";
@@ -1652,7 +1653,10 @@ const InstructorsPage: React.FC = () => {
   const { t: ti } = useTranslation("istruttori");
   const navigate = useNavigate();
   const { puo_gestire_sportivo, puo_creare_accessi, puo_vedere_costi_istruttori } = usePermessiAzione();
-  const { data: istruttori = [], isLoading } = use_istruttori();
+  const istruttori_query = use_istruttori();
+  const { data: istruttori = [], isLoading } = istruttori_query;
+  const qc_pagina = useQueryClient();
+  const [tab_dettaglio, set_tab_dettaglio] = useState("info");
   // Referto G+S: la regola sta nel database. Un errore non diventa mai "tutti in regola".
   const referto_gs_query = use_referto_gs();
   const referto_gs_by_id = useMemo(() => {
@@ -1735,9 +1739,15 @@ const InstructorsPage: React.FC = () => {
   }, [istruttori, active_filter, search_istruttori]);
   const handle_save = async (data: any) => {
     try {
-      await upsert.mutateAsync(data);
+      const id_salvato = await upsert.mutateAsync(data);
       set_modal_open(false);
       toast({ title: data.id ? ti("toast.salvato") : ti("toast.creato") });
+      // Dopo la creazione si apre la scheda: il riquadro «Cosa manca» dice cosa resta da compilare.
+      if (!data.id && id_salvato) {
+        set_selected_id(id_salvato);
+        set_disp_local({});
+        set_tab_dettaglio("info");
+      }
     } catch (err: any) {
       toast({ title: ti("toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
     }
@@ -1770,6 +1780,7 @@ const InstructorsPage: React.FC = () => {
         })
         .eq("id", selected_id);
       if (error) throw error;
+      await qc_pagina.invalidateQueries({ queryKey: ["istruttori"] });
       toast({ title: ti("toast.compenso_salvato") });
     } catch (err: any) {
       toast({ title: ti("toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
@@ -1780,6 +1791,7 @@ const InstructorsPage: React.FC = () => {
 
   const open_detail = (i: any) => {
     set_selected_id(i.id);
+    set_tab_dettaglio("info");
     set_disp_local(JSON.parse(JSON.stringify(i.disponibilita || {})));
   };
 
@@ -1952,7 +1964,30 @@ const InstructorsPage: React.FC = () => {
             </div>
           )}
 
-          <Tabs defaultValue="info">
+          <CosaMancaIstruttore
+            istruttore={selected}
+            lettura_istruttore={istruttori_query}
+            puo_vedere_costi={puo_vedere_costi_istruttori}
+            puo_saltare={puo_gestire_sportivo}
+            destinazione_disponibile={{
+              disponibilita: true,
+              tariffa_oraria: true,
+              accesso_app: puo_creare_accessi || puo_gestire_sportivo,
+              gs_valido_fino: puo_gestire_sportivo,
+              data_nascita: puo_gestire_sportivo,
+            }}
+            on_vai={(campo: CampoMancanteIstruttore) => {
+              if (campo === "disponibilita") set_tab_dettaglio("disponibilita");
+              else if (campo === "tariffa_oraria") set_tab_dettaglio("compenso");
+              else if (campo === "accesso_app" && puo_creare_accessi) set_accesso_target(selected);
+              else {
+                set_selected_modal(selected);
+                set_modal_open(true);
+              }
+            }}
+          />
+
+          <Tabs value={tab_dettaglio} onValueChange={set_tab_dettaglio}>
             <TabsList>
               <TabsTrigger value="info">{ti("dettaglio.tab_info")}</TabsTrigger>
               <TabsTrigger value="compenso">{ti("dettaglio.tab_compenso")}</TabsTrigger>

@@ -365,9 +365,11 @@ export function use_upsert_istruttore() {
       if (data.id) {
         const { error } = await supabase.from("istruttori").update(payload).eq("id", data.id);
         if (error) throw error;
+        return data.id as string;
       } else {
-        const { error } = await supabase.from("istruttori").insert(payload);
+        const { data: creato, error } = await supabase.from("istruttori").insert(payload).select("id").single();
         if (error) throw error;
+        return creato.id as string;
       }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["istruttori"] }),
