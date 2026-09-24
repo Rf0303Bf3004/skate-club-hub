@@ -107,6 +107,19 @@
     },
     "aiuto": {
       "istruttore_scheda": "Il faut la fiche du moniteur dans « Moniteurs » : l'accès créé dans « Utilisateurs » ne suffit pas."
+    },
+    "destinazioni": {
+      "dati_club": "Données du club",
+      "utenti": "Utilisateurs",
+      "ruoli_permessi": "Rôles et autorisations",
+      "stagioni": "Saisons",
+      "ghiaccio": "Glace",
+      "istruttori": "Moniteurs",
+      "corsi": "Cours",
+      "atleti": "Athlètes",
+      "fatturazione": "Facturation",
+      "comunicazioni": "Communications",
+      "setup_club": "Configuration du club"
     }
   },
   "procedura": {
@@ -123,6 +136,7 @@
     "fatto": "Fait : {{controllo}}",
     "ricontrolla": "Revérifier",
     "ricontrollo_in_corso": "Vérification…",
-    "prossimo": "Prochaine étape :"
+    "prossimo": "Prochaine étape :",
+    "vai_a": "Aller à {{destinazione}}"
   }
 }

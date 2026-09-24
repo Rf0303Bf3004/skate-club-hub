@@ -107,6 +107,19 @@
     },
     "aiuto": {
       "istruttore_scheda": "The instructor needs a profile under «Instructors»: a login created under «Users» isn't enough."
+    },
+    "destinazioni": {
+      "dati_club": "Club details",
+      "utenti": "Users",
+      "ruoli_permessi": "Roles and permissions",
+      "stagioni": "Seasons",
+      "ghiaccio": "Ice",
+      "istruttori": "Instructors",
+      "corsi": "Courses",
+      "atleti": "Athletes",
+      "fatturazione": "Invoicing",
+      "comunicazioni": "Communications",
+      "setup_club": "Club setup"
     }
   },
   "procedura": {
@@ -123,6 +136,7 @@
     "fatto": "Done: {{controllo}}",
     "ricontrolla": "Check again",
     "ricontrollo_in_corso": "Checking…",
-    "prossimo": "Next:"
+    "prossimo": "Next:",
+    "vai_a": "Go to {{destinazione}}"
   }
 }

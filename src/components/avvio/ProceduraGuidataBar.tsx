@@ -153,7 +153,7 @@ export default function ProceduraGuidataBar() {
       </Button>
       <Button asChild size="sm" className="h-8 gap-1.5">
         <Link to={rotta.to}>
-          {t("procedura.vai")} <ArrowRight className="w-3.5 h-3.5" />
+          {t("procedura.vai_a", { destinazione: t(`avvio.destinazioni.${rotta.chiave}`) })} <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </Button>
       <button type="button" onClick={esci} className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground">
