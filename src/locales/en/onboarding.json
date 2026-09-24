@@ -156,6 +156,9 @@
     "ricontrolla": "Check again",
     "ricontrollo_in_corso": "Checking…",
     "prossimo": "Next:",
-    "vai_a": "Go to {{destinazione}}"
+    "vai_a": "Go to {{destinazione}}",
+    "passo_precedente": "Previous step",
+    "passo_successivo": "Next step",
+    "torna_al_corrente": "Back to the step to do"
   }
 }

@@ -156,6 +156,9 @@
     "ricontrolla": "Erneut prüfen",
     "ricontrollo_in_corso": "Wird geprüft…",
     "prossimo": "Als Nächstes:",
-    "vai_a": "Zu {{destinazione}}"
+    "vai_a": "Zu {{destinazione}}",
+    "passo_precedente": "Vorheriger Schritt",
+    "passo_successivo": "Nächster Schritt",
+    "torna_al_corrente": "Zurück zum offenen Schritt"
   }
 }

@@ -216,6 +216,9 @@
     "ricontrolla": "Ricontrolla",
     "ricontrollo_in_corso": "Ricontrollo…",
     "prossimo": "Prossimo:",
-    "vai_a": "Vai a {{destinazione}}"
+    "vai_a": "Vai a {{destinazione}}",
+    "passo_precedente": "Passo precedente",
+    "passo_successivo": "Passo successivo",
+    "torna_al_corrente": "Torna al passo da fare"
   }
 }

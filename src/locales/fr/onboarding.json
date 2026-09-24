@@ -156,6 +156,9 @@
     "ricontrolla": "Revérifier",
     "ricontrollo_in_corso": "Vérification…",
     "prossimo": "Prochaine étape :",
-    "vai_a": "Aller à {{destinazione}}"
+    "vai_a": "Aller à {{destinazione}}",
+    "passo_precedente": "Étape précédente",
+    "passo_successivo": "Étape suivante",
+    "torna_al_corrente": "Revenir à l’étape à faire"
   }
 }

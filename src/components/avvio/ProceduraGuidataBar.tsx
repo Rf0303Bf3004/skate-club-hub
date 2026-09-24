@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, CheckCircle2, Compass, RefreshCw, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, Compass, RefreshCw, X, XCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -49,6 +49,13 @@ export default function ProceduraGuidataBar() {
   const righe = useMemo(() => diagnosi.data ?? [], [diagnosi.data]);
   const conteggio = useMemo(() => avanzamento_avvio(righe), [righe]);
   const corrente = useMemo(() => passo_corrente_avvio(righe), [righe]);
+  const righe_ordinate = useMemo(() => [...righe].sort((a, b) => a.passo - b.passo), [righe]);
+
+  // null = segue il passo corrente; un numero = l'utente sta scorrendo e la vista resta ferma.
+  const [passo_mostrato, set_passo_mostrato] = useState<number | null>(null);
+  useEffect(() => {
+    set_passo_mostrato(null);
+  }, [club_id]);
 
   // «Fatto: …» quando il PASSO CORRENTE cambia e quello di prima risulta ora ✓.
   // Si cerca fra tutte le righe: una riga risolta perde `blocca`, quindi non è più fra i bloccanti.
@@ -109,7 +116,8 @@ export default function ProceduraGuidataBar() {
     );
   }
 
-  if (fatto) {
+  // Chi sta scorrendo non viene interrotto dal «Fatto: …».
+  if (fatto && passo_mostrato === null) {
     return (
       <div role="status" className={`${cornice} bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900 flex items-center gap-3 animate-fade-in`}>
         <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -118,7 +126,10 @@ export default function ProceduraGuidataBar() {
     );
   }
 
-  if (!corrente) {
+  const riga_scelta = passo_mostrato !== null ? righe_ordinate.find((r) => r.passo === passo_mostrato) : undefined;
+  const mostrata = riga_scelta ?? corrente;
+
+  if (!mostrata) {
     if (pronto_chiuso) return null;
     return (
       <div className={`${cornice} bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900 flex items-center gap-3`}>
@@ -137,30 +148,82 @@ export default function ProceduraGuidataBar() {
     );
   }
 
-  const rotta = rotta_riga(corrente);
+  const rotta = rotta_riga(mostrata);
+  const indice = righe_ordinate.findIndex((r) => r.passo === mostrata.passo);
+  const e_corrente = !!corrente && corrente.passo === mostrata.passo;
+  const vai_a_indice = (i: number) => {
+    const r = righe_ordinate[i];
+    if (r) set_passo_mostrato(r.passo);
+  };
+  const icona_esito =
+    mostrata.esito === "✓" ? (
+      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 inline" />
+    ) : mostrata.esito === "⚠" ? (
+      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 inline" />
+    ) : (
+      <XCircle className="w-4 h-4 text-destructive shrink-0 inline" />
+    );
 
   return (
     <div className={`${cornice} bg-primary/10 backdrop-blur-md border-primary/20 flex flex-wrap items-center gap-x-4 gap-y-1.5`}>
       <Compass className="w-4 h-4 text-primary shrink-0 hidden sm:block" />
       <div className="flex-1 min-w-[12rem]">
-        {sulla_pagina_avvio ? (
-          <p className="text-xs font-semibold text-primary">
-            {t("procedura.titolo")} · {t("avvio.a_posto", { a_posto: conteggio.a_posto, totale: conteggio.totale })}
-          </p>
-        ) : (
-          <Link
-            to="/avvio"
-            title={t("procedura.vedi_passi")}
-            className="text-xs font-semibold text-primary hover:underline underline-offset-2"
-          >
-            {t("procedura.titolo")} · {t("avvio.a_posto", { a_posto: conteggio.a_posto, totale: conteggio.totale })}
-          </Link>
-        )}
+        <div className="flex flex-wrap items-center gap-x-2">
+          {sulla_pagina_avvio ? (
+            <p className="text-xs font-semibold text-primary">
+              {t("procedura.titolo")} · {t("avvio.a_posto", { a_posto: conteggio.a_posto, totale: conteggio.totale })}
+            </p>
+          ) : (
+            <Link
+              to="/avvio"
+              title={t("procedura.vedi_passi")}
+              className="text-xs font-semibold text-primary hover:underline underline-offset-2"
+            >
+              {t("procedura.titolo")} · {t("avvio.a_posto", { a_posto: conteggio.a_posto, totale: conteggio.totale })}
+            </Link>
+          )}
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+            <button
+              type="button"
+              disabled={indice <= 0}
+              onClick={() => vai_a_indice(indice - 1)}
+              title={t("procedura.passo_precedente")}
+              aria-label={t("procedura.passo_precedente")}
+              className="p-0.5 rounded hover:bg-background/60 hover:text-foreground disabled:opacity-40 disabled:pointer-events-none"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span>{t("procedura.passo", { n: indice + 1, m: righe_ordinate.length })}</span>
+            <button
+              type="button"
+              disabled={indice < 0 || indice >= righe_ordinate.length - 1}
+              onClick={() => vai_a_indice(indice + 1)}
+              title={t("procedura.passo_successivo")}
+              aria-label={t("procedura.passo_successivo")}
+              className="p-0.5 rounded hover:bg-background/60 hover:text-foreground disabled:opacity-40 disabled:pointer-events-none"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </span>
+          {passo_mostrato !== null && !e_corrente && (
+            <button
+              type="button"
+              onClick={() => set_passo_mostrato(null)}
+              className="text-xs text-primary underline underline-offset-2 hover:text-foreground"
+            >
+              {t("procedura.torna_al_corrente")}
+            </button>
+          )}
+        </div>
         <Progress value={conteggio.percentuale} className="h-1 my-1" />
-        <p className="text-foreground truncate">
-          <span className="text-muted-foreground">{t("procedura.prossimo")} </span>
-          <span className="font-medium">{corrente.controllo}</span>
-          {corrente.dettaglio && <span className="text-muted-foreground"> — {corrente.dettaglio}</span>}
+        <p className="text-foreground truncate flex items-center gap-1.5">
+          {e_corrente ? (
+            <span className="text-muted-foreground">{t("procedura.prossimo")}</span>
+          ) : (
+            icona_esito
+          )}
+          <span className="font-medium">{mostrata.controllo}</span>
+          {mostrata.dettaglio && <span className="text-muted-foreground truncate"> — {mostrata.dettaglio}</span>}
         </p>
         {rotta.aiuto && <p className="text-xs text-muted-foreground">{t(`avvio.aiuto.${rotta.aiuto}`)}</p>}
       </div>

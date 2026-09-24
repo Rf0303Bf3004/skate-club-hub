@@ -24,6 +24,10 @@
   },
   "procedura": {
     "titolo": "Procedura guidada",
-    "vedi_passi": "Vesair tut ils pass"
+    "vedi_passi": "Vesair tut ils pass",
+    "passo_precedente": "Pass precedent",
+    "passo_successivo": "Pass proxim",
+    "torna_al_corrente": "Turnar al pass da far",
+    "passo": "Pass {{n}} da {{m}}"
   }
 }
