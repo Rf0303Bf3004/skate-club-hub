@@ -150,6 +150,9 @@ export default function AvvioClubPage() {
                         {r.dettaglio && (
                           <p className="text-xs text-muted-foreground mt-0.5">{r.dettaglio}</p>
                         )}
+                        {!ok && rotta.aiuto && (
+                          <p className="text-xs text-foreground mt-1">{t(`avvio.aiuto.${rotta.aiuto}`)}</p>
+                        )}
                       </div>
                       <Button asChild size="sm" variant={ok ? "ghost" : "default"} className="gap-1.5">
                         <Link to={rotta.to}>

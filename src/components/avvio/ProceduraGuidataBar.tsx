@@ -137,6 +137,7 @@ export default function ProceduraGuidataBar() {
           <span className="font-medium">{corrente.controllo}</span>
           {corrente.dettaglio && <span className="text-muted-foreground"> — {corrente.dettaglio}</span>}
         </p>
+        {rotta.aiuto && <p className="text-xs text-muted-foreground">{t(`avvio.aiuto.${rotta.aiuto}`)}</p>}
       </div>
       <Button
         variant="ghost"
