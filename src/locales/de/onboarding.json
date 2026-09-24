@@ -80,7 +80,21 @@
     "load_error": "Die gespeicherten Daten des Clubs können nicht gelesen werden. Versuchen Sie es erneut, bevor Sie weitermachen, damit nichts überschrieben wird.",
     "retry": "Erneut versuchen",
     "gate_error": "Es kann nicht geprüft werden, ob die Einrichtung des Clubs abgeschlossen ist.",
-    "save_error": "Speichern fehlgeschlagen"
+    "save_error": "Speichern fehlgeschlagen",
+    "step3": {
+      "nome_pista_label": "Name der Eisbahn *",
+      "nome_pista_placeholder": "z. B. Haupteisbahn",
+      "nome_pista_obbligatorio": "Geben Sie den Namen der Eisbahn ein, bevor Sie fortfahren.",
+      "errore_salvataggio_pista": "Die Eisbahn wurde nicht gespeichert: {{motivo}}",
+      "operazione_salvataggio_pista": "Eisbahn bei der Erstkonfiguration erstellen",
+      "errore_salvataggio_fasce": "Die Zeitfenster wurden nicht gespeichert: {{motivo}} Die soeben erstellte Eisbahn wurde entfernt; Sie können es erneut versuchen, ohne Duplikate zu erstellen.",
+      "errore_fasce_risorsa_esistente": "Die Zeitfenster wurden nicht gespeichert: {{motivo}} Die bestehende Eisbahn wurde nicht geändert.",
+      "operazione_salvataggio_fasce": "Zeitfenster der Eisbahn bei der Erstkonfiguration speichern",
+      "errore_salvataggio_parziale": "Die Zeitfenster wurden nicht gespeichert: {{motivo}} Die Eisbahn «{{risorsa}}» blieb unter Club-Einrichtung → Eis → Ressourcen und Anlagen gespeichert, weil die Wiederherstellung fehlschlug: {{ripristino}}",
+      "operazione_ripristino_pista": "Wiederherstellung nach unvollständigem Speichern der Eisbahn",
+      "pista_e_fasce_salvate_one": "Eisbahn «{{risorsa}}» und 1 Zeitfenster gespeichert",
+      "pista_e_fasce_salvate_other": "Eisbahn «{{risorsa}}» und {{count}} Zeitfenster gespeichert"
+    }
   },
   "avvio": {
     "titolo": "Geführter Start",

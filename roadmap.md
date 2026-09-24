@@ -12,3 +12,4 @@
 - [ ] Portale genitori: aggiungere barra di navigazione inferiore sotto 1024 px
 
 - [x] Unificare il nome della procedura guidata, aggiungere ritorno a /avvio e verificare 5 traduzioni DB.
+- [x] Onboarding pista: salvare risorsa e fasce insieme, compensare per ID e mostrare gli errori reali.
