@@ -1359,13 +1359,28 @@ const ClubSetupPage: React.FC = () => {
         </SetupSection>
 
 
+        </TabsContent>
+
         <SetupSection
           id="gh_disponibilita"
           titolo={t("club.sezioni.disponibilita_strutture")}
           mancanti={mancanti.disponibilita}
         >
+          {!risorse_lette ? (
+            <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mb-3 space-y-2">
+              <p className="text-sm text-destructive">{t("ghiaccio.errore_risorse_per_disponibilita")}</p>
+              <Button variant="outline" size="sm" disabled={risorse_in_lettura} onClick={() => void ricarica_risorse()}>
+                {t("club.azioni.riprova")}
+              </Button>
+            </div>
+          ) : risorse_attive.length === 0 ? (
+            <div className="bg-muted/40 border border-border rounded-lg p-3 mb-3">
+              <p className="text-sm text-foreground">{t("ghiaccio.vuoto_risorse_per_disponibilita")}</p>
+            </div>
+          ) : null}
+          <fieldset disabled={!disponibilita_compilabile} className="disabled:opacity-50">
           <div className="flex justify-end">
-            <Button size="sm" onClick={save_disponibilita} disabled={saving_disp || !risorsa_sel_id}>
+            <Button size="sm" onClick={save_disponibilita} disabled={saving_disp || !risorsa_sel_id || !disponibilita_compilabile}>
               {saving_disp ? t("club.azioni.salvando") : t("club.azioni.salva_disponibilita")}
             </Button>
           </div>
@@ -1451,7 +1466,7 @@ const ClubSetupPage: React.FC = () => {
 
         {risorsa_is_ghiaccio && (
         <SetupSection id="gh_pulizia" titolo={t("club.sezioni.pulizia_ghiaccio")}>
-          <div className="space-y-4">
+          <fieldset disabled={!disponibilita_compilabile} className="space-y-4 disabled:opacity-50">
             {GIORNI.map((giorno) => {
               const slots = disp_pulizia_local[giorno] || [];
               return (
@@ -1491,13 +1506,9 @@ const ClubSetupPage: React.FC = () => {
                 </div>
               );
             })}
-          </div>
+          </fieldset>
         </SetupSection>
         )}
-
-        <SetupSection id="gh_risorse" titolo="Risorse e strutture">
-          <RisorseSection />
-        </SetupSection>
         </TabsContent>
 
         {/* ══ CATALOGO ══ */}
