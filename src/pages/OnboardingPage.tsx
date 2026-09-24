@@ -61,14 +61,31 @@ export default function OnboardingPage() {
     { giorno: GIORNI[0], ora_inizio: "17:00", ora_fine: "20:00" },
   ]);
 
+  // I dati già salvati devono arrivare prima di poter salvare un passo:
+  // altrimenti «Avanti» sovrascriverebbe il club con campi vuoti.
+  const [dati_pronti, set_dati_pronti] = useState(false);
+  const [errore_caricamento, set_errore_caricamento] = useState(false);
+  const [tentativo, set_tentativo] = useState(0);
+
   useEffect(() => {
     if (!session) return;
+    let annullato = false;
+    set_dati_pronti(false);
+    set_errore_caricamento(false);
     void (async () => {
-      const [{ data: stag }, { data: club }, { data: ident }] = await Promise.all([
+      const [r_stag, r_club, r_ident] = await Promise.all([
         supabase.from("stagioni").select("id, nome, data_inizio, data_fine").eq("club_id", session.club_id).eq("attiva", true).maybeSingle(),
         supabase.from("clubs").select("logo_url, colore_primario").eq("id", session.club_id).maybeSingle(),
         supabase.from("club_identity").select("anno_fondazione, federazione, mission, sito_web, social_instagram, social_facebook").eq("club_id", session.club_id).maybeSingle(),
       ]);
+      if (annullato) return;
+      const errore = r_stag.error ?? r_club.error ?? r_ident.error;
+      if (errore) {
+        set_errore_caricamento(true);
+        void segnala_errore("OnboardingPage", t("wizard.load_error"), errore, undefined, "avviso");
+        return;
+      }
+      const stag = r_stag.data, club = r_club.data, ident = r_ident.data;
       if (stag) setStagione({ nome: stag.nome || "", data_inizio: stag.data_inizio || "", data_fine: stag.data_fine || "" });
       if (club) {
         if (club.logo_url) setLogoUrl(club.logo_url);
@@ -84,8 +101,11 @@ export default function OnboardingPage() {
           social_facebook: ident.social_facebook || "",
         });
       }
+      set_dati_pronti(true);
     })();
-  }, [session]);
+    return () => { annullato = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, tentativo]);
 
   if (!session) return null;
 
