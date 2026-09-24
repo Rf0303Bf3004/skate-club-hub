@@ -70,7 +70,7 @@ import SuperAdminConvenzioniPage from "@/pages/SuperAdminConvenzioniPage";
 import SuperAdminAppMobilePage from "@/pages/SuperAdminAppMobilePage";
 import SuperAdminTraduzioniPage from "@/pages/SuperAdminTraduzioniPage";
 import ConvenzioniSociPage from "@/pages/ConvenzioniSociPage";
-import AvvioClubPage from "@/pages/AvvioClubPage";
+import AvvioClubPage, { use_diagnosi_avvio, ha_bloccanti_aperti } from "@/pages/AvvioClubPage";
 import EsportazioniPage from "@/pages/EsportazioniPage";
 import AssenzeStaffPage from "@/pages/AssenzeStaffPage";
 
@@ -393,6 +393,18 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
   return gruppo ? <>{gruppo.rotte}</> : <>{children}</>;
 };
 
+/**
+ * Home della presidenza. Tre stati (regola 2): solo una diagnosi letta con
+ * successo e senza bloccanti aperti mostra la Dashboard; lettura fallita o non
+ * ancora arrivata → pagina di avvio (che gestisce caricamento ed errore con «Riprova»).
+ * Non è un blocco: il menu resta navigabile.
+ */
+const HomePresidenza = ({ club_id }: { club_id: string | undefined }) => {
+  const diagnosi = use_diagnosi_avvio(club_id);
+  if (diagnosi.isSuccess && !ha_bloccanti_aperti(diagnosi.data)) return <PresidentDashboard />;
+  return <AvvioClubPage />;
+};
+
 const SmartHome = () => {
   const navigate = useNavigate();
   const { session } = useAuth();
@@ -402,9 +414,9 @@ const SmartHome = () => {
     }
   }, [session, navigate]);
   if (session?.ruolo === "superadmin") return null;
-  // Presidenza e amministrazione atterrano sulla Dashboard del presidente.
+  // Presidenza e amministrazione: lista di avvio finché ci sono bloccanti, poi Dashboard.
   if (session?.ruolo === "presidente" || session?.ruolo === "vicepresidente" || session?.ruolo === "admin") {
-    return <PresidentDashboard />;
+    return <HomePresidenza club_id={session.club_id} />;
   }
   // Istruttori e aiuto monitori: home unica «cosa devo fare adesso».
   if (session?.ruolo === "istruttore" || session?.ruolo === "aiuto_monitore") {

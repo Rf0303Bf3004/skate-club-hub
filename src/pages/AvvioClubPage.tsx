@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { CheckCircle2, AlertTriangle, XCircle, ArrowRight, RefreshCw } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
@@ -13,10 +14,11 @@ import { segnala_errore, messaggio_leggibile } from "@/lib/errori";
  * Pagina "Avvio del club": percorso completo di configurazione.
  * A differenza di OnboardingBanner (solo i buchi, chiudibile), qui si vedono
  * TUTTE le righe di diagnosi_avvio_club, anche quelle superate. Sola lettura.
- * Testi in italiano scritti qui: pagina nata per una demo, senza i18n.
+ * Le colonne `area`, `controllo` e `dettaglio` arrivano dal database in italiano
+ * e non vengono tradotte; i testi della pagina passano da i18n (onboarding.avvio.*).
  */
 
-interface RigaDiagnosi {
+export interface RigaDiagnosi {
   passo: number;
   area: string;
   controllo: string;
@@ -25,20 +27,35 @@ interface RigaDiagnosi {
   blocca: boolean;
 }
 
-// Stessa mappa di OnboardingBanner.
-const ROTTA_PER_AREA: Record<string, { to: string; label: string }> = {
-  Anagrafica: { to: "/setup-club", label: "Setup del club" },
-  Accesso: { to: "/utenti", label: "Utenti e permessi" },
-  Stagione: { to: "/setup-club", label: "Date stagione" },
-  Ghiaccio: { to: "/setup-club", label: "Risorse e disponibilità" },
-  Offerta: { to: "/corsi", label: "Corsi e istruttori" },
-  Atleti: { to: "/atleti", label: "Atleti" },
-  Fatturazione: { to: "/setup-club", label: "Fatturazione" },
-  Comunicazioni: { to: "/comunicazioni", label: "Comunicazioni" },
-  "App famiglie": { to: "/atleti", label: "Atleti" },
+/** Lettura condivisa (stessa chiave) fra questa pagina e la home della presidenza. */
+export function use_diagnosi_avvio(club_id: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: ["diagnosi_avvio_club", club_id],
+    enabled: enabled && !!club_id,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("diagnosi_avvio_club" as any, { p_club: club_id });
+      if (error) throw error;
+      return (data ?? []) as RigaDiagnosi[];
+    },
+  });
+}
+
+export const ha_bloccanti_aperti = (righe: RigaDiagnosi[]) => righe.some((r) => r.blocca && r.esito !== "✓");
+
+// Stessa mappa di OnboardingBanner (le chiavi sono valori del database).
+const ROTTA_PER_AREA: Record<string, { to: string; chiave: string }> = {
+  Anagrafica: { to: "/setup-club", chiave: "setup_club" },
+  Accesso: { to: "/utenti", chiave: "utenti" },
+  Stagione: { to: "/setup-club", chiave: "date_stagione" },
+  Ghiaccio: { to: "/setup-club", chiave: "risorse" },
+  Offerta: { to: "/corsi", chiave: "corsi" },
+  Atleti: { to: "/atleti", chiave: "atleti" },
+  Fatturazione: { to: "/setup-club", chiave: "fatturazione" },
+  Comunicazioni: { to: "/comunicazioni", chiave: "comunicazioni" },
+  "App famiglie": { to: "/atleti", chiave: "atleti" },
 };
 
-const rotta_area = (area: string) => ROTTA_PER_AREA[area] ?? { to: "/setup-club", label: "Setup del club" };
+const rotta_area = (area: string) => ROTTA_PER_AREA[area] ?? { to: "/setup-club", chiave: "setup_club" };
 
 const icona_esito = (esito: string) => {
   if (esito === "✓") return <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />;
@@ -47,18 +64,16 @@ const icona_esito = (esito: string) => {
 };
 
 export default function AvvioClubPage() {
+  const { t } = useTranslation("onboarding");
   const { session } = useAuth();
   const club_id = session?.club_id;
 
-  const { data: righe = [], isPending, isError, error, refetch, isRefetching } = useQuery({
-    queryKey: ["diagnosi_avvio_club", club_id],
-    enabled: !!club_id,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("diagnosi_avvio_club" as any, { p_club: club_id });
-      if (error) throw error;
-      return (data ?? []) as RigaDiagnosi[];
-    },
-  });
+  const { data: righe = [], isPending, isError, error, refetch, isRefetching } = use_diagnosi_avvio(club_id);
+
+  useEffect(() => {
+    if (isError) void segnala_errore("AvvioClubPage", t("avvio.errore_lettura"), error, undefined, "avviso");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isError]);
 
   const gruppi = useMemo(() => {
     const mappa = new Map<string, RigaDiagnosi[]>();
@@ -74,13 +89,19 @@ export default function AvvioClubPage() {
   const bloccanti_aperte = righe.filter((r) => r.blocca && r.esito !== "✓").length;
   const avanzamento = righe.length > 0 ? Math.round((a_posto / righe.length) * 100) : 0;
 
+  const intestazione = (
+    <div>
+      <h1 className="text-2xl font-bold text-foreground">{t("avvio.titolo")}</h1>
+      <p className="mt-1 text-muted-foreground">{t("avvio.sottotitolo")}</p>
+    </div>
+  );
+
   if (!club_id) {
     return (
       <div className="p-4 md:p-6 max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-foreground">Avvio del club</h1>
-        <p className="mt-1 text-muted-foreground">Quello che serve perché il club possa lavorare</p>
+        {intestazione}
         <div className="mt-6 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-4 text-sm text-amber-800 dark:text-amber-300">
-          Nessun club è collegato a questa sessione. Esci e rientra, poi riprova.
+          {t("avvio.nessun_club")}
         </div>
       </div>
     );
@@ -88,12 +109,9 @@ export default function AvvioClubPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Avvio del club</h1>
-        <p className="mt-1 text-muted-foreground">Quello che serve perché il club possa lavorare</p>
-      </div>
+      {intestazione}
 
-      {isPending && (
+      {isPending && !isError && (
         <div className="space-y-3">
           <Skeleton className="h-16 w-full rounded-xl" />
           <Skeleton className="h-10 w-1/3 rounded-lg" />
@@ -107,9 +125,9 @@ export default function AvvioClubPage() {
           <div className="flex items-start gap-3">
             <XCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-destructive">L'elenco dei controlli non è disponibile</p>
+              <p className="font-medium text-destructive">{t("avvio.errore_titolo")}</p>
               <p className="text-sm text-muted-foreground mt-1">
-                {messaggio_leggibile(error)} Non significa che non ci sia lavoro in sospeso: semplicemente non sono riuscito a leggerlo.
+                {messaggio_leggibile(error)} {t("avvio.errore_dettaglio")}
               </p>
             </div>
           </div>
@@ -118,11 +136,9 @@ export default function AvvioClubPage() {
             size="sm"
             className="gap-1.5"
             disabled={isRefetching}
-            onClick={() => {
-              refetch().catch((e) => segnala_errore("AvvioClubPage", "Lettura controlli di avvio", e, undefined, "avviso"));
-            }}
+            onClick={() => void refetch()}
           >
-            <RefreshCw className={`w-4 h-4 ${isRefetching ? "animate-spin" : ""}`} /> Riprova
+            <RefreshCw className={`w-4 h-4 ${isRefetching ? "animate-spin" : ""}`} /> {t("avvio.riprova")}
           </Button>
         </div>
       )}
@@ -132,16 +148,14 @@ export default function AvvioClubPage() {
           <div className="rounded-xl border border-border bg-card p-5 space-y-3">
             <div className="flex items-baseline justify-between gap-4">
               <p className="text-lg font-semibold text-foreground">
-                {a_posto} di {righe.length} a posto
+                {t("avvio.a_posto", { a_posto, totale: righe.length })}
               </p>
               <span className="text-sm text-muted-foreground">{avanzamento}%</span>
             </div>
             <Progress value={avanzamento} />
             {bloccanti_aperte > 0 && (
               <p className="text-sm font-medium text-destructive">
-                {bloccanti_aperte === 1
-                  ? "C'è 1 controllo bloccante da risolvere: il club non è pronto a lavorare finché non è a posto."
-                  : `Ci sono ${bloccanti_aperte} controlli bloccanti da risolvere: il club non è pronto a lavorare finché non sono a posto.`}
+                {t("avvio.bloccanti", { count: bloccanti_aperte })}
               </p>
             )}
           </div>
@@ -175,7 +189,7 @@ export default function AvvioClubPage() {
                       </div>
                       <Button asChild size="sm" variant={ok ? "ghost" : "default"} className="gap-1.5">
                         <Link to={rotta.to}>
-                          {rotta.label} <ArrowRight className="w-3.5 h-3.5" />
+                          {t(`avvio.rotte.${rotta.chiave}`)} <ArrowRight className="w-3.5 h-3.5" />
                         </Link>
                       </Button>
                     </li>
