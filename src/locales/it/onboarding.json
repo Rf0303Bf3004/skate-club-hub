@@ -185,6 +185,7 @@
     "riprova": "Riprova",
     "fatto": "Fatto: {{controllo}}",
     "ricontrolla": "Ricontrolla",
-    "ricontrollo_in_corso": "Ricontrollo…"
+    "ricontrollo_in_corso": "Ricontrollo…",
+    "prossimo": "Prossimo:"
   }
 }

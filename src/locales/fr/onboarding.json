@@ -122,6 +122,7 @@
     "riprova": "Réessayer",
     "fatto": "Fait : {{controllo}}",
     "ricontrolla": "Revérifier",
-    "ricontrollo_in_corso": "Vérification…"
+    "ricontrollo_in_corso": "Vérification…",
+    "prossimo": "Prochaine étape :"
   }
 }

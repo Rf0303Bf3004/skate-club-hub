@@ -122,6 +122,7 @@
     "riprova": "Try again",
     "fatto": "Done: {{controllo}}",
     "ricontrolla": "Check again",
-    "ricontrollo_in_corso": "Checking…"
+    "ricontrollo_in_corso": "Checking…",
+    "prossimo": "Next:"
   }
 }
