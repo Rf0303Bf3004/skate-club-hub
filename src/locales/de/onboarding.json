@@ -45,7 +45,9 @@
       "password_min": "Passwort: mindestens 8 Zeichen",
       "passwords_mismatch": "Die beiden Passwörter stimmen nicht überein",
       "terms_required": "Sie müssen die Bedingungen und Datenschutzerklärung akzeptieren, um fortzufahren",
-      "register_failed": "Registrierungsfehler"
+      "register_failed": "Registrierungsfehler",
+      "password_weak": "Dieses Passwort ist zu verbreitet und leicht zu erraten. Bitte wählen Sie ein anderes.",
+      "email_exists": "Diese E-Mail-Adresse ist bereits registriert. Melden Sie sich an oder verwenden Sie eine andere Adresse."
     },
     "success_created": "Club erstellt! Willkommen."
   },

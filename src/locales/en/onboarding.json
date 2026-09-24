@@ -45,7 +45,9 @@
       "password_min": "Password: 8 characters minimum",
       "passwords_mismatch": "The two passwords don't match",
       "terms_required": "You must accept the terms and privacy policy to continue",
-      "register_failed": "Registration error"
+      "register_failed": "Registration error",
+      "password_weak": "This password is too common and easy to guess. Please choose a different one.",
+      "email_exists": "This email address is already registered. Sign in or use a different address."
     },
     "success_created": "Club created! Welcome."
   },

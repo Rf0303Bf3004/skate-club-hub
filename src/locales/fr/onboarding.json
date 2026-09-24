@@ -45,7 +45,9 @@
       "password_min": "Mot de passe : 8 caractères minimum",
       "passwords_mismatch": "Les deux mots de passe ne correspondent pas",
       "terms_required": "Vous devez accepter les conditions et la politique de confidentialité pour continuer",
-      "register_failed": "Erreur lors de l'inscription"
+      "register_failed": "Erreur lors de l'inscription",
+      "password_weak": "Ce mot de passe est trop courant et facile à deviner. Choisissez-en un autre.",
+      "email_exists": "Cette adresse e-mail est déjà enregistrée. Connectez-vous ou utilisez une autre adresse."
     },
     "success_created": "Club créé ! Bienvenue."
   },
