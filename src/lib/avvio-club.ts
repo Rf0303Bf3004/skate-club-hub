@@ -34,7 +34,20 @@ export const ROTTA_PER_AREA: Record<string, { to: string; chiave: string }> = {
   "App famiglie": { to: "/atleti", chiave: "atleti" },
 };
 
+/**
+ * Eccezioni per singolo controllo, per numero di passo (identificativo stabile della funzione).
+ * Passo 11 «Almeno un istruttore» conta le SCHEDE in `istruttori`, non gli accessi.
+ * `aiuto` = onboarding.avvio.aiuto.<chiave>.
+ */
+const ROTTA_PER_PASSO: Record<number, { to: string; chiave: string; aiuto?: string }> = {
+  11: { to: "/istruttori", chiave: "istruttori", aiuto: "istruttore_scheda" },
+};
+
 export const rotta_area = (area: string) => ROTTA_PER_AREA[area] ?? { to: "/setup-club", chiave: "setup_club" };
+
+/** Rotta di una riga: prima l'eccezione per passo, poi la mappa per area. */
+export const rotta_riga = (r: Pick<RigaDiagnosi, "passo" | "area">): { to: string; chiave: string; aiuto?: string } =>
+  ROTTA_PER_PASSO[r.passo] ?? rotta_area(r.area);
 
 export const riga_bloccante_aperta = (r: RigaDiagnosi) => r.blocca && r.esito !== "✓";
 

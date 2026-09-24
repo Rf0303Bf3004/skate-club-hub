@@ -4,8 +4,8 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Navigate } from "react-router-dom";
-import { Users, Plus, Pencil, KeyRound, Copy, Search, ArrowUpDown } from "lucide-react";
+import { Link, Navigate } from "react-router-dom";
+import { Users, Plus, Pencil, KeyRound, Copy, Search, ArrowUpDown, Info, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -200,6 +200,9 @@ const UtentiPage: React.FC = () => {
   if (!session) return null;
   if (!allowed) return <Navigate to="/" replace />;
 
+  // Ruoli di pista: l'accesso non crea la scheda istruttore. Lo si dice, senza crearla a sorpresa.
+  const [avviso_scheda, set_avviso_scheda] = useState<string | null>(null);
+
   const open_create = () => {
     set_edit_user(null);
     set_form({
@@ -300,6 +303,10 @@ const UtentiPage: React.FC = () => {
           setTimeout(() => set_evidenzia_user_id((v) => (v === nuovo_user_id ? null : v)), 6000);
         }
 
+        if (["istruttore", "dt", "aiuto_monitore"].includes(form.ruolo)) {
+          set_avviso_scheda(`${form.nome.trim()} ${form.cognome.trim()}`.trim());
+        }
+
         // Se il ruolo è di pista, proponi il collegamento alla scheda istruttore omonima non collegata
         if (nuovo_user_id && ["istruttore", "aiuto_monitore"].includes(form.ruolo)) {
           const { data: schede } = await supabase
@@ -391,6 +398,27 @@ const UtentiPage: React.FC = () => {
           <Plus className="w-4 h-4" /> {t("users.new_user")}
         </Button>
       </div>
+
+      {avviso_scheda && (
+        <div role="status" className="flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+          <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <div className="flex-1 space-y-2">
+            <p className="text-sm text-foreground">{t("users.scheda_istruttore.avviso", { nome: avviso_scheda })}</p>
+            <Button asChild size="sm">
+              <Link to="/istruttori?nuovo=1">{t("users.scheda_istruttore.crea")}</Link>
+            </Button>
+          </div>
+          <button
+            type="button"
+            onClick={() => set_avviso_scheda(null)}
+            title={t("users.scheda_istruttore.chiudi")}
+            aria-label={t("users.scheda_istruttore.chiudi")}
+            className="p-1 rounded-md text-muted-foreground hover:text-foreground"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       <div className="bg-card rounded-xl shadow-card p-4 flex flex-col sm:flex-row gap-3 sm:items-center">
         <div className="flex-1 relative">

@@ -81,6 +81,12 @@
     "errori": {
       "federazione_lettura": "The club's federation can't be read: the field stays locked so it isn't overwritten.",
       "federazione_salvataggio": "Federation not saved"
+    },
+    "risorse": {
+      "nome_obbligatorio": "The name is required.",
+      "errore_salvataggio": "The resource wasn't saved. What you typed is still here: correct it or try again.",
+      "errore_lettura": "The club's resources can't be read. That doesn't mean there are none.",
+      "riprova": "Try again"
     }
   },
   "seasons": {
@@ -201,7 +207,12 @@
     "title": "Users",
     "invite": "Invite user",
     "role": "Role",
-    "last_access": "Last access"
+    "last_access": "Last access",
+    "scheda_istruttore": {
+      "avviso": "You created the login for {{nome}}. For them to appear among the club's instructors, they also need an instructor profile.",
+      "crea": "Create the instructor profile",
+      "chiudi": "Close"
+    }
   },
   "nuova_stagione": {
     "step2": {

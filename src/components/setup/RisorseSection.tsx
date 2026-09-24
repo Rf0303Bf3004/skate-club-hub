@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { use_stagione_attiva } from "@/lib/stagione-attiva";
 import { use_costi_risorsa, use_salva_costo_risorsa } from "@/hooks/use-costi-risorsa";
-import { segnala_errore } from "@/lib/errori";
+import { segnala_errore, messaggio_leggibile } from "@/lib/errori";
 import {
   use_risorse_strutture,
   use_upsert_risorsa,
@@ -38,12 +38,16 @@ const RisorsaDialog: React.FC<{
   on_close: () => void;
   risorsa?: RisorsaStruttura | null;
 }> = ({ open, on_close, risorsa }) => {
+  const { t } = useTranslation("settings");
   const upsert = use_upsert_risorsa();
   const { data: eventi_campi = [] } = use_eventi_campi_opzioni();
   const [form, set_form] = React.useState<Record<string, any>>(empty_form);
+  // Errore di salvataggio mostrato dentro il modulo: i dati digitati restano.
+  const [errore_salvataggio, set_errore_salvataggio] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (!open) return;
+    set_errore_salvataggio(null);
     set_form(
       risorsa
         ? {
@@ -65,9 +69,10 @@ const RisorsaDialog: React.FC<{
 
   const salva = async () => {
     if (!String(form.nome).trim()) {
-      toast({ title: "Il nome è obbligatorio", variant: "destructive" });
+      set_errore_salvataggio(t("club.risorse.nome_obbligatorio"));
       return;
     }
+    set_errore_salvataggio(null);
     try {
       await upsert.mutateAsync({
         ...(risorsa?.id ? { id: risorsa.id } : {}),
@@ -86,8 +91,10 @@ const RisorsaDialog: React.FC<{
 
       toast({ title: "Risorsa salvata" });
       on_close();
-    } catch (e: any) {
-      toast({ title: "Errore", description: e?.message, variant: "destructive" });
+    } catch (e: unknown) {
+      // Il modulo resta aperto con i dati: si dice il motivo, nessun dato perso.
+      set_errore_salvataggio(`${t("club.risorse.errore_salvataggio")} ${messaggio_leggibile(e)}`);
+      void segnala_errore("RisorseSection", t("club.risorse.errore_salvataggio"), e, undefined, "avviso");
     }
   };
 
@@ -207,6 +214,12 @@ const RisorsaDialog: React.FC<{
         </div>
 
 
+        {errore_salvataggio && (
+          <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+            {errore_salvataggio}
+          </p>
+        )}
+
         <DialogFooter>
           <Button variant="ghost" onClick={on_close}>
             Annulla
@@ -284,7 +297,7 @@ export const RisorseSection: React.FC = () => {
   const { t } = useTranslation("settings");
   const { session } = useAuth();
   const allowed = !!session && ["superadmin", "admin", "presidente"].includes(session.ruolo);
-  const { data: risorse = [], isLoading } = use_risorse_strutture();
+  const { data: risorse = [], isLoading, isError: risorse_errore, refetch: rileggi_risorse, isFetching: risorse_in_lettura } = use_risorse_strutture();
   const elimina = use_elimina_risorsa();
   const [dialog_open, set_dialog_open] = React.useState(false);
   const [edit_risorsa, set_edit_risorsa] = React.useState<RisorsaStruttura | null>(null);
@@ -320,7 +333,14 @@ export const RisorseSection: React.FC = () => {
         </Button>
       </div>
 
-      {isLoading ? (
+      {risorse_errore ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+          <span className="flex-1">{t("club.risorse.errore_lettura")}</span>
+          <Button size="sm" variant="outline" disabled={risorse_in_lettura} onClick={() => void rileggi_risorse()}>
+            {t("club.risorse.riprova")}
+          </Button>
+        </div>
+      ) : isLoading ? (
         <p className="text-sm text-muted-foreground">Caricamento…</p>
       ) : risorse.length === 0 ? (
         <p className="text-sm text-muted-foreground">

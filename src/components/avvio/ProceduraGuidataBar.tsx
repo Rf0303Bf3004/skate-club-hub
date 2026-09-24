@@ -8,7 +8,7 @@ import { segnala_errore } from "@/lib/errori";
 import {
   RUOLI_AVVIO_CLUB,
   riga_bloccante_aperta,
-  rotta_area,
+  rotta_riga,
   use_diagnosi_avvio,
   use_preferenze_procedura,
 } from "@/lib/avvio-club";
@@ -124,7 +124,7 @@ export default function ProceduraGuidataBar() {
   }
 
   const n = bloccanti.indexOf(corrente) + 1;
-  const rotta = rotta_area(corrente.area);
+  const rotta = rotta_riga(corrente);
 
   return (
     <div className={`${cornice} bg-primary/10 backdrop-blur-md border-primary/20 flex flex-wrap items-center gap-x-4 gap-y-1.5`}>
@@ -137,6 +137,7 @@ export default function ProceduraGuidataBar() {
           <span className="font-medium">{corrente.controllo}</span>
           {corrente.dettaglio && <span className="text-muted-foreground"> — {corrente.dettaglio}</span>}
         </p>
+        {rotta.aiuto && <p className="text-xs text-muted-foreground">{t(`avvio.aiuto.${rotta.aiuto}`)}</p>}
       </div>
       <Button
         variant="ghost"

@@ -1,7 +1,7 @@
 import TariffeRagioniSocialiSection from "@/components/istruttori/TariffeRagioniSocialiSection";
 import CodiceIstruttoreCard from "@/components/CodiceIstruttoreCard";
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
 import {
@@ -1675,6 +1675,16 @@ const InstructorsPage: React.FC = () => {
   const elimina = use_elimina_istruttore();
   const [modal_open, set_modal_open] = useState(false);
   const [selected_modal, set_selected_modal] = useState<any>(null);
+  // «?nuovo=1» (arrivo da Utenti): apre direttamente la scheda nuova, poi toglie il parametro.
+  const [search_params, set_search_params] = useSearchParams();
+  useEffect(() => {
+    if (search_params.get("nuovo") !== "1" || !puo_gestire_sportivo) return;
+    set_selected_modal(null);
+    set_modal_open(true);
+    const next = new URLSearchParams(search_params);
+    next.delete("nuovo");
+    set_search_params(next, { replace: true });
+  }, [search_params, puo_gestire_sportivo, set_search_params]);
   const [selected_id, set_selected_id] = useState<string | null>(null);
   const [selected_monitore_id, set_selected_monitore_id] = useState<string | null>(null);
   const [disp_local, set_disp_local] = useState<Record<string, { ora_inizio: string; ora_fine: string }[]>>({});

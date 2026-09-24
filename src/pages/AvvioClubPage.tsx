@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { CheckCircle2, AlertTriangle, XCircle, ArrowRight, RefreshCw } from "lucide-react";
-import { rotta_area, use_diagnosi_avvio, type RigaDiagnosi } from "@/lib/avvio-club";
+import { rotta_riga, use_diagnosi_avvio, type RigaDiagnosi } from "@/lib/avvio-club";
 import { RiprendiProceduraButton } from "@/components/avvio/ProceduraGuidataBar";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -129,7 +129,7 @@ export default function AvvioClubPage() {
               <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">{area}</h2>
               <ul className="space-y-2">
                 {controlli.map((r) => {
-                  const rotta = rotta_area(r.area);
+                  const rotta = rotta_riga(r);
                   const ok = r.esito === "✓";
                   return (
                     <li
@@ -149,6 +149,9 @@ export default function AvvioClubPage() {
                         </span>
                         {r.dettaglio && (
                           <p className="text-xs text-muted-foreground mt-0.5">{r.dettaglio}</p>
+                        )}
+                        {!ok && rotta.aiuto && (
+                          <p className="text-xs text-foreground mt-1">{t(`avvio.aiuto.${rotta.aiuto}`)}</p>
                         )}
                       </div>
                       <Button asChild size="sm" variant={ok ? "ghost" : "default"} className="gap-1.5">

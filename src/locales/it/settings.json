@@ -199,6 +199,12 @@
     "errori": {
       "federazione_lettura": "Non riesco a leggere la federazione del club: il campo resta bloccato per non sovrascriverla.",
       "federazione_salvataggio": "Federazione non salvata"
+    },
+    "risorse": {
+      "nome_obbligatorio": "Il nome è obbligatorio.",
+      "errore_salvataggio": "La risorsa non è stata salvata. Quello che hai scritto è ancora qui: correggi o riprova.",
+      "errore_lettura": "Non riesco a leggere le risorse del club. Non significa che non ce ne siano.",
+      "riprova": "Riprova"
     }
   },
   "seasons": {
@@ -453,6 +459,11 @@
       "deactivated": "Utente disattivato",
       "reactivated": "Utente riattivato",
       "password_copied": "Password copiata"
+    },
+    "scheda_istruttore": {
+      "avviso": "Hai creato l'accesso per {{nome}}. Per farlo comparire fra gli istruttori del club serve anche la sua scheda.",
+      "crea": "Crea la scheda istruttore",
+      "chiudi": "Chiudi"
     }
   },
   "nuova_stagione": {

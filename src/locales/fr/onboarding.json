@@ -102,7 +102,11 @@
       "corsi": "Cours et moniteurs",
       "atleti": "Athlètes",
       "fatturazione": "Facturation",
-      "comunicazioni": "Communications"
+      "comunicazioni": "Communications",
+      "istruttori": "Moniteurs"
+    },
+    "aiuto": {
+      "istruttore_scheda": "Il faut la fiche du moniteur dans « Moniteurs » : l'accès créé dans « Utilisateurs » ne suffit pas."
     }
   },
   "procedura": {
