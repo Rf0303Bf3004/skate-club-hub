@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, ArrowRight, Plus, Trash2, Upload, BookOpen, UserPlus, Users, LayoutDashboard } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Loader2, ArrowLeft, ArrowRight, Plus, Trash2, Upload, BookOpen, UserPlus, Users, LayoutDashboard, LogOut, AlertTriangle } from "lucide-react";
+
 import { useTranslation } from "react-i18next";
+import { segnala_errore } from "@/lib/errori";
 
 interface SlotGhiaccio {
   giorno: string;
@@ -21,8 +22,7 @@ const TOTAL_STEPS = 3;
 
 export default function OnboardingPage() {
   const { t } = useTranslation("onboarding");
-  const { session } = useAuth();
-  const navigate = useNavigate();
+  const { session, logout } = useAuth();
   const GIORNI = [
     t("wizard.days.monday"),
     t("wizard.days.tuesday"),
@@ -61,14 +61,31 @@ export default function OnboardingPage() {
     { giorno: GIORNI[0], ora_inizio: "17:00", ora_fine: "20:00" },
   ]);
 
+  // I dati già salvati devono arrivare prima di poter salvare un passo:
+  // altrimenti «Avanti» sovrascriverebbe il club con campi vuoti.
+  const [dati_pronti, set_dati_pronti] = useState(false);
+  const [errore_caricamento, set_errore_caricamento] = useState(false);
+  const [tentativo, set_tentativo] = useState(0);
+
   useEffect(() => {
     if (!session) return;
+    let annullato = false;
+    set_dati_pronti(false);
+    set_errore_caricamento(false);
     void (async () => {
-      const [{ data: stag }, { data: club }, { data: ident }] = await Promise.all([
+      const [r_stag, r_club, r_ident] = await Promise.all([
         supabase.from("stagioni").select("id, nome, data_inizio, data_fine").eq("club_id", session.club_id).eq("attiva", true).maybeSingle(),
         supabase.from("clubs").select("logo_url, colore_primario").eq("id", session.club_id).maybeSingle(),
         supabase.from("club_identity").select("anno_fondazione, federazione, mission, sito_web, social_instagram, social_facebook").eq("club_id", session.club_id).maybeSingle(),
       ]);
+      if (annullato) return;
+      const errore = r_stag.error ?? r_club.error ?? r_ident.error;
+      if (errore) {
+        set_errore_caricamento(true);
+        void segnala_errore("OnboardingPage", t("wizard.load_error"), errore, undefined, "avviso");
+        return;
+      }
+      const stag = r_stag.data, club = r_club.data, ident = r_ident.data;
       if (stag) setStagione({ nome: stag.nome || "", data_inizio: stag.data_inizio || "", data_fine: stag.data_fine || "" });
       if (club) {
         if (club.logo_url) setLogoUrl(club.logo_url);
@@ -84,8 +101,11 @@ export default function OnboardingPage() {
           social_facebook: ident.social_facebook || "",
         });
       }
+      set_dati_pronti(true);
     })();
-  }, [session]);
+    return () => { annullato = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, tentativo]);
 
   if (!session) return null;
 
@@ -97,7 +117,7 @@ export default function OnboardingPage() {
       const ext = file.name.split(".").pop() || "png";
       const path = `${session.club_id}/logo-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("loghi-club").upload(path, file, { upsert: true });
-      if (upErr) { toast.error(upErr.message); return; }
+      if (upErr) { void segnala_errore("OnboardingPage", t("wizard.save_error"), upErr); return; }
       // Pulizia: rimuovi il logo precedente se appartiene alla cartella di questo club.
       // Errori ignorati in silenzio: è pulizia, non deve bloccare il salvataggio.
       try {
@@ -131,8 +151,8 @@ export default function OnboardingPage() {
       }).eq("id", session.club_id),
     ]);
     setLoading(false);
-    if (r1.error) { toast.error(r1.error.message); return false; }
-    if (r2.error) { toast.error(r2.error.message); return false; }
+    const e12 = r1.error ?? r2.error;
+    if (e12) { void segnala_errore("OnboardingPage", t("wizard.save_error"), e12); return false; }
     return true;
   };
 
@@ -148,7 +168,7 @@ export default function OnboardingPage() {
       .eq("club_id", session.club_id)
       .eq("attiva", true);
     setLoading(false);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { void segnala_errore("OnboardingPage", t("wizard.save_error"), error); return false; }
     return true;
   };
 
@@ -156,8 +176,13 @@ export default function OnboardingPage() {
     const valid = slots.filter((s) => s.giorno && s.ora_inizio && s.ora_fine && s.ora_inizio < s.ora_fine);
     if (valid.length === 0) return true;
     setLoading(true);
-    const { data: stag } = await supabase
+    const { data: stag, error: stag_err } = await supabase
       .from("stagioni").select("id").eq("club_id", session.club_id).eq("attiva", true).maybeSingle();
+    if (stag_err) {
+      setLoading(false);
+      void segnala_errore("OnboardingPage", t("wizard.save_error"), stag_err);
+      return false;
+    }
     const payload = valid.map((s) => ({
       club_id: session.club_id,
       stagione_id: stag?.id ?? null,
@@ -168,7 +193,7 @@ export default function OnboardingPage() {
     }));
     const { error } = await supabase.from("disponibilita_ghiaccio").insert(payload);
     setLoading(false);
-    if (error) { toast.error(t("wizard.availability_error", { message: error.message })); return false; }
+    if (error) { void segnala_errore("OnboardingPage", t("wizard.save_error"), error); return false; }
     toast.success(t("wizard.slots_configured", { count: valid.length }));
     return true;
   };
@@ -191,15 +216,15 @@ export default function OnboardingPage() {
       .update({ onboarding_completato: true })
       .eq("id", session.club_id);
     setLoading(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { void segnala_errore("OnboardingPage", t("wizard.save_error"), error); return; }
     toast.success(t("wizard.onboarding_completed"));
-    navigate(to, { replace: true });
-    if (to === "/") window.location.reload();
+    // Ricarica completa: il blocco d'accesso rilegge lo stato del club.
+    window.location.replace(to);
   };
 
   if (done) {
     return (
-      <div className="min-h-screen bg-background p-4 md:p-8">
+      <div className="min-h-mobile bg-background p-4 md:p-8">
         <div className="max-w-3xl mx-auto">
           <div className="mb-6 text-center">
             <h1 className="text-3xl font-bold">{t("wizard.done.title")}</h1>
@@ -234,7 +259,10 @@ export default function OnboardingPage() {
               </Card>
             </button>
           </div>
-          <div className="mt-6 flex justify-center">
+          <div className="mt-6 flex justify-center gap-2">
+            <Button variant="ghost" onClick={() => void logout()} disabled={loading}>
+              <LogOut className="h-4 w-4 mr-2" /> {t("wizard.logout")}
+            </Button>
             <Button variant="outline" onClick={() => completeAndGo("/")} disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               <LayoutDashboard className="h-4 w-4 mr-2" /> {t("wizard.done.go_to_dashboard")}
@@ -246,11 +274,24 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
+    <div className="min-h-mobile bg-background p-4 md:p-8">
       <div className="max-w-3xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">{t("wizard.welcome_title")}</h1>
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-2xl font-bold">{t("wizard.welcome_title")}</h1>
+            <Button variant="outline" size="sm" onClick={() => void logout()}>
+              <LogOut className="h-4 w-4 mr-1" /> {t("wizard.logout")}
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">{t("wizard.required_hint")}</p>
           <p className="text-muted-foreground">{t("wizard.step_of", { step, total: TOTAL_STEPS })}</p>
+          {errore_caricamento && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              <span className="flex-1">{t("wizard.load_error")}</span>
+              <Button size="sm" variant="outline" onClick={() => set_tentativo((n) => n + 1)}>{t("wizard.retry")}</Button>
+            </div>
+          )}
           <div className="mt-3 flex gap-1">
             {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((i) => (
               <div key={i} className={`h-2 flex-1 rounded ${i <= step ? "bg-primary" : "bg-muted"}`} />
@@ -409,7 +450,7 @@ export default function OnboardingPage() {
             <Button variant="outline" disabled={step === 1 || loading} onClick={() => setStep(step - 1)}>
               <ArrowLeft className="h-4 w-4 mr-1" /> {t("wizard.back_button")}
             </Button>
-            <Button onClick={next} disabled={loading}>
+            <Button onClick={next} disabled={loading || !dati_pronti}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {step < TOTAL_STEPS ? <>{t("wizard.next_button")} <ArrowRight className="h-4 w-4 ml-1" /></> : t("wizard.complete_button")}
             </Button>

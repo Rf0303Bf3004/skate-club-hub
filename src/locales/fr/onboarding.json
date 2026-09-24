@@ -29,7 +29,13 @@
       "email": "E-mail",
       "phone": "Téléphone",
       "password": "Mot de passe (min 8)",
-      "password_confirm": "Confirmer le mot de passe"
+      "password_confirm": "Confirmer le mot de passe",
+      "country": "Pays",
+      "country_ch": "Suisse",
+      "country_it": "Italie",
+      "cap": "NPA",
+      "locality": "Localité",
+      "province": "Province"
     },
     "accept_terms_prefix": "J'accepte les",
     "accept_terms_link": "Conditions",
@@ -47,9 +53,20 @@
       "terms_required": "Vous devez accepter les conditions et la politique de confidentialité pour continuer",
       "register_failed": "Erreur lors de l'inscription",
       "password_weak": "Ce mot de passe est trop courant et facile à deviner. Choisissez-en un autre.",
-      "email_exists": "Cette adresse e-mail est déjà enregistrée. Connectez-vous ou utilisez une autre adresse."
+      "email_exists": "Cette adresse e-mail est déjà enregistrée. Connectez-vous ou utilisez une autre adresse.",
+      "cap_required": "Le NPA est obligatoire",
+      "cap_pending": "Attendez la vérification du NPA avant de continuer",
+      "canton_required": "Le canton est obligatoire",
+      "province_required": "La province est obligatoire"
     },
-    "success_created": "Club créé ! Bienvenue."
+    "success_created": "Club créé ! Bienvenue.",
+    "cap": {
+      "searching": "Recherche du NPA…",
+      "found_hint": "Remplis à partir du NPA. Si la localité porte un autre nom, vous pouvez la corriger.",
+      "not_found": "NPA non reconnu, saisissez vous-même la localité et le canton",
+      "error": "Impossible de vérifier le NPA pour le moment. Saisissez vous-même la localité et le canton, ou réessayez.",
+      "retry": "Réessayer"
+    }
   },
   "wizard": {
     "title": "Configuration initiale",
@@ -57,6 +74,12 @@
     "next": "Suivant",
     "back": "Précédent",
     "finish": "Terminer la configuration",
-    "skip": "Passer pour le moment"
+    "skip": "Passer pour le moment",
+    "logout": "Se déconnecter",
+    "required_hint": "Terminez la configuration pour commencer à utiliser le portail.",
+    "load_error": "Impossible de lire les données déjà enregistrées du club. Réessayez avant de continuer, pour ne pas les écraser.",
+    "retry": "Réessayer",
+    "gate_error": "Impossible de vérifier si la configuration du club est terminée.",
+    "save_error": "Échec de l'enregistrement"
   }
 }

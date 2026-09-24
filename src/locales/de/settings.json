@@ -31,7 +31,10 @@
     },
     "fields": {
       "auguri_compleanno_attivo": "Geburtstagswünsche an Familien",
-      "auguri_compleanno_orario": "Sendezeit der Glückwünsche (Schweizer Ortszeit)"
+      "auguri_compleanno_orario": "Sendezeit der Glückwünsche (Schweizer Ortszeit)",
+      "sigla": "Kürzel",
+      "federazione": "Verband",
+      "federazione_placeholder": "z. B. Swiss Ice Skating"
     },
     "pista": {
       "spiegazione": "Das Tablet am Eisrand meldet sich mit diesem Vereinscode an, nicht mit dem Zugang einer Person. Es öffnet nur die Eisfläche: heutige Einheiten, Anwesenheit und Notizen.",
@@ -74,6 +77,10 @@
       "qr_alt": "QR-Code der Adresse des öffentlichen Kalenders",
       "qr_istruzione": "Drucke den QR-Code aus und hänge ihn auf: Wer ihn scannt, öffnet den Kalender sofort.",
       "differenza_pista": "Der QR-Code des Tablets am Eisrand ist ein Schlüssel und darf nicht verteilt werden; dieser hier darf aufgehängt werden."
+    },
+    "errori": {
+      "federazione_lettura": "Der Verband des Clubs kann nicht gelesen werden: Das Feld bleibt gesperrt, damit er nicht überschrieben wird.",
+      "federazione_salvataggio": "Verband nicht gespeichert"
     }
   },
   "seasons": {

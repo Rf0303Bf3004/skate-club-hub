@@ -29,7 +29,13 @@
       "email": "Email",
       "phone": "Telefono",
       "password": "Password (min 8)",
-      "password_confirm": "Conferma password"
+      "password_confirm": "Conferma password",
+      "country": "Paese",
+      "country_ch": "Svizzera",
+      "country_it": "Italia",
+      "cap": "CAP",
+      "locality": "Località",
+      "province": "Provincia"
     },
     "accept_terms_prefix": "Accetto i",
     "accept_terms_link": "Termini",
@@ -47,9 +53,20 @@
       "terms_required": "Devi accettare termini e privacy per continuare",
       "register_failed": "Errore registrazione",
       "password_weak": "Questa password è troppo comune e facile da indovinare. Scegline una diversa.",
-      "email_exists": "Questo indirizzo email è già registrato. Accedi oppure usa un altro indirizzo."
+      "email_exists": "Questo indirizzo email è già registrato. Accedi oppure usa un altro indirizzo.",
+      "cap_required": "Il CAP è obbligatorio",
+      "cap_pending": "Attendi la verifica del CAP prima di continuare",
+      "canton_required": "Il cantone è obbligatorio",
+      "province_required": "La provincia è obbligatoria"
     },
-    "success_created": "Club creato! Benvenuto."
+    "success_created": "Club creato! Benvenuto.",
+    "cap": {
+      "searching": "Cerco il CAP…",
+      "found_hint": "Compilati dal CAP. Se la località ha un altro nome, puoi correggerla.",
+      "not_found": "CAP non riconosciuto, scrivi tu località e cantone",
+      "error": "Non riesco a verificare il CAP in questo momento. Scrivi tu località e cantone, oppure riprova.",
+      "retry": "Riprova"
+    }
   },
   "wizard": {
     "title": "Configurazione iniziale",
@@ -120,6 +137,12 @@
     },
     "back_button": "Indietro",
     "next_button": "Avanti",
-    "complete_button": "Completa"
+    "complete_button": "Completa",
+    "logout": "Esci",
+    "required_hint": "Completa la configurazione per iniziare a usare il portale.",
+    "load_error": "Non riesco a leggere i dati già salvati del club. Riprova prima di continuare, per non sovrascriverli.",
+    "retry": "Riprova",
+    "gate_error": "Non riesco a verificare se la configurazione del club è completa.",
+    "save_error": "Salvataggio non riuscito"
   }
 }

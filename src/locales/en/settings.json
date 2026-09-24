@@ -10,7 +10,7 @@
       "salvataggio_parziale_ghiaccio": "The other sections were saved, but the ice configuration was not: it could not be read."
     },
     "azioni": {
-      "riprova": "Retry"
+      "riprova": "Try again"
     },
     "testi": {
       "dato_non_disponibile": "Data not available",
@@ -31,7 +31,10 @@
     },
     "fields": {
       "auguri_compleanno_attivo": "Birthday wishes to families",
-      "auguri_compleanno_orario": "Birthday wishes send time (Swiss local time)"
+      "auguri_compleanno_orario": "Birthday wishes send time (Swiss local time)",
+      "sigla": "Abbreviation",
+      "federazione": "Federation",
+      "federazione_placeholder": "e.g. Swiss Ice Skating"
     },
     "pista": {
       "spiegazione": "The rink-side tablet signs in with this club code, not with a person's account. It only opens the rink: today's sessions, attendance and notes.",
@@ -74,6 +77,10 @@
       "qr_alt": "QR code of the public calendar address",
       "qr_istruzione": "Print the QR code and put it up: anyone who scans it opens the calendar straight away.",
       "differenza_pista": "The rink tablet QR code is a key and must not be shared; this one can be put up."
+    },
+    "errori": {
+      "federazione_lettura": "The club's federation can't be read: the field stays locked so it isn't overwritten.",
+      "federazione_salvataggio": "Federation not saved"
     }
   },
   "seasons": {
