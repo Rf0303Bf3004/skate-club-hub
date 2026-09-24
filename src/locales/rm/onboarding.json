@@ -8,9 +8,13 @@
       "operazione_salvataggio_pista": "Crear la pista da glatsch durant la configuraziun iniziala",
       "errore_salvataggio_fasce": "Las periodas n'èn betg vegnidas memorisadas: {{motivo}} La pista gist creada è vegnida eliminada; ti pos empruvar danovamain senza crear duplicats.",
       "errore_fasce_risorsa_esistente": "Las periodas n'èn betg vegnidas memorisadas: {{motivo}} La pista existenta n'è betg vegnida midada.",
+      "errore_fasce_dopo_rinomina": "La pista è vegnida renumnada «{{risorsa}}», ma las periodas n'èn betg vegnidas memorisadas: {{motivo}}",
       "operazione_salvataggio_fasce": "Memorisar las periodas da la pista durant la configuraziun iniziala",
       "errore_salvataggio_parziale": "Las periodas n'èn betg vegnidas memorisadas: {{motivo}} La pista «{{risorsa}}» è restada sut Configuraziun dal club → Glatsch → Resursas e stabiliments, perquai che la restauraziun n'è betg reussida: {{ripristino}}",
       "operazione_ripristino_pista": "Restauraziun suenter ina memorizzaziun incumpletta da la pista",
+      "errore_rinomina_pista": "La pista n'è betg vegnida renumnada: {{motivo}} Las periodas n'èn betg vegnidas memorisadas.",
+      "operazione_rinomina_pista": "Renumnar la pista durant la configuraziun iniziala",
+      "skip_hint": "Ti pos laschar las periodas vidas e las configurar pli tard; il num da la pista è obligatoric.",
       "pista_e_fasce_salvate_one": "Pista «{{risorsa}}» ed 1 perioda memorisadas",
       "pista_e_fasce_salvate_other": "Pista «{{risorsa}}» e {{count}} periodas memorisadas"
     }
