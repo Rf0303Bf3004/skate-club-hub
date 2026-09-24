@@ -31,7 +31,10 @@
     },
     "fields": {
       "auguri_compleanno_attivo": "Vœux d'anniversaire aux familles",
-      "auguri_compleanno_orario": "Heure d'envoi des vœux (heure locale suisse)"
+      "auguri_compleanno_orario": "Heure d'envoi des vœux (heure locale suisse)",
+      "sigla": "Sigle",
+      "federazione": "Fédération",
+      "federazione_placeholder": "p. ex. Swiss Ice Skating"
     },
     "pista": {
       "spiegazione": "La tablette au bord de la glace se connecte avec ce code du club, et non avec le compte d'une personne. Elle n'ouvre que la piste : séances du jour, appel et notes.",
@@ -74,6 +77,10 @@
       "qr_alt": "QR de l'adresse du calendrier public",
       "qr_istruzione": "Imprimez le QR et affichez-le : en le scannant, on ouvre directement le calendrier.",
       "differenza_pista": "Le QR de la tablette au bord de la glace est une clé et ne doit pas être diffusé ; celui-ci peut être affiché."
+    },
+    "errori": {
+      "federazione_lettura": "Impossible de lire la fédération du club : le champ reste bloqué pour ne pas l'écraser.",
+      "federazione_salvataggio": "Fédération non enregistrée"
     }
   },
   "seasons": {

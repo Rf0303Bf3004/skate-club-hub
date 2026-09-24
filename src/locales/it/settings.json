@@ -93,7 +93,10 @@
       "seleziona_risorsa_placeholder": "Seleziona una risorsa",
       "tipo_pianificazione": "Tipo di pianificazione",
       "periodo_giorni": "Ogni quanti giorni va rinnovata",
-      "giorni_preavviso": "Preavviso (giorni prima della scadenza)"
+      "giorni_preavviso": "Preavviso (giorni prima della scadenza)",
+      "sigla": "Sigla",
+      "federazione": "Federazione",
+      "federazione_placeholder": "es. Swiss Ice Skating"
     },
     "testi": {
       "clausole_info": "Appare come Art. 12 nella pagina pubblica di iscrizione e nella scheda stampabile. Se vuoto, l'articolo non viene mostrato.",
@@ -192,6 +195,10 @@
       "qr_alt": "QR dell'indirizzo del calendario pubblico",
       "qr_istruzione": "Stampa il QR e appendilo: chi lo inquadra apre subito il calendario.",
       "differenza_pista": "Il QR del tablet di bordo pista è una chiave e non va diffuso; questo invece si può appendere."
+    },
+    "errori": {
+      "federazione_lettura": "Non riesco a leggere la federazione del club: il campo resta bloccato per non sovrascriverla.",
+      "federazione_salvataggio": "Federazione non salvata"
     }
   },
   "seasons": {

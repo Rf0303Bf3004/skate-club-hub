@@ -29,7 +29,13 @@
       "email": "Email",
       "phone": "Phone",
       "password": "Password (min 8)",
-      "password_confirm": "Confirm password"
+      "password_confirm": "Confirm password",
+      "country": "Country",
+      "country_ch": "Switzerland",
+      "country_it": "Italy",
+      "cap": "Postcode",
+      "locality": "Town",
+      "province": "Province"
     },
     "accept_terms_prefix": "I accept the",
     "accept_terms_link": "Terms",
@@ -47,9 +53,20 @@
       "terms_required": "You must accept the terms and privacy policy to continue",
       "register_failed": "Registration error",
       "password_weak": "This password is too common and easy to guess. Please choose a different one.",
-      "email_exists": "This email address is already registered. Sign in or use a different address."
+      "email_exists": "This email address is already registered. Sign in or use a different address.",
+      "cap_required": "The postcode is required",
+      "cap_pending": "Please wait until the postcode has been checked",
+      "canton_required": "The canton is required",
+      "province_required": "The province is required"
     },
-    "success_created": "Club created! Welcome."
+    "success_created": "Club created! Welcome.",
+    "cap": {
+      "searching": "Looking up the postcode…",
+      "found_hint": "Filled in from the postcode. If the town has another name, you can correct it.",
+      "not_found": "Postcode not recognised, please type the town and canton yourself",
+      "error": "The postcode can't be checked right now. Type the town and canton yourself, or try again.",
+      "retry": "Try again"
+    }
   },
   "wizard": {
     "title": "Initial setup",
@@ -57,6 +74,12 @@
     "next": "Next",
     "back": "Back",
     "finish": "Finish setup",
-    "skip": "Skip for now"
+    "skip": "Skip for now",
+    "logout": "Sign out",
+    "required_hint": "Complete the setup to start using the portal.",
+    "load_error": "The club's saved data can't be read. Try again before continuing, so nothing is overwritten.",
+    "retry": "Try again",
+    "gate_error": "It can't be checked whether the club setup is complete.",
+    "save_error": "Saving failed"
   }
 }

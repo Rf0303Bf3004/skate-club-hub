@@ -29,7 +29,13 @@
       "email": "E-Mail",
       "phone": "Telefon",
       "password": "Passwort (min. 8)",
-      "password_confirm": "Passwort bestätigen"
+      "password_confirm": "Passwort bestätigen",
+      "country": "Land",
+      "country_ch": "Schweiz",
+      "country_it": "Italien",
+      "cap": "PLZ",
+      "locality": "Ort",
+      "province": "Provinz"
     },
     "accept_terms_prefix": "Ich akzeptiere die",
     "accept_terms_link": "Bedingungen",
@@ -47,9 +53,20 @@
       "terms_required": "Sie müssen die Bedingungen und Datenschutzerklärung akzeptieren, um fortzufahren",
       "register_failed": "Registrierungsfehler",
       "password_weak": "Dieses Passwort ist zu verbreitet und leicht zu erraten. Bitte wählen Sie ein anderes.",
-      "email_exists": "Diese E-Mail-Adresse ist bereits registriert. Melden Sie sich an oder verwenden Sie eine andere Adresse."
+      "email_exists": "Diese E-Mail-Adresse ist bereits registriert. Melden Sie sich an oder verwenden Sie eine andere Adresse.",
+      "cap_required": "Die PLZ ist erforderlich",
+      "cap_pending": "Bitte warten Sie, bis die PLZ geprüft ist",
+      "canton_required": "Der Kanton ist erforderlich",
+      "province_required": "Die Provinz ist erforderlich"
     },
-    "success_created": "Club erstellt! Willkommen."
+    "success_created": "Club erstellt! Willkommen.",
+    "cap": {
+      "searching": "PLZ wird gesucht…",
+      "found_hint": "Aus der PLZ ausgefüllt. Hat der Ort einen anderen Namen, können Sie ihn korrigieren.",
+      "not_found": "PLZ nicht erkannt, bitte Ort und Kanton selbst eingeben",
+      "error": "Die PLZ kann gerade nicht geprüft werden. Geben Sie Ort und Kanton selbst ein oder versuchen Sie es erneut.",
+      "retry": "Erneut versuchen"
+    }
   },
   "wizard": {
     "title": "Erstkonfiguration",
@@ -57,6 +74,12 @@
     "next": "Weiter",
     "back": "Zurück",
     "finish": "Konfiguration abschliessen",
-    "skip": "Vorerst überspringen"
+    "skip": "Vorerst überspringen",
+    "logout": "Abmelden",
+    "required_hint": "Schliessen Sie die Einrichtung ab, um das Portal zu nutzen.",
+    "load_error": "Die gespeicherten Daten des Clubs können nicht gelesen werden. Versuchen Sie es erneut, bevor Sie weitermachen, damit nichts überschrieben wird.",
+    "retry": "Erneut versuchen",
+    "gate_error": "Es kann nicht geprüft werden, ob die Einrichtung des Clubs abgeschlossen ist.",
+    "save_error": "Speichern fehlgeschlagen"
   }
 }
