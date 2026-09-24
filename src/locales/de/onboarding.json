@@ -88,6 +88,7 @@
       "resource_save_error": "Die Eisbahn wurde nicht gespeichert: {{motivo}}",
       "resource_save_operation": "Eisbahn bei der Erstkonfiguration erstellen",
       "availability_save_error": "Die Zeitfenster wurden nicht gespeichert: {{motivo}} Die soeben erstellte Eisbahn wurde entfernt; Sie können es erneut versuchen, ohne Duplikate zu erstellen.",
+      "existing_resource_availability_error": "Die Zeitfenster wurden nicht gespeichert: {{motivo}} Die bestehende Eisbahn wurde nicht geändert.",
       "availability_save_operation": "Zeitfenster der Eisbahn bei der Erstkonfiguration speichern",
       "partial_save_error": "Die Zeitfenster wurden nicht gespeichert: {{motivo}} Die Eisbahn «{{risorsa}}» blieb unter Club-Einrichtung → Eis → Ressourcen und Anlagen gespeichert, weil die Wiederherstellung fehlschlug: {{ripristino}}",
       "partial_save_operation": "Wiederherstellung nach unvollständigem Speichern der Eisbahn"

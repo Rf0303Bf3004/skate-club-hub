@@ -140,6 +140,7 @@
       "resource_save_error": "La pista non è stata salvata: {{motivo}}",
       "resource_save_operation": "Creazione pista durante la configurazione iniziale",
       "availability_save_error": "Le fasce non sono state salvate: {{motivo}} La pista appena creata è stata rimossa; puoi riprovare senza creare duplicati.",
+      "existing_resource_availability_error": "Le fasce non sono state salvate: {{motivo}} La pista esistente non è stata modificata.",
       "availability_save_operation": "Salvataggio fasce della pista durante la configurazione iniziale",
       "partial_save_error": "Le fasce non sono state salvate: {{motivo}} La pista «{{risorsa}}» è rimasta in Configurazione club → Ghiaccio → Risorse e strutture perché il ripristino non è riuscito: {{ripristino}}",
       "partial_save_operation": "Ripristino dopo il salvataggio incompleto della pista"

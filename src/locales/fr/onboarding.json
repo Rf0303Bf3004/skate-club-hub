@@ -88,6 +88,7 @@
       "resource_save_error": "La patinoire n'a pas été enregistrée : {{motivo}}",
       "resource_save_operation": "Création de la patinoire pendant la configuration initiale",
       "availability_save_error": "Les plages horaires n'ont pas été enregistrées : {{motivo}} La patinoire qui venait d'être créée a été supprimée ; vous pouvez réessayer sans créer de doublon.",
+      "existing_resource_availability_error": "Les plages horaires n'ont pas été enregistrées : {{motivo}} La patinoire existante n'a pas été modifiée.",
       "availability_save_operation": "Enregistrement des plages de la patinoire pendant la configuration initiale",
       "partial_save_error": "Les plages horaires n'ont pas été enregistrées : {{motivo}} La patinoire « {{risorsa}} » est restée dans Configuration du club → Glace → Ressources et structures, car la restauration a échoué : {{ripristino}}",
       "partial_save_operation": "Restauration après l'enregistrement incomplet de la patinoire"

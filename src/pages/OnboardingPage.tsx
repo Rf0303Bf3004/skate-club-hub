@@ -61,6 +61,7 @@ export default function OnboardingPage() {
 
   // Step 3: disponibilità ghiaccio
   const [nome_risorsa, set_nome_risorsa] = useState("");
+  const [risorsa_esistente_id, set_risorsa_esistente_id] = useState<string | null>(null);
   const [slots, setSlots] = useState<SlotGhiaccio[]>([
     { giorno: GIORNI[0], ora_inizio: "17:00", ora_fine: "20:00" },
   ]);
@@ -82,7 +83,7 @@ export default function OnboardingPage() {
         supabase.from("stagioni").select("id, nome, data_inizio, data_fine").eq("club_id", session.club_id).eq("attiva", true).maybeSingle(),
         supabase.from("clubs").select("logo_url, colore_primario").eq("id", session.club_id).maybeSingle(),
         supabase.from("club_identity").select("anno_fondazione, federazione, mission, sito_web, social_instagram, social_facebook").eq("club_id", session.club_id).maybeSingle(),
-        supabase.from("risorse_strutture").select("nome").eq("club_id", session.club_id).eq("tipo", "ghiaccio").eq("attiva", true).order("ordine").limit(1).maybeSingle(),
+        supabase.from("risorse_strutture").select("id, nome").eq("club_id", session.club_id).eq("tipo", "ghiaccio").eq("attiva", true).order("ordine").limit(1).maybeSingle(),
       ]);
       if (annullato) return;
       const errore = r_stag.error ?? r_club.error ?? r_ident.error ?? r_risorsa.error;
@@ -107,7 +108,10 @@ export default function OnboardingPage() {
           social_facebook: ident.social_facebook || "",
         });
       }
-      if (r_risorsa.data?.nome) set_nome_risorsa(r_risorsa.data.nome);
+      if (r_risorsa.data) {
+        set_risorsa_esistente_id(r_risorsa.data.id);
+        set_nome_risorsa(r_risorsa.data.nome);
+      }
       set_dati_pronti(true);
     })();
     return () => { annullato = true; };
@@ -194,23 +198,29 @@ export default function OnboardingPage() {
         .from("stagioni").select("id").eq("club_id", session.club_id).eq("attiva", true).maybeSingle();
       if (stag_err) throw stag_err;
 
-      const { data: nuova_risorsa, error: risorsa_err } = await supabase
-        .from("risorse_strutture")
-        .insert({ club_id: session.club_id, nome, tipo: "ghiaccio" })
-        .select("id, nome")
-        .single();
-      if (risorsa_err) {
-        const messaggio = t("wizard.step3.resource_save_error", { motivo: messaggio_leggibile(risorsa_err) });
-        set_errore_salvataggio_pista(messaggio);
-        void segnala_errore("OnboardingPage", t("wizard.step3.resource_save_operation"), risorsa_err);
-        return false;
+      let risorsa_per_fasce: { id: string; nome: string };
+      if (risorsa_esistente_id) {
+        risorsa_per_fasce = { id: risorsa_esistente_id, nome };
+      } else {
+        const { data: nuova_risorsa, error: risorsa_err } = await supabase
+          .from("risorse_strutture")
+          .insert({ club_id: session.club_id, nome, tipo: "ghiaccio" })
+          .select("id, nome")
+          .single();
+        if (risorsa_err) {
+          const messaggio = t("wizard.step3.resource_save_error", { motivo: messaggio_leggibile(risorsa_err) });
+          set_errore_salvataggio_pista(messaggio);
+          void segnala_errore("OnboardingPage", t("wizard.step3.resource_save_operation"), risorsa_err);
+          return false;
+        }
+        risorsa_per_fasce = nuova_risorsa;
+        risorsa_creata = nuova_risorsa;
       }
-      risorsa_creata = nuova_risorsa;
 
       if (valid.length > 0) {
         const payload = valid.map((s) => ({
           club_id: session.club_id,
-          risorsa_id: nuova_risorsa.id,
+          risorsa_id: risorsa_per_fasce.id,
           stagione_id: stag?.id ?? null,
           giorno: s.giorno,
           ora_inizio: s.ora_inizio,
@@ -219,24 +229,28 @@ export default function OnboardingPage() {
         }));
         const { error: disponibilita_err } = await supabase.from("disponibilita_ghiaccio").insert(payload);
         if (disponibilita_err) {
-          const { error: compensazione_err } = await supabase
-            .from("risorse_strutture")
-            .delete()
-            .eq("id", nuova_risorsa.id);
+          const compensazione = risorsa_creata
+            ? await supabase.from("risorse_strutture").delete().eq("id", risorsa_creata.id)
+            : { error: null };
+          const compensazione_err = compensazione.error;
           if (compensazione_err) {
             const messaggio = t("wizard.step3.partial_save_error", {
-              risorsa: nuova_risorsa.nome,
+              risorsa: risorsa_per_fasce.nome,
               motivo: messaggio_leggibile(disponibilita_err),
               ripristino: messaggio_leggibile(compensazione_err),
             });
             set_errore_salvataggio_pista(messaggio);
             void segnala_errore("OnboardingPage", t("wizard.step3.partial_save_operation"), compensazione_err, {
-              risorsa_id: nuova_risorsa.id,
+              risorsa_id: risorsa_per_fasce.id,
               errore_disponibilita: messaggio_leggibile(disponibilita_err),
             });
-          } else {
+          } else if (risorsa_creata) {
             risorsa_creata = null;
             const messaggio = t("wizard.step3.availability_save_error", { motivo: messaggio_leggibile(disponibilita_err) });
+            set_errore_salvataggio_pista(messaggio);
+            void segnala_errore("OnboardingPage", t("wizard.step3.availability_save_operation"), disponibilita_err);
+          } else {
+            const messaggio = t("wizard.step3.existing_resource_availability_error", { motivo: messaggio_leggibile(disponibilita_err) });
             set_errore_salvataggio_pista(messaggio);
             void segnala_errore("OnboardingPage", t("wizard.step3.availability_save_operation"), disponibilita_err);
           }
@@ -258,7 +272,10 @@ export default function OnboardingPage() {
         query_client.invalidateQueries({ queryKey: ["disponibilita_ghiaccio"] }),
         invalida_diagnosi_avvio(query_client),
       ]);
-      if (risorsa_creata) set_nome_risorsa(risorsa_creata.nome);
+      if (risorsa_creata) {
+        set_risorsa_esistente_id(risorsa_creata.id);
+        set_nome_risorsa(risorsa_creata.nome);
+      }
     }
   };
 

@@ -88,6 +88,7 @@
       "resource_save_error": "The ice rink wasn't saved: {{motivo}}",
       "resource_save_operation": "Creating the ice rink during initial setup",
       "availability_save_error": "The time slots weren't saved: {{motivo}} The newly created ice rink was removed; you can try again without creating duplicates.",
+      "existing_resource_availability_error": "The time slots weren't saved: {{motivo}} The existing ice rink wasn't changed.",
       "availability_save_operation": "Saving ice rink time slots during initial setup",
       "partial_save_error": "The time slots weren't saved: {{motivo}} The ice rink “{{risorsa}}” remains under Club setup → Ice → Resources and facilities because recovery failed: {{ripristino}}",
       "partial_save_operation": "Recovery after incomplete ice rink saving"

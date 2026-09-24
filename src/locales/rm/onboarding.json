@@ -7,6 +7,7 @@
       "resource_save_error": "La pista da glatsch n'è betg vegnida memorisada: {{motivo}}",
       "resource_save_operation": "Crear la pista da glatsch durant la configuraziun iniziala",
       "availability_save_error": "Las periodas n'èn betg vegnidas memorisadas: {{motivo}} La pista gist creada è vegnida eliminada; ti pos empruvar danovamain senza crear duplicats.",
+      "existing_resource_availability_error": "Las periodas n'èn betg vegnidas memorisadas: {{motivo}} La pista existenta n'è betg vegnida midada.",
       "availability_save_operation": "Memorisar las periodas da la pista durant la configuraziun iniziala",
       "partial_save_error": "Las periodas n'èn betg vegnidas memorisadas: {{motivo}} La pista «{{risorsa}}» è restada sut Configuraziun dal club → Glatsch → Resursas e stabiliments, perquai che la restauraziun n'è betg reussida: {{ripristino}}",
       "partial_save_operation": "Restauraziun suenter ina memorizzaziun incumpletta da la pista"
