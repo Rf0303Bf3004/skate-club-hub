@@ -81,5 +81,28 @@
     "retry": "Try again",
     "gate_error": "It can't be checked whether the club setup is complete.",
     "save_error": "Saving failed"
+  },
+  "avvio": {
+    "titolo": "Club start-up",
+    "sottotitolo": "What the club needs before it can operate",
+    "nessun_club": "No club is linked to this session. Sign out, sign back in, then try again.",
+    "errore_titolo": "The list of checks isn't available",
+    "errore_dettaglio": "This doesn't mean nothing is pending: the list simply couldn't be read.",
+    "errore_lettura": "The start-up checks couldn't be read",
+    "riprova": "Try again",
+    "a_posto": "{{a_posto}} of {{totale}} done",
+    "bloccanti_one": "1 blocking check is still open: the club can't operate until it's resolved.",
+    "bloccanti_other": "{{count}} blocking checks are still open: the club can't operate until they're resolved.",
+    "vai_alla_lista": "Go to the start-up list",
+    "rotte": {
+      "setup_club": "Club setup",
+      "utenti": "Users and permissions",
+      "date_stagione": "Season dates",
+      "risorse": "Resources and availability",
+      "corsi": "Courses and instructors",
+      "atleti": "Athletes",
+      "fatturazione": "Invoicing",
+      "comunicazioni": "Communications"
+    }
   }
 }

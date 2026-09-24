@@ -81,5 +81,28 @@
     "retry": "Réessayer",
     "gate_error": "Impossible de vérifier si la configuration du club est terminée.",
     "save_error": "Échec de l'enregistrement"
+  },
+  "avvio": {
+    "titolo": "Démarrage du club",
+    "sottotitolo": "Ce qu'il faut pour que le club puisse travailler",
+    "nessun_club": "Aucun club n'est lié à cette session. Déconnectez-vous, reconnectez-vous, puis réessayez.",
+    "errore_titolo": "La liste des contrôles n'est pas disponible",
+    "errore_dettaglio": "Cela ne veut pas dire qu'il n'y a rien en suspens : la liste n'a simplement pas pu être lue.",
+    "errore_lettura": "Impossible de lire les contrôles de démarrage",
+    "riprova": "Réessayer",
+    "a_posto": "{{a_posto}} sur {{totale}} en ordre",
+    "bloccanti_one": "1 contrôle bloquant reste à résoudre : le club ne peut pas travailler tant qu'il n'est pas réglé.",
+    "bloccanti_other": "{{count}} contrôles bloquants restent à résoudre : le club ne peut pas travailler tant qu'ils ne sont pas réglés.",
+    "vai_alla_lista": "Aller à la liste de démarrage",
+    "rotte": {
+      "setup_club": "Configuration du club",
+      "utenti": "Utilisateurs et autorisations",
+      "date_stagione": "Dates de la saison",
+      "risorse": "Ressources et disponibilités",
+      "corsi": "Cours et moniteurs",
+      "atleti": "Athlètes",
+      "fatturazione": "Facturation",
+      "comunicazioni": "Communications"
+    }
   }
 }

@@ -263,9 +263,9 @@ export default function OnboardingPage() {
             <Button variant="ghost" onClick={() => void logout()} disabled={loading}>
               <LogOut className="h-4 w-4 mr-2" /> {t("wizard.logout")}
             </Button>
-            <Button variant="outline" onClick={() => completeAndGo("/")} disabled={loading}>
+            <Button variant="outline" onClick={() => completeAndGo("/avvio")} disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <LayoutDashboard className="h-4 w-4 mr-2" /> {t("wizard.done.go_to_dashboard")}
+              <LayoutDashboard className="h-4 w-4 mr-2" /> {t("avvio.vai_alla_lista")}
             </Button>
           </div>
         </div>

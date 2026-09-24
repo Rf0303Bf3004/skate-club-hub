@@ -81,5 +81,28 @@
     "retry": "Erneut versuchen",
     "gate_error": "Es kann nicht geprüft werden, ob die Einrichtung des Clubs abgeschlossen ist.",
     "save_error": "Speichern fehlgeschlagen"
+  },
+  "avvio": {
+    "titolo": "Start des Clubs",
+    "sottotitolo": "Was der Club braucht, um arbeiten zu können",
+    "nessun_club": "Mit dieser Sitzung ist kein Club verbunden. Melden Sie sich ab und wieder an und versuchen Sie es erneut.",
+    "errore_titolo": "Die Liste der Prüfungen ist nicht verfügbar",
+    "errore_dettaglio": "Das heisst nicht, dass nichts offen ist: Die Liste konnte nur nicht gelesen werden.",
+    "errore_lettura": "Die Start-Prüfungen konnten nicht gelesen werden",
+    "riprova": "Erneut versuchen",
+    "a_posto": "{{a_posto}} von {{totale}} erledigt",
+    "bloccanti_one": "1 blockierende Prüfung ist offen: Der Club ist erst arbeitsbereit, wenn sie erledigt ist.",
+    "bloccanti_other": "{{count}} blockierende Prüfungen sind offen: Der Club ist erst arbeitsbereit, wenn sie erledigt sind.",
+    "vai_alla_lista": "Zur Start-Liste",
+    "rotte": {
+      "setup_club": "Club-Einrichtung",
+      "utenti": "Benutzer und Berechtigungen",
+      "date_stagione": "Saisondaten",
+      "risorse": "Ressourcen und Verfügbarkeit",
+      "corsi": "Kurse und Trainer",
+      "atleti": "Athletinnen und Athleten",
+      "fatturazione": "Rechnungsstellung",
+      "comunicazioni": "Mitteilungen"
+    }
   }
 }
