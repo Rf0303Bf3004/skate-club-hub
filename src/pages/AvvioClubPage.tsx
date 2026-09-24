@@ -46,9 +46,7 @@ export default function AvvioClubPage() {
     return Array.from(mappa.entries());
   }, [righe]);
 
-  const a_posto = righe.filter((r) => r.esito === "✓").length;
-  const bloccanti_aperte = righe.filter((r) => r.blocca && r.esito !== "✓").length;
-  const avanzamento = righe.length > 0 ? Math.round((a_posto / righe.length) * 100) : 0;
+  const { a_posto, bloccanti_aperte, percentuale: avanzamento } = avanzamento_avvio(righe);
 
   const intestazione = (
     <div>
