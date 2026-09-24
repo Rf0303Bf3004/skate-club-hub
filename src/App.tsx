@@ -60,6 +60,7 @@ import PacchettiSponsorPage from "@/pages/PacchettiSponsorPage";
 import RegisterClubPage from "@/pages/RegisterClubPage";
 import OnboardingPage from "@/pages/OnboardingPage";
 import LegalPlaceholderPage from "@/pages/LegalPlaceholderPage";
+import TerminiPage from "@/pages/TerminiPage";
 import PrivacyPage from "@/pages/PrivacyPage";
 import RecoveryPage from "@/pages/RecoveryPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
@@ -257,7 +258,7 @@ const PERCORSI_PUBBLICI: GruppoPercorsoPubblico[] = [
     rotte: (
       <BrowserRouter>
         <Routes>
-          <Route path="/termini" element={<LegalPlaceholderPage titolo="Termini e Condizioni" />} />
+          <Route path="/termini" element={<TerminiPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
         </Routes>
       </BrowserRouter>
