@@ -122,6 +122,28 @@ const ClubSetupPage: React.FC = () => {
   const { t: t_old } = useI18n();
   const { t } = useTranslation("settings");
   const queryClient = useQueryClient();
+
+  // Federazione: vive in club_identity, non in clubs. Si modifica solo a lettura riuscita.
+  const club_id_identita = get_current_club_id();
+  const identita = useQuery({
+    queryKey: ["club_identity_federazione", club_id_identita],
+    enabled: !!club_id_identita,
+    queryFn: async (): Promise<string> => {
+      const { data, error } = await supabase
+        .from("club_identity")
+        .select("federazione")
+        .eq("club_id", club_id_identita)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.federazione ?? "";
+    },
+  });
+  useEffect(() => {
+    if (identita.isError) {
+      void segnala_errore("ClubSetupPage", t("club.errori.federazione_lettura"), identita.error, undefined, "avviso");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [identita.isError]);
   const { data: club, isLoading: loading_club, isError: errore_club } = use_club();
   const { data: setup } = use_setup_club();
   const { data: stagioni = [] } = use_stagioni();
@@ -260,7 +282,7 @@ const ClubSetupPage: React.FC = () => {
       const club_id = get_current_club_id();
       const club_payload: Record<string, any> = {};
       const club_fields = [
-        "nome", "citta", "cap", "paese", "email", "telefono", "indirizzo",
+        "nome", "sigla", "citta", "cap", "paese", "email", "telefono", "indirizzo",
         "sito_web", "numero_tessera_federale", "colore_primario", "descrizione", "logo_url",
         "reminder_allenamenti_attivo", "reminder_staff_attivo", "reminder_orario_invio", "reminder_anticipo_giorni",
         "reminder_planning_atleti_attivo", "reminder_planning_istruttori_attivo",
@@ -296,6 +318,18 @@ const ClubSetupPage: React.FC = () => {
           if (error) throw error;
         }
         await queryClient.invalidateQueries({ queryKey: ["setup_club", club_id] });
+      }
+
+      if ("federazione" in form && identita.isSuccess) {
+        const { error: fed_err } = await supabase
+          .from("club_identity")
+          .update({ federazione: String(form.federazione ?? "").trim() })
+          .eq("club_id", club_id);
+        if (fed_err) {
+          void segnala_errore("ClubSetupPage", t("club.errori.federazione_salvataggio"), fed_err);
+          throw fed_err;
+        }
+        await queryClient.invalidateQueries({ queryKey: ["club_identity_federazione", club_id] });
       }
 
       // Auto-sync della stagione attiva con le date configurate.
@@ -776,6 +810,25 @@ const ClubSetupPage: React.FC = () => {
             </Field>
             <Field label={t("club.fields.tessera_federale")} icon={<Hash className="w-3.5 h-3.5" />}>
               <Input value={get_val("numero_tessera_federale")} onChange={(e) => set_val("numero_tessera_federale", e.target.value)} />
+            </Field>
+            <Field label={t("club.fields.sigla")} icon={<Hash className="w-3.5 h-3.5" />}>
+              <Input maxLength={10} value={get_val("sigla")} onChange={(e) => set_val("sigla", e.target.value)} />
+            </Field>
+            <Field label={t("club.fields.federazione")} icon={<Hash className="w-3.5 h-3.5" />}>
+              <Input
+                disabled={!identita.isSuccess}
+                value={"federazione" in form ? form.federazione : (identita.data ?? "")}
+                onChange={(e) => set_val("federazione", e.target.value)}
+                placeholder={t("club.fields.federazione_placeholder")}
+              />
+              {identita.isError && (
+                <div className="flex flex-wrap items-center gap-2 text-xs text-destructive mt-1">
+                  <span>{t("club.errori.federazione_lettura")}</span>
+                  <Button type="button" size="sm" variant="outline" onClick={() => void identita.refetch()}>
+                    {t("club.azioni.riprova")}
+                  </Button>
+                </div>
+              )}
             </Field>
           </div>
         </SetupSection>
