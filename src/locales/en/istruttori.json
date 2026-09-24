@@ -100,5 +100,52 @@
     "sostituto_annulla": "Cancel",
     "sostituto_errore_elenco": "The instructor list could not be loaded.",
     "sostituto_errore_ore": "The worked hours for the month could not be loaded."
+  },
+  "cosa_manca": {
+    "titolo": "What is missing",
+    "sottotitolo": "The record is saved. For everything to work, these details are still missing.",
+    "livello_impedisce": "Blocking",
+    "livello_utile": "Useful",
+    "in_corso": "Checking what is missing in the record…",
+    "errore": "Cannot work out what is missing: one of the reads failed. The list is not shown so that it does not look complete.",
+    "errore_costi": "The rates for this instructor cannot be read, so it is not possible to say whether they are missing.",
+    "completo": "Nothing is missing: the record is complete.",
+    "completo_con_saltati": "Nothing else is missing, apart from the details skipped for now.",
+    "vai_disponibilita": "Go to availability",
+    "vai_compenso": "Go to compensation",
+    "vai_accesso": "Link an account",
+    "vai_scheda": "Fill in the record",
+    "salta": "Skip for now",
+    "conferma_titolo": "Skip “{{cosa}}” for now?",
+    "conferma_testo": "{{conseguenza}} The field will stay empty and will not be requested again until it is reopened from the “Skipped” list.",
+    "saltati_titolo_one": "{{count}} skipped item",
+    "saltati_titolo_other": "{{count}} skipped items",
+    "saltato_da": "Skipped by {{chi}} on {{quando}}",
+    "chi_sconosciuto": "a user no longer in the club",
+    "riapri": "Reopen",
+    "errore_salta": "The item could not be marked as skipped.",
+    "errore_riapri": "The item could not be reopened.",
+    "voci": {
+      "disponibilita": {
+        "cosa": "Weekly availability",
+        "conseguenza": "Cannot be placed in the grid: no course can be assigned."
+      },
+      "tariffa_oraria": {
+        "cosa": "Hourly rate (hourly contract)",
+        "conseguenza": "The compensation will be zero. Zero means free, which is different from “not decided yet”."
+      },
+      "accesso_app": {
+        "cosa": "Access to the app",
+        "conseguenza": "Cannot sign in to the app: will not see their courses or reminders."
+      },
+      "gs_valido_fino": {
+        "cosa": "G+S qualification expiry",
+        "conseguenza": "Nobody will know when the qualification expires and no one will be notified."
+      },
+      "data_nascita": {
+        "cosa": "Date of birth",
+        "conseguenza": "Useful for the personal record; everything else works without it."
+      }
+    }
   }
 }

@@ -296,5 +296,52 @@
     "sostituto_annulla": "Annulla",
     "sostituto_errore_elenco": "Non è stato possibile leggere l'elenco degli istruttori.",
     "sostituto_errore_ore": "Non è stato possibile leggere le ore lavorate del mese."
+  },
+  "cosa_manca": {
+    "titolo": "Cosa manca",
+    "sottotitolo": "La scheda è salvata. Per funzionare del tutto mancano ancora questi dati.",
+    "livello_impedisce": "Impedisce",
+    "livello_utile": "Utile",
+    "in_corso": "Sto controllando cosa manca nella scheda…",
+    "errore": "Non riesco a calcolare cosa manca: una delle letture non è riuscita. L'elenco non viene mostrato per non farlo sembrare completo.",
+    "errore_costi": "Non riesco a leggere le tariffe di questo istruttore, quindi non posso dire se mancano.",
+    "completo": "Non manca niente: la scheda è completa.",
+    "completo_con_saltati": "Non manca altro, a parte i dati saltati per ora.",
+    "vai_disponibilita": "Vai alla disponibilità",
+    "vai_compenso": "Vai al compenso",
+    "vai_accesso": "Collega un accesso",
+    "vai_scheda": "Compila nella scheda",
+    "salta": "Salta per ora",
+    "conferma_titolo": "Saltare per ora «{{cosa}}»?",
+    "conferma_testo": "{{conseguenza}} Il dato resterà vuoto e non verrà più richiesto finché non viene riaperto dall'elenco «Saltati».",
+    "saltati_titolo_one": "{{count}} dato saltato",
+    "saltati_titolo_other": "{{count}} dati saltati",
+    "saltato_da": "Saltato da {{chi}} il {{quando}}",
+    "chi_sconosciuto": "un utente non più nel club",
+    "riapri": "Riapri",
+    "errore_salta": "Non è stato possibile segnare il dato come saltato.",
+    "errore_riapri": "Non è stato possibile riaprire il dato.",
+    "voci": {
+      "disponibilita": {
+        "cosa": "Disponibilità settimanale",
+        "conseguenza": "Non può essere messo in griglia: nessun corso potrà essergli assegnato."
+      },
+      "tariffa_oraria": {
+        "cosa": "Tariffa oraria (contratto a ore)",
+        "conseguenza": "Il compenso risulterà zero. Zero significa gratis, ed è diverso da «non ancora deciso»."
+      },
+      "accesso_app": {
+        "cosa": "Accesso all'app",
+        "conseguenza": "Non può entrare nell'app: non vedrà i suoi corsi né i promemoria."
+      },
+      "gs_valido_fino": {
+        "cosa": "Scadenza della qualifica G+S",
+        "conseguenza": "Non si saprà quando scade la qualifica e nessuno verrà avvisato."
+      },
+      "data_nascita": {
+        "cosa": "Data di nascita",
+        "conseguenza": "Dato utile per l'anagrafica; senza, tutto il resto funziona."
+      }
+    }
   }
 }

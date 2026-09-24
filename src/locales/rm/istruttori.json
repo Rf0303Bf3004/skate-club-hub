@@ -1,0 +1,49 @@
+{
+  "cosa_manca": {
+    "titolo": "Tge che manca",
+    "sottotitolo": "La fitgha è memorisada. Per ch'ella funcziunia dal tuttafatg mancan anc questas datas.",
+    "livello_impedisce": "Impedescha",
+    "livello_utile": "Nizzaivel",
+    "in_corso": "Jau controllel tge che manca en la fitgha…",
+    "errore": "Jau na poss betg calcular tge che manca: ina da las lecturas n'è betg reussida. La glista na vegn betg mussada per ch'ella na paraia betg cumpletta.",
+    "errore_costi": "Jau na poss betg leger las tariffas da quest instructur, perquai na poss jau betg dir sch'ellas mancan.",
+    "completo": "I na manca nagut: la fitgha è cumpletta.",
+    "completo_con_saltati": "I na manca nagut auter, danor las datas sursiglidas per il mument.",
+    "vai_disponibilita": "Ir a la disponibilitad",
+    "vai_compenso": "Ir a la indemnisaziun",
+    "vai_accesso": "Colliar in access",
+    "vai_scheda": "Emplenir en la fitgha",
+    "salta": "Sursiglir per il mument",
+    "conferma_titolo": "Sursiglir per il mument «{{cosa}}»?",
+    "conferma_testo": "{{conseguenza}} La data resta vida e na vegn betg pli dumandada fin ch'ella na vegn betg averta danovamain da la glista «Sursiglidas».",
+    "saltati_titolo_one": "{{count}} data sursiglida",
+    "saltati_titolo_other": "{{count}} datas sursiglidas",
+    "saltato_da": "Sursiglì da {{chi}} ils {{quando}}",
+    "chi_sconosciuto": "in utilisader che n'è betg pli en il club",
+    "riapri": "Avrir danovamain",
+    "errore_salta": "I n'è betg stà pussaivel da marcar la data sco sursiglida.",
+    "errore_riapri": "I n'è betg stà pussaivel d'avrir danovamain la data.",
+    "voci": {
+      "disponibilita": {
+        "cosa": "Disponibilitad emnila",
+        "conseguenza": "Na po betg vegnir planisà en la grilla: nagin curs na po vegnir attribuì."
+      },
+      "tariffa_oraria": {
+        "cosa": "Tariffa per ura (contract per ura)",
+        "conseguenza": "L'indemnisaziun resulta nulla. Nulla munta gratuit, e quai è auter che «anc betg decidì»."
+      },
+      "accesso_app": {
+        "cosa": "Access a l'app",
+        "conseguenza": "Na po betg entrar en l'app: na vesa ni ses curs ni las promemorias."
+      },
+      "gs_valido_fino": {
+        "cosa": "Scadenza da la qualificaziun G+S",
+        "conseguenza": "Nagin na sa cura che la qualificaziun scada e nagin na vegn avisà."
+      },
+      "data_nascita": {
+        "cosa": "Data da naschientscha",
+        "conseguenza": "Data nizzaivla per l'anagrafica; senza ella funcziuna tut il rest."
+      }
+    }
+  }
+}

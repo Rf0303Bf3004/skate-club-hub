@@ -100,5 +100,52 @@
     "sostituto_annulla": "Annuler",
     "sostituto_errore_elenco": "La liste des entraîneurs n'a pas pu être lue.",
     "sostituto_errore_ore": "Les heures travaillées du mois n'ont pas pu être lues."
+  },
+  "cosa_manca": {
+    "titolo": "Ce qui manque",
+    "sottotitolo": "La fiche est enregistrée. Pour qu'elle fonctionne entièrement, il manque encore ces données.",
+    "livello_impedisce": "Bloquant",
+    "livello_utile": "Utile",
+    "in_corso": "Vérification de ce qui manque dans la fiche…",
+    "errore": "Impossible de calculer ce qui manque : une des lectures a échoué. La liste n'est pas affichée pour ne pas paraître complète.",
+    "errore_costi": "Impossible de lire les tarifs de cet entraîneur : on ne peut donc pas dire s'ils manquent.",
+    "completo": "Rien ne manque : la fiche est complète.",
+    "completo_con_saltati": "Rien d'autre ne manque, hormis les données ignorées pour l'instant.",
+    "vai_disponibilita": "Aller aux disponibilités",
+    "vai_compenso": "Aller à la rémunération",
+    "vai_accesso": "Relier un accès",
+    "vai_scheda": "Compléter dans la fiche",
+    "salta": "Ignorer pour l'instant",
+    "conferma_titolo": "Ignorer pour l'instant « {{cosa}} » ?",
+    "conferma_testo": "{{conseguenza}} La donnée restera vide et ne sera plus demandée tant qu'elle n'est pas rouverte depuis la liste « Ignorées ».",
+    "saltati_titolo_one": "{{count}} donnée ignorée",
+    "saltati_titolo_other": "{{count}} données ignorées",
+    "saltato_da": "Ignoré par {{chi}} le {{quando}}",
+    "chi_sconosciuto": "un utilisateur qui n'est plus dans le club",
+    "riapri": "Rouvrir",
+    "errore_salta": "Impossible de marquer la donnée comme ignorée.",
+    "errore_riapri": "Impossible de rouvrir la donnée.",
+    "voci": {
+      "disponibilita": {
+        "cosa": "Disponibilités hebdomadaires",
+        "conseguenza": "Ne peut pas être placé dans la grille : aucun cours ne pourra lui être attribué."
+      },
+      "tariffa_oraria": {
+        "cosa": "Tarif horaire (contrat à l'heure)",
+        "conseguenza": "La rémunération sera de zéro. Zéro signifie gratuit, ce qui est différent de « pas encore décidé »."
+      },
+      "accesso_app": {
+        "cosa": "Accès à l'application",
+        "conseguenza": "Ne peut pas entrer dans l'application : ne verra ni ses cours ni les rappels."
+      },
+      "gs_valido_fino": {
+        "cosa": "Échéance de la qualification J+S",
+        "conseguenza": "On ne saura pas quand la qualification expire et personne ne sera averti."
+      },
+      "data_nascita": {
+        "cosa": "Date de naissance",
+        "conseguenza": "Donnée utile pour la fiche ; sans elle, tout le reste fonctionne."
+      }
+    }
   }
 }

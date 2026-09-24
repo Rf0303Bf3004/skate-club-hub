@@ -100,5 +100,52 @@
     "sostituto_annulla": "Abbrechen",
     "sostituto_errore_elenco": "Die Trainerliste konnte nicht gelesen werden.",
     "sostituto_errore_ore": "Die geleisteten Stunden des Monats konnten nicht gelesen werden."
+  },
+  "cosa_manca": {
+    "titolo": "Was fehlt",
+    "sottotitolo": "Das Profil ist gespeichert. Damit alles funktioniert, fehlen noch diese Angaben.",
+    "livello_impedisce": "Verhindert",
+    "livello_utile": "Nützlich",
+    "in_corso": "Es wird geprüft, was im Profil fehlt…",
+    "errore": "Es kann nicht berechnet werden, was fehlt: Eine der Abfragen ist fehlgeschlagen. Die Liste wird nicht angezeigt, damit sie nicht vollständig wirkt.",
+    "errore_costi": "Die Tarife dieser Trainerin oder dieses Trainers können nicht gelesen werden, daher lässt sich nicht sagen, ob sie fehlen.",
+    "completo": "Es fehlt nichts: Das Profil ist vollständig.",
+    "completo_con_saltati": "Sonst fehlt nichts, ausser den vorerst übersprungenen Angaben.",
+    "vai_disponibilita": "Zur Verfügbarkeit",
+    "vai_compenso": "Zur Vergütung",
+    "vai_accesso": "Zugang verknüpfen",
+    "vai_scheda": "Im Profil ausfüllen",
+    "salta": "Vorerst überspringen",
+    "conferma_titolo": "«{{cosa}}» vorerst überspringen?",
+    "conferma_testo": "{{conseguenza}} Die Angabe bleibt leer und wird nicht mehr verlangt, bis sie in der Liste «Übersprungen» wieder geöffnet wird.",
+    "saltati_titolo_one": "{{count}} Angabe übersprungen",
+    "saltati_titolo_other": "{{count}} Angaben übersprungen",
+    "saltato_da": "Übersprungen von {{chi}} am {{quando}}",
+    "chi_sconosciuto": "eine Person, die nicht mehr im Club ist",
+    "riapri": "Wieder öffnen",
+    "errore_salta": "Die Angabe konnte nicht als übersprungen markiert werden.",
+    "errore_riapri": "Die Angabe konnte nicht wieder geöffnet werden.",
+    "voci": {
+      "disponibilita": {
+        "cosa": "Wöchentliche Verfügbarkeit",
+        "conseguenza": "Kann nicht ins Raster eingeplant werden: Es kann kein Kurs zugewiesen werden."
+      },
+      "tariffa_oraria": {
+        "cosa": "Stundentarif (Stundenvertrag)",
+        "conseguenza": "Die Vergütung ergibt null. Null bedeutet gratis und ist etwas anderes als «noch nicht entschieden»."
+      },
+      "accesso_app": {
+        "cosa": "Zugang zur App",
+        "conseguenza": "Kann die App nicht öffnen: sieht weder die eigenen Kurse noch die Erinnerungen."
+      },
+      "gs_valido_fino": {
+        "cosa": "Ablauf der G+S-Anerkennung",
+        "conseguenza": "Man weiss nicht, wann die Anerkennung abläuft, und niemand wird benachrichtigt."
+      },
+      "data_nascita": {
+        "cosa": "Geburtsdatum",
+        "conseguenza": "Nützliche Angabe für die Stammdaten; ohne sie funktioniert alles andere."
+      }
+    }
   }
 }
