@@ -195,6 +195,7 @@ export default function OnboardingPage() {
     setLoading(true);
     set_errore_salvataggio_pista(null);
     let risorsa_creata: { id: string; nome: string } | null = null;
+    let risorsa_rinominata_nell_operazione = false;
     try {
       const { data: stag, error: stag_err } = await supabase
         .from("stagioni").select("id").eq("club_id", session.club_id).eq("attiva", true).maybeSingle();
@@ -217,6 +218,7 @@ export default function OnboardingPage() {
             return false;
           }
           risorsa_per_fasce = risorsa_rinominata;
+          risorsa_rinominata_nell_operazione = true;
           set_nome_risorsa_caricato(risorsa_rinominata.nome);
         } else {
           risorsa_per_fasce = { id: risorsa_esistente_id, nome: nome_risorsa_caricato };
@@ -270,7 +272,7 @@ export default function OnboardingPage() {
             set_errore_salvataggio_pista(messaggio);
             void segnala_errore("OnboardingPage", t("wizard.step3.operazione_salvataggio_fasce"), disponibilita_err, undefined, "avviso");
           } else {
-            const chiave_errore = nome !== nome_risorsa_caricato
+            const chiave_errore = risorsa_rinominata_nell_operazione
               ? "wizard.step3.errore_fasce_dopo_rinomina"
               : "wizard.step3.errore_fasce_risorsa_esistente";
             const messaggio = t(chiave_errore, {
