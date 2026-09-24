@@ -1,0 +1,16 @@
+{
+  "menu": {
+    "home": "Home",
+    "calendario": "Chalender",
+    "eventi": "Occurrenzas",
+    "notizie": "Novitads",
+    "profilo": "Profil",
+    "navigazione_principale": "Navigaziun principala"
+  },
+  "installazione": {
+    "iphone": "Tutga Cundivider e lura Agiuntar a la pagina principala.",
+    "android": "Agiunta Ice Arena a tia pagina principala.",
+    "installa": "Installar",
+    "chiudi": "Serrar"
+  }
+}

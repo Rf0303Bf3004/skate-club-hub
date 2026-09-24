@@ -419,7 +419,7 @@ const CalendarioPubblicoPage: React.FC = () => {
   // --- indirizzo con nome del club non valido o calendario spento ---
   if (tipo === "slug" && slug_non_disponibile) {
     return (
-      <div className="min-h-screen bg-muted/30 px-4 py-10">
+      <div className="min-h-mobile bg-muted/30 px-4 py-10">
         <div className="mx-auto w-full max-w-sm text-center">
           <CalendarDays className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
           <h1 className="text-lg font-semibold">{t("titolo")}</h1>
@@ -432,7 +432,7 @@ const CalendarioPubblicoPage: React.FC = () => {
   // --- schermata del codice ---
   if (!tipo) {
     return (
-      <div className="min-h-screen bg-muted/30 px-4 py-10">
+      <div className="min-h-mobile bg-muted/30 px-4 py-10">
         <div className="mx-auto w-full max-w-sm">
           <div className="mb-6 flex flex-col items-center gap-2 text-center">
             <CalendarDays className="h-8 w-8 text-primary" />
@@ -485,7 +485,7 @@ const CalendarioPubblicoPage: React.FC = () => {
   const in_corso = mesi_in_corso || righe_in_corso;
 
   return (
-    <div className="min-h-screen bg-muted/30 px-3 py-6">
+    <div className="min-h-mobile bg-muted/30 px-3 py-6">
       <div className="mx-auto w-full max-w-2xl space-y-4">
         <header className="space-y-1 text-center">
           <h1 className="text-lg font-semibold">{intestazione.titolo}</h1>

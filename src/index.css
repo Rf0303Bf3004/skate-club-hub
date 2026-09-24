@@ -92,6 +92,37 @@
 }
 
 @layer utilities {
+  .min-h-mobile {
+    min-height: 100vh;
+  }
+  .h-mobile {
+    height: 100vh;
+  }
+  .portale-main-bottom {
+    padding-bottom: max(6.5rem, calc(env(safe-area-inset-bottom) + 5.5rem));
+  }
+  .portale-aside-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .portale-bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .portale-install-bottom {
+    bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+  @supports (height: 100dvh) {
+    .min-h-mobile {
+      min-height: 100dvh;
+    }
+    .h-mobile {
+      height: 100dvh;
+    }
+  }
+  @media (min-width: 1024px) {
+    .portale-main-bottom {
+      padding-bottom: max(2rem, calc(env(safe-area-inset-bottom) + 1rem));
+    }
+  }
   .shadow-card {
     box-shadow: var(--shadow-card);
   }

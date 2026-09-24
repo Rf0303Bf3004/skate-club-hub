@@ -19,7 +19,14 @@
     "atleta": "Atleta",
     "corsi": "Corsi",
     "fatture": "Fatture",
-    "convenzioni": "Convenzioni"
+    "convenzioni": "Convenzioni",
+    "navigazione_principale": "Navigazione principale"
+  },
+  "installazione": {
+    "iphone": "Tocca Condividi, poi Aggiungi alla schermata Home.",
+    "android": "Aggiungi Ice Arena alla schermata Home.",
+    "installa": "Installa",
+    "chiudi": "Chiudi"
   },
   "home": {
     "benvenuto": "Benvenuto",

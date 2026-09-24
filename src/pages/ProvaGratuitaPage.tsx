@@ -94,7 +94,7 @@ const ProvaGratuitaPage: React.FC = () => {
 
   if (is_loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+      <div className="min-h-mobile flex items-center justify-center bg-muted/30">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -102,7 +102,7 @@ const ProvaGratuitaPage: React.FC = () => {
 
   if (!club) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <div className="min-h-mobile flex items-center justify-center bg-muted/30 p-4">
         <div className="max-w-sm w-full bg-card border rounded-2xl p-6 text-center space-y-3">
           <AlertCircle className="w-10 h-10 text-muted-foreground mx-auto" />
           <h1 className="text-lg font-semibold">{k("club_non_trovato_titolo")}</h1>
@@ -114,7 +114,7 @@ const ProvaGratuitaPage: React.FC = () => {
 
   if (inviato) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <div className="min-h-mobile flex items-center justify-center bg-muted/30 p-4">
         <div className="max-w-sm w-full bg-card border rounded-2xl p-6 text-center space-y-4">
           <CheckCircle2 className="w-14 h-14 text-emerald-600 mx-auto" />
           <h1 className="text-xl font-semibold">{k("conferma_titolo")}</h1>
@@ -149,7 +149,7 @@ const ProvaGratuitaPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 px-4 py-6 flex justify-center">
+    <div className="min-h-mobile bg-muted/30 px-4 py-6 flex justify-center">
       <div className="w-full max-w-md space-y-5 pb-10">
         <header className="text-center space-y-3 pt-2">
           {club.logo_url && (

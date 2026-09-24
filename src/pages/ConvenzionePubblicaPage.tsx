@@ -113,7 +113,7 @@ export default function ConvenzionePubblicaPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-mobile bg-slate-50 flex items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-slate-400" />
       </div>
     );
@@ -121,7 +121,7 @@ export default function ConvenzionePubblicaPage() {
 
   if (not_found || !data) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <div className="min-h-mobile bg-slate-50 flex items-center justify-center p-6">
         <div className="max-w-md bg-white rounded-lg border border-slate-200 p-8 text-center shadow-sm">
           <Tag className="w-10 h-10 text-slate-300 mx-auto mb-3" />
           <h1 className="text-lg font-semibold text-slate-900 mb-1">Convenzione non disponibile</h1>
@@ -138,7 +138,7 @@ export default function ConvenzionePubblicaPage() {
 
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-mobile bg-slate-50">
       <div className="max-w-2xl mx-auto p-4 md:p-8">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           {imm_url && (

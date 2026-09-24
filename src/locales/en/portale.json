@@ -1,4 +1,18 @@
 {
+  "menu": {
+    "home": "Home",
+    "calendario": "Calendar",
+    "eventi": "Events",
+    "notizie": "News",
+    "profilo": "Profile",
+    "navigazione_principale": "Main navigation"
+  },
+  "installazione": {
+    "iphone": "Tap Share, then Add to Home Screen.",
+    "android": "Add Ice Arena to your Home screen.",
+    "installa": "Install",
+    "chiudi": "Close"
+  },
   "home": {
     "errore_prossimi": "We could not read the upcoming activities. This does not mean there are none."
   },

@@ -157,7 +157,7 @@ const IscrivitiPage: React.FC = () => {
 
   if (is_loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+      <div className="min-h-mobile flex items-center justify-center bg-muted/30">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -165,7 +165,7 @@ const IscrivitiPage: React.FC = () => {
 
   if (fatale) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <div className="min-h-mobile flex items-center justify-center bg-muted/30 p-4">
         <div className="max-w-sm w-full bg-card border rounded-2xl p-6 text-center space-y-3">
           <AlertCircle className="w-10 h-10 text-destructive mx-auto" />
           <h1 className="text-lg font-semibold">Iscrizione non disponibile</h1>
@@ -177,7 +177,7 @@ const IscrivitiPage: React.FC = () => {
 
   if (inviato) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <div className="min-h-mobile flex items-center justify-center bg-muted/30 p-4">
         <div className="max-w-sm w-full bg-card border rounded-2xl p-6 text-center space-y-3">
           <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
           <h1 className="text-lg font-semibold">Richiesta inviata</h1>
@@ -192,7 +192,7 @@ const IscrivitiPage: React.FC = () => {
 
   if (!stagione?.iscrizioni_aperte) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <div className="min-h-mobile flex items-center justify-center bg-muted/30 p-4">
         <div className="max-w-sm w-full bg-card border rounded-2xl p-6 text-center space-y-3">
           <AlertCircle className="w-10 h-10 text-amber-600 mx-auto" />
           <h1 className="text-lg font-semibold">Iscrizioni chiuse</h1>
@@ -209,7 +209,7 @@ const IscrivitiPage: React.FC = () => {
     : null;
 
   return (
-    <div className="min-h-screen bg-muted/30 p-4 flex justify-center">
+    <div className="min-h-mobile bg-muted/30 p-4 flex justify-center">
       <div className="w-full max-w-xl space-y-4 pb-10">
         <header className="text-center pt-4 space-y-2">
           {club?.logo_url && (

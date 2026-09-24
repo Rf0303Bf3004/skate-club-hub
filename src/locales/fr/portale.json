@@ -1,4 +1,18 @@
 {
+  "menu": {
+    "home": "Accueil",
+    "calendario": "Calendrier",
+    "eventi": "Événements",
+    "notizie": "Actualités",
+    "profilo": "Profil",
+    "navigazione_principale": "Navigation principale"
+  },
+  "installazione": {
+    "iphone": "Touche Partager, puis Sur l’écran d’accueil.",
+    "android": "Ajoute Ice Arena à ton écran d’accueil.",
+    "installa": "Installer",
+    "chiudi": "Fermer"
+  },
   "home": {
     "errore_prossimi": "Impossible de lire les prochains rendez-vous. Cela ne signifie pas qu'il n'y en a pas."
   },
