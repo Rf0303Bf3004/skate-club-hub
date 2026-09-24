@@ -230,5 +230,9 @@
       "success_senza_fasce": "Saison « {{nome}} » créée. La saison précédente n'avait aucune plage de glace à reporter : définissez-les dans Configuration du club.",
       "error_copia": "Saison créée, mais les plages de glace n'ont pas été reportées : {{message}}. Vérifiez-les dans Configuration du club."
     }
+  },
+  "ghiaccio": {
+    "vuoto_risorse_per_disponibilita": "Ajoute d’abord une patinoire ou une salle ci-dessus : une plage horaire doit indiquer à quelle installation elle se rapporte.",
+    "errore_risorse_per_disponibilita": "Impossible de lire les patinoires et les salles du club : la disponibilité reste bloquée."
   }
 }

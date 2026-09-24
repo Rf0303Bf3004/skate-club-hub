@@ -230,5 +230,9 @@
       "success_senza_fasce": "Season \"{{nome}}\" created. The previous season had no ice slots to carry over: set them up in Club setup.",
       "error_copia": "Season created, but the ice slots were not carried over: {{message}}. Check them in Club setup."
     }
+  },
+  "ghiaccio": {
+    "vuoto_risorse_per_disponibilita": "First add a rink or a gym above: a time slot has to say which facility it belongs to.",
+    "errore_risorse_per_disponibilita": "The club's rinks and gyms can't be read, so availability stays locked."
   }
 }
