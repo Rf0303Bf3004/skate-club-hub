@@ -257,7 +257,7 @@ const PERCORSI_PUBBLICI: GruppoPercorsoPubblico[] = [
     rotte: (
       <BrowserRouter>
         <Routes>
-          <Route path="/termini" element={<LegalPlaceholderPage titolo="Termini e Condizioni" />} />
+          <Route path="/termini" element={<TerminiPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
         </Routes>
       </BrowserRouter>
