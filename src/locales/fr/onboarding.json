@@ -83,7 +83,7 @@
     "save_error": "Échec de l'enregistrement"
   },
   "avvio": {
-    "titolo": "Démarrage du club",
+    "titolo": "Procédure guidée",
     "sottotitolo": "Ce qu'il faut pour que le club puisse travailler",
     "nessun_club": "Aucun club n'est lié à cette session. Déconnectez-vous, reconnectez-vous, puis réessayez.",
     "errore_titolo": "La liste des contrôles n'est pas disponible",
@@ -124,6 +124,7 @@
   },
   "procedura": {
     "titolo": "Procédure guidée",
+    "vedi_passi": "Voir toutes les étapes",
     "passo": "Étape {{n}} sur {{m}}",
     "vai": "Y aller",
     "esci": "Quitter la procédure guidée",

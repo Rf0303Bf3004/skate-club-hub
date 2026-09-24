@@ -234,6 +234,7 @@
   "relazione": "Relazione",
   "setup": "Setup",
   "menu": {
+    "avvio_club": "Procedura guidata",
     "dashboard": "Dashboard",
     "atleti": "Atleti",
     "istruttori": "Istruttori",

@@ -83,7 +83,7 @@
     "save_error": "Saving failed"
   },
   "avvio": {
-    "titolo": "Club start-up",
+    "titolo": "Guided setup",
     "sottotitolo": "What the club needs before it can operate",
     "nessun_club": "No club is linked to this session. Sign out, sign back in, then try again.",
     "errore_titolo": "The list of checks isn't available",
@@ -124,6 +124,7 @@
   },
   "procedura": {
     "titolo": "Guided setup",
+    "vedi_passi": "View all steps",
     "passo": "Step {{n}} of {{m}}",
     "vai": "Go",
     "esci": "Leave guided setup",

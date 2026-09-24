@@ -78,11 +78,24 @@ export default function ProceduraGuidataBar() {
   if (!attiva || !club_id) return null;
 
   const cornice = "sticky top-14 z-20 border-b text-sm px-4 lg:px-8 py-2";
+  const sulla_pagina_avvio = location.pathname === "/avvio";
+  const titolo_procedura = sulla_pagina_avvio ? (
+    <span className="text-xs font-semibold text-primary">{t("procedura.titolo")}</span>
+  ) : (
+    <Link
+      to="/avvio"
+      title={t("procedura.vedi_passi")}
+      className="text-xs font-semibold text-primary hover:underline underline-offset-2"
+    >
+      {t("procedura.titolo")}
+    </Link>
+  );
 
   // Fallita, o non ancora arrivata: nessun passo, nessun «pronto».
   if (!diagnosi.isSuccess) {
     return (
       <div className={`${cornice} bg-muted/80 backdrop-blur-md border-border flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground`}>
+        {titolo_procedura}
         <span>{diagnosi.isError ? t("procedura.errore") : t("procedura.caricamento")}</span>
         {diagnosi.isError && (
           <Button variant="ghost" size="sm" className="h-7 gap-1.5" disabled={diagnosi.isFetching} onClick={() => void refetch()}>
@@ -130,9 +143,19 @@ export default function ProceduraGuidataBar() {
     <div className={`${cornice} bg-primary/10 backdrop-blur-md border-primary/20 flex flex-wrap items-center gap-x-4 gap-y-1.5`}>
       <Compass className="w-4 h-4 text-primary shrink-0 hidden sm:block" />
       <div className="flex-1 min-w-[12rem]">
-        <p className="text-xs font-semibold text-primary">
-          {t("procedura.titolo")} · {t("avvio.a_posto", { a_posto: conteggio.a_posto, totale: conteggio.totale })}
-        </p>
+        {sulla_pagina_avvio ? (
+          <p className="text-xs font-semibold text-primary">
+            {t("procedura.titolo")} · {t("avvio.a_posto", { a_posto: conteggio.a_posto, totale: conteggio.totale })}
+          </p>
+        ) : (
+          <Link
+            to="/avvio"
+            title={t("procedura.vedi_passi")}
+            className="text-xs font-semibold text-primary hover:underline underline-offset-2"
+          >
+            {t("procedura.titolo")} · {t("avvio.a_posto", { a_posto: conteggio.a_posto, totale: conteggio.totale })}
+          </Link>
+        )}
         <Progress value={conteggio.percentuale} className="h-1 my-1" />
         <p className="text-foreground truncate">
           <span className="text-muted-foreground">{t("procedura.prossimo")} </span>
