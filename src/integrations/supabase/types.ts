@@ -9924,6 +9924,7 @@ export type Database = {
           titolo: string
         }[]
       }
+      calendario_ics_atleta: { Args: { p_codice: string }; Returns: string }
       calendario_pubblico: {
         Args: { p_a?: string; p_codice: string; p_da?: string }
         Returns: {
@@ -10154,6 +10155,13 @@ export type Database = {
         Returns: {
           atleti_ripristinati: number
           fatture_ripristinate: number
+        }[]
+      }
+      dettagli_lezione: {
+        Args: { p_corso: string; p_data: string; p_istruttore?: string }
+        Returns: {
+          istruttore: string
+          luogo: string
         }[]
       }
       diagnosi_avvio_club: {
@@ -10422,6 +10430,7 @@ export type Database = {
       iban_e_qr_iban: { Args: { p: string }; Returns: boolean }
       iban_normalizza: { Args: { p: string }; Returns: string }
       iban_valido: { Args: { p: string }; Returns: boolean }
+      ics_testo: { Args: { p: string }; Returns: string }
       ide_valido: { Args: { p_numero: string }; Returns: boolean }
       impostazioni_iva: {
         Args: { p_club: string; p_ragione_sociale?: string }
