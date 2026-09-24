@@ -21,3 +21,6 @@ verify_jwt = false
 [functions.pista-login]
 verify_jwt = false
 
+
+[functions.calendario-ics]
+verify_jwt = false
