@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, CheckCircle2, Compass, RefreshCw, X } from "lucide-react";
@@ -28,7 +28,8 @@ export default function ProceduraGuidataBar() {
   const { nascosta, pronto_chiuso, esci, chiudi_pronto } = use_preferenze_procedura(club_id);
   const attiva = soggetto && !nascosta;
 
-  const diagnosi = use_diagnosi_avvio(club_id, attiva);
+  // Rilettura ogni 25 s solo mentre la barra è visibile.
+  const diagnosi = use_diagnosi_avvio(club_id, attiva, attiva ? 25_000 : false);
   const { refetch } = diagnosi;
 
   // Avanza da sola: rilettura a ogni cambio di pagina (il ritorno in primo piano lo fa la query).
@@ -49,6 +50,30 @@ export default function ProceduraGuidataBar() {
   );
   const corrente = bloccanti.find(riga_bloccante_aperta);
 
+  // «Fatto: …» quando il passo corrente di prima risulta ora superato.
+  const passo_precedente = useRef<number | null>(null);
+  const [fatto, set_fatto] = useState<string | null>(null);
+  useEffect(() => {
+    if (!diagnosi.isSuccess) return;
+    const prima = passo_precedente.current;
+    const ora = corrente?.passo ?? null;
+    if (prima !== null && prima !== ora) {
+      const superata = bloccanti.find((r) => r.passo === prima && r.esito === "✓");
+      if (superata) set_fatto(superata.controllo);
+    }
+    passo_precedente.current = ora;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [diagnosi.isSuccess, diagnosi.dataUpdatedAt]);
+  useEffect(() => {
+    if (!fatto) return;
+    const timer = window.setTimeout(() => set_fatto(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [fatto]);
+  useEffect(() => {
+    passo_precedente.current = null;
+    set_fatto(null);
+  }, [club_id]);
+
   if (!attiva || !club_id) return null;
 
   const cornice = "sticky top-14 z-20 border-b text-sm px-4 lg:px-8 py-2";
@@ -66,6 +91,15 @@ export default function ProceduraGuidataBar() {
         <button type="button" onClick={esci} className="ml-auto text-xs underline underline-offset-2 hover:text-foreground">
           {t("procedura.esci")}
         </button>
+      </div>
+    );
+  }
+
+  if (fatto) {
+    return (
+      <div role="status" className={`${cornice} bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900 flex items-center gap-3 animate-fade-in`}>
+        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+        <span className="font-medium text-foreground truncate">{t("procedura.fatto", { controllo: fatto })}</span>
       </div>
     );
   }
@@ -104,6 +138,16 @@ export default function ProceduraGuidataBar() {
           {corrente.dettaglio && <span className="text-muted-foreground"> — {corrente.dettaglio}</span>}
         </p>
       </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8 gap-1.5"
+        disabled={diagnosi.isFetching}
+        onClick={() => void refetch()}
+      >
+        <RefreshCw className={`w-3.5 h-3.5 ${diagnosi.isFetching ? "animate-spin" : ""}`} />
+        {diagnosi.isFetching ? t("procedura.ricontrollo_in_corso") : t("procedura.ricontrolla")}
+      </Button>
       <Button asChild size="sm" className="h-8 gap-1.5">
         <Link to={rotta.to}>
           {t("procedura.vai")} <ArrowRight className="w-3.5 h-3.5" />

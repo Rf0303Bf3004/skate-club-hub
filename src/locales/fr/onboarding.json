@@ -115,6 +115,9 @@
     "chiudi": "Fermer",
     "errore": "Impossible de lire les étapes",
     "caricamento": "Lecture des étapes…",
-    "riprova": "Réessayer"
+    "riprova": "Réessayer",
+    "fatto": "Fait : {{controllo}}",
+    "ricontrolla": "Revérifier",
+    "ricontrollo_in_corso": "Vérification…"
   }
 }

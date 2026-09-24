@@ -115,6 +115,9 @@
     "chiudi": "Close",
     "errore": "The steps can't be read",
     "caricamento": "Reading the steps…",
-    "riprova": "Try again"
+    "riprova": "Try again",
+    "fatto": "Done: {{controllo}}",
+    "ricontrolla": "Check again",
+    "ricontrollo_in_corso": "Checking…"
   }
 }

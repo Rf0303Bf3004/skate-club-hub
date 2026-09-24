@@ -178,6 +178,9 @@
     "chiudi": "Chiudi",
     "errore": "Non riesco a leggere i passi",
     "caricamento": "Leggo i passi…",
-    "riprova": "Riprova"
+    "riprova": "Riprova",
+    "fatto": "Fatto: {{controllo}}",
+    "ricontrolla": "Ricontrolla",
+    "ricontrollo_in_corso": "Ricontrollo…"
   }
 }

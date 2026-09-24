@@ -3,7 +3,7 @@ import { usePermessiSezioniMatrix } from "@/hooks/usePermessi";
 import { toast } from "@/hooks/use-toast";
 import GrigliaGhiaccioPage from "@/pages/GrigliaGhiaccioPage";
 import PistaPage from "@/pages/PistaPage";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useNavigate, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
