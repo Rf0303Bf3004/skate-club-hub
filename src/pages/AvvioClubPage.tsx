@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { CheckCircle2, AlertTriangle, XCircle, ArrowRight, RefreshCw } from "lucide-react";
-import { rotta_riga, use_diagnosi_avvio, type RigaDiagnosi } from "@/lib/avvio-club";
+import { avanzamento_avvio, rotta_riga, use_diagnosi_avvio, type RigaDiagnosi } from "@/lib/avvio-club";
 import { RiprendiProceduraButton } from "@/components/avvio/ProceduraGuidataBar";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
