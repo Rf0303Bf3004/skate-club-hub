@@ -259,7 +259,7 @@ const PortaleLayout: React.FC = () => {
           </button>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <nav className="hidden lg:block flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {items.map((it) => (
             <NavLink
               key={it.to}
