@@ -27,7 +27,8 @@
       "ghiaccio_planning": "Aktivitäten und Planung",
       "auguri_compleanno": "🎂 Geburtstagswünsche",
       "codice_pista": "Code für das Eisrand-Tablet",
-      "calendario_pubblico": "Öffentlicher Kalender"
+      "calendario_pubblico": "Öffentlicher Kalender",
+      "risorse_strutture": "Anlagen und Einrichtungen"
     },
     "fields": {
       "auguri_compleanno_attivo": "Geburtstagswünsche an Familien",
@@ -233,6 +234,7 @@
   },
   "ghiaccio": {
     "vuoto_risorse_per_disponibilita": "Füge zuerst oben eine Eisfläche oder eine Turnhalle hinzu: Ein Zeitfenster muss angeben, zu welcher Anlage es gehört.",
-    "errore_risorse_per_disponibilita": "Die Eisflächen und Turnhallen des Clubs können nicht gelesen werden, deshalb bleibt die Verfügbarkeit gesperrt."
+    "errore_risorse_per_disponibilita": "Die Eisflächen und Turnhallen des Clubs können nicht gelesen werden, deshalb bleibt die Verfügbarkeit gesperrt.",
+    "lettura_risorse_in_corso": "Die Eisflächen und Turnhallen des Clubs werden gerade gelesen…"
   }
 }
