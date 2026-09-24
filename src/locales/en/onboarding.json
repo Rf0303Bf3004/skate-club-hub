@@ -89,9 +89,13 @@
       "operazione_salvataggio_pista": "Creating the ice rink during initial setup",
       "errore_salvataggio_fasce": "The time slots weren't saved: {{motivo}} The newly created ice rink was removed; you can try again without creating duplicates.",
       "errore_fasce_risorsa_esistente": "The time slots weren't saved: {{motivo}} The existing ice rink wasn't changed.",
+      "errore_fasce_dopo_rinomina": "The ice rink was renamed “{{risorsa}}”, but the time slots weren't saved: {{motivo}}",
       "operazione_salvataggio_fasce": "Saving ice rink time slots during initial setup",
       "errore_salvataggio_parziale": "The time slots weren't saved: {{motivo}} The ice rink “{{risorsa}}” remains under Club setup → Ice → Resources and facilities because recovery failed: {{ripristino}}",
       "operazione_ripristino_pista": "Recovery after incomplete ice rink saving",
+      "errore_rinomina_pista": "The ice rink wasn't renamed: {{motivo}} The time slots weren't saved.",
+      "operazione_rinomina_pista": "Renaming the ice rink during initial setup",
+      "skip_hint": "You can leave the time slots empty and configure them later; the ice rink name is required.",
       "pista_e_fasce_salvate_one": "Ice rink “{{risorsa}}” and 1 time slot saved",
       "pista_e_fasce_salvate_other": "Ice rink “{{risorsa}}” and {{count}} time slots saved"
     }

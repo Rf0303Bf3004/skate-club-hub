@@ -89,9 +89,13 @@
       "operazione_salvataggio_pista": "Création de la patinoire pendant la configuration initiale",
       "errore_salvataggio_fasce": "Les plages horaires n'ont pas été enregistrées : {{motivo}} La patinoire qui venait d'être créée a été supprimée ; vous pouvez réessayer sans créer de doublon.",
       "errore_fasce_risorsa_esistente": "Les plages horaires n'ont pas été enregistrées : {{motivo}} La patinoire existante n'a pas été modifiée.",
+      "errore_fasce_dopo_rinomina": "La patinoire a été renommée « {{risorsa}} », mais les plages horaires n'ont pas été enregistrées : {{motivo}}",
       "operazione_salvataggio_fasce": "Enregistrement des plages de la patinoire pendant la configuration initiale",
       "errore_salvataggio_parziale": "Les plages horaires n'ont pas été enregistrées : {{motivo}} La patinoire « {{risorsa}} » est restée dans Configuration du club → Glace → Ressources et structures, car la restauration a échoué : {{ripristino}}",
       "operazione_ripristino_pista": "Restauration après l'enregistrement incomplet de la patinoire",
+      "errore_rinomina_pista": "La patinoire n'a pas été renommée : {{motivo}} Les plages horaires n'ont pas été enregistrées.",
+      "operazione_rinomina_pista": "Renommer la patinoire pendant la configuration initiale",
+      "skip_hint": "Vous pouvez laisser les plages horaires vides et les configurer plus tard ; le nom de la patinoire est obligatoire.",
       "pista_e_fasce_salvate_one": "Patinoire « {{risorsa}} » et 1 plage enregistrées",
       "pista_e_fasce_salvate_other": "Patinoire « {{risorsa}} » et {{count}} plages enregistrées"
     }

@@ -61,6 +61,7 @@ export default function OnboardingPage() {
 
   // Step 3: disponibilità ghiaccio
   const [nome_risorsa, set_nome_risorsa] = useState("");
+  const [nome_risorsa_caricato, set_nome_risorsa_caricato] = useState("");
   const [risorsa_esistente_id, set_risorsa_esistente_id] = useState<string | null>(null);
   const [slots, setSlots] = useState<SlotGhiaccio[]>([
     { giorno: GIORNI[0], ora_inizio: "17:00", ora_fine: "20:00" },
@@ -111,6 +112,7 @@ export default function OnboardingPage() {
       if (r_risorsa.data) {
         set_risorsa_esistente_id(r_risorsa.data.id);
         set_nome_risorsa(r_risorsa.data.nome);
+        set_nome_risorsa_caricato(r_risorsa.data.nome);
       }
       set_dati_pronti(true);
     })();
@@ -193,6 +195,7 @@ export default function OnboardingPage() {
     setLoading(true);
     set_errore_salvataggio_pista(null);
     let risorsa_creata: { id: string; nome: string } | null = null;
+    let risorsa_rinominata_nell_operazione = false;
     try {
       const { data: stag, error: stag_err } = await supabase
         .from("stagioni").select("id").eq("club_id", session.club_id).eq("attiva", true).maybeSingle();
@@ -200,7 +203,26 @@ export default function OnboardingPage() {
 
       let risorsa_per_fasce: { id: string; nome: string };
       if (risorsa_esistente_id) {
-        risorsa_per_fasce = { id: risorsa_esistente_id, nome };
+        if (nome !== nome_risorsa_caricato) {
+          const { data: risorsa_rinominata, error: rinomina_err } = await supabase
+            .from("risorse_strutture")
+            .update({ nome })
+            .eq("id", risorsa_esistente_id)
+            .eq("club_id", session.club_id)
+            .select("id, nome")
+            .single();
+          if (rinomina_err) {
+            const messaggio = t("wizard.step3.errore_rinomina_pista", { motivo: messaggio_leggibile(rinomina_err) });
+            set_errore_salvataggio_pista(messaggio);
+            void segnala_errore("OnboardingPage", t("wizard.step3.operazione_rinomina_pista"), rinomina_err, undefined, "avviso");
+            return false;
+          }
+          risorsa_per_fasce = risorsa_rinominata;
+          risorsa_rinominata_nell_operazione = true;
+          set_nome_risorsa_caricato(risorsa_rinominata.nome);
+        } else {
+          risorsa_per_fasce = { id: risorsa_esistente_id, nome: nome_risorsa_caricato };
+        }
       } else {
         const { data: nuova_risorsa, error: risorsa_err } = await supabase
           .from("risorse_strutture")
@@ -250,7 +272,13 @@ export default function OnboardingPage() {
             set_errore_salvataggio_pista(messaggio);
             void segnala_errore("OnboardingPage", t("wizard.step3.operazione_salvataggio_fasce"), disponibilita_err, undefined, "avviso");
           } else {
-            const messaggio = t("wizard.step3.errore_fasce_risorsa_esistente", { motivo: messaggio_leggibile(disponibilita_err) });
+            const chiave_errore = risorsa_rinominata_nell_operazione
+              ? "wizard.step3.errore_fasce_dopo_rinomina"
+              : "wizard.step3.errore_fasce_risorsa_esistente";
+            const messaggio = t(chiave_errore, {
+              motivo: messaggio_leggibile(disponibilita_err),
+              risorsa: risorsa_per_fasce.nome,
+            });
             set_errore_salvataggio_pista(messaggio);
             void segnala_errore("OnboardingPage", t("wizard.step3.operazione_salvataggio_fasce"), disponibilita_err, undefined, "avviso");
           }
@@ -275,6 +303,7 @@ export default function OnboardingPage() {
       if (risorsa_creata) {
         set_risorsa_esistente_id(risorsa_creata.id);
         set_nome_risorsa(risorsa_creata.nome);
+        set_nome_risorsa_caricato(risorsa_creata.nome);
       }
     }
   };
