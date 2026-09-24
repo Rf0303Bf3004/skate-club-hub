@@ -227,6 +227,7 @@
   "irreversible_warning": "Diese Aktion ist unwiderruflich. Alle verknüpften Daten werden gelöscht.",
   "confirm_delete_title": "Löschen bestätigen",
   "menu": {
+    "avvio_club": "Geführter Start",
     "griglia_ghiaccio": "Aktivitätenraster",
     "planning_ghiaccio": "Planung",
     "ruoli_permessi": "Rollenverwaltung",

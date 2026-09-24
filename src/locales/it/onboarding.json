@@ -146,7 +146,7 @@
     "save_error": "Salvataggio non riuscito"
   },
   "avvio": {
-    "titolo": "Avvio del club",
+    "titolo": "Procedura guidata",
     "sottotitolo": "Quello che serve perché il club possa lavorare",
     "nessun_club": "Nessun club è collegato a questa sessione. Esci e rientra, poi riprova.",
     "errore_titolo": "L'elenco dei controlli non è disponibile",
@@ -187,6 +187,7 @@
   },
   "procedura": {
     "titolo": "Procedura guidata",
+    "vedi_passi": "Vedi tutti i passi",
     "passo": "Passo {{n}} di {{m}}",
     "vai": "Vai",
     "esci": "Esci dalla procedura guidata",

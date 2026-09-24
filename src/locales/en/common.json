@@ -227,6 +227,7 @@
   "irreversible_warning": "This action is irreversible. All linked data will be deleted.",
   "confirm_delete_title": "Confirm deletion",
   "menu": {
+    "avvio_club": "Guided setup",
     "griglia_ghiaccio": "Activity grid",
     "planning_ghiaccio": "Planning",
     "ruoli_permessi": "Role Management",

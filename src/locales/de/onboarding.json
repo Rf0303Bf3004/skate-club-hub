@@ -83,7 +83,7 @@
     "save_error": "Speichern fehlgeschlagen"
   },
   "avvio": {
-    "titolo": "Start des Clubs",
+    "titolo": "Geführter Start",
     "sottotitolo": "Was der Club braucht, um arbeiten zu können",
     "nessun_club": "Mit dieser Sitzung ist kein Club verbunden. Melden Sie sich ab und wieder an und versuchen Sie es erneut.",
     "errore_titolo": "Die Liste der Prüfungen ist nicht verfügbar",
@@ -124,6 +124,7 @@
   },
   "procedura": {
     "titolo": "Geführter Start",
+    "vedi_passi": "Alle Schritte anzeigen",
     "passo": "Schritt {{n}} von {{m}}",
     "vai": "Los",
     "esci": "Geführten Start beenden",

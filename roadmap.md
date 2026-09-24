@@ -10,3 +10,5 @@
 - [ ] Portale genitori: correggere altezza mobile e zona sicura, verificando 6 messaggi a 390 px
 - [ ] Portale genitori: aggiungere manifesto, icone e invito installazione una tantum
 - [ ] Portale genitori: aggiungere barra di navigazione inferiore sotto 1024 px
+
+- [x] Unificare il nome della procedura guidata, aggiungere ritorno a /avvio e verificare 5 traduzioni DB.

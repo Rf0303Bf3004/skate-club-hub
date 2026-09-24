@@ -227,6 +227,7 @@
   "irreversible_warning": "Cette opération est irréversible. Toutes les données liées seront supprimées.",
   "confirm_delete_title": "Confirmer la suppression",
   "menu": {
+    "avvio_club": "Procédure guidée",
     "griglia_ghiaccio": "Grille des activités",
     "planning_ghiaccio": "Planning",
     "ruoli_permessi": "Gestion des rôles",

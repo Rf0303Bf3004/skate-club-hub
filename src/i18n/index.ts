@@ -70,6 +70,8 @@ import en_planning from '@/locales/en/planning.json';
 import en_calendario from '@/locales/en/calendario.json';
 
 import rm_portale from '@/locales/rm/portale.json';
+import rm_common from '@/locales/rm/common.json';
+import rm_onboarding from '@/locales/rm/onboarding.json';
 
 export const NAMESPACES = [
   'common',
@@ -121,7 +123,7 @@ const resources = {
     events: en_events, mobile: en_mobile, validation: en_validation, errors: en_errors,
     portale: en_portale, istruttori: en_istruttori, planning: en_planning, calendario: en_calendario,
   },
-  rm: { portale: rm_portale },
+  rm: { common: rm_common, onboarding: rm_onboarding, portale: rm_portale },
 };
 
 /**
