@@ -161,5 +161,15 @@
   },
   "notizie": {
     "quando": "When: {{data}}"
+  },
+  "calendario_telefono": {
+    "titolo": "The calendar on your phone",
+    "spiegazione": "Add the training calendar just once: after that it updates by itself whenever the club changes something.",
+    "aggiungi": "Add to calendar",
+    "copia": "Copy the link",
+    "copiato": "Link copied",
+    "errore_copia": "The link could not be copied. Try again.",
+    "riservatezza": "Do not share this link: anyone who receives it can see your daughter's training sessions.",
+    "ritardo": "The calendar updates by itself, but it can take a few hours. For urgent notices always check the notifications."
   }
 }

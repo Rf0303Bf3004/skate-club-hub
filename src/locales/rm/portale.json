@@ -12,5 +12,15 @@
     "android": "Agiunta Ice Arena a tia pagina principala.",
     "installa": "Installar",
     "chiudi": "Serrar"
+  },
+  "calendario_telefono": {
+    "titolo": "Il chalender sin tes telefon",
+    "spiegazione": "Agiunta il chalender dals trenaments mo ina giada: suenter s'actualisescha el sez, cura ch'il club mida insatge.",
+    "aggiungi": "Agiuntar al chalender",
+    "copia": "Copiar la colliaziun",
+    "copiato": "Colliaziun copiada",
+    "errore_copia": "I n'è betg reussì da copiar la colliaziun. Emprova anc ina giada.",
+    "riservatezza": "Na parta betg questa colliaziun: tgi che la survegn vesa ils trenaments da tia figlia.",
+    "ritardo": "Il chalender s'actualisescha sez, ma quai po durar intginas uras. Per avis urgents guarda adina las notificaziuns."
   }
 }

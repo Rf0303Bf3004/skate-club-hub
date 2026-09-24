@@ -245,5 +245,15 @@
     "genitore1": "Primo genitore",
     "genitore2": "Secondo genitore",
     "errore": "Non è stato possibile leggere con quale accesso sei entrato."
+  },
+  "calendario_telefono": {
+    "titolo": "Il calendario sul tuo telefono",
+    "spiegazione": "Aggiungi il calendario degli allenamenti una volta sola: poi si aggiorna da solo quando il club cambia qualcosa.",
+    "aggiungi": "Aggiungi al calendario",
+    "copia": "Copia il link",
+    "copiato": "Link copiato",
+    "errore_copia": "Non è stato possibile copiare il link. Riprova.",
+    "riservatezza": "Non condividere questo link: chi lo riceve vede gli allenamenti di tua figlia.",
+    "ritardo": "Il calendario si aggiorna da solo, ma può metterci qualche ora. Per gli avvisi urgenti guarda sempre le notifiche."
   }
 }

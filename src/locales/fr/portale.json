@@ -161,5 +161,15 @@
   },
   "notizie": {
     "quando": "Quand : {{data}}"
+  },
+  "calendario_telefono": {
+    "titolo": "Le calendrier sur ton téléphone",
+    "spiegazione": "Ajoute le calendrier des entraînements une seule fois : ensuite, il se met à jour tout seul quand le club change quelque chose.",
+    "aggiungi": "Ajouter au calendrier",
+    "copia": "Copier le lien",
+    "copiato": "Lien copié",
+    "errore_copia": "Impossible de copier le lien. Réessaie.",
+    "riservatezza": "Ne partage pas ce lien : la personne qui le reçoit voit les entraînements de ta fille.",
+    "ritardo": "Le calendrier se met à jour tout seul, mais cela peut prendre quelques heures. Pour les avis urgents, regarde toujours les notifications."
   }
 }
