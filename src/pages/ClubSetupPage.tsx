@@ -160,7 +160,20 @@ const ClubSetupPage: React.FC = () => {
   const { data: stagione_corrente } = use_stagione_attiva();
   const { data: disp_ghiaccio_raw, isLoading: loading_disp } = use_disponibilita_ghiaccio();
   const { data: catalogo_count, isError: errore_catalogo } = use_catalogo_count();
-  const { data: risorse = [] } = use_risorse_strutture();
+  const {
+    data: risorse = [],
+    isSuccess: risorse_lette,
+    isError: errore_risorse,
+    isFetching: risorse_in_lettura,
+    error: errore_risorse_dettaglio,
+    refetch: ricarica_risorse,
+  } = use_risorse_strutture();
+  useEffect(() => {
+    if (errore_risorse) {
+      void segnala_errore("ClubSetupPage", "Lettura risorse per disponibilità", errore_risorse_dettaglio, undefined, "avviso");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [errore_risorse]);
 
   const stagione_attiva = stagioni.find((s: any) => s.attiva);
   const [form, set_form] = useState<Record<string, any>>({});
@@ -195,6 +208,8 @@ const ClubSetupPage: React.FC = () => {
   const [saving_disp, set_saving_disp] = useState(false);
 
   const risorse_attive = (risorse ?? []).filter((r: any) => r.attiva !== false);
+  // Compilabile solo con lettura riuscita e almeno una risorsa attiva: «non arrivata» ≠ «zero».
+  const disponibilita_compilabile = risorse_lette && risorse_attive.length > 0;
   const risorsa_sel = (risorse ?? []).find((r: any) => r.id === risorsa_sel_id) ?? null;
   const risorsa_is_ghiaccio = risorsa_sel?.tipo !== "palestra";
 
@@ -1182,6 +1197,156 @@ const ClubSetupPage: React.FC = () => {
 
         {/* ══ GHIACCIO E PLANNING ══ */}
         <TabsContent value="ghiaccio" className="space-y-4">
+        <SetupSection id="gh_risorse" titolo="Risorse e strutture">
+          <RisorseSection />
+        </SetupSection>
+
+
+        <SetupSection
+          id="gh_disponibilita"
+          titolo={t("club.sezioni.disponibilita_strutture")}
+          mancanti={mancanti.disponibilita}
+        >
+          {!risorse_lette ? (
+            <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mb-3 space-y-2">
+              <p className="text-sm text-destructive">{t("ghiaccio.errore_risorse_per_disponibilita")}</p>
+              <Button variant="outline" size="sm" disabled={risorse_in_lettura} onClick={() => void ricarica_risorse()}>
+                {t("club.azioni.riprova")}
+              </Button>
+            </div>
+          ) : risorse_attive.length === 0 ? (
+            <div className="bg-muted/40 border border-border rounded-lg p-3 mb-3">
+              <p className="text-sm text-foreground">{t("ghiaccio.vuoto_risorse_per_disponibilita")}</p>
+            </div>
+          ) : null}
+          <fieldset disabled={!disponibilita_compilabile} className="disabled:opacity-50">
+          <div className="flex justify-end">
+            <Button size="sm" onClick={save_disponibilita} disabled={saving_disp || !risorsa_sel_id || !disponibilita_compilabile}>
+              {saving_disp ? t("club.azioni.salvando") : t("club.azioni.salva_disponibilita")}
+            </Button>
+          </div>
+
+          <div className="mb-4 max-w-sm">
+            <Label className="text-xs text-muted-foreground">
+              {t("club.fields.valida_fino_al")}
+            </Label>
+            <Input
+              type="date"
+              className="h-9 mt-1"
+              value={get_val("disponibilita_valida_fino_al", "") || ""}
+              onChange={(e) => set_val("disponibilita_valida_fino_al", e.target.value || null)}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              {t("club.testi.disponibilita_scadenza_info")}
+            </p>
+          </div>
+          <div className="mb-4 max-w-sm">
+            <Label className="text-xs text-muted-foreground">{t("club.fields.risorsa")}</Label>
+            <Select value={risorsa_sel_id} onValueChange={set_risorsa_sel_id}>
+              <SelectTrigger className="h-9 mt-1">
+                <SelectValue placeholder={t("club.fields.seleziona_risorsa_placeholder")} />
+              </SelectTrigger>
+              <SelectContent>
+                {risorse_attive.map((r: any) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.nome} · {r.tipo === "palestra" ? t("club.opzioni.palestra") : t("club.opzioni.ghiaccio")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-4">
+
+            {GIORNI.map((giorno) => {
+              const slots = disp_local[giorno] || [];
+              return (
+                <div key={giorno} className="border border-border/50 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-foreground">{giorno}</span>
+                    <Button variant="ghost" size="sm" onClick={() => add_slot(giorno)} className="h-7 text-xs">
+                      <Plus className="w-3 h-3 mr-1" /> {t("club.azioni.slot")}
+                    </Button>
+                  </div>
+                  {slots.length === 0 && <p className="text-xs text-muted-foreground italic py-1">{t("club.testi.nessuno_slot_prefix")} <strong>{t("club.azioni.plus_slot")}</strong> {t("club.testi.nessuno_slot_suffix")}</p>}
+                  {slots.map((s, idx) => (
+                    <div key={idx} className="flex items-center gap-2 mb-1">
+                      <Input
+                        type="time"
+                        value={s.ora_inizio}
+                        onChange={(e) => update_slot(giorno, idx, "ora_inizio", e.target.value)}
+                        className="w-28 h-8 text-xs"
+                      />
+                      <span className="text-muted-foreground text-xs">—</span>
+                      <Input
+                        type="time"
+                        value={s.ora_fine}
+                        onChange={(e) => update_slot(giorno, idx, "ora_fine", e.target.value)}
+                        className="w-28 h-8 text-xs"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => remove_slot(giorno, idx)}
+                        className="h-7 w-7 p-0 text-destructive"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+          </fieldset>
+        </SetupSection>
+
+
+        {risorsa_is_ghiaccio && (
+        <SetupSection id="gh_pulizia" titolo={t("club.sezioni.pulizia_ghiaccio")}>
+          <fieldset disabled={!disponibilita_compilabile} className="space-y-4 disabled:opacity-50">
+            {GIORNI.map((giorno) => {
+              const slots = disp_pulizia_local[giorno] || [];
+              return (
+                <div key={giorno} className="border border-border/50 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-foreground">{giorno}</span>
+                    <Button variant="ghost" size="sm" onClick={() => add_slot_pulizia(giorno)} className="h-7 text-xs">
+                      <Plus className="w-3 h-3 mr-1" /> {t("club.azioni.slot")}
+                    </Button>
+                  </div>
+                  {slots.length === 0 && <p className="text-xs text-muted-foreground italic py-1">{t("club.testi.nessuno_slot_prefix")} <strong>{t("club.azioni.plus_slot")}</strong> {t("club.testi.nessuno_slot_suffix")}</p>}
+                  {slots.map((s, idx) => (
+                    <div key={idx} className="flex items-center gap-2 mb-1">
+                      <Input
+                        type="time"
+                        value={s.ora_inizio}
+                        onChange={(e) => update_slot_pulizia(giorno, idx, "ora_inizio", e.target.value)}
+                        className="w-28 h-8 text-xs"
+                      />
+                      <span className="text-muted-foreground text-xs">—</span>
+                      <Input
+                        type="time"
+                        value={s.ora_fine}
+                        onChange={(e) => update_slot_pulizia(giorno, idx, "ora_fine", e.target.value)}
+                        className="w-28 h-8 text-xs"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => remove_slot_pulizia(giorno, idx)}
+                        className="h-7 w-7 p-0 text-destructive"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </fieldset>
+        </SetupSection>
+        )}
+
         <SetupSection id="gh_parametri" titolo={t("club.sezioni.ghiaccio_planning")}>
         {loading_config && (
           <div className="bg-muted/40 border border-border rounded-lg p-3 mb-3">
@@ -1359,145 +1524,6 @@ const ClubSetupPage: React.FC = () => {
         </SetupSection>
 
 
-        <SetupSection
-          id="gh_disponibilita"
-          titolo={t("club.sezioni.disponibilita_strutture")}
-          mancanti={mancanti.disponibilita}
-        >
-          <div className="flex justify-end">
-            <Button size="sm" onClick={save_disponibilita} disabled={saving_disp || !risorsa_sel_id}>
-              {saving_disp ? t("club.azioni.salvando") : t("club.azioni.salva_disponibilita")}
-            </Button>
-          </div>
-
-          <div className="mb-4 max-w-sm">
-            <Label className="text-xs text-muted-foreground">
-              {t("club.fields.valida_fino_al")}
-            </Label>
-            <Input
-              type="date"
-              className="h-9 mt-1"
-              value={get_val("disponibilita_valida_fino_al", "") || ""}
-              onChange={(e) => set_val("disponibilita_valida_fino_al", e.target.value || null)}
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              {t("club.testi.disponibilita_scadenza_info")}
-            </p>
-          </div>
-          <div className="mb-4 max-w-sm">
-            <Label className="text-xs text-muted-foreground">{t("club.fields.risorsa")}</Label>
-            <Select value={risorsa_sel_id} onValueChange={set_risorsa_sel_id}>
-              <SelectTrigger className="h-9 mt-1">
-                <SelectValue placeholder={t("club.fields.seleziona_risorsa_placeholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                {risorse_attive.map((r: any) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.nome} · {r.tipo === "palestra" ? t("club.opzioni.palestra") : t("club.opzioni.ghiaccio")}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {risorse_attive.length === 0 && (
-              <p className="text-xs text-muted-foreground italic mt-1">
-                {t("club.testi.nessuna_risorsa")}
-              </p>
-            )}
-          </div>
-          <div className="space-y-4">
-
-            {GIORNI.map((giorno) => {
-              const slots = disp_local[giorno] || [];
-              return (
-                <div key={giorno} className="border border-border/50 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-foreground">{giorno}</span>
-                    <Button variant="ghost" size="sm" onClick={() => add_slot(giorno)} className="h-7 text-xs">
-                      <Plus className="w-3 h-3 mr-1" /> {t("club.azioni.slot")}
-                    </Button>
-                  </div>
-                  {slots.length === 0 && <p className="text-xs text-muted-foreground italic py-1">{t("club.testi.nessuno_slot_prefix")} <strong>{t("club.azioni.plus_slot")}</strong> {t("club.testi.nessuno_slot_suffix")}</p>}
-                  {slots.map((s, idx) => (
-                    <div key={idx} className="flex items-center gap-2 mb-1">
-                      <Input
-                        type="time"
-                        value={s.ora_inizio}
-                        onChange={(e) => update_slot(giorno, idx, "ora_inizio", e.target.value)}
-                        className="w-28 h-8 text-xs"
-                      />
-                      <span className="text-muted-foreground text-xs">—</span>
-                      <Input
-                        type="time"
-                        value={s.ora_fine}
-                        onChange={(e) => update_slot(giorno, idx, "ora_fine", e.target.value)}
-                        className="w-28 h-8 text-xs"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => remove_slot(giorno, idx)}
-                        className="h-7 w-7 p-0 text-destructive"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
-          </div>
-        </SetupSection>
-
-
-        {risorsa_is_ghiaccio && (
-        <SetupSection id="gh_pulizia" titolo={t("club.sezioni.pulizia_ghiaccio")}>
-          <div className="space-y-4">
-            {GIORNI.map((giorno) => {
-              const slots = disp_pulizia_local[giorno] || [];
-              return (
-                <div key={giorno} className="border border-border/50 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-foreground">{giorno}</span>
-                    <Button variant="ghost" size="sm" onClick={() => add_slot_pulizia(giorno)} className="h-7 text-xs">
-                      <Plus className="w-3 h-3 mr-1" /> {t("club.azioni.slot")}
-                    </Button>
-                  </div>
-                  {slots.length === 0 && <p className="text-xs text-muted-foreground italic py-1">{t("club.testi.nessuno_slot_prefix")} <strong>{t("club.azioni.plus_slot")}</strong> {t("club.testi.nessuno_slot_suffix")}</p>}
-                  {slots.map((s, idx) => (
-                    <div key={idx} className="flex items-center gap-2 mb-1">
-                      <Input
-                        type="time"
-                        value={s.ora_inizio}
-                        onChange={(e) => update_slot_pulizia(giorno, idx, "ora_inizio", e.target.value)}
-                        className="w-28 h-8 text-xs"
-                      />
-                      <span className="text-muted-foreground text-xs">—</span>
-                      <Input
-                        type="time"
-                        value={s.ora_fine}
-                        onChange={(e) => update_slot_pulizia(giorno, idx, "ora_fine", e.target.value)}
-                        className="w-28 h-8 text-xs"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => remove_slot_pulizia(giorno, idx)}
-                        className="h-7 w-7 p-0 text-destructive"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
-          </div>
-        </SetupSection>
-        )}
-
-        <SetupSection id="gh_risorse" titolo="Risorse e strutture">
-          <RisorseSection />
-        </SetupSection>
         </TabsContent>
 
         {/* ══ CATALOGO ══ */}

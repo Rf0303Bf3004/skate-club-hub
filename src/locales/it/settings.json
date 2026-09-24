@@ -664,5 +664,9 @@
     "toast_save_error": "Errore salvataggio",
     "toast_level_added": "✅ Livello \"{{livello}}\" aggiunto",
     "toast_add_error": "Errore aggiunta livello"
+  },
+  "ghiaccio": {
+    "vuoto_risorse_per_disponibilita": "Prima aggiungi una pista o una palestra qui sopra: una fascia oraria deve dire a quale struttura si riferisce.",
+    "errore_risorse_per_disponibilita": "Non riesco a leggere le piste e le palestre del club, quindi la disponibilità resta bloccata."
   }
 }

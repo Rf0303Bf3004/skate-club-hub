@@ -230,5 +230,9 @@
       "success_senza_fasce": "Saison „{{nome}}“ erstellt. In der vorherigen Saison gab es keine Eiszeiten zum Übernehmen: Lege sie in der Club-Konfiguration an.",
       "error_copia": "Saison erstellt, aber die Eiszeiten wurden nicht übernommen: {{message}}. Prüfe sie in der Club-Konfiguration."
     }
+  },
+  "ghiaccio": {
+    "vuoto_risorse_per_disponibilita": "Füge zuerst oben eine Eisfläche oder eine Turnhalle hinzu: Ein Zeitfenster muss angeben, zu welcher Anlage es gehört.",
+    "errore_risorse_per_disponibilita": "Die Eisflächen und Turnhallen des Clubs können nicht gelesen werden, deshalb bleibt die Verfügbarkeit gesperrt."
   }
 }
