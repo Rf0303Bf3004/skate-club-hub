@@ -80,7 +80,18 @@
     "load_error": "The club's saved data can't be read. Try again before continuing, so nothing is overwritten.",
     "retry": "Try again",
     "gate_error": "It can't be checked whether the club setup is complete.",
-    "save_error": "Saving failed"
+    "save_error": "Saving failed",
+    "step3": {
+      "resource_name_label": "Ice rink name *",
+      "resource_name_placeholder": "e.g. Main rink",
+      "resource_name_required": "Enter the ice rink name before continuing.",
+      "resource_save_error": "The ice rink wasn't saved: {{motivo}}",
+      "resource_save_operation": "Creating the ice rink during initial setup",
+      "availability_save_error": "The time slots weren't saved: {{motivo}} The newly created ice rink was removed; you can try again without creating duplicates.",
+      "availability_save_operation": "Saving ice rink time slots during initial setup",
+      "partial_save_error": "The time slots weren't saved: {{motivo}} The ice rink “{{risorsa}}” remains under Club setup → Ice → Resources and facilities because recovery failed: {{ripristino}}",
+      "partial_save_operation": "Recovery after incomplete ice rink saving"
+    }
   },
   "avvio": {
     "titolo": "Guided setup",

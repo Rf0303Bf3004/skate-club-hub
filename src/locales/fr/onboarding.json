@@ -80,7 +80,18 @@
     "load_error": "Impossible de lire les données déjà enregistrées du club. Réessayez avant de continuer, pour ne pas les écraser.",
     "retry": "Réessayer",
     "gate_error": "Impossible de vérifier si la configuration du club est terminée.",
-    "save_error": "Échec de l'enregistrement"
+    "save_error": "Échec de l'enregistrement",
+    "step3": {
+      "resource_name_label": "Nom de la patinoire *",
+      "resource_name_placeholder": "p. ex. Patinoire principale",
+      "resource_name_required": "Saisissez le nom de la patinoire avant de continuer.",
+      "resource_save_error": "La patinoire n'a pas été enregistrée : {{motivo}}",
+      "resource_save_operation": "Création de la patinoire pendant la configuration initiale",
+      "availability_save_error": "Les plages horaires n'ont pas été enregistrées : {{motivo}} La patinoire qui venait d'être créée a été supprimée ; vous pouvez réessayer sans créer de doublon.",
+      "availability_save_operation": "Enregistrement des plages de la patinoire pendant la configuration initiale",
+      "partial_save_error": "Les plages horaires n'ont pas été enregistrées : {{motivo}} La patinoire « {{risorsa}} » est restée dans Configuration du club → Glace → Ressources et structures, car la restauration a échoué : {{ripristino}}",
+      "partial_save_operation": "Restauration après l'enregistrement incomplet de la patinoire"
+    }
   },
   "avvio": {
     "titolo": "Procédure guidée",

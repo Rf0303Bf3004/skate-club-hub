@@ -133,7 +133,16 @@
       "start_label": "Inizio",
       "end_label": "Fine",
       "add_slot": "Aggiungi slot",
-      "skip_hint": "Puoi saltare lasciando la lista vuota e configurare dopo."
+      "skip_hint": "Puoi lasciare vuote le fasce e configurarle dopo.",
+      "resource_name_label": "Nome della pista *",
+      "resource_name_placeholder": "es. Pista principale",
+      "resource_name_required": "Scrivi il nome della pista prima di continuare.",
+      "resource_save_error": "La pista non è stata salvata: {{motivo}}",
+      "resource_save_operation": "Creazione pista durante la configurazione iniziale",
+      "availability_save_error": "Le fasce non sono state salvate: {{motivo}} La pista appena creata è stata rimossa; puoi riprovare senza creare duplicati.",
+      "availability_save_operation": "Salvataggio fasce della pista durante la configurazione iniziale",
+      "partial_save_error": "Le fasce non sono state salvate: {{motivo}} La pista «{{risorsa}}» è rimasta in Configurazione club → Ghiaccio → Risorse e strutture perché il ripristino non è riuscito: {{ripristino}}",
+      "partial_save_operation": "Ripristino dopo il salvataggio incompleto della pista"
     },
     "back_button": "Indietro",
     "next_button": "Avanti",

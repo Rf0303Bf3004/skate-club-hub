@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { invalida_diagnosi_avvio } from "@/lib/avvio-club";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +12,7 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft, ArrowRight, Plus, Trash2, Upload, BookOpen, UserPlus, Users, LayoutDashboard, LogOut, AlertTriangle } from "lucide-react";
 
 import { useTranslation } from "react-i18next";
-import { segnala_errore } from "@/lib/errori";
+import { messaggio_leggibile, segnala_errore } from "@/lib/errori";
 
 interface SlotGhiaccio {
   giorno: string;
@@ -23,6 +25,7 @@ const TOTAL_STEPS = 3;
 export default function OnboardingPage() {
   const { t } = useTranslation("onboarding");
   const { session, logout } = useAuth();
+  const query_client = useQueryClient();
   const GIORNI = [
     t("wizard.days.monday"),
     t("wizard.days.tuesday"),
@@ -57,9 +60,11 @@ export default function OnboardingPage() {
   });
 
   // Step 3: disponibilità ghiaccio
+  const [nome_risorsa, set_nome_risorsa] = useState("");
   const [slots, setSlots] = useState<SlotGhiaccio[]>([
     { giorno: GIORNI[0], ora_inizio: "17:00", ora_fine: "20:00" },
   ]);
+  const [errore_salvataggio_pista, set_errore_salvataggio_pista] = useState<string | null>(null);
 
   // I dati già salvati devono arrivare prima di poter salvare un passo:
   // altrimenti «Avanti» sovrascriverebbe il club con campi vuoti.
@@ -73,13 +78,14 @@ export default function OnboardingPage() {
     set_dati_pronti(false);
     set_errore_caricamento(false);
     void (async () => {
-      const [r_stag, r_club, r_ident] = await Promise.all([
+      const [r_stag, r_club, r_ident, r_risorsa] = await Promise.all([
         supabase.from("stagioni").select("id, nome, data_inizio, data_fine").eq("club_id", session.club_id).eq("attiva", true).maybeSingle(),
         supabase.from("clubs").select("logo_url, colore_primario").eq("id", session.club_id).maybeSingle(),
         supabase.from("club_identity").select("anno_fondazione, federazione, mission, sito_web, social_instagram, social_facebook").eq("club_id", session.club_id).maybeSingle(),
+        supabase.from("risorse_strutture").select("nome").eq("club_id", session.club_id).eq("tipo", "ghiaccio").eq("attiva", true).order("ordine").limit(1).maybeSingle(),
       ]);
       if (annullato) return;
-      const errore = r_stag.error ?? r_club.error ?? r_ident.error;
+      const errore = r_stag.error ?? r_club.error ?? r_ident.error ?? r_risorsa.error;
       if (errore) {
         set_errore_caricamento(true);
         void segnala_errore("OnboardingPage", t("wizard.load_error"), errore, undefined, "avviso");
@@ -101,6 +107,7 @@ export default function OnboardingPage() {
           social_facebook: ident.social_facebook || "",
         });
       }
+      if (r_risorsa.data?.nome) set_nome_risorsa(r_risorsa.data.nome);
       set_dati_pronti(true);
     })();
     return () => { annullato = true; };
@@ -173,29 +180,86 @@ export default function OnboardingPage() {
   };
 
   const saveStep3 = async () => {
-    const valid = slots.filter((s) => s.giorno && s.ora_inizio && s.ora_fine && s.ora_inizio < s.ora_fine);
-    if (valid.length === 0) return true;
-    setLoading(true);
-    const { data: stag, error: stag_err } = await supabase
-      .from("stagioni").select("id").eq("club_id", session.club_id).eq("attiva", true).maybeSingle();
-    if (stag_err) {
-      setLoading(false);
-      void segnala_errore("OnboardingPage", t("wizard.save_error"), stag_err);
+    const nome = nome_risorsa.trim();
+    if (!nome) {
+      set_errore_salvataggio_pista(t("wizard.step3.resource_name_required"));
       return false;
     }
-    const payload = valid.map((s) => ({
-      club_id: session.club_id,
-      stagione_id: stag?.id ?? null,
-      giorno: s.giorno,
-      ora_inizio: s.ora_inizio,
-      ora_fine: s.ora_fine,
-      tipo: "ghiaccio",
-    }));
-    const { error } = await supabase.from("disponibilita_ghiaccio").insert(payload);
-    setLoading(false);
-    if (error) { void segnala_errore("OnboardingPage", t("wizard.save_error"), error); return false; }
-    toast.success(t("wizard.slots_configured", { count: valid.length }));
-    return true;
+    const valid = slots.filter((s) => s.giorno && s.ora_inizio && s.ora_fine && s.ora_inizio < s.ora_fine);
+    setLoading(true);
+    set_errore_salvataggio_pista(null);
+    let risorsa_creata: { id: string; nome: string } | null = null;
+    try {
+      const { data: stag, error: stag_err } = await supabase
+        .from("stagioni").select("id").eq("club_id", session.club_id).eq("attiva", true).maybeSingle();
+      if (stag_err) throw stag_err;
+
+      const { data: nuova_risorsa, error: risorsa_err } = await supabase
+        .from("risorse_strutture")
+        .insert({ club_id: session.club_id, nome, tipo: "ghiaccio" })
+        .select("id, nome")
+        .single();
+      if (risorsa_err) {
+        const messaggio = t("wizard.step3.resource_save_error", { motivo: messaggio_leggibile(risorsa_err) });
+        set_errore_salvataggio_pista(messaggio);
+        void segnala_errore("OnboardingPage", t("wizard.step3.resource_save_operation"), risorsa_err);
+        return false;
+      }
+      risorsa_creata = nuova_risorsa;
+
+      if (valid.length > 0) {
+        const payload = valid.map((s) => ({
+          club_id: session.club_id,
+          risorsa_id: nuova_risorsa.id,
+          stagione_id: stag?.id ?? null,
+          giorno: s.giorno,
+          ora_inizio: s.ora_inizio,
+          ora_fine: s.ora_fine,
+          tipo: "ghiaccio",
+        }));
+        const { error: disponibilita_err } = await supabase.from("disponibilita_ghiaccio").insert(payload);
+        if (disponibilita_err) {
+          const { error: compensazione_err } = await supabase
+            .from("risorse_strutture")
+            .delete()
+            .eq("id", nuova_risorsa.id);
+          if (compensazione_err) {
+            const messaggio = t("wizard.step3.partial_save_error", {
+              risorsa: nuova_risorsa.nome,
+              motivo: messaggio_leggibile(disponibilita_err),
+              ripristino: messaggio_leggibile(compensazione_err),
+            });
+            set_errore_salvataggio_pista(messaggio);
+            void segnala_errore("OnboardingPage", t("wizard.step3.partial_save_operation"), compensazione_err, {
+              risorsa_id: nuova_risorsa.id,
+              errore_disponibilita: messaggio_leggibile(disponibilita_err),
+            });
+          } else {
+            risorsa_creata = null;
+            const messaggio = t("wizard.step3.availability_save_error", { motivo: messaggio_leggibile(disponibilita_err) });
+            set_errore_salvataggio_pista(messaggio);
+            void segnala_errore("OnboardingPage", t("wizard.step3.availability_save_operation"), disponibilita_err);
+          }
+          return false;
+        }
+      }
+
+      toast.success(t("wizard.slots_configured", { count: valid.length }));
+      return true;
+    } catch (errore: unknown) {
+      const messaggio = t("wizard.step3.resource_save_error", { motivo: messaggio_leggibile(errore) });
+      set_errore_salvataggio_pista(messaggio);
+      void segnala_errore("OnboardingPage", t("wizard.step3.resource_save_operation"), errore);
+      return false;
+    } finally {
+      setLoading(false);
+      await Promise.all([
+        query_client.invalidateQueries({ queryKey: ["risorse_strutture"] }),
+        query_client.invalidateQueries({ queryKey: ["disponibilita_ghiaccio"] }),
+        invalida_diagnosi_avvio(query_client),
+      ]);
+      if (risorsa_creata) set_nome_risorsa(risorsa_creata.nome);
+    }
   };
 
   const next = async () => {
@@ -403,6 +467,15 @@ export default function OnboardingPage() {
                 <CardDescription>{t("wizard.step3.subtitle")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
+                <div>
+                  <Label htmlFor="nome-risorsa">{t("wizard.step3.resource_name_label")}</Label>
+                  <Input
+                    id="nome-risorsa"
+                    value={nome_risorsa}
+                    onChange={(event) => set_nome_risorsa(event.target.value)}
+                    placeholder={t("wizard.step3.resource_name_placeholder")}
+                  />
+                </div>
                 {slots.map((s, i) => (
                   <div key={i} className="grid grid-cols-12 gap-2 items-end">
                     <div className="col-span-5">
@@ -442,6 +515,11 @@ export default function OnboardingPage() {
                 <p className="text-xs text-muted-foreground pt-2">
                   {t("wizard.step3.skip_hint")}
                 </p>
+                {errore_salvataggio_pista && (
+                  <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+                    {errore_salvataggio_pista}
+                  </p>
+                )}
               </CardContent>
             </>
           )}
