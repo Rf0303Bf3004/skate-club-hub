@@ -69,6 +69,8 @@ import en_istruttori from '@/locales/en/istruttori.json';
 import en_planning from '@/locales/en/planning.json';
 import en_calendario from '@/locales/en/calendario.json';
 
+import rm_portale from '@/locales/rm/portale.json';
+
 export const NAMESPACES = [
   'common',
   'atleti',
@@ -119,8 +121,7 @@ const resources = {
     events: en_events, mobile: en_mobile, validation: en_validation, errors: en_errors,
     portale: en_portale, istruttori: en_istruttori, planning: en_planning, calendario: en_calendario,
   },
-  // RM mantenuto come slot per retrocompatibilità; fallback a IT finché non popolato.
-  rm: {},
+  rm: { portale: rm_portale },
 };
 
 /**

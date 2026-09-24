@@ -1,4 +1,18 @@
 {
+  "menu": {
+    "home": "Home",
+    "calendario": "Kalender",
+    "eventi": "Anlässe",
+    "notizie": "Mitteilungen",
+    "profilo": "Profil",
+    "navigazione_principale": "Hauptnavigation"
+  },
+  "installazione": {
+    "iphone": "Tippe auf Teilen und dann auf Zum Home-Bildschirm.",
+    "android": "Füge Ice Arena zum Home-Bildschirm hinzu.",
+    "installa": "Installieren",
+    "chiudi": "Schliessen"
+  },
   "home": {
     "errore_prossimi": "Die nächsten Termine konnten nicht gelesen werden. Das bedeutet nicht, dass es keine gibt."
   },

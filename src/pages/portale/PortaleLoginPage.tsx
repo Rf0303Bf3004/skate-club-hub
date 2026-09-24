@@ -52,15 +52,15 @@ const PortaleLoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center p-0 sm:p-4 bg-gradient-to-br from-sky-500 via-indigo-600 to-purple-700">
+    <div className="min-h-mobile relative flex items-center justify-center p-0 sm:p-4 bg-gradient-to-br from-sky-500 via-indigo-600 to-purple-700">
       {/* Pattern decorativo */}
       <div className="absolute inset-0 opacity-20 pointer-events-none">
         <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white blur-3xl" />
         <div className="absolute -bottom-24 -right-24 w-[28rem] h-[28rem] rounded-full bg-sky-200 blur-3xl" />
       </div>
 
-      <div className="relative w-full sm:max-w-[420px] min-h-screen sm:min-h-0">
-        <div className="bg-white/95 backdrop-blur-xl sm:rounded-3xl shadow-2xl p-8 sm:p-10 space-y-7 border border-white/40 min-h-screen sm:min-h-0 flex flex-col justify-center">
+      <div className="relative w-full sm:max-w-[420px] min-h-mobile sm:min-h-0">
+        <div className="bg-white/95 backdrop-blur-xl sm:rounded-3xl shadow-2xl p-8 sm:p-10 space-y-7 border border-white/40 min-h-mobile sm:min-h-0 flex flex-col justify-center">
           {/* Logo club */}
           <div className="flex flex-col items-center gap-4">
             {logo_url ? (

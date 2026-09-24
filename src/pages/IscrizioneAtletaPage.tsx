@@ -255,7 +255,7 @@ const IscrizioneAtletaPage: React.FC = () => {
 
   if (is_loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+      <div className="min-h-mobile flex items-center justify-center bg-muted/30">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -263,7 +263,7 @@ const IscrizioneAtletaPage: React.FC = () => {
 
   if (fatale || !atleta) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <div className="min-h-mobile flex items-center justify-center bg-muted/30 p-4">
         <div className="max-w-sm w-full bg-card border rounded-2xl p-6 text-center space-y-3">
           <AlertCircle className="w-10 h-10 text-destructive mx-auto" />
           <h1 className="text-lg font-semibold">Atleta non trovato</h1>
@@ -275,7 +275,7 @@ const IscrizioneAtletaPage: React.FC = () => {
 
   if (rinuncia_fatta) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <div className="min-h-mobile flex items-center justify-center bg-muted/30 p-4">
         <div className="max-w-sm w-full bg-card border rounded-2xl p-6 text-center space-y-3">
           <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
           <h1 className="text-lg font-semibold">Grazie</h1>
@@ -290,7 +290,7 @@ const IscrizioneAtletaPage: React.FC = () => {
 
   if (successo) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <div className="min-h-mobile flex items-center justify-center bg-muted/30 p-4">
         <div className="max-w-sm w-full bg-card border rounded-2xl p-6 text-center space-y-3">
           <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
           <h1 className="text-lg font-semibold">
@@ -332,7 +332,7 @@ const IscrizioneAtletaPage: React.FC = () => {
       : null;
     const risposta_data = (gia_attivo || gia_non_rinnovato) && !riapri;
     return (
-      <div className="min-h-screen bg-muted/30 p-4 flex justify-center">
+      <div className="min-h-mobile bg-muted/30 p-4 flex justify-center">
         <div className="w-full max-w-xl space-y-4 pb-10">
           <header className="text-center pt-4">
             <h1 className="text-xl font-semibold">Rinnovo per la stagione {stagione?.nome}</h1>
@@ -403,7 +403,7 @@ const IscrizioneAtletaPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 p-4 flex justify-center">
+    <div className="min-h-mobile bg-muted/30 p-4 flex justify-center">
       <div className="w-full max-w-xl space-y-4 pb-10">
         <header className="text-center pt-4">
           <h1 className="text-xl font-semibold">Iscrizione atleta</h1>

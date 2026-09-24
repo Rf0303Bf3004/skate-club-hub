@@ -61,7 +61,7 @@ const CampoOspitePubblicoPage: React.FC = () => {
 
   if (errore) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6">
+      <main className="min-h-mobile flex items-center justify-center p-6">
         <Card className="max-w-md w-full">
           <CardHeader>
             <CardTitle>Link non valido</CardTitle>
@@ -76,7 +76,7 @@ const CampoOspitePubblicoPage: React.FC = () => {
 
   if (!info) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
+      <main className="min-h-mobile flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </main>
     );
@@ -84,7 +84,7 @@ const CampoOspitePubblicoPage: React.FC = () => {
 
   const e = info.evento;
   return (
-    <main className="min-h-screen bg-muted/30 py-10 px-4">
+    <main className="min-h-mobile bg-muted/30 py-10 px-4">
       <div className="max-w-4xl mx-auto space-y-6">
         <header className="space-y-1">
           <h1 className="text-2xl font-bold text-foreground">{e?.nome ?? "Campo"}</h1>

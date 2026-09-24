@@ -11,7 +11,7 @@ export default function PrivacyPage() {
     fornitore.paese,
   ].filter(Boolean).join(", ");
   return (
-    <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-mobile bg-background py-8 px-4 sm:px-6 lg:px-8">
       <Card className="mx-auto w-full max-w-3xl shadow-sm">
         <CardHeader className="space-y-2">
           <CardTitle className="text-2xl font-semibold tracking-tight">

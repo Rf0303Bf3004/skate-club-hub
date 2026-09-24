@@ -99,7 +99,7 @@ const CaricaFotoPage: React.FC = () => {
 
   if (is_loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+      <div className="min-h-mobile flex items-center justify-center bg-muted/30">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -107,7 +107,7 @@ const CaricaFotoPage: React.FC = () => {
 
   if (!atleta) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <div className="min-h-mobile flex items-center justify-center bg-muted/30 p-4">
         <div className="max-w-sm w-full bg-card border rounded-2xl p-6 text-center space-y-3">
           <AlertCircle className="w-10 h-10 text-destructive mx-auto" />
           <h1 className="text-lg font-semibold">Atleta non trovato</h1>
@@ -118,7 +118,7 @@ const CaricaFotoPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 p-4 flex justify-center">
+    <div className="min-h-mobile bg-muted/30 p-4 flex justify-center">
       <div className="w-full max-w-md space-y-4">
         <header className="text-center pt-4">
           <h1 className="text-xl font-semibold">Carica la foto profilo</h1>
