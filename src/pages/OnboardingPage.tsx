@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, ArrowRight, Plus, Trash2, Upload, BookOpen, UserPlus, Users, LayoutDashboard, LogOut, AlertTriangle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+
 import { useTranslation } from "react-i18next";
 import { segnala_errore } from "@/lib/errori";
 
@@ -23,7 +23,6 @@ const TOTAL_STEPS = 3;
 export default function OnboardingPage() {
   const { t } = useTranslation("onboarding");
   const { session, logout } = useAuth();
-  const navigate = useNavigate();
   const GIORNI = [
     t("wizard.days.monday"),
     t("wizard.days.tuesday"),
@@ -225,7 +224,7 @@ export default function OnboardingPage() {
 
   if (done) {
     return (
-      <div className="min-h-screen bg-background p-4 md:p-8">
+      <div className="min-h-mobile bg-background p-4 md:p-8">
         <div className="max-w-3xl mx-auto">
           <div className="mb-6 text-center">
             <h1 className="text-3xl font-bold">{t("wizard.done.title")}</h1>
@@ -275,7 +274,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
+    <div className="min-h-mobile bg-background p-4 md:p-8">
       <div className="max-w-3xl mx-auto">
         <div className="mb-6">
           <div className="flex items-start justify-between gap-3">
