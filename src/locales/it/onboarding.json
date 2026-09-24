@@ -133,7 +133,7 @@
       "start_label": "Inizio",
       "end_label": "Fine",
       "add_slot": "Aggiungi slot",
-      "skip_hint": "Puoi lasciare vuote le fasce e configurarle dopo.",
+      "skip_hint": "Puoi lasciare vuote le fasce e configurarle dopo; il nome della pista è obbligatorio.",
       "nome_pista_label": "Nome della pista *",
       "nome_pista_placeholder": "es. Pista principale",
       "nome_pista_obbligatorio": "Scrivi il nome della pista prima di continuare.",

@@ -95,6 +95,7 @@
       "operazione_ripristino_pista": "Wiederherstellung nach unvollständigem Speichern der Eisbahn",
       "errore_rinomina_pista": "Die Eisbahn wurde nicht umbenannt: {{motivo}} Die Zeitfenster wurden nicht gespeichert.",
       "operazione_rinomina_pista": "Eisbahn bei der Erstkonfiguration umbenennen",
+      "skip_hint": "Sie können die Zeitfenster leer lassen und später konfigurieren; der Name der Eisbahn ist erforderlich.",
       "pista_e_fasce_salvate_one": "Eisbahn «{{risorsa}}» und 1 Zeitfenster gespeichert",
       "pista_e_fasce_salvate_other": "Eisbahn «{{risorsa}}» und {{count}} Zeitfenster gespeichert"
     }

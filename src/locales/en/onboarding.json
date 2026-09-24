@@ -95,6 +95,7 @@
       "operazione_ripristino_pista": "Recovery after incomplete ice rink saving",
       "errore_rinomina_pista": "The ice rink wasn't renamed: {{motivo}} The time slots weren't saved.",
       "operazione_rinomina_pista": "Renaming the ice rink during initial setup",
+      "skip_hint": "You can leave the time slots empty and configure them later; the ice rink name is required.",
       "pista_e_fasce_salvate_one": "Ice rink “{{risorsa}}” and 1 time slot saved",
       "pista_e_fasce_salvate_other": "Ice rink “{{risorsa}}” and {{count}} time slots saved"
     }
