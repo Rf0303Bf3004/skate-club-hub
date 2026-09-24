@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import { useTranslation } from "react-i18next";
-import { rotta_area, type RigaDiagnosi } from "@/lib/avvio-club";
+import { rotta_riga, type RigaDiagnosi } from "@/lib/avvio-club";
 
 /**
  * Lista di avvio del club, alimentata dalla funzione DB diagnosi_avvio_club(club_id).
@@ -102,7 +102,7 @@ export default function OnboardingBanner() {
           {!tutto_ok && (
             <ul className="mt-4 space-y-2">
               {mancanti.map((r) => {
-                const rotta = rotta_area(r.area);
+                const rotta = rotta_riga(r);
                 return (
                   <li
                     key={r.passo}
