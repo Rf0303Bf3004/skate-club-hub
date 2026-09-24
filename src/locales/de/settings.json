@@ -88,6 +88,11 @@
       "errore_salvataggio": "Die Ressource wurde nicht gespeichert. Ihre Eingaben sind noch da: korrigieren oder erneut versuchen.",
       "errore_lettura": "Die Ressourcen des Clubs können nicht gelesen werden. Das heisst nicht, dass es keine gibt.",
       "riprova": "Erneut versuchen"
+    },
+    "sezione": {
+      "passo_procedura": "Schritt der geführten Einrichtung",
+      "campi_da_compilare_one": "{{count}} Feld auszufüllen",
+      "campi_da_compilare_other": "{{count}} Felder auszufüllen"
     }
   },
   "seasons": {

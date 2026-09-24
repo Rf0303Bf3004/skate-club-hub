@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { invalida_diagnosi_avvio } from "@/lib/avvio-club";
 import { useSearchParams } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";

@@ -88,6 +88,11 @@
       "errore_salvataggio": "La ressource n'a pas été enregistrée. Vos saisies sont toujours là : corrigez ou réessayez.",
       "errore_lettura": "Impossible de lire les ressources du club. Cela ne veut pas dire qu'il n'y en a pas.",
       "riprova": "Réessayer"
+    },
+    "sezione": {
+      "passo_procedura": "Étape de la procédure guidée",
+      "campi_da_compilare_one": "{{count}} champ à remplir",
+      "campi_da_compilare_other": "{{count}} champs à remplir"
     }
   },
   "seasons": {

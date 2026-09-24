@@ -88,6 +88,11 @@
       "errore_salvataggio": "The resource wasn't saved. What you typed is still here: correct it or try again.",
       "errore_lettura": "The club's resources can't be read. That doesn't mean there are none.",
       "riprova": "Try again"
+    },
+    "sezione": {
+      "passo_procedura": "Guided setup step",
+      "campi_da_compilare_one": "{{count}} field to fill in",
+      "campi_da_compilare_other": "{{count}} fields to fill in"
     }
   },
   "seasons": {
