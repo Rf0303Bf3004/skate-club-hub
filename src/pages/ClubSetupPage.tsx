@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { invalida_diagnosi_avvio } from "@/lib/avvio-club";
 import { useSearchParams } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
@@ -378,6 +379,8 @@ const ClubSetupPage: React.FC = () => {
       });
     } finally {
       set_saving(false);
+      // Anche a salvataggio parziale qualcosa può essere cambiato: la procedura guidata rilegge.
+      void invalida_diagnosi_avvio(queryClient);
     }
   };
 
@@ -426,6 +429,7 @@ const ClubSetupPage: React.FC = () => {
       toast({ title: t("club.toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving_ghiaccio(false);
+      void invalida_diagnosi_avvio(queryClient);
     }
   };
 
