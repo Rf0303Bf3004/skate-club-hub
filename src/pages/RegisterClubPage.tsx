@@ -88,7 +88,8 @@ export default function RegisterClubPage() {
       toast.success(t('register.success_created'));
       window.location.href = "/onboarding";
     } catch (err) {
-      toast.error(String(err));
+      console.error(err);
+      toast.error(t("register.errors.register_failed"));
       setLoading(false);
     }
   };
