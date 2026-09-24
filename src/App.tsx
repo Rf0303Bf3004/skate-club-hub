@@ -59,6 +59,7 @@ import PresidentRelazione from "@/pages/PresidentRelazione";
 import PacchettiSponsorPage from "@/pages/PacchettiSponsorPage";
 import RegisterClubPage from "@/pages/RegisterClubPage";
 import OnboardingPage from "@/pages/OnboardingPage";
+import { OnboardingGate } from "@/components/OnboardingGate";
 import LegalPlaceholderPage from "@/pages/LegalPlaceholderPage";
 import TerminiPage from "@/pages/TerminiPage";
 import PrivacyPage from "@/pages/PrivacyPage";
@@ -509,6 +510,7 @@ const AuthenticatedApp = () => {
   }
 
   return (
+    <OnboardingGate>
     <BrowserRouter>
       <MainLayout>
         <Routes>
@@ -648,6 +650,7 @@ const AuthenticatedApp = () => {
         </Routes>
       </MainLayout>
     </BrowserRouter>
+    </OnboardingGate>
   );
 };
 
