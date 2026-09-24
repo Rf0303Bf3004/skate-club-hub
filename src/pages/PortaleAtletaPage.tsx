@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { use_contenuti_traduzioni } from "@/hooks/use-contenuti-traduzioni";
 import { formatta_livelli_corso, is_apertura_totale, livello_dichiarato } from "@/lib/livelli-corso";
 import DateInput from "@/components/forms/DateInput";
+import CalendarioTelefonoRiquadro from "@/components/portale/CalendarioTelefonoRiquadro";
 
 import { format_data } from "@/lib/format-data";
 // Portale pubblico mobile-first: l'identificativo è il `codice_atleta` (AT-XXXX-XXXX).
@@ -368,6 +369,7 @@ const PortaleAtletaPage: React.FC = () => {
 
         {tab === "calendario" && (
           <div className="space-y-3">
+            <CalendarioTelefonoRiquadro codice_atleta={token} />
             <h2 className="text-sm font-bold text-foreground">{t("atleta_page.prossimi_impegni")}</h2>
             {errore_lettura ? (
               <BoxErrore errore={errore_lettura} etichetta={t("atleta_page.riprova")} on_riprova={() => set_tentativo((n) => n + 1)} />
