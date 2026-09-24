@@ -168,7 +168,11 @@ export default function RegisterClubPage() {
                   inputMode="numeric"
                   maxLength={ch ? 4 : 5}
                   value={form.cap}
-                  onChange={(e) => update("cap", e.target.value.replace(/\D/g, ""))}
+                  onChange={(e) => {
+                    const nuovo = e.target.value.replace(/\D/g, "");
+                    // Un CAP nuovo invalida località e cantone del precedente.
+                    setForm((f) => (nuovo === f.cap ? f : { ...f, cap: nuovo, localita: "", cantone: "" }));
+                  }}
                 />
               </div>
               <div>
