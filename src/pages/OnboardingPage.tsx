@@ -186,7 +186,7 @@ export default function OnboardingPage() {
   const saveStep3 = async () => {
     const nome = nome_risorsa.trim();
     if (!nome) {
-      set_errore_salvataggio_pista(t("wizard.step3.resource_name_required"));
+      set_errore_salvataggio_pista(t("wizard.step3.nome_pista_obbligatorio"));
       return false;
     }
     const valid = slots.filter((s) => s.giorno && s.ora_inizio && s.ora_fine && s.ora_inizio < s.ora_fine);
@@ -208,9 +208,9 @@ export default function OnboardingPage() {
           .select("id, nome")
           .single();
         if (risorsa_err) {
-          const messaggio = t("wizard.step3.resource_save_error", { motivo: messaggio_leggibile(risorsa_err) });
+          const messaggio = t("wizard.step3.errore_salvataggio_pista", { motivo: messaggio_leggibile(risorsa_err) });
           set_errore_salvataggio_pista(messaggio);
-          void segnala_errore("OnboardingPage", t("wizard.step3.resource_save_operation"), risorsa_err);
+          void segnala_errore("OnboardingPage", t("wizard.step3.operazione_salvataggio_pista"), risorsa_err, undefined, "avviso");
           return false;
         }
         risorsa_per_fasce = nuova_risorsa;
@@ -234,36 +234,36 @@ export default function OnboardingPage() {
             : { error: null };
           const compensazione_err = compensazione.error;
           if (compensazione_err) {
-            const messaggio = t("wizard.step3.partial_save_error", {
+            const messaggio = t("wizard.step3.errore_salvataggio_parziale", {
               risorsa: risorsa_per_fasce.nome,
               motivo: messaggio_leggibile(disponibilita_err),
               ripristino: messaggio_leggibile(compensazione_err),
             });
             set_errore_salvataggio_pista(messaggio);
-            void segnala_errore("OnboardingPage", t("wizard.step3.partial_save_operation"), compensazione_err, {
+            void segnala_errore("OnboardingPage", t("wizard.step3.operazione_ripristino_pista"), compensazione_err, {
               risorsa_id: risorsa_per_fasce.id,
               errore_disponibilita: messaggio_leggibile(disponibilita_err),
-            });
+            }, "avviso");
           } else if (risorsa_creata) {
             risorsa_creata = null;
-            const messaggio = t("wizard.step3.availability_save_error", { motivo: messaggio_leggibile(disponibilita_err) });
+            const messaggio = t("wizard.step3.errore_salvataggio_fasce", { motivo: messaggio_leggibile(disponibilita_err) });
             set_errore_salvataggio_pista(messaggio);
-            void segnala_errore("OnboardingPage", t("wizard.step3.availability_save_operation"), disponibilita_err);
+            void segnala_errore("OnboardingPage", t("wizard.step3.operazione_salvataggio_fasce"), disponibilita_err, undefined, "avviso");
           } else {
-            const messaggio = t("wizard.step3.existing_resource_availability_error", { motivo: messaggio_leggibile(disponibilita_err) });
+            const messaggio = t("wizard.step3.errore_fasce_risorsa_esistente", { motivo: messaggio_leggibile(disponibilita_err) });
             set_errore_salvataggio_pista(messaggio);
-            void segnala_errore("OnboardingPage", t("wizard.step3.availability_save_operation"), disponibilita_err);
+            void segnala_errore("OnboardingPage", t("wizard.step3.operazione_salvataggio_fasce"), disponibilita_err, undefined, "avviso");
           }
           return false;
         }
       }
 
-      toast.success(t("wizard.slots_configured", { count: valid.length }));
+      toast.success(t("wizard.step3.pista_e_fasce_salvate", { risorsa: risorsa_per_fasce.nome, count: valid.length }));
       return true;
     } catch (errore: unknown) {
-      const messaggio = t("wizard.step3.resource_save_error", { motivo: messaggio_leggibile(errore) });
+      const messaggio = t("wizard.step3.errore_salvataggio_pista", { motivo: messaggio_leggibile(errore) });
       set_errore_salvataggio_pista(messaggio);
-      void segnala_errore("OnboardingPage", t("wizard.step3.resource_save_operation"), errore);
+      void segnala_errore("OnboardingPage", t("wizard.step3.operazione_salvataggio_pista"), errore, undefined, "avviso");
       return false;
     } finally {
       setLoading(false);
@@ -485,12 +485,12 @@ export default function OnboardingPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <Label htmlFor="nome-risorsa">{t("wizard.step3.resource_name_label")}</Label>
+                  <Label htmlFor="nome-risorsa">{t("wizard.step3.nome_pista_label")}</Label>
                   <Input
                     id="nome-risorsa"
                     value={nome_risorsa}
                     onChange={(event) => set_nome_risorsa(event.target.value)}
-                    placeholder={t("wizard.step3.resource_name_placeholder")}
+                    placeholder={t("wizard.step3.nome_pista_placeholder")}
                   />
                 </div>
                 {slots.map((s, i) => (

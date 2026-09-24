@@ -1,16 +1,18 @@
 {
   "wizard": {
     "step3": {
-      "resource_name_label": "Num da la pista da glatsch *",
-      "resource_name_placeholder": "p. ex. pista principala",
-      "resource_name_required": "Endatescha il num da la pista da glatsch avant che cuntinuar.",
-      "resource_save_error": "La pista da glatsch n'è betg vegnida memorisada: {{motivo}}",
-      "resource_save_operation": "Crear la pista da glatsch durant la configuraziun iniziala",
-      "availability_save_error": "Las periodas n'èn betg vegnidas memorisadas: {{motivo}} La pista gist creada è vegnida eliminada; ti pos empruvar danovamain senza crear duplicats.",
-      "existing_resource_availability_error": "Las periodas n'èn betg vegnidas memorisadas: {{motivo}} La pista existenta n'è betg vegnida midada.",
-      "availability_save_operation": "Memorisar las periodas da la pista durant la configuraziun iniziala",
-      "partial_save_error": "Las periodas n'èn betg vegnidas memorisadas: {{motivo}} La pista «{{risorsa}}» è restada sut Configuraziun dal club → Glatsch → Resursas e stabiliments, perquai che la restauraziun n'è betg reussida: {{ripristino}}",
-      "partial_save_operation": "Restauraziun suenter ina memorizzaziun incumpletta da la pista"
+      "nome_pista_label": "Num da la pista da glatsch *",
+      "nome_pista_placeholder": "p. ex. pista principala",
+      "nome_pista_obbligatorio": "Endatescha il num da la pista da glatsch avant che cuntinuar.",
+      "errore_salvataggio_pista": "La pista da glatsch n'è betg vegnida memorisada: {{motivo}}",
+      "operazione_salvataggio_pista": "Crear la pista da glatsch durant la configuraziun iniziala",
+      "errore_salvataggio_fasce": "Las periodas n'èn betg vegnidas memorisadas: {{motivo}} La pista gist creada è vegnida eliminada; ti pos empruvar danovamain senza crear duplicats.",
+      "errore_fasce_risorsa_esistente": "Las periodas n'èn betg vegnidas memorisadas: {{motivo}} La pista existenta n'è betg vegnida midada.",
+      "operazione_salvataggio_fasce": "Memorisar las periodas da la pista durant la configuraziun iniziala",
+      "errore_salvataggio_parziale": "Las periodas n'èn betg vegnidas memorisadas: {{motivo}} La pista «{{risorsa}}» è restada sut Configuraziun dal club → Glatsch → Resursas e stabiliments, perquai che la restauraziun n'è betg reussida: {{ripristino}}",
+      "operazione_ripristino_pista": "Restauraziun suenter ina memorizzaziun incumpletta da la pista",
+      "pista_e_fasce_salvate_one": "Pista «{{risorsa}}» ed 1 perioda memorisadas",
+      "pista_e_fasce_salvate_other": "Pista «{{risorsa}}» e {{count}} periodas memorisadas"
     }
   },
   "avvio": {
