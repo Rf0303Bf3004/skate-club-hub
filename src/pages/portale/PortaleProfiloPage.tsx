@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useOutletContext } from "react-router-dom
 import { User, GraduationCap, CreditCard, Sparkles, Ribbon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { PortaleSession } from "@/lib/portale-auth";
+import CalendarioTelefonoRiquadro from "@/components/portale/CalendarioTelefonoRiquadro";
 
 function calcola_eta(data_nascita: string | null): number | null {
   if (!data_nascita) return null;
@@ -122,6 +123,8 @@ const PortaleProfiloPage: React.FC = () => {
       {/* CONTENT */}
       <div>
         {at_root ? (
+          <div className="space-y-6">
+          <CalendarioTelefonoRiquadro codice_atleta={session.atleta.codice_atleta} />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {subnav.map((s) => (
               <NavLink
@@ -135,6 +138,7 @@ const PortaleProfiloPage: React.FC = () => {
                 <span className="font-bold text-slate-700 text-lg">{s.label}</span>
               </NavLink>
             ))}
+          </div>
           </div>
         ) : (
           <Outlet context={{ session, atleta }} />
