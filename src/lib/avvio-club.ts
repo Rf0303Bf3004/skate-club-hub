@@ -53,6 +53,23 @@ export const riga_bloccante_aperta = (r: RigaDiagnosi) => r.blocca && r.esito !=
 
 export const ha_bloccanti_aperti = (righe: RigaDiagnosi[]) => righe.some(riga_bloccante_aperta);
 
+/**
+ * Conteggio unico dell'avanzamento, usato da pagina di avvio e procedura guidata.
+ * Denominatore stabile = tutte le righe (la funzione marca `blocca` solo sui controlli
+ * che falliscono, quindi contare i bloccanti farebbe muovere numeratore e denominatore insieme).
+ */
+export function avanzamento_avvio(righe: RigaDiagnosi[]) {
+  const a_posto = righe.filter((r) => r.esito === "✓").length;
+  const totale = righe.length;
+  const bloccanti_aperte = righe.filter(riga_bloccante_aperta).length;
+  const percentuale = totale > 0 ? Math.round((a_posto / totale) * 100) : 0;
+  return { a_posto, totale, bloccanti_aperte, percentuale };
+}
+
+/** Passo corrente: la prima riga bloccante aperta, in ordine di `passo`. */
+export const passo_corrente_avvio = (righe: RigaDiagnosi[]) =>
+  [...righe].sort((a, b) => a.passo - b.passo).find(riga_bloccante_aperta);
+
 /** Prefisso della chiave di cache della diagnosi (una sola chiave in tutto il portale). */
 export const CHIAVE_DIAGNOSI_AVVIO = "diagnosi_avvio_club";
 

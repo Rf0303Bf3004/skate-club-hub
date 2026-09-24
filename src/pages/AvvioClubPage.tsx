@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { CheckCircle2, AlertTriangle, XCircle, ArrowRight, RefreshCw } from "lucide-react";
-import { rotta_riga, use_diagnosi_avvio, type RigaDiagnosi } from "@/lib/avvio-club";
+import { avanzamento_avvio, rotta_riga, use_diagnosi_avvio, type RigaDiagnosi } from "@/lib/avvio-club";
 import { RiprendiProceduraButton } from "@/components/avvio/ProceduraGuidataBar";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -46,9 +46,7 @@ export default function AvvioClubPage() {
     return Array.from(mappa.entries());
   }, [righe]);
 
-  const a_posto = righe.filter((r) => r.esito === "✓").length;
-  const bloccanti_aperte = righe.filter((r) => r.blocca && r.esito !== "✓").length;
-  const avanzamento = righe.length > 0 ? Math.round((a_posto / righe.length) * 100) : 0;
+  const { a_posto, bloccanti_aperte, percentuale: avanzamento } = avanzamento_avvio(righe);
 
   const intestazione = (
     <div>

@@ -122,6 +122,7 @@
     "riprova": "Erneut versuchen",
     "fatto": "Erledigt: {{controllo}}",
     "ricontrolla": "Erneut prüfen",
-    "ricontrollo_in_corso": "Wird geprüft…"
+    "ricontrollo_in_corso": "Wird geprüft…",
+    "prossimo": "Als Nächstes:"
   }
 }

@@ -4,10 +4,12 @@ import { useTranslation } from "react-i18next";
 import { ArrowRight, CheckCircle2, Compass, RefreshCw, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { segnala_errore } from "@/lib/errori";
 import {
   RUOLI_AVVIO_CLUB,
-  riga_bloccante_aperta,
+  avanzamento_avvio,
+  passo_corrente_avvio,
   rotta_riga,
   use_diagnosi_avvio,
   use_preferenze_procedura,
@@ -44,13 +46,12 @@ export default function ProceduraGuidataBar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [diagnosi.isError, attiva]);
 
-  const bloccanti = useMemo(
-    () => (diagnosi.data ?? []).filter((r) => r.blocca).sort((a, b) => a.passo - b.passo),
-    [diagnosi.data],
-  );
-  const corrente = bloccanti.find(riga_bloccante_aperta);
+  const righe = useMemo(() => diagnosi.data ?? [], [diagnosi.data]);
+  const conteggio = useMemo(() => avanzamento_avvio(righe), [righe]);
+  const corrente = useMemo(() => passo_corrente_avvio(righe), [righe]);
 
-  // «Fatto: …» quando il passo corrente di prima risulta ora superato.
+  // «Fatto: …» quando il PASSO CORRENTE cambia e quello di prima risulta ora ✓.
+  // Si cerca fra tutte le righe: una riga risolta perde `blocca`, quindi non è più fra i bloccanti.
   const passo_precedente = useRef<number | null>(null);
   const [fatto, set_fatto] = useState<string | null>(null);
   useEffect(() => {
@@ -58,7 +59,7 @@ export default function ProceduraGuidataBar() {
     const prima = passo_precedente.current;
     const ora = corrente?.passo ?? null;
     if (prima !== null && prima !== ora) {
-      const superata = bloccanti.find((r) => r.passo === prima && r.esito === "✓");
+      const superata = righe.find((r) => r.passo === prima && r.esito === "✓");
       if (superata) set_fatto(superata.controllo);
     }
     passo_precedente.current = ora;
@@ -123,7 +124,6 @@ export default function ProceduraGuidataBar() {
     );
   }
 
-  const n = bloccanti.indexOf(corrente) + 1;
   const rotta = rotta_riga(corrente);
 
   return (
@@ -131,9 +131,11 @@ export default function ProceduraGuidataBar() {
       <Compass className="w-4 h-4 text-primary shrink-0 hidden sm:block" />
       <div className="flex-1 min-w-[12rem]">
         <p className="text-xs font-semibold text-primary">
-          {t("procedura.titolo")} · {t("procedura.passo", { n, m: bloccanti.length })}
+          {t("procedura.titolo")} · {t("avvio.a_posto", { a_posto: conteggio.a_posto, totale: conteggio.totale })}
         </p>
+        <Progress value={conteggio.percentuale} className="h-1 my-1" />
         <p className="text-foreground truncate">
+          <span className="text-muted-foreground">{t("procedura.prossimo")} </span>
           <span className="font-medium">{corrente.controllo}</span>
           {corrente.dettaglio && <span className="text-muted-foreground"> — {corrente.dettaglio}</span>}
         </p>
