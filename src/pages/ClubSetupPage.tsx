@@ -160,7 +160,20 @@ const ClubSetupPage: React.FC = () => {
   const { data: stagione_corrente } = use_stagione_attiva();
   const { data: disp_ghiaccio_raw, isLoading: loading_disp } = use_disponibilita_ghiaccio();
   const { data: catalogo_count, isError: errore_catalogo } = use_catalogo_count();
-  const { data: risorse = [] } = use_risorse_strutture();
+  const {
+    data: risorse = [],
+    isSuccess: risorse_lette,
+    isError: errore_risorse,
+    isFetching: risorse_in_lettura,
+    error: errore_risorse_dettaglio,
+    refetch: ricarica_risorse,
+  } = use_risorse_strutture();
+  useEffect(() => {
+    if (errore_risorse) {
+      void segnala_errore("ClubSetupPage", "Lettura risorse per disponibilità", errore_risorse_dettaglio, undefined, "avviso");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [errore_risorse]);
 
   const stagione_attiva = stagioni.find((s: any) => s.attiva);
   const [form, set_form] = useState<Record<string, any>>({});
@@ -195,6 +208,8 @@ const ClubSetupPage: React.FC = () => {
   const [saving_disp, set_saving_disp] = useState(false);
 
   const risorse_attive = (risorse ?? []).filter((r: any) => r.attiva !== false);
+  // Compilabile solo con lettura riuscita e almeno una risorsa attiva: «non arrivata» ≠ «zero».
+  const disponibilita_compilabile = risorse_lette && risorse_attive.length > 0;
   const risorsa_sel = (risorse ?? []).find((r: any) => r.id === risorsa_sel_id) ?? null;
   const risorsa_is_ghiaccio = risorsa_sel?.tipo !== "palestra";
 
