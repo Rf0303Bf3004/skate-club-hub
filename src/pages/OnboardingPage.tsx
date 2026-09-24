@@ -267,7 +267,7 @@ export default function OnboardingPage() {
       return false;
     } finally {
       setLoading(false);
-      await Promise.all([
+      await Promise.allSettled([
         query_client.invalidateQueries({ queryKey: ["risorse_strutture"] }),
         query_client.invalidateQueries({ queryKey: ["disponibilita_ghiaccio"] }),
         invalida_diagnosi_avvio(query_client),
