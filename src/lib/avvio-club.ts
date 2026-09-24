@@ -21,33 +21,66 @@ export interface RigaDiagnosi {
 /** Ruoli a cui si rivolgono lista di avvio e procedura guidata. */
 export const RUOLI_AVVIO_CLUB = ["presidente", "vicepresidente", "admin"];
 
-/** Area (valore del database) → pagina dove si risolve; `chiave` = onboarding.avvio.rotte.<chiave>. */
-export const ROTTA_PER_AREA: Record<string, { to: string; chiave: string }> = {
-  Anagrafica: { to: "/setup-club", chiave: "setup_club" },
-  Accesso: { to: "/utenti", chiave: "utenti" },
-  Stagione: { to: "/setup-club", chiave: "date_stagione" },
-  Ghiaccio: { to: "/setup-club", chiave: "risorse" },
-  Offerta: { to: "/corsi", chiave: "corsi" },
-  Atleti: { to: "/atleti", chiave: "atleti" },
-  Fatturazione: { to: "/setup-club", chiave: "fatturazione" },
-  Comunicazioni: { to: "/comunicazioni", chiave: "comunicazioni" },
-  "App famiglie": { to: "/atleti", chiave: "atleti" },
-};
+/** Destinazione di un controllo; `chiave` = onboarding.avvio.destinazioni.<chiave>, `aiuto` = onboarding.avvio.aiuto.<aiuto>. */
+export interface RottaAvvio {
+  to: string;
+  chiave: string;
+  aiuto?: string;
+}
+
+const DATI_CLUB: RottaAvvio = { to: "/setup-club?tab=club", chiave: "dati_club" };
+const GHIACCIO: RottaAvvio = { to: "/setup-club?tab=ghiaccio", chiave: "ghiaccio" };
+const FATTURAZIONE: RottaAvvio = { to: "/setup-club?tab=fatturazione", chiave: "fatturazione" };
+const STAGIONI: RottaAvvio = { to: "/stagioni", chiave: "stagioni" };
+const ATLETI: RottaAvvio = { to: "/atleti", chiave: "atleti" };
 
 /**
- * Eccezioni per singolo controllo, per numero di passo (identificativo stabile della funzione).
- * Passo 11 «Almeno un istruttore» conta le SCHEDE in `istruttori`, non gli accessi.
- * `aiuto` = onboarding.avvio.aiuto.<chiave>.
+ * Mappa unica per numero di passo (identificativo stabile di diagnosi_avvio_club),
+ * usata da barra guidata, pagina di avvio e banner della dashboard.
+ * Passo 11 conta le SCHEDE in `istruttori`, non gli accessi: porta a Istruttori.
  */
-const ROTTA_PER_PASSO: Record<number, { to: string; chiave: string; aiuto?: string }> = {
+const ROTTA_PER_PASSO: Record<number, RottaAvvio> = {
+  1: DATI_CLUB,
+  2: DATI_CLUB,
+  3: { to: "/utenti", chiave: "utenti" },
+  4: { to: "/ruoli-permessi", chiave: "ruoli_permessi" },
+  6: STAGIONI,
+  7: STAGIONI,
+  8: GHIACCIO,
+  9: GHIACCIO,
+  10: GHIACCIO,
   11: { to: "/istruttori", chiave: "istruttori", aiuto: "istruttore_scheda" },
+  12: { to: "/corsi", chiave: "corsi" },
+  13: ATLETI,
+  14: ATLETI,
+  15: ATLETI,
+  16: FATTURAZIONE,
+  17: FATTURAZIONE,
+  18: FATTURAZIONE,
+  19: FATTURAZIONE,
+  20: FATTURAZIONE,
+  21: { to: "/comunicazioni", chiave: "comunicazioni" },
+  22: ATLETI,
 };
 
-export const rotta_area = (area: string) => ROTTA_PER_AREA[area] ?? { to: "/setup-club", chiave: "setup_club" };
+/** Solo ripiego, per passi che la funzione aggiungesse in futuro. Area = valore del database. */
+const RIPIEGO_PER_AREA: Record<string, RottaAvvio> = {
+  Anagrafica: DATI_CLUB,
+  Accesso: { to: "/utenti", chiave: "utenti" },
+  Stagione: STAGIONI,
+  Ghiaccio: GHIACCIO,
+  Offerta: { to: "/corsi", chiave: "corsi" },
+  Atleti: ATLETI,
+  Fatturazione: FATTURAZIONE,
+  Comunicazioni: { to: "/comunicazioni", chiave: "comunicazioni" },
+  "App famiglie": ATLETI,
+};
 
-/** Rotta di una riga: prima l'eccezione per passo, poi la mappa per area. */
-export const rotta_riga = (r: Pick<RigaDiagnosi, "passo" | "area">): { to: string; chiave: string; aiuto?: string } =>
-  ROTTA_PER_PASSO[r.passo] ?? rotta_area(r.area);
+const RIPIEGO: RottaAvvio = { to: "/setup-club", chiave: "setup_club" };
+
+/** Rotta di una riga: prima la mappa per passo, poi il ripiego per area. */
+export const rotta_riga = (r: Pick<RigaDiagnosi, "passo" | "area">): RottaAvvio =>
+  ROTTA_PER_PASSO[r.passo] ?? RIPIEGO_PER_AREA[r.area] ?? RIPIEGO;
 
 export const riga_bloccante_aperta = (r: RigaDiagnosi) => r.blocca && r.esito !== "✓";
 
