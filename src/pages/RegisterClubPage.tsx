@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
+import { codice_errore_edge } from "@/lib/errore-edge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,8 +69,14 @@ export default function RegisterClubPage() {
           telefono: form.telefono,
         },
       });
-      if (error || (data as any)?.error) {
-        toast.error((data as any)?.error || error?.message || t('register.errors.register_failed'));
+      if (error || (data as { error?: unknown } | null)?.error) {
+        const codice = (await codice_errore_edge(data, error)) ?? "";
+        const chiave = /weak|easy to guess|pwned/i.test(codice)
+          ? "register.errors.password_weak"
+          : /already (been )?registered|already exists|già associato/i.test(codice)
+            ? "register.errors.email_exists"
+            : "register.errors.register_failed";
+        toast.error(t(chiave));
         setLoading(false);
         return;
       }
