@@ -1,3 +1,4 @@
+import ProceduraGuidataBar from "@/components/avvio/ProceduraGuidataBar";
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useI18n, LOCALE_LABELS, Locale } from "@/lib/i18n";

@@ -104,5 +104,17 @@
       "fatturazione": "Facturation",
       "comunicazioni": "Communications"
     }
+  },
+  "procedura": {
+    "titolo": "Procédure guidée",
+    "passo": "Étape {{n}} sur {{m}}",
+    "vai": "Y aller",
+    "esci": "Quitter la procédure guidée",
+    "riprendi": "Reprendre la procédure guidée",
+    "pronto": "Le club est prêt : tous les contrôles bloquants sont en ordre.",
+    "chiudi": "Fermer",
+    "errore": "Impossible de lire les étapes",
+    "caricamento": "Lecture des étapes…",
+    "riprova": "Réessayer"
   }
 }

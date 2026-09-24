@@ -104,5 +104,17 @@
       "fatturazione": "Rechnungsstellung",
       "comunicazioni": "Mitteilungen"
     }
+  },
+  "procedura": {
+    "titolo": "Geführter Start",
+    "passo": "Schritt {{n}} von {{m}}",
+    "vai": "Los",
+    "esci": "Geführten Start beenden",
+    "riprendi": "Geführten Start fortsetzen",
+    "pronto": "Der Club ist bereit: Alle blockierenden Prüfungen sind erledigt.",
+    "chiudi": "Schliessen",
+    "errore": "Die Schritte können nicht gelesen werden",
+    "caricamento": "Schritte werden gelesen…",
+    "riprova": "Erneut versuchen"
   }
 }
