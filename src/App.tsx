@@ -3,7 +3,7 @@ import { usePermessiSezioniMatrix } from "@/hooks/usePermessi";
 import { toast } from "@/hooks/use-toast";
 import GrigliaGhiaccioPage from "@/pages/GrigliaGhiaccioPage";
 import PistaPage from "@/pages/PistaPage";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useNavigate, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -71,7 +71,7 @@ import SuperAdminAppMobilePage from "@/pages/SuperAdminAppMobilePage";
 import SuperAdminTraduzioniPage from "@/pages/SuperAdminTraduzioniPage";
 import ConvenzioniSociPage from "@/pages/ConvenzioniSociPage";
 import AvvioClubPage from "@/pages/AvvioClubPage";
-import { use_diagnosi_avvio, ha_bloccanti_aperti } from "@/lib/avvio-club";
+import { use_diagnosi_avvio, ha_bloccanti_aperti, invalida_diagnosi_avvio } from "@/lib/avvio-club";
 import { RiprendiProceduraButton } from "@/components/avvio/ProceduraGuidataBar";
 import EsportazioniPage from "@/pages/EsportazioniPage";
 import AssenzeStaffPage from "@/pages/AssenzeStaffPage";
@@ -273,7 +273,13 @@ const PERCORSI_PUBBLICI: GruppoPercorsoPubblico[] = [
 const e_percorso_pubblico = (path: string): boolean =>
   PERCORSI_PUBBLICI.some((g) => g.corrisponde(path));
 
-const queryClient = new QueryClient();
+// Ogni mutazione riuscita (useMutation, in qualsiasi file) fa rileggere la
+// diagnosi di avvio: la procedura guidata avanza senza attendere un cambio pagina.
+const queryClient: QueryClient = new QueryClient({
+  mutationCache: new MutationCache({
+    onSuccess: () => { void invalida_diagnosi_avvio(queryClient); },
+  }),
+});
 
 /**
  * Sessione «pista»: il tablet entra con il codice del club e resta sulla pista.

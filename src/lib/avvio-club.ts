@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
 /**
@@ -40,12 +40,21 @@ export const riga_bloccante_aperta = (r: RigaDiagnosi) => r.blocca && r.esito !=
 
 export const ha_bloccanti_aperti = (righe: RigaDiagnosi[]) => righe.some(riga_bloccante_aperta);
 
+/** Prefisso della chiave di cache della diagnosi (una sola chiave in tutto il portale). */
+export const CHIAVE_DIAGNOSI_AVVIO = "diagnosi_avvio_club";
+
+/** Fa rileggere la diagnosi a chi la sta mostrando (pagina di avvio, home, barra). */
+export const invalida_diagnosi_avvio = (qc: QueryClient) =>
+  qc.invalidateQueries({ queryKey: [CHIAVE_DIAGNOSI_AVVIO] });
+
 /** Lettura condivisa (stessa chiave di cache ovunque). */
-export function use_diagnosi_avvio(club_id: string | undefined, enabled = true) {
+export function use_diagnosi_avvio(club_id: string | undefined, enabled = true, intervallo_ms: number | false = false) {
   return useQuery({
-    queryKey: ["diagnosi_avvio_club", club_id],
+    queryKey: [CHIAVE_DIAGNOSI_AVVIO, club_id],
     enabled: enabled && !!club_id,
     refetchOnWindowFocus: true,
+    // Rete di sicurezza per scritture che non passano da un'invalidazione: solo dove richiesto.
+    refetchInterval: intervallo_ms,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("diagnosi_avvio_club" as any, { p_club: club_id });
       if (error) throw error;
