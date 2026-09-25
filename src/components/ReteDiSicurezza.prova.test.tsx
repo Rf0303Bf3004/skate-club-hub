@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { createRoot } from "react-dom/client";
+import { act } from "react";
 import { MemoryRouter, Routes, Route, Link, useLocation } from "react-router-dom";
 import type { ReactNode } from "react";
 
@@ -14,24 +15,33 @@ const RetePagina = ({ children }: { children: ReactNode }) => {
 const Rotta = () => { throw new Error("ERRORE FINTO"); };
 
 describe("rete interna", () => {
-  it("lascia in piedi il menu e si sblocca cambiando pagina", () => {
+  it("lascia in piedi il menu e si sblocca cambiando pagina", async () => {
+    (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
     vi.spyOn(console, "error").mockImplementation(() => {});
-    render(
-      <MemoryRouter initialEntries={["/rotta"]}>
-        <nav><Link to="/altra">MENU-ALTRA</Link></nav>
-        <RetePagina>
-          <Routes>
-            <Route path="/rotta" element={<Rotta />} />
-            <Route path="/altra" element={<p>PAGINA-ALTRA</p>} />
-          </Routes>
-        </RetePagina>
-      </MemoryRouter>,
-    );
-    expect(screen.getByRole("alert").textContent).toContain("ERRORE FINTO");
-    expect(screen.getByText("MENU-ALTRA")).toBeTruthy();
+    const div = document.createElement("div");
+    document.body.appendChild(div);
+    const root = createRoot(div);
+    await act(async () => {
+      root.render(
+        <MemoryRouter initialEntries={["/rotta"]}>
+          <nav><Link to="/altra">MENU-ALTRA</Link></nav>
+          <RetePagina>
+            <Routes>
+              <Route path="/rotta" element={<Rotta />} />
+              <Route path="/altra" element={<p>PAGINA-ALTRA</p>} />
+            </Routes>
+          </RetePagina>
+        </MemoryRouter>,
+      );
+    });
+    expect(div.querySelector("[role=alert]")?.textContent).toContain("ERRORE FINTO");
+    expect(div.querySelector("nav a")?.textContent).toBe("MENU-ALTRA");
     expect(segnala_errore).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByText("MENU-ALTRA"));
-    expect(screen.queryByRole("alert")).toBeNull();
-    expect(screen.getByText("PAGINA-ALTRA")).toBeTruthy();
+    await act(async () => {
+      (div.querySelector("nav a") as HTMLAnchorElement).click();
+    });
+    expect(div.querySelector("[role=alert]")).toBeNull();
+    expect(div.textContent).toContain("PAGINA-ALTRA");
+    expect(segnala_errore).toHaveBeenCalledTimes(1);
   });
 });
