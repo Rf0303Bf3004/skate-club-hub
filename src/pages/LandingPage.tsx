@@ -2,7 +2,6 @@ import React, { useEffect } from "react";
 import { Snowflake, ArrowRight } from "lucide-react";
 
 const LandingPage: React.FC = () => {
-  if (new URLSearchParams(window.location.search).has("rompi")) throw new Error("ERRORE FINTO DI PROVA per la rete di sicurezza");
   useEffect(() => {
     document.title = "Ice Arena — Entra nel tuo club";
     let meta = document.querySelector('meta[name="description"]');
