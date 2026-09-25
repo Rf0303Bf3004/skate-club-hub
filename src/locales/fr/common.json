@@ -617,5 +617,13 @@
     "titolo": "Les cours se créent dans la Grille d'activités",
     "testo": "Dans la Grille d'activités, le portail vérifie la disponibilité de la glace et de l'instructeur avant de créer le cours.",
     "azione": "Aller à la Grille d'activités"
+  },
+  "rete_sicurezza": {
+    "titolo": "La page s'est interrompue à cause d'une erreur du programme",
+    "testo": "Ce n'est pas un problème de données : la page a cessé de fonctionner. L'erreur a été enregistrée. Si elle se répète, merci de transmettre le texte ci-dessous.",
+    "dettaglio_tecnico": "Détail technique",
+    "ricarica": "Recharger la page",
+    "torna_home": "Retour à l'accueil",
+    "operazione": "Page interrompue par une erreur"
   }
 }

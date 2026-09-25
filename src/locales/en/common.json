@@ -617,5 +617,13 @@
     "titolo": "Courses are created in the Activity Grid",
     "testo": "In the Activity Grid the portal checks that ice and an instructor are available before creating the course.",
     "azione": "Go to the Activity Grid"
+  },
+  "rete_sicurezza": {
+    "titolo": "The page stopped because of a program error",
+    "testo": "This is not a data problem: the page stopped working. The error has been logged. If it happens again, please report the text below.",
+    "dettaglio_tecnico": "Technical detail",
+    "ricarica": "Reload the page",
+    "torna_home": "Back to home",
+    "operazione": "Page stopped by an error"
   }
 }
