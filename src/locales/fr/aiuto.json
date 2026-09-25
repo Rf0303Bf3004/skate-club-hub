@@ -1,0 +1,10 @@
+{
+  "ui": {
+    "pulsante": "Aide",
+    "titolo_pannello": "Aide sur cette page",
+    "descrizione_pannello": "Ce qu'il faut cliquer et écrire, étape par étape.",
+    "solo_italiano": "Ce guide n'est pour l'instant disponible qu'en italien.",
+    "vuoto_guida": "Il n'y a pas encore de guide pour cette page.",
+    "vai_procedura": "Aller à la procédure guidée"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "ui": {
+    "pulsante": "Hilfe",
+    "titolo_pannello": "Hilfe zu dieser Seite",
+    "descrizione_pannello": "Was du anklicken und eintragen musst, Schritt für Schritt.",
+    "solo_italiano": "Diese Anleitung gibt es vorerst nur auf Italienisch.",
+    "vuoto_guida": "Für diese Seite gibt es noch keine Anleitung.",
+    "vai_procedura": "Zum geführten Einstieg"
+  }
+}
