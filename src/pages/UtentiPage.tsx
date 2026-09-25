@@ -111,6 +111,8 @@ const UtentiPage: React.FC = () => {
     ruolo: "istruttore", attivo: true,
   });
   const [submitting, set_submitting] = useState(false);
+  // Ruoli di pista: l'accesso non crea la scheda istruttore. Lo si dice, senza crearla a sorpresa.
+  const [avviso_scheda, set_avviso_scheda] = useState<string | null>(null);
 
   const [confirm_state, set_confirm_state] = useState<{
     type: "toggle" | "reset"; user: UtenteRow;
@@ -199,9 +201,6 @@ const UtentiPage: React.FC = () => {
 
   if (!session) return null;
   if (!allowed) return <Navigate to="/" replace />;
-
-  // Ruoli di pista: l'accesso non crea la scheda istruttore. Lo si dice, senza crearla a sorpresa.
-  const [avviso_scheda, set_avviso_scheda] = useState<string | null>(null);
 
   const open_create = () => {
     set_edit_user(null);
