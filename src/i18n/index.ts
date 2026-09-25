@@ -3,6 +3,7 @@ import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
 import it_common from '@/locales/it/common.json';
+import it_aiuto from '@/locales/it/aiuto.json';
 import it_atleti from '@/locales/it/atleti.json';
 import it_fatture from '@/locales/it/fatture.json';
 import it_dashboard from '@/locales/it/dashboard.json';
@@ -22,6 +23,7 @@ import it_planning from '@/locales/it/planning.json';
 import it_calendario from '@/locales/it/calendario.json';
 
 import fr_common from '@/locales/fr/common.json';
+import fr_aiuto from '@/locales/fr/aiuto.json';
 import fr_atleti from '@/locales/fr/atleti.json';
 import fr_fatture from '@/locales/fr/fatture.json';
 import fr_dashboard from '@/locales/fr/dashboard.json';
@@ -38,6 +40,7 @@ import fr_planning from '@/locales/fr/planning.json';
 import fr_calendario from '@/locales/fr/calendario.json';
 
 import de_common from '@/locales/de/common.json';
+import de_aiuto from '@/locales/de/aiuto.json';
 import de_atleti from '@/locales/de/atleti.json';
 import de_fatture from '@/locales/de/fatture.json';
 import de_dashboard from '@/locales/de/dashboard.json';
@@ -54,6 +57,7 @@ import de_planning from '@/locales/de/planning.json';
 import de_calendario from '@/locales/de/calendario.json';
 
 import en_common from '@/locales/en/common.json';
+import en_aiuto from '@/locales/en/aiuto.json';
 import en_atleti from '@/locales/en/atleti.json';
 import en_fatture from '@/locales/en/fatture.json';
 import en_dashboard from '@/locales/en/dashboard.json';
@@ -71,6 +75,7 @@ import en_calendario from '@/locales/en/calendario.json';
 
 import rm_portale from '@/locales/rm/portale.json';
 import rm_common from '@/locales/rm/common.json';
+import rm_aiuto from '@/locales/rm/aiuto.json';
 import rm_onboarding from '@/locales/rm/onboarding.json';
 import rm_settings from '@/locales/rm/settings.json';
 import rm_istruttori from '@/locales/rm/istruttori.json';
@@ -94,6 +99,7 @@ export const NAMESPACES = [
   'istruttori',
   'planning',
   'calendario',
+  'aiuto',
 ] as const;
 
 export const SUPPORTED_LOCALES = ['it', 'de', 'fr', 'rm', 'en'] as const;
@@ -105,27 +111,27 @@ const resources = {
     onboarding: it_onboarding, settings: it_settings, communications: it_communications,
     events: it_events, mobile: it_mobile, validation: it_validation, errors: it_errors,
     segreteria: it_segreteria, superadmin: it_superadmin, portale: it_portale,
-    corsi: it_corsi, istruttori: it_istruttori, planning: it_planning, calendario: it_calendario,
+    corsi: it_corsi, istruttori: it_istruttori, planning: it_planning, calendario: it_calendario, aiuto: it_aiuto,
   },
   fr: {
     common: fr_common, atleti: fr_atleti, fatture: fr_fatture, dashboard: fr_dashboard,
     onboarding: fr_onboarding, settings: fr_settings, communications: fr_communications,
     events: fr_events, mobile: fr_mobile, validation: fr_validation, errors: fr_errors,
-    portale: fr_portale, istruttori: fr_istruttori, planning: fr_planning, calendario: fr_calendario,
+    portale: fr_portale, istruttori: fr_istruttori, planning: fr_planning, calendario: fr_calendario, aiuto: fr_aiuto,
   },
   de: {
     common: de_common, atleti: de_atleti, fatture: de_fatture, dashboard: de_dashboard,
     onboarding: de_onboarding, settings: de_settings, communications: de_communications,
     events: de_events, mobile: de_mobile, validation: de_validation, errors: de_errors,
-    portale: de_portale, istruttori: de_istruttori, planning: de_planning, calendario: de_calendario,
+    portale: de_portale, istruttori: de_istruttori, planning: de_planning, calendario: de_calendario, aiuto: de_aiuto,
   },
   en: {
     common: en_common, atleti: en_atleti, fatture: en_fatture, dashboard: en_dashboard,
     onboarding: en_onboarding, settings: en_settings, communications: en_communications,
     events: en_events, mobile: en_mobile, validation: en_validation, errors: en_errors,
-    portale: en_portale, istruttori: en_istruttori, planning: en_planning, calendario: en_calendario,
+    portale: en_portale, istruttori: en_istruttori, planning: en_planning, calendario: en_calendario, aiuto: en_aiuto,
   },
-  rm: { common: rm_common, onboarding: rm_onboarding, portale: rm_portale, settings: rm_settings, istruttori: rm_istruttori },
+  rm: { common: rm_common, onboarding: rm_onboarding, portale: rm_portale, settings: rm_settings, istruttori: rm_istruttori, aiuto: rm_aiuto },
 };
 
 /**

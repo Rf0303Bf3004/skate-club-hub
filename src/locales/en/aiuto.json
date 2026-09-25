@@ -1,0 +1,10 @@
+{
+  "ui": {
+    "pulsante": "Help",
+    "titolo_pannello": "Help for this page",
+    "descrizione_pannello": "What to click and what to type, one step at a time.",
+    "solo_italiano": "For now this guide is only available in Italian.",
+    "vuoto_guida": "There is no guide for this page yet.",
+    "vai_procedura": "Go to the guided setup"
+  }
+}
