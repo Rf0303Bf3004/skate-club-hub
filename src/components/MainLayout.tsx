@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { Users, Settings, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, ChevronDown, ChevronRight, FileText, Search, LayoutGrid, BadgePercent, Smartphone, Rocket, FileSpreadsheet, UserX } from "lucide-react";
 import GlobalSearchPalette from "@/components/common/GlobalSearchPalette";
+import AiutoPagina from "@/components/common/AiutoPagina";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { use_count_iscrizioni_non_lette } from "@/components/comunicazioni/IscrizioniAtletiNotifiche";
@@ -524,6 +525,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <span className="hidden md:inline text-xs">{tc("search")}</span>
               <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 rounded border border-border bg-muted text-[10px] font-mono">⌘K</kbd>
             </Button>
+            <AiutoPagina />
+
 
             <Select value={locale} onValueChange={(v) => set_locale(v as Locale)}>
               <SelectTrigger className="w-32 h-8 text-xs">
