@@ -38,33 +38,7 @@ import NotaPermesso from "@/components/common/NotaPermesso";
 import ConfirmButton from "@/components/common/ConfirmButton";
 
 import { format_data } from "@/lib/format-data";
-// ── ErrorBoundary ──
-class PlanningErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
-  constructor(props: { children: ReactNode }) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("PlanningPage crash:", error, info);
-  }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="flex flex-col items-center justify-center h-64 gap-3">
-          <AlertTriangle className="h-8 w-8 text-destructive" />
-          <p className="text-foreground font-bold">{i18n.t('planning:error_boundary.title')}</p>
-          <p className="text-sm text-muted-foreground max-w-md text-center">{this.state.error?.message}</p>
-          <button className="text-sm text-primary underline" onClick={() => this.setState({ hasError: false, error: null })}>{i18n.t('planning:error_boundary.retry')}</button>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
+import ReteDiSicurezza from "@/components/ReteDiSicurezza";
 class SidebarErrorBoundary extends Component<{ children: ReactNode; className: string }, { hasError: boolean }> {
   constructor(props: { children: ReactNode; className: string }) {
     super(props);
@@ -98,9 +72,9 @@ class SidebarErrorBoundary extends Component<{ children: ReactNode; className: s
 
 function PlanningPageWrapper() {
   return (
-    <PlanningErrorBoundary>
+    <ReteDiSicurezza dove="PlanningPage">
       <PlanningPageInner />
-    </PlanningErrorBoundary>
+    </ReteDiSicurezza>
   );
 }
 
