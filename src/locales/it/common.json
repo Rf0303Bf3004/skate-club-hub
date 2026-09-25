@@ -4,6 +4,8 @@
   "allenamenti": "Allenamenti",
   "anagrafica": "Anagrafica",
   "annulla": "Annulla",
+  "riprova": "Riprova",
+  "sessione_non_leggibile": "Non riesco a leggere chi sei: può essere un problema di connessione. Riprova, e se continua effettua di nuovo l'accesso.",
   "argento": "Argento",
   "argento_medal": "Argento",
   "atleta_federazione": "Atleta di Federazione",
