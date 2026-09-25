@@ -7,7 +7,8 @@ import { toast } from "@/hooks/use-toast";
 import GrigliaGhiaccioPage from "@/pages/GrigliaGhiaccioPage";
 import PistaPage from "@/pages/PistaPage";
 import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, useNavigate, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useNavigate, Navigate, useLocation } from "react-router-dom";
+import ReteDiSicurezza from "@/components/ReteDiSicurezza";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -558,6 +559,12 @@ const SoloPresidenteGuard = ({ children, ruoli_extra = [] }: { children: React.R
 };
 
 
+/** Rete interna attorno alle pagine: rimontata a ogni cambio pagina così il riquadro non resta appiccicato. */
+const RetePagina = ({ children }: { children: React.ReactNode }) => {
+  const location = useLocation();
+  return <ReteDiSicurezza key={location.pathname} dove="App.pagina">{children}</ReteDiSicurezza>;
+};
+
 const AuthenticatedApp = () => {
   const { is_authenticated, is_loading } = useAuth();
 
@@ -585,6 +592,7 @@ const AuthenticatedApp = () => {
     <OnboardingGate>
     <BrowserRouter>
       <MainLayout>
+        <RetePagina>
         <Routes>
           <Route path="/" element={<SmartHome />} />
           <Route path="/staff" element={<Navigate to="/" replace />} />
@@ -720,6 +728,7 @@ const AuthenticatedApp = () => {
           />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </RetePagina>
       </MainLayout>
     </BrowserRouter>
     </OnboardingGate>
@@ -732,6 +741,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <ReteDiSicurezza dove="App.radice">
         <PistaGate>
           <PublicRoutes>
             <AuthProvider>
@@ -739,6 +749,7 @@ const App = () => (
             </AuthProvider>
           </PublicRoutes>
         </PistaGate>
+        </ReteDiSicurezza>
       </TooltipProvider>
     </I18nProvider>
   </QueryClientProvider>

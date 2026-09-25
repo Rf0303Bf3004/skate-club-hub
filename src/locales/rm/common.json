@@ -3,5 +3,13 @@
   "sessione_non_leggibile": "Jau na poss betg leger tgi che ti es: forsa in problem da connexiun. Emprova anc ina giada, e t'annunzia da nov sch'il problem cuntinuescha.",
   "menu": {
     "avvio_club": "Procedura guidada"
+  },
+  "rete_sicurezza": {
+    "titolo": "La pagina è vegnida interrutta d'ina errur dal program",
+    "testo": "I n'è betg in problem da las datas: la pagina ha chalà da funcziunar. L'errur è vegnida registrada. Sch'ella sa repeta, communitgescha p.pl. il text sutvart.",
+    "dettaglio_tecnico": "Detagl tecnic",
+    "ricarica": "Chargiar da nov la pagina",
+    "torna_home": "Enavos a la pagina principala",
+    "operazione": "Pagina interrutta d'ina errur"
   }
 }

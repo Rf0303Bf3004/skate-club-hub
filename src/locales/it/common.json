@@ -726,5 +726,13 @@
     "titolo": "I corsi si creano nella Griglia attività",
     "testo": "Nella Griglia attività il portale controlla che ci siano il ghiaccio e l'istruttore prima di creare il corso.",
     "azione": "Vai alla Griglia attività"
+  },
+  "rete_sicurezza": {
+    "titolo": "La pagina si è interrotta per un errore del programma",
+    "testo": "Non è un problema dei dati: la pagina ha smesso di funzionare. L'errore è stato registrato. Se si ripete, riferisci il testo qui sotto.",
+    "dettaglio_tecnico": "Dettaglio tecnico",
+    "ricarica": "Ricarica la pagina",
+    "torna_home": "Torna alla home",
+    "operazione": "Pagina interrotta da un errore"
   }
 }

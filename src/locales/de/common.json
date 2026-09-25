@@ -617,5 +617,13 @@
     "titolo": "Kurse werden im Aktivitätsraster erstellt",
     "testo": "Im Aktivitätsraster prüft das Portal, ob Eis und eine Trainerin oder ein Trainer verfügbar sind, bevor der Kurs erstellt wird.",
     "azione": "Zum Aktivitätsraster"
+  },
+  "rete_sicurezza": {
+    "titolo": "Die Seite wurde durch einen Programmfehler unterbrochen",
+    "testo": "Es liegt nicht an den Daten: Die Seite funktioniert nicht mehr. Der Fehler wurde gespeichert. Falls er erneut auftritt, bitte den Text unten weitergeben.",
+    "dettaglio_tecnico": "Technisches Detail",
+    "ricarica": "Seite neu laden",
+    "torna_home": "Zur Startseite",
+    "operazione": "Seite durch Fehler unterbrochen"
   }
 }
