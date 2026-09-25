@@ -1,4 +1,7 @@
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
+import { segnala_errore } from "@/lib/errori";
 import { usePermessiSezioniMatrix } from "@/hooks/usePermessi";
 import { toast } from "@/hooks/use-toast";
 import GrigliaGhiaccioPage from "@/pages/GrigliaGhiaccioPage";
@@ -450,13 +453,55 @@ const SmartHome = () => {
 
 const ProtectedSuperAdmin = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
-  const { session } = useAuth();
+  const { t } = useTranslation("common");
+  const { session, is_loading } = useAuth();
+  const segnalato = React.useRef(false);
+
   useEffect(() => {
     if (session && session.ruolo !== "superadmin") {
       navigate("/", { replace: true });
     }
   }, [session, navigate]);
-  return session?.ruolo === "superadmin" ? <>{children}</> : null;
+
+  // Lettura finita ma sessione nulla: non e' un problema di permessi,
+  // e' una lettura fallita. Va detto e registrato, mai mostrato come vuoto.
+  useEffect(() => {
+    if (!is_loading && !session && !segnalato.current) {
+      segnalato.current = true;
+      void segnala_errore(
+        "ProtectedSuperAdmin",
+        t("sessione_non_leggibile"),
+        new Error("sessione nulla dopo il caricamento"),
+        undefined,
+        "avviso",
+      );
+    }
+  }, [is_loading, session, t]);
+
+  if (is_loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+      </div>
+    );
+  }
+  if (session?.ruolo === "superadmin") {
+    return <>{children}</>;
+  }
+  if (session) {
+    // Ruolo diverso: il rimando alla home parte dall'effetto sopra.
+    return null;
+  }
+  return (
+    <div className="flex items-center justify-center py-20">
+      <div className="max-w-md rounded-lg border border-destructive/40 bg-destructive/10 p-6 text-center space-y-4">
+        <p className="text-sm text-foreground">{t("sessione_non_leggibile")}</p>
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          {t("riprova")}
+        </Button>
+      </div>
+    </div>
+  );
 };
 
 /** Protegge una rotta in base ai permessi di sezione (ruoli_permessi_sezioni). */
