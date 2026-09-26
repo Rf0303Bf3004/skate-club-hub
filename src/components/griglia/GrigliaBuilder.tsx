@@ -258,7 +258,7 @@ const GruppoDraggable: React.FC<{
 }> = ({ drag_id, livello, atleta_ids, box_id, colore, aperto, on_toggle }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: drag_id,
-    data: { tipo: "gruppo", atleta_ids, livello, box_id },
+    data: trascinabile_gruppo(box_id ?? "", livello, atleta_ids).data,
   });
   const down_ref = React.useRef<{ x: number; y: number } | null>(null);
   return (
@@ -299,6 +299,31 @@ const GruppoDraggable: React.FC<{
 };
 
 
+// ─── Gruppi per livello: UNA sola regola, usata dall'elenco trascinabile e
+// dal pannello «Aggiungi persone». Stesso ripiego di `risolvi_membri_gruppo`
+// (use-griglia-ghiaccio): se divergono, il gruppo scelto non corrisponde a quello mostrato.
+function raggruppa_per_livello<T extends { livello_attuale?: string | null }>(items: T[]): [string, T[]][] {
+  const map = new Map<string, T[]>();
+  for (const i of items) {
+    const liv = (i.livello_attuale || "Pulcini") as string;
+    map.set(liv, [...(map.get(liv) ?? []), i]);
+  }
+  return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0], "it"));
+}
+
+/** Identità del gruppo trascinabile: la stessa per trascinamento e pannello. */
+function trascinabile_gruppo(box_id: string, livello: string, atleta_ids: string[]) {
+  return { id: `gruppo:${box_id}:${livello}`, data: { tipo: "gruppo", atleta_ids, livello, box_id } };
+}
+function trascinabile_proposta(proposta_id: string, titolo: string, corso_id: string | null, atleta_ids: string[]) {
+  return {
+    id: `gruppo:proposta:${proposta_id}`,
+    data: { tipo: "gruppo", atleta_ids, individuale: true, etichetta: titolo, corso_id },
+  };
+}
+
+type EsitoAssegnazione = { stato: "aggiunto" | "in_attesa" | "non_aggiunto" | "errore"; dettaglio?: string };
+
 // ─── Stato istruttore per l'orario in costruzione ─────────
 type StatoIstruttore = { tipo: "libero" | "fuori" | "occupato"; testo: string };
 const ORDINE_STATO: Record<StatoIstruttore["tipo"], number> = { libero: 0, fuori: 1, occupato: 2 };
@@ -332,14 +357,7 @@ const PoolBox: React.FC<{
   // Raggruppamento per livello (solo per gli atleti)
   const gruppi = useMemo(() => {
     if (prefisso !== "atleta") return [];
-    const map = new Map<string, typeof filtrati>();
-    for (const i of filtrati) {
-      // Stesso ripiego di `risolvi_membri_gruppo` (use-griglia-ghiaccio):
-      // se divergono, il gruppo trascinato non corrisponde a quello mostrato.
-      const liv = (i.livello_attuale || "Pulcini") as string;
-      map.set(liv, [...(map.get(liv) ?? []), i]);
-    }
-    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0], "it"));
+    return raggruppa_per_livello(filtrati);
   }, [filtrati, prefisso]);
 
   return (
@@ -465,15 +483,9 @@ const PoolPropostaBox: React.FC<{
   const [aperto, set_aperto] = useState(true);
   const vuoto = items.length === 0;
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `gruppo:proposta:${proposta_id}`,
+    id: trascinabile_proposta(proposta_id, titolo, corso_id, []).id,
     disabled: vuoto,
-    data: {
-      tipo: "gruppo",
-      atleta_ids: items.map((i) => i.id),
-      individuale: true,
-      etichetta: titolo,
-      corso_id,
-    },
+    data: trascinabile_proposta(proposta_id, titolo, corso_id, items.map((i) => i.id)).data,
   });
 
   return (
