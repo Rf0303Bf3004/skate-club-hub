@@ -48,10 +48,9 @@ interface Props {
   open: boolean;
   on_close: () => void;
   istruttore: any;
-  evidenziato?: boolean;
 }
 
-const CreaAccessoDialog: React.FC<Props> = ({ open, on_close, istruttore, evidenziato = false }) => {
+const CreaAccessoDialog: React.FC<Props> = ({ open, on_close, istruttore }) => {
   const qc = useQueryClient();
   const club_id = get_current_club_id();
   const [email, set_email] = useState("");
@@ -195,13 +194,7 @@ const CreaAccessoDialog: React.FC<Props> = ({ open, on_close, istruttore, eviden
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && on_close()}>
-      <DialogContent
-        className={`max-w-md ${
-          evidenziato
-            ? "border-amber-500 ring-2 ring-amber-500/60 animate-evidenzia-passo motion-reduce:animate-none"
-            : ""
-        }`}
-      >
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <KeyRound className="w-4 h-4" /> Crea accesso
