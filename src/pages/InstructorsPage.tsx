@@ -2035,15 +2035,10 @@ const InstructorsPage: React.FC = () => {
                 const ha_accesso = !!selected.user_id;
                 return (
                   <div
-                    ref={destinazione_evidenziata === "accesso" ? destinazione_ref : undefined}
                     className={`max-w-lg rounded-xl border px-4 py-3 flex items-center justify-between gap-3 ${
                       ha_accesso
                         ? "border-border bg-card"
                         : "border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700"
-                    } ${
-                      destinazione_evidenziata === "accesso"
-                        ? "border-amber-500 ring-2 ring-amber-500/60 animate-evidenzia-passo motion-reduce:animate-none"
-                        : ""
                     }`}
                   >
                     <div className="min-w-0">
