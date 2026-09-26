@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { get_current_club_id } from "@/lib/supabase";
 import {
   DndContext,
@@ -39,6 +40,7 @@ import {
   use_pubblica_blocco,
   use_disponibilita_giorno,
   use_ripeti_sessione,
+  use_fine_ricorrenze,
   use_assegna_gruppo_sessione,
   use_rimuovi_gruppo_sessione,
   use_sync_gruppo_sessione,
@@ -98,13 +100,17 @@ import ConfirmButton from "@/components/common/ConfirmButton";
 import NuovaPropostaDialog, { type ConfermaProposta } from "@/components/griglia/NuovaPropostaDialog";
 import { use_pool_proposte, use_crea_proposta } from "@/hooks/use-proposte";
 import { Link as RouterLink } from "react-router-dom";
-import { verifica_orario_disponibilita } from "@/lib/availability";
+import {
+  verifica_orario_disponibilita,
+  calcola_status_istruttori_per_slot,
+  istruttore_disponibile,
+} from "@/lib/availability";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2, GripVertical, HelpCircle, ChevronDown, ChevronRight, AlertTriangle, Repeat, Link2, RefreshCw, Package } from "lucide-react";
+import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2, GripVertical, HelpCircle, ChevronDown, ChevronRight, AlertTriangle, Repeat, Link2, RefreshCw, Package, Hand } from "lucide-react";
 
-import { format_data } from "@/lib/format-data";
+import { format_data, format_giorno_esteso } from "@/lib/format-data";
 const DURATA_DEFAULT_MIN = 20;
 const ALTRO = "__altro__";
 
@@ -293,6 +299,10 @@ const GruppoDraggable: React.FC<{
 };
 
 
+// ─── Stato istruttore per l'orario in costruzione ─────────
+type StatoIstruttore = { tipo: "libero" | "fuori" | "occupato"; testo: string };
+const ORDINE_STATO: Record<StatoIstruttore["tipo"], number> = { libero: 0, fuori: 1, occupato: 2 };
+
 // ─── Box pool sorgente ─────────────────────────────────────
 const PoolBox: React.FC<{
   titolo: string;
@@ -302,7 +312,9 @@ const PoolBox: React.FC<{
   colore?: string | null;
   box_id?: string;
   neutro?: boolean;
-}> = ({ titolo, items, prefisso, variante_istruttori, colore, box_id, neutro }) => {
+  /** Stato di ogni istruttore per l'orario in costruzione (chi è libero sta in cima). */
+  stati_istruttori?: Record<string, StatoIstruttore>;
+}> = ({ titolo, items, prefisso, variante_istruttori, colore, box_id, neutro, stati_istruttori }) => {
   const [q, set_q] = useState("");
   const [aperto, set_aperto] = useState(true);
   const [gruppi_aperti, set_gruppi_aperti] = useState<Record<string, boolean>>({});
@@ -310,9 +322,12 @@ const PoolBox: React.FC<{
 
   const filtrati = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return items;
-    return items.filter((i) => `${i.nome} ${i.cognome}`.toLowerCase().includes(term));
-  }, [items, q]);
+    const base = term ? items.filter((i) => `${i.nome} ${i.cognome}`.toLowerCase().includes(term)) : items;
+    if (!stati_istruttori) return base;
+    // Nessuno si nasconde: si ordina soltanto, i liberi in cima.
+    const peso = (id: string) => ORDINE_STATO[stati_istruttori[id]?.tipo ?? "libero"];
+    return [...base].sort((a, b) => peso(a.id) - peso(b.id));
+  }, [items, q, stati_istruttori]);
 
   // Raggruppamento per livello (solo per gli atleti)
   const gruppi = useMemo(() => {
@@ -402,15 +417,37 @@ const PoolBox: React.FC<{
                 );
               })
 
-            : filtrati.map((i) => (
-                <PillolaDraggable
-                  key={i.id}
-                  drag_id={`istruttore:${i.id}`}
-                  label={`${i.nome} ${i.cognome}`}
-                  sigla={iniziali(i.nome, i.cognome)}
-                  is_istruttore
-                />
-              ))}
+            : filtrati.map((i) => {
+                const st = stati_istruttori?.[i.id];
+                const segnato = st && st.tipo !== "libero";
+                return (
+                  <div
+                    key={i.id}
+                    className={cn(
+                      "flex flex-col gap-0.5",
+                      st?.tipo === "fuori" && "rounded-lg border-l-4 border-amber-500 pl-1.5",
+                      st?.tipo === "occupato" && "rounded-lg border-l-4 border-destructive pl-1.5",
+                    )}
+                  >
+                    <PillolaDraggable
+                      drag_id={`istruttore:${i.id}`}
+                      label={`${i.nome} ${i.cognome}`}
+                      sigla={iniziali(i.nome, i.cognome)}
+                      is_istruttore
+                    />
+                    {segnato && (
+                      <p
+                        className={cn(
+                          "text-[11px] leading-tight pl-1",
+                          st.tipo === "fuori" ? "text-amber-700" : "text-destructive",
+                        )}
+                      >
+                        {st.testo}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
           {filtrati.length === 0 && <p className="text-xs text-muted-foreground py-1">Nessun risultato.</p>}
         </div>
       )}
