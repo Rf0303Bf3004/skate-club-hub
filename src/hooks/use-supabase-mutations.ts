@@ -1286,10 +1286,25 @@ export function use_elimina_stagione() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("stagioni").delete().eq("id", id);
+      const { data, error } = await supabase
+        .from("stagioni").delete().eq("id", id).eq("club_id", cid()).select("id");
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error("nessuna_riga");
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["stagioni"] }),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["stagioni"] }),
+  });
+}
+
+export function use_archivia_stagione() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from("stagioni").update({ attiva: false }).eq("id", id).eq("club_id", cid()).select("id");
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error("nessuna_riga");
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["stagioni"] }),
   });
 }
 
