@@ -2084,3 +2084,31 @@ export function use_risincronizza_proposta() {
     },
   });
 }
+
+// ─── Fine della ricorrenza (ultima occorrenza nel planning) ─────────
+/**
+ * Per ogni corso collegato a una sessione della griglia, l'ultima data NON
+ * annullata nel planning. Una lettura fallita resta un errore: chi la usa
+ * mostra «ricorrente» senza data, mai una data inventata.
+ */
+export function use_fine_ricorrenze(corso_ids: string[]) {
+  const ids = Array.from(new Set(corso_ids.filter(Boolean))).sort();
+  return useQuery({
+    queryKey: ["griglia_fine_ricorrenze", get_current_club_id(), ids],
+    enabled: ids.length > 0,
+    queryFn: async (): Promise<Record<string, string>> => {
+      const { data, error } = await supabase
+        .from("planning_corsi_settimana")
+        .select("corso_id,data")
+        .in("corso_id", ids)
+        .eq("annullato", false)
+        .not("data", "is", null);
+      if (error) throw error;
+      const out: Record<string, string> = {};
+      for (const r of (data ?? []) as { corso_id: string; data: string }[]) {
+        if (!out[r.corso_id] || r.data > out[r.corso_id]) out[r.corso_id] = r.data;
+      }
+      return out;
+    },
+  });
+}
