@@ -158,7 +158,8 @@
     "costo_lezioni": "Costo club lezioni private",
     "costo_lezioni_ora_min": "Costo club lezioni private (ora · minuto)",
     "contratto_compenso_fisso": "Contratto a compenso fisso",
-    "margine_minuto_sul_prezzo": "Margine/min (% sul prezzo di vendita)"
+    "margine_minuto_sul_prezzo": "Margine/min (% sul prezzo di vendita)",
+    "vendita_sotto_costo": "Vendita sotto costo"
   },
   "badge": {
     "monitrice": "Monitrice",

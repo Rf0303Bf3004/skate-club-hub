@@ -1703,7 +1703,7 @@ const InstructorsPage: React.FC = () => {
   const [search_istruttori, set_search_istruttori] = useState("");
   const [accesso_target, set_accesso_target] = useState<any>(null);
   const [destinazione_evidenziata, set_destinazione_evidenziata] = useState<
-    "disponibilita" | "compenso" | "accesso" | null
+    "disponibilita" | "compenso" | null
   >(null);
   const destinazione_ref = useRef<HTMLDivElement | null>(null);
   const { data: email_accessi } = use_email_utenti_club();
@@ -1712,8 +1712,6 @@ const InstructorsPage: React.FC = () => {
     if (!destinazione_evidenziata) return;
     if (destinazione_evidenziata === "disponibilita" && tab_dettaglio !== "disponibilita") return;
     if (destinazione_evidenziata === "compenso" && tab_dettaglio !== "compenso") return;
-    if (destinazione_evidenziata === "accesso" && tab_dettaglio !== "info") return;
-
     const frame = window.requestAnimationFrame(() => {
       const riduci_movimento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       destinazione_ref.current?.scrollIntoView({
@@ -1916,7 +1914,6 @@ const InstructorsPage: React.FC = () => {
           open={!!accesso_target}
           on_close={() => set_accesso_target(null)}
           istruttore={accesso_target}
-          evidenziato={destinazione_evidenziata === "accesso"}
         />
         {modal_open && (
 
@@ -2015,8 +2012,6 @@ const InstructorsPage: React.FC = () => {
                 set_destinazione_evidenziata("compenso");
                 set_tab_dettaglio("compenso");
               } else if (campo === "accesso_app" && puo_creare_accessi) {
-                set_destinazione_evidenziata("accesso");
-                set_tab_dettaglio("info");
                 set_accesso_target(selected);
               }
               else {
@@ -2203,7 +2198,9 @@ const InstructorsPage: React.FC = () => {
                           >
                             {margine === null || percentuale === null
                               ? "—"
-                              : `CHF ${margine.toFixed(2)}/min · ${percentuale.toFixed(1)}%`}
+                              : margine < 0
+                                ? `${ti("dettaglio.vendita_sotto_costo")} · CHF ${margine.toFixed(2)}/min · ${percentuale.toFixed(1)}%`
+                                : `CHF ${margine.toFixed(2)}/min · ${percentuale.toFixed(1)}%`}
                           </span>
                         </div>
                       </>

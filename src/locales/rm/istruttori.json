@@ -6,7 +6,8 @@
     "costo_lezioni": "Custs dal club per lecziuns privatas",
     "costo_lezioni_ora_min": "Custs dal club per lecziuns privatas (ura · minuta)",
     "contratto_compenso_fisso": "Contract cun indemnisaziun fixa",
-    "margine_minuto_sul_prezzo": "Marge/min (% dal pretsch da vendita)"
+    "margine_minuto_sul_prezzo": "Marge/min (% dal pretsch da vendita)",
+    "vendita_sotto_costo": "Vendita sut ils custs"
   },
   "cosa_manca": {
     "titolo": "Tge che manca",

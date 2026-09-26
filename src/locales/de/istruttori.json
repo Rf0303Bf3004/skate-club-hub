@@ -11,7 +11,8 @@
     "costo_lezioni": "Clubkosten Privatlektionen",
     "costo_lezioni_ora_min": "Clubkosten Privatlektionen (Stunde · Minute)",
     "contratto_compenso_fisso": "Vertrag mit fixer Vergütung",
-    "margine_minuto_sul_prezzo": "Marge/Min. (% des Verkaufspreises)"
+    "margine_minuto_sul_prezzo": "Marge/Min. (% des Verkaufspreises)",
+    "vendita_sotto_costo": "Verkauf unter den Kosten"
   },
   "gs": {
     "titolo": "Gioventù e Sport (G+S)",
