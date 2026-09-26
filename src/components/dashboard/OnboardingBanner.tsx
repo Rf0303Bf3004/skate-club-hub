@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import { useTranslation } from "react-i18next";
+import { useModalitaArea } from "@/hooks/useModalitaArea";
 import { rotta_riga, type RigaDiagnosi } from "@/lib/avvio-club";
 
 /**
@@ -21,6 +22,7 @@ export default function OnboardingBanner() {
   const { session } = useAuth();
   const club_id = session?.club_id;
   const { puo_configurare_club } = usePermessiAzione();
+  const { modalita: modalita_ghiaccio } = useModalitaArea("ghiaccio");
   const [chiuso_localmente, set_chiuso_localmente] = useState(false);
 
   const { data: banner_chiuso } = useQuery({
@@ -102,7 +104,7 @@ export default function OnboardingBanner() {
           {!tutto_ok && (
             <ul className="mt-4 space-y-2">
               {mancanti.map((r) => {
-                const rotta = rotta_riga(r);
+                const rotta = rotta_riga(r, modalita_ghiaccio);
                 return (
                   <li
                     key={r.passo}

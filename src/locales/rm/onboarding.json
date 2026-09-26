@@ -20,7 +20,10 @@
     }
   },
   "avvio": {
-    "titolo": "Procedura guidada"
+    "titolo": "Procedura guidada",
+    "destinazioni": {
+      "griglia_ghiaccio": "Grilla da glatsch"
+    }
   },
   "procedura": {
     "titolo": "Procedura guidada",

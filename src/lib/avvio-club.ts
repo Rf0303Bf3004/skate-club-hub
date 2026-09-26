@@ -91,9 +91,21 @@ const RIPIEGO_PER_AREA: Record<string, RottaAvvio> = {
 
 const RIPIEGO: RottaAvvio = { to: "/setup-club", chiave: "setup_club" };
 
-/** Rotta di una riga: prima la mappa per passo, poi il ripiego per area. */
-export const rotta_riga = (r: Pick<RigaDiagnosi, "passo" | "area">): RottaAvvio =>
-  ROTTA_PER_PASSO[r.passo] ?? RIPIEGO_PER_AREA[r.area] ?? RIPIEGO;
+/** Passo 12 nei club in griglia giornaliera: i corsi si creano dalla griglia, non da /corsi. */
+const GRIGLIA_GHIACCIO: RottaAvvio = { to: "/griglia-ghiaccio", chiave: "griglia_ghiaccio" };
+
+/**
+ * Rotta di una riga: prima la mappa per passo, poi il ripiego per area.
+ * `modalita_ghiaccio` = modalità dell'area ghiaccio del club (useModalitaArea("ghiaccio")).
+ * Se non nota (lettura in corso o fallita) resta la rotta standard, che non porta mai su un rifiuto.
+ */
+export const rotta_riga = (
+  r: Pick<RigaDiagnosi, "passo" | "area">,
+  modalita_ghiaccio?: string,
+): RottaAvvio => {
+  if (r.passo === 12 && modalita_ghiaccio === "griglia_giornaliera") return GRIGLIA_GHIACCIO;
+  return ROTTA_PER_PASSO[r.passo] ?? RIPIEGO_PER_AREA[r.area] ?? RIPIEGO;
+};
 
 export const riga_bloccante_aperta = (r: RigaDiagnosi) => r.blocca && r.esito !== "✓";
 
