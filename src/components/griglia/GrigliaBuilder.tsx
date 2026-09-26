@@ -94,6 +94,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SpecialitaManager from "@/components/griglia/SpecialitaManager";
 import ConfermaForzaturaDisponibilita from "@/components/griglia/ConfermaForzaturaDisponibilita";
 import RipetiSessioneDialog from "@/components/griglia/RipetiSessioneDialog";
+import AggiungiPersonePanel, { type VocePannello, type EsitoVoce } from "@/components/griglia/AggiungiPersonePanel";
 import ConfermaConflittoAtleti from "@/components/griglia/ConfermaConflittoAtleti";
 import DisallineamentoPropostaPill from "@/components/griglia/DisallineamentoPropostaPill";
 import ConfirmButton from "@/components/common/ConfirmButton";
@@ -108,7 +109,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2, GripVertical, HelpCircle, ChevronDown, ChevronRight, AlertTriangle, Repeat, Link2, RefreshCw, Package, Hand } from "lucide-react";
+import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2, GripVertical, HelpCircle, ChevronDown, ChevronRight, AlertTriangle, Repeat, Link2, RefreshCw, Package, Hand, UserPlus } from "lucide-react";
 
 import { format_data, format_data_completa, format_giorno_esteso } from "@/lib/format-data";
 const DURATA_DEFAULT_MIN = 20;
@@ -127,6 +128,20 @@ function from_min(v: number): string {
   const h = Math.floor(v / 60) % 24;
   const m = v % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+/** Schermo con puntatore «grossolano» (dito): lo capisce il dispositivo, non si chiede a nessuno. */
+function use_schermo_touch(): boolean {
+  const [touch, set_touch] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(pointer: coarse)");
+    const aggiorna = () => set_touch(mq.matches);
+    aggiorna();
+    mq.addEventListener?.("change", aggiorna);
+    return () => mq.removeEventListener?.("change", aggiorna);
+  }, []);
+  return touch;
 }
 
 function iniziali(nome?: string, cognome?: string): string {
@@ -1343,6 +1358,127 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   // Fine della ricorrenza per le sessioni collegate a un corso.
   const fine_ricorrenze = use_fine_ricorrenze(sessioni.map((s) => s.corso_id ?? "").filter(Boolean));
   const giorno_settimana = blocco.data ? format_data(blocco.data, { weekday: "long" }) : "";
+  // Box atleti visibili: UNA sola lista, usata sia dall'elenco trascinabile sia dal pannello.
+  const box_atleti_visibili = useMemo(() => {
+    const out: { box_id: string; titolo: string; items: any[]; colore?: string | null; neutro?: boolean }[] = [];
+    if (pool_ragioni.length > 0) {
+      for (const p of pool_ragioni) out.push({ box_id: p.id, titolo: p.titolo, items: p.items, colore: p.colore });
+    } else {
+      out.push({ box_id: "club", titolo: "Club", items: pool_club_fallback });
+    }
+    if (pool_senza_ragione_sociale.length > 0) {
+      out.push({ box_id: "senza_rs", titolo: "Senza ragione sociale", items: pool_senza_ragione_sociale, neutro: true });
+    }
+    if (modalita_esterni === "attivo" || pool_esterni.length > 0) {
+      out.push({ box_id: "esterni", titolo: "Esterni", items: pool_esterni, colore: VERDE_ESTERNI });
+    }
+    return out;
+  }, [pool_ragioni, pool_club_fallback, pool_senza_ragione_sociale, modalita_esterni, pool_esterni]);
+
+  // ─── Pannello «Aggiungi persone»: seconda strada, stesso meccanismo ───
+  const [pannello_sessione_id, set_pannello_sessione_id] = useState<string | null>(null);
+  const [esiti_pannello, set_esiti_pannello] = useState<Record<string, EsitoVoce> | null>(null);
+  const [pannello_in_corso, set_pannello_in_corso] = useState(false);
+  const coda_ref = React.useRef<{ sessione_id: string; voci: VocePannello[] }>({ sessione_id: "", voci: [] });
+  const schermo_touch = use_schermo_touch();
+
+  const voci_pannello = useMemo<VocePannello[]>(() => {
+    const voci: VocePannello[] = [];
+    if (fonte_pool_attiva === "proposta") {
+      for (const p of pool_proposte_items) {
+        if (p.items.length === 0) continue;
+        const tr = trascinabile_proposta(p.proposta_id, p.titolo, p.corso_id, p.items.map((i) => i.id));
+        voci.push({ chiave: tr.id, tipo: "gruppo", etichetta: p.titolo, sezione: t("griglia_guida.pannello_proposte"), active_id: tr.id, data: tr.data });
+      }
+    } else {
+      for (const box of box_atleti_visibili) {
+        for (const [livello, membri] of raggruppa_per_livello(box.items)) {
+          const tr = trascinabile_gruppo(box.box_id, box.titolo, livello, membri.map((m: any) => m.id));
+          voci.push({ chiave: tr.id, tipo: "gruppo", etichetta: livello, sezione: box.titolo, active_id: tr.id, data: tr.data });
+          for (const m of membri as any[]) {
+            voci.push({
+              chiave: `${tr.id}|atleta:${m.id}`,
+              tipo: "atleta",
+              etichetta: `${m.nome} ${m.cognome}`.trim(),
+              sezione: box.titolo,
+              gruppo_chiave: tr.id,
+              active_id: `atleta:${m.id}`,
+              data: null,
+            });
+          }
+        }
+      }
+    }
+    for (const i of pool_istruttori as any[]) {
+      voci.push({
+        chiave: `istruttore:${i.id}`,
+        tipo: "istruttore",
+        etichetta: `${i.nome} ${i.cognome}`.trim(),
+        sezione: t("griglia_guida.pannello_istruttori"),
+        stato: stati_istruttori?.[i.id],
+        active_id: `istruttore:${i.id}`,
+        data: null,
+      });
+    }
+    return voci;
+  }, [fonte_pool_attiva, pool_proposte_items, box_atleti_visibili, pool_istruttori, stati_istruttori, t]);
+
+  const aggiorna_esito = (chiave: string, e: Partial<EsitoVoce>) =>
+    set_esiti_pannello((prev) => (prev ? { ...prev, [chiave]: { ...prev[chiave], ...e } } : prev));
+
+  /**
+   * Esegue le voci scelte UNA ALLA VOLTA con `esegui_drop`, la stessa funzione
+   * del rilascio. Se una voce apre una finestra di conferma, le successive
+   * aspettano: le finestre non si sovrappongono e ogni esito resta leggibile.
+   */
+  const prosegui_coda = async () => {
+    const coda = coda_ref.current;
+    while (coda.voci.length > 0) {
+      const voce = coda.voci.shift()!;
+      aggiorna_esito(voce.chiave, { stato: "in_corso" });
+      attesa_ref.current = (esito) => {
+        aggiorna_esito(voce.chiave, { stato: esito.stato, dettaglio: esito.dettaglio });
+        void prosegui_coda();
+      };
+      const esito = await esegui_drop(coda.sessione_id, voce.active_id, voce.data);
+      if (esito.stato === "in_attesa") {
+        aggiorna_esito(voce.chiave, { stato: "in_attesa", dettaglio: esito.dettaglio });
+        return;
+      }
+      attesa_ref.current = null;
+      aggiorna_esito(voce.chiave, { stato: esito.stato, dettaglio: esito.dettaglio });
+    }
+    set_pannello_in_corso(false);
+  };
+
+  const conferma_pannello = (scelte: VocePannello[]) => {
+    if (!pannello_sessione_id || scelte.length === 0) return;
+    // Gruppi prima, poi atleti singoli, poi istruttori.
+    const ordine = { gruppo: 0, atleta: 1, istruttore: 2 } as const;
+    const ordinate = [...scelte].sort((a, b) => ordine[a.tipo] - ordine[b.tipo]);
+    set_esiti_pannello(
+      Object.fromEntries(
+        ordinate.map((v) => [
+          v.chiave,
+          {
+            etichetta:
+              v.tipo === "gruppo" ? t("griglia_guida.pannello_gruppo", { nome: v.etichetta, count: (v.data?.atleta_ids ?? []).length }) : v.etichetta,
+            stato: "in_coda" as const,
+          },
+        ]),
+      ),
+    );
+    coda_ref.current = { sessione_id: pannello_sessione_id, voci: ordinate };
+    set_pannello_in_corso(true);
+    void prosegui_coda();
+  };
+
+  const chiudi_pannello = () => {
+    if (pannello_in_corso) return;
+    set_pannello_sessione_id(null);
+    set_esiti_pannello(null);
+  };
+
   const sessione_vuota = !sessione_aperta || ((sessione_aperta.atleti?.length ?? 0) === 0 && (sessione_aperta.istruttori?.length ?? 0) === 0);
 
   /** Avvisa (non blocca) se la persona è già in un'altra sessione sovrapposta nello stesso giorno. */
@@ -2144,25 +2280,17 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
             </>
           ) : (
             <>
-              {pool_ragioni.length > 0 ? (
-                pool_ragioni.map((p) => (
-                  <PoolBox key={p.id} box_id={p.id} titolo={p.titolo} items={p.items} prefisso="atleta" colore={p.colore} />
-                ))
-              ) : (
-                <PoolBox box_id="club" titolo="Club" items={pool_club_fallback} prefisso="atleta" />
-              )}
-              {pool_senza_ragione_sociale.length > 0 && (
+              {box_atleti_visibili.map((b) => (
                 <PoolBox
-                  box_id="senza_rs"
-                  titolo="Senza ragione sociale"
-                  items={pool_senza_ragione_sociale}
+                  key={b.box_id}
+                  box_id={b.box_id}
+                  titolo={b.titolo}
+                  items={b.items}
                   prefisso="atleta"
-                  neutro
+                  colore={b.colore}
+                  neutro={b.neutro}
                 />
-              )}
-              {(modalita_esterni === "attivo" || pool_esterni.length > 0) && (
-                <PoolBox box_id="esterni" titolo="Esterni" items={pool_esterni} prefisso="atleta" colore={VERDE_ESTERNI} />
-              )}
+              ))}
               <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori stati_istruttori={stati_istruttori} />
             </>
           )}
@@ -2235,6 +2363,19 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
 
               {sessioni.map((s) => (
                 <TabsContent key={s.id} value={s.id} className="mt-3">
+                  <div className="mb-2">
+                    <Button
+                      variant={schermo_touch ? "default" : "secondary"}
+                      size={schermo_touch ? "lg" : "default"}
+                      className="gap-2"
+                      onClick={() => {
+                        set_esiti_pannello(null);
+                        set_pannello_sessione_id(s.id);
+                      }}
+                    >
+                      <UserPlus className="w-4 h-4" /> {t("griglia_guida.pannello_pulsante")}
+                    </Button>
+                  </div>
                   <div className="mb-2 flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm">
                     <Repeat className={cn("w-4 h-4 shrink-0", s.corso_id ? "text-primary" : "text-muted-foreground")} />
                     {s.corso_id ? (
@@ -2573,6 +2714,19 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AggiungiPersonePanel
+        open={!!pannello_sessione_id}
+        on_close={chiudi_pannello}
+        titolo_sessione={(() => {
+          const s = sessioni.find((x) => x.id === pannello_sessione_id);
+          return s ? `${hhmm(s.ora_inizio)}–${hhmm(s.ora_fine)}` : "";
+        })()}
+        voci={voci_pannello}
+        on_conferma={conferma_pannello}
+        esiti={esiti_pannello}
+        in_corso={pannello_in_corso}
+      />
 
       <RipetiSessioneDialog
 
