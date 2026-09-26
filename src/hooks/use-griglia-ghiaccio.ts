@@ -2101,7 +2101,7 @@ export function use_fine_ricorrenze(corso_ids: string[]) {
         .from("planning_corsi_settimana")
         .select("corso_id,data")
         .in("corso_id", ids)
-        .eq("annullato", false)
+        .or("annullato.is.null,annullato.eq.false")
         .not("data", "is", null);
       if (error) throw error;
       const out: Record<string, string> = {};
