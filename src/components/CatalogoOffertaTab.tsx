@@ -602,6 +602,36 @@ const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
             </div>
           </>
         )}
+
+        {q_atleti_livello.isError && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 flex items-center justify-between gap-3 flex-wrap">
+            <span>{t("catalogo.errore_mancanti")}</span>
+            <Button size="sm" variant="outline" onClick={() => q_atleti_livello.refetch()}>{t("catalogo.riprova")}</Button>
+          </div>
+        )}
+
+        {livelli_mancanti.length > 0 && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 space-y-3">
+            <div>
+              <h3 className="text-sm font-bold text-amber-900">{t("catalogo.mancanti_titolo")}</h3>
+              <p className="text-xs text-amber-900 mt-1">{t("catalogo.mancanti_spiegazione")}</p>
+            </div>
+            <ul className="divide-y divide-amber-200">
+              {livelli_mancanti.map((m) => (
+                <li key={m.nome} className="flex items-center justify-between gap-3 py-2">
+                  <span className="flex items-center gap-2 text-sm text-foreground">
+                    <span className={`w-3 h-3 rounded-full flex-shrink-0 ${colore_fase(per_nome.get(m.nome)?.fase)}`} />
+                    <span className="font-medium">{m.nome}</span>
+                    <span className="text-muted-foreground">{t("catalogo.mancanti_atleti", { count: m.n })}</span>
+                  </span>
+                  <Button size="sm" variant="outline" onClick={() => aggiungi_mancante(m.nome)} disabled={aggiunta_in_corso !== null}>
+                    {aggiunta_in_corso === m.nome ? <Loader2 className="w-4 h-4 animate-spin" /> : t("catalogo.mancanti_aggiungi")}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );
