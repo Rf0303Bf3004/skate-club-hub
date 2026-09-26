@@ -1,18 +1,16 @@
-# Correggere il salvataggio iniziale della pista
+# Scheda istruttore: collegamenti, avviso iniziale e margine
 
-## Diagnosi confermata
-- La finestra “Nuova risorsa” invia già `tipo: "ghiaccio"` o `"palestra"`, quindi il vincolo sul tipo non è la causa.
-- Lo stato impossibile nasce nell’onboarding: il passo disponibilità inserisce direttamente in `disponibilita_ghiaccio` con `risorsa_id` nullo e non tenta mai di creare `risorse_strutture`.
+## Verifica della diagnosi
+- Confermare dal comportamento dei tab che il clic cambia davvero scheda, ma non sposta la pagina: disponibilità e compenso vengono montati sotto il riquadro «Cosa manca»; accesso apre invece una finestra e richiede un trattamento coerente.
+- Riutilizzare l’animazione `animate-evidenzia-passo motion-reduce:animate-none` già impiegata dalla procedura guidata.
 
-## Implementazione
-1. Nel passo pista dell’onboarding, raccogliere anche il nome della pista e validarlo prima di scrivere.
-2. Creare prima `risorse_strutture` con il club della sessione e `tipo: "ghiaccio"`; usare l’ID restituito per tutte le fasce.
-3. Se la risorsa fallisce, non scrivere fasce e mostrare il motivo reale. Se le fasce falliscono, rimuovere soltanto la risorsa appena creata come compensazione; se anche il ripristino fallisce, dichiarare esplicitamente il risultato parziale.
-4. Invalidare risorse, disponibilità e diagnosi dopo qualsiasi scrittura riuscita, anche quando il passo successivo fallisce.
-5. Conservare campi e passaggio in caso d’errore; mostrare il messaggio verde solo dopo entrambe le scritture.
-6. Aggiungere le etichette necessarie nelle cinque lingue e in `traduzioni_ui`, senza modificare schema, policy o funzioni.
+## Modifiche
+- Aggiungere riferimenti alle tre destinazioni e una richiesta di navigazione: cambiare scheda o aprire l’accesso, attendere che il riquadro esista, scorrere al centro e applicare per pochi secondi l’evidenziazione esistente.
+- Mostrare nel modulo solo in creazione una frase discreta che anticipa disponibilità, compenso e accesso dopo il salvataggio.
+- Nella scheda Informazioni, lasciare sempre visibile il prezzo di vendita; solo per chi può vedere i costi mostrare costo lezioni orario e al minuto, oppure il compenso fisso. Mostrare il margine al minuto e la percentuale sul prezzo solo con contratto orario e costo positivo; evidenziare i margini negativi.
+- Aggiungere tutte le nuove etichette in italiano, tedesco svizzero, francese, inglese e romancio, sia nei file sia in `traduzioni_ui`.
 
 ## Verifica
-- Controllo tipi, rilettura completa dei file modificati e prova dei tre esiti: risorsa fallita, fasce fallite con compensazione, successo completo.
-- Verifica che le query usino sempre il club della sessione e che nessuna disponibilità nuova abbia `risorsa_id` nullo.
-- La fascia orfana esistente resterà intatta. Riporterò tabella, ID e comando di rimozione proposto, da eseguire solo dopo conferma.
+- Provare il cambio scheda e lo scorrimento/evidenziazione nel browser, compreso il mantenimento del cursore con contenuto montato dopo il clic.
+- Verificare i casi economici: permesso negato, contratto fisso, costo nullo, margine positivo e negativo.
+- Rileggere integralmente ogni file modificato e controllare l’anteprima dopo la compilazione automatica.
