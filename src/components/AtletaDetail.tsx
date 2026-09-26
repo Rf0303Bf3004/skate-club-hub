@@ -1208,7 +1208,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 )}
               </div>
 
-              {/* ─── Sezione Atleta esterno ─── */}
+              {/* ─── Sezione Atleta esterno ─── (spento: non si offre, salvo chi è già esterno) */}
+              {(modalita_esterni === "attivo" || !!form.atleta_esterno) && (
               <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
                 <h3 className="text-sm font-bold text-foreground">{td("detail.external_section")}</h3>
                 <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
@@ -1224,6 +1225,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   </label>
                 </div>
               </div>
+              )}
 
               {/* ─── Sezione Fatturazione (solo modalità multi ragione sociale) ─── */}
               <FatturazioneAtletaFields

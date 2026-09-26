@@ -1031,6 +1031,8 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const { data: specialita = [] } = use_griglia_specialita();
   const { data: ragioni_sociali = [] } = use_ragioni_sociali();
   const { modalita: modalita_fatturazione } = useModalitaArea("fatturazione");
+  // «Esterni» segue il dato: visibile se l'interruttore è acceso OPPURE se esiste almeno un esterno.
+  const { modalita: modalita_esterni } = useModalitaArea("atleti_esterni");
 
   const upsert_sessione = use_upsert_sessione();
   const elimina_sessione = use_elimina_sessione();
@@ -1996,7 +1998,9 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                   neutro
                 />
               )}
-              <PoolBox box_id="esterni" titolo="Esterni" items={pool_esterni} prefisso="atleta" colore={VERDE_ESTERNI} />
+              {(modalita_esterni === "attivo" || pool_esterni.length > 0) && (
+                <PoolBox box_id="esterni" titolo="Esterni" items={pool_esterni} prefisso="atleta" colore={VERDE_ESTERNI} />
+              )}
               <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori />
             </>
           )}
