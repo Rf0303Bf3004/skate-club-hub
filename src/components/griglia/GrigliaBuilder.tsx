@@ -1151,9 +1151,25 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const [conflitto_batch, set_conflitto_batch] = useState<{
     conflitti: ConflittoAtleta[];
     assegnabili: number;
-    esegui_liberi?: () => Promise<void>;
-    esegui_forza?: (motivo: string) => Promise<void>;
+    esegui_liberi?: () => Promise<EsitoAssegnazione>;
+    esegui_forza?: (motivo: string) => Promise<EsitoAssegnazione>;
   } | null>(null);
+
+  /**
+   * Esito in sospeso di un'assegnazione che attende una conferma (finestra di
+   * conflitto o di forzatura). Il pannello «Aggiungi persone» lo usa per il
+   * riepilogo; il trascinamento non lo imposta, quindi per lui non cambia nulla.
+   */
+  const attesa_ref = React.useRef<((e: EsitoAssegnazione) => void) | null>(null);
+  const prendi_attesa = () => {
+    const r = attesa_ref.current;
+    attesa_ref.current = null;
+    return r;
+  };
+  const risolvi_attesa = (r: ((e: EsitoAssegnazione) => void) | null, esito: EsitoAssegnazione) => {
+    if (esito.stato === "in_attesa") attesa_ref.current = r;
+    else r?.(esito);
+  };
 
 
 
@@ -1396,7 +1412,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     origine: "manuale" | "gruppo" | "proposta";
     origine_corso_id?: string | null;
     etichetta?: string;
-  }) => {
+  }): Promise<EsitoAssegnazione> => {
     const ids = Array.from(new Set(input.atleta_ids.filter(Boolean)));
     if (ids.length === 0) {
       toast({
@@ -1404,17 +1420,17 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         description: "Il contenitore trascinato non contiene nessun atleta.",
         variant: "destructive",
       });
-      return;
+      return { stato: "non_aggiunto", dettaglio: t("griglia_guida.det_vuoto") };
     }
 
-    const esegui = async (lista: string[], forzatura: { motivo: string } | null) => {
+    const esegui = async (lista: string[], forzatura: { motivo: string } | null): Promise<EsitoAssegnazione> => {
       if (lista.length === 0) {
         toast({
           title: "⚠️ Nessun atleta da assegnare",
           description: "Erano tutti in conflitto orario.",
           variant: "destructive",
         });
-        return;
+        return { stato: "non_aggiunto", dettaglio: t("griglia_guida.det_tutti_conflitto") };
       }
       const res = await assegna_atleti.mutateAsync({
         sessione_id: input.sessione_id,
@@ -1437,19 +1453,22 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
               : "Il database non ha accettato la scrittura: controlla i tuoi permessi e riprova.",
           variant: "destructive",
         });
-        return;
+        return {
+          stato: "non_aggiunto",
+          dettaglio: gia > 0 ? t("griglia_guida.det_gia_presenti", { count: gia }) : t("griglia_guida.det_rifiutato"),
+        };
       }
       const parti = [input.etichetta, gia > 0 ? `${gia} erano già in questa sessione` : null].filter(Boolean);
       toast({
         title: `✅ ${inseriti} ${inseriti === 1 ? "atleta assegnato" : "atleti assegnati"} alla sessione`,
         description: parti.length > 0 ? parti.join(" · ") : undefined,
       });
+      return { stato: "aggiunto", dettaglio: t("griglia_guida.det_atleti", { count: inseriti }) };
     };
 
     const conflitti = await verifica_conflitti_atleti(input.sessione_id, ids);
     if (conflitti.length === 0) {
-      await esegui(ids, null);
-      return;
+      return await esegui(ids, null);
     }
     const in_conflitto = new Set(conflitti.map((c) => c.atleta_id));
     const liberi = ids.filter((id) => !in_conflitto.has(id));
@@ -1459,6 +1478,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
       esegui_liberi: liberi.length > 0 ? async () => esegui(liberi, null) : undefined,
       esegui_forza: async (motivo) => esegui(ids, { motivo }),
     });
+    return { stato: "in_attesa", dettaglio: t("griglia_guida.det_conflitto_atleti", { count: conflitti.length }) };
   };
 
   /** Etichetta leggibile di ciò che si sta trascinando (per i messaggi di conferma). */
@@ -1487,7 +1507,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     data: any,
     /** Sessione appena creata: non è ancora nell'elenco letto dal server. */
     appena_creata = false,
-  ) => {
+  ): Promise<EsitoAssegnazione> => {
     const dest =
       sessioni.find((s) => s.id === sessione_id) ??
       (appena_creata ? ({ id: sessione_id, gruppi: [] } as unknown as GrigliaSessione) : undefined);
@@ -1497,7 +1517,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         description: "La sotto-sessione è stata modificata da un'altra persona: ricarica la pagina.",
         variant: "destructive",
       });
-      return;
+      return { stato: "errore", dettaglio: t("griglia_guida.det_sessione_sparita") };
     }
 
     const [tipo, persona_id] = active_id.split(":");
@@ -1508,14 +1528,13 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         // Contenitore "per proposta": assegnazione individuale degli iscritti,
         // nessun gruppo dinamico per livello.
         if (data?.individuale) {
-          await assegna_batch({
+          return await assegna_batch({
             sessione_id,
             atleta_ids: ids,
             origine: "proposta",
             origine_corso_id: data?.corso_id ?? null,
             etichetta: data?.etichetta ?? undefined,
           });
-          return;
         }
         if (livello_gruppo && livello_gruppo !== LIVELLO_NON_DEFINITO) {
           // Collegamento dinamico: nuova riga in griglia_sessioni_gruppi + atleti taggati.
@@ -1543,11 +1562,11 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
             });
             if (conflitto) {
               set_conflitto_gruppo({ livello: livello_gruppo, conflitto });
-              return;
+              return { stato: "in_attesa", dettaglio: t("griglia_guida.det_gruppo_sovrapposto") };
             }
           }
 
-          const esito_gruppo = (res_f: any, esclusi: number) => {
+          const esito_gruppo = (res_f: any, esclusi: number): EsitoAssegnazione => {
             const aggiunti = res_f?.aggiunti ?? 0;
             const gia = res_f?.gia_presenti ?? 0;
             if (aggiunti === 0) {
@@ -1561,7 +1580,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                       : "Il database non ha accettato la scrittura: controlla i tuoi permessi e riprova.",
                 variant: "destructive",
               });
-              return;
+              return { stato: "non_aggiunto", dettaglio: t("griglia_guida.det_rifiutato") };
             }
             const note = [
               gia > 0 ? `${gia} erano già presenti` : null,
@@ -1573,6 +1592,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                 note.length > 0 ? ` · ${note.join(" · ")}` : ""
               }.`,
             });
+            return { stato: "aggiunto", dettaglio: t("griglia_guida.det_gruppo_collegato", { count: aggiunti }) };
           };
 
           // ⛔ Blocco duro: se qualche atleta del gruppo è già in un'altra
@@ -1581,7 +1601,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           if (conflitti_atleti.length > 0) {
             const in_conflitto = conflitti_atleti.map((c) => c.atleta_id);
             const liberi = ids.filter((id) => !in_conflitto.includes(id));
-            const esegui = async (forzatura: { motivo: string } | null, escludi: string[]) => {
+            const esegui = async (forzatura: { motivo: string } | null, escludi: string[]): Promise<EsitoAssegnazione> => {
               const res_f = await assegna_gruppo.mutateAsync({
                 sessione_id,
                 gruppo_livello: livello_gruppo,
@@ -1590,7 +1610,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                 forzatura: forzatura ? { motivo: forzatura.motivo } : null,
                 escludi_atleta_ids: escludi,
               } as any);
-              esito_gruppo(res_f, escludi.length);
+              return esito_gruppo(res_f, escludi.length);
             };
             set_conflitto_batch({
               conflitti: conflitti_atleti,
@@ -1598,7 +1618,10 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
               esegui_liberi: liberi.length > 0 ? async () => esegui(null, in_conflitto) : undefined,
               esegui_forza: async (motivo) => esegui({ motivo }, []),
             });
-            return;
+            return {
+              stato: "in_attesa",
+              dettaglio: t("griglia_guida.det_conflitto_atleti", { count: conflitti_atleti.length }),
+            };
           }
 
           const res = await assegna_gruppo.mutateAsync({
@@ -1612,15 +1635,18 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
               title: `ℹ️ Il gruppo «${livello_gruppo}» è già collegato a questa sessione`,
               description: `Membership risincronizzata: ${(res as any).aggiunti ?? 0} aggiunti.`,
             });
-          } else {
-            esito_gruppo(res, 0);
+            return {
+              stato: "non_aggiunto",
+              dettaglio: t("griglia_guida.det_gruppo_gia", { count: (res as any).aggiunti ?? 0 }),
+            };
           }
+          return esito_gruppo(res, 0);
         } else {
           // Livello non definito: nessun gruppo dinamico, assegnazione individuale.
-          await assegna_batch({ sessione_id, atleta_ids: ids, origine: "manuale" });
+          return await assegna_batch({ sessione_id, atleta_ids: ids, origine: "manuale" });
         }
       } else if (tipo === "atleta") {
-        await assegna_batch({ sessione_id, atleta_ids: [persona_id], origine: "manuale" });
+        return await assegna_batch({ sessione_id, atleta_ids: [persona_id], origine: "manuale" });
       } else if (tipo === "istruttore") {
         const i = (istruttori as any[]).find((x) => x.id === persona_id);
         const nome = i ? `${i.nome} ${i.cognome}` : "Istruttore";
@@ -1628,18 +1654,20 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         const conflitto = await verifica_conflitto_istruttore({ sessione_id, istruttore_id: persona_id });
         if (conflitto) {
           set_conflitto_istruttore({ nome, istruttore_id: persona_id, sessione_id, conflitto });
-          return;
+          return { stato: "in_attesa", dettaglio: t("griglia_guida.det_istr_sovrapposto", { attivita: conflitto.etichetta }) };
         }
-        await esegui_assegna_istruttore({ sessione_id, istruttore_id: persona_id, nome });
+        return await esegui_assegna_istruttore({ sessione_id, istruttore_id: persona_id, nome });
       } else {
         toast({
           title: "⚠️ Elemento non riconosciuto",
           description: "Trascina un atleta, un gruppo o un istruttore.",
           variant: "destructive",
         });
+        return { stato: "errore", dettaglio: t("griglia_guida.det_sconosciuto") };
       }
     } catch (e: any) {
       toast({ title: "Errore assegnazione", description: e.message, variant: "destructive" });
+      return { stato: "errore", dettaglio: e?.message };
     }
   };
 
@@ -1720,7 +1748,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     nome: string;
     forza?: boolean;
     motivo_forzatura?: string;
-  }) => {
+  }): Promise<EsitoAssegnazione> => {
     try {
       await assegna_istruttore.mutateAsync({
         sessione_id: p.sessione_id,
@@ -1729,6 +1757,10 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         motivo_forzatura: p.motivo_forzatura ?? null,
       });
       if (p.motivo_forzatura) toast({ title: `✅ ${p.nome} assegnato (fuori disponibilità, motivato)` });
+      return {
+        stato: "aggiunto",
+        dettaglio: p.motivo_forzatura ? t("griglia_guida.det_istr_forzato") : undefined,
+      };
     } catch (e: any) {
       if (e instanceof ErroreDisponibilitaIstruttore) {
         const sess = sessioni.find((x) => x.id === p.sessione_id);
@@ -1740,9 +1772,10 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           motivo_blocco: `${p.nome}: ${e.esito.motivo ?? ""}`,
           orario_label: sess ? `${hhmm(sess.ora_inizio)}–${hhmm(sess.ora_fine)}` : undefined,
         });
-        return;
+        return { stato: "in_attesa", dettaglio: e.esito.motivo ?? undefined };
       }
       toast({ title: "Errore assegnazione", description: e?.message, variant: "destructive" });
+      return { stato: "errore", dettaglio: e?.message };
     }
   };
 
@@ -2300,16 +2333,21 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         open={!!conflitto_batch}
         conflitti={conflitto_batch?.conflitti ?? []}
         assegnabili={conflitto_batch?.assegnabili ?? 0}
-        on_close={() => set_conflitto_batch(null)}
+        on_close={() => {
+          set_conflitto_batch(null);
+          prendi_attesa()?.({ stato: "non_aggiunto", dettaglio: t("griglia_guida.det_annullato") });
+        }}
         on_solo_liberi={
           conflitto_batch?.esegui_liberi
             ? async () => {
                 const fn = conflitto_batch.esegui_liberi!;
+                const r = prendi_attesa();
                 set_conflitto_batch(null);
                 try {
-                  await fn();
+                  risolvi_attesa(r, await fn());
                 } catch (e: any) {
                   toast({ title: "Errore assegnazione", description: e.message, variant: "destructive" });
+                  r?.({ stato: "errore", dettaglio: e?.message });
                 }
               }
             : undefined
@@ -2318,18 +2356,27 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           conflitto_batch?.esegui_forza
             ? async (motivo) => {
                 const fn = conflitto_batch.esegui_forza!;
+                const r = prendi_attesa();
                 set_conflitto_batch(null);
                 try {
-                  await fn(motivo);
+                  risolvi_attesa(r, await fn(motivo));
                 } catch (e: any) {
                   toast({ title: "Errore assegnazione", description: e.message, variant: "destructive" });
+                  r?.({ stato: "errore", dettaglio: e?.message });
                 }
               }
             : undefined
         }
       />
 
-      <AlertDialog open={!!conflitto_gruppo} onOpenChange={(o) => !o && set_conflitto_gruppo(null)}>
+      <AlertDialog
+        open={!!conflitto_gruppo}
+        onOpenChange={(o) => {
+          if (o) return;
+          set_conflitto_gruppo(null);
+          prendi_attesa()?.({ stato: "non_aggiunto", dettaglio: t("griglia_guida.det_gruppo_sovrapposto") });
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>⛔ Gruppo già assegnato in questo orario</AlertDialogTitle>
@@ -2341,7 +2388,14 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => set_conflitto_gruppo(null)}>Ho capito</AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => {
+                set_conflitto_gruppo(null);
+                prendi_attesa()?.({ stato: "non_aggiunto", dettaglio: t("griglia_guida.det_gruppo_sovrapposto") });
+              }}
+            >
+              Ho capito
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -2363,7 +2417,14 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={!!conflitto_istruttore} onOpenChange={(o) => !o && set_conflitto_istruttore(null)}>
+      <AlertDialog
+        open={!!conflitto_istruttore}
+        onOpenChange={(o) => {
+          if (o) return;
+          set_conflitto_istruttore(null);
+          prendi_attesa()?.({ stato: "non_aggiunto", dettaglio: t("griglia_guida.det_annullato") });
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>⚠️ Istruttore già assegnato in questo orario</AlertDialogTitle>
@@ -2381,14 +2442,16 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
             <AlertDialogAction
               onClick={async () => {
                 const c = conflitto_istruttore;
+                const r = prendi_attesa();
                 set_conflitto_istruttore(null);
                 if (!c) return;
-                await esegui_assegna_istruttore({
+                const esito = await esegui_assegna_istruttore({
                   sessione_id: c.sessione_id,
                   istruttore_id: c.istruttore_id,
                   nome: c.nome,
                   forza: true,
                 });
+                risolvi_attesa(r, esito);
               }}
             >
               Assegna comunque
@@ -2403,18 +2466,23 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         open={!!forzatura_istruttore}
         motivo={forzatura_istruttore?.motivo_blocco ?? null}
         orario_label={forzatura_istruttore?.orario_label}
-        on_close={() => set_forzatura_istruttore(null)}
+        on_close={() => {
+          set_forzatura_istruttore(null);
+          prendi_attesa()?.({ stato: "non_aggiunto", dettaglio: t("griglia_guida.det_annullato") });
+        }}
         on_forza={async (motivo) => {
           const f = forzatura_istruttore;
+          const r = prendi_attesa();
           set_forzatura_istruttore(null);
           if (!f) return;
-          await esegui_assegna_istruttore({
+          const esito = await esegui_assegna_istruttore({
             sessione_id: f.sessione_id,
             istruttore_id: f.istruttore_id,
             nome: f.nome,
             forza: f.forza,
             motivo_forzatura: motivo,
           });
+          risolvi_attesa(r, esito);
         }}
       />
 
