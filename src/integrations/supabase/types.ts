@@ -766,7 +766,15 @@ export type Database = {
           stagione_id?: string
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "atleti_storici_stagioni_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bilancio_stagione: {
         Row: {
@@ -802,7 +810,15 @@ export type Database = {
           totale_entrate?: number
           totale_uscite?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bilancio_stagione_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       campi_allenamento: {
         Row: {
@@ -1142,7 +1158,15 @@ export type Database = {
           stagione_id?: string
           tipo?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cassa_movimenti_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       catalogo_livelli: {
         Row: {
@@ -2050,7 +2074,15 @@ export type Database = {
           permanenza_massima_ore?: number
           stagione_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "configurazione_ghiaccio_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contenuti_traduzioni: {
         Row: {
@@ -2131,7 +2163,15 @@ export type Database = {
           stagione_id?: string | null
           testo?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contratti_accettati_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       convenzioni: {
         Row: {
@@ -2657,7 +2697,15 @@ export type Database = {
           stagione_id?: string
           tariffa_oraria?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "costi_istruttori_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       costi_risorsa_stagione: {
         Row: {
@@ -2979,6 +3027,13 @@ export type Database = {
             referencedRelation: "risorse_strutture"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "disponibilita_ghiaccio_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
         ]
       }
       disponibilita_istruttori: {
@@ -3160,6 +3215,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "domande_iscrizione_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3435,7 +3497,15 @@ export type Database = {
           stagione_id?: string | null
           stato?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "eventi_campi_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       eventi_esterni: {
         Row: {
@@ -3492,7 +3562,15 @@ export type Database = {
           tipo?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "eventi_esterni_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       eventi_pubblici: {
         Row: {
@@ -3528,7 +3606,15 @@ export type Database = {
           stagione_id?: string | null
           tipo?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "eventi_pubblici_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       eventi_straordinari: {
         Row: {
@@ -3573,7 +3659,15 @@ export type Database = {
           tipo?: string
           titolo?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "eventi_straordinari_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       export_definizioni: {
         Row: {
@@ -4709,7 +4803,15 @@ export type Database = {
           ora_inizio_giornata?: string
           stagione_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "impostazioni_planning_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       iscrizioni_campo: {
         Row: {
@@ -5233,7 +5335,15 @@ export type Database = {
           prezzo_pagato?: number
           stagione_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "iscrizioni_pacchetti_storiche_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       istruttori: {
         Row: {
@@ -5695,7 +5805,15 @@ export type Database = {
           ore?: number
           stagione_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "lezioni_private_storiche_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       livelli: {
         Row: {
@@ -5931,7 +6049,15 @@ export type Database = {
           motivo?: string
           stagione_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "motivi_abbandono_aggregati_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       note_pista: {
         Row: {
@@ -6138,7 +6264,15 @@ export type Database = {
           stagione_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ore_lavorate_istruttori_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ore_pista_disponibili: {
         Row: {
@@ -6171,7 +6305,15 @@ export type Database = {
           ore_settimanali_utilizzate?: number
           stagione_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ore_pista_disponibili_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ore_pista_monitors: {
         Row: {
@@ -6577,7 +6719,15 @@ export type Database = {
           stagione_id?: string | null
           stato?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "planning_settimane_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       presenze: {
         Row: {
@@ -7202,7 +7352,15 @@ export type Database = {
           stagione_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "relazione_preferenze_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       relazioni_allegati: {
         Row: {
@@ -7400,7 +7558,15 @@ export type Database = {
           tono?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "relazioni_paragrafi_auto_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ricavi_per_fonte: {
         Row: {
@@ -7427,7 +7593,15 @@ export type Database = {
           importo?: number
           stagione_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ricavi_per_fonte_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       richieste_iscrizione: {
         Row: {
@@ -7502,7 +7676,15 @@ export type Database = {
           periodo?: string | null
           stagione_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "richieste_iscrizione_storiche_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       richieste_lezioni_private: {
         Row: {
@@ -7959,7 +8141,15 @@ export type Database = {
           podi_conquistati?: number
           stagione_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "risultati_storici_stagioni_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ruoli_permessi_sezioni: {
         Row: {
@@ -8836,7 +9026,15 @@ export type Database = {
           stagione_id?: string
           superati?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "test_storici_stagioni_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tipi_corso: {
         Row: {
