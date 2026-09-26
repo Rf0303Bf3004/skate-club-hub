@@ -9,7 +9,9 @@
     "errore_caricamento": "Non riesco a caricare l'elenco dei livelli: riprova.",
     "riprova": "Riprova",
     "caricamento": "Carico i livelli…",
-    "campo_livello": "Livello del corso"
+    "campo_livello": "Livello del corso",
+    "fuori_catalogo": "«{{livelli}}» non è nel catalogo dei livelli del club: il corso non raggiunge nessuna atleta.",
+    "fuori_catalogo_breve": "Livello fuori catalogo"
   },
   "tipo_corso": {
     "none": "Nessun tipo",

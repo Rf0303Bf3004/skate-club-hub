@@ -56,6 +56,20 @@ export function livello_da_sistemare(corso: { attivo?: boolean | null; livello_r
   return corso?.attivo !== true && !livello_dichiarato(corso?.livello_richiesto);
 }
 
+/**
+ * Livelli dichiarati dal corso che NON esistono nel catalogo del club.
+ * Il confronto esatto di `corsi_per_atleta` li rende invisibili alle famiglie:
+ * meglio dirlo in faccia che lasciare il corso nascosto in silenzio.
+ */
+export function livelli_fuori_catalogo(
+  valore: string | null | undefined,
+  nomi_catalogo: string[],
+): string[] {
+  if (is_apertura_totale(valore)) return [];
+  const noti = new Set(nomi_catalogo.map((n) => chiave_livello(n)));
+  return parse_livelli_corso(valore).filter((l) => !noti.has(chiave_livello(l)));
+}
+
 /** Valore da salvare in `corsi.livello_richiesto`. */
 export function serializza_livelli_corso(livelli: string[], tutti: boolean): string | null {
   if (tutti) return LIVELLO_TUTTI;
