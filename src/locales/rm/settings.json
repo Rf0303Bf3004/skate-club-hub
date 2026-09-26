@@ -36,5 +36,19 @@
     "vuoto_risorse_per_disponibilita": "Agiunta l'emprim survart ina pista da glatsch u ina halla da gimnastica: ina perioda sto indicar a tge stabiliment ch'ella sa referescha.",
     "errore_risorse_per_disponibilita": "Las pistas da glatsch e las hallas da gimnastica dal club na pon betg vegnir legidas, perquai resta la disponibilitad bloccada.",
     "lettura_risorse_in_corso": "Jau legel actualmain las pistas da glatsch e las hallas da gimnastica dal club…"
+  },
+  "catalogo": {
+    "errore_catalogo": "Jau na poss betg leger il catalog u la glista uffiziala dals nivels, perquai resta la pagina bloccada.",
+    "errore_iscritti": "Jau na poss betg dumbrar las atletas per nivel: gruppas ed uras na vegnan betg calculadas.",
+    "errore_ore": "Jau na poss betg leger las disponibilitads dal glatsch.",
+    "riprova": "Empruvar anc ina giada",
+    "vuoto_livelli_paese": "Per il pajais dal club ({{paese}}) n'èn nagins nivels configurads en la glista uffiziala. Els ston vegnir agiuntads avant ch'il catalog po vegnir emplenì.",
+    "scegli_livello": "Nivel d'agiuntar",
+    "livello_non_ufficiale": "Quest nivel na cumpara betg en la glista uffiziala dal pajais dal club.",
+    "iscritti_calcolati": "Atletas dal club cun quest nivel, dumbradas da las datas persunalas.",
+    "vuoto_ore": "Disponibilitad dal glatsch betg declerada.",
+    "ore_da_risorse": "Da: {{risorse}}",
+    "surplus_senza_ore": "Betg calculabel senza disponibilitad declerada.",
+    "surplus_senza_iscritti": "Betg calculabel senza il dumber dals inscrits."
   }
 }

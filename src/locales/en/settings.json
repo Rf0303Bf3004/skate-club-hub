@@ -260,5 +260,19 @@
     "vuoto_risorse_per_disponibilita": "First add a rink or a gym above: a time slot has to say which facility it belongs to.",
     "errore_risorse_per_disponibilita": "The club's rinks and gyms can't be read, so availability stays locked.",
     "lettura_risorse_in_corso": "Reading the club's rinks and gyms…"
+  },
+  "catalogo": {
+    "errore_catalogo": "Unable to read the catalogue or the official list of levels, so the page stays locked.",
+    "errore_iscritti": "Unable to count athletes per level: groups and hours are not calculated.",
+    "errore_ore": "Unable to read the ice availability.",
+    "riprova": "Try again",
+    "vuoto_livelli_paese": "No levels are configured in the official list for the club's country ({{paese}}). They must be added before the catalogue can be filled in.",
+    "scegli_livello": "Level to add",
+    "livello_non_ufficiale": "This level is not in the official list for the club's country.",
+    "iscritti_calcolati": "Club athletes at this level, counted from the athlete records.",
+    "vuoto_ore": "Ice availability not declared.",
+    "ore_da_risorse": "From: {{risorse}}",
+    "surplus_senza_ore": "Cannot be calculated without declared availability.",
+    "surplus_senza_iscritti": "Cannot be calculated without the enrolment count."
   }
 }
