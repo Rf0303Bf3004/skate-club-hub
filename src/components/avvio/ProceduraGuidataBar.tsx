@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { segnala_errore } from "@/lib/errori";
+import { useModalitaArea } from "@/hooks/useModalitaArea";
 import {
   RUOLI_AVVIO_CLUB,
   avanzamento_avvio,
@@ -29,6 +30,7 @@ export default function ProceduraGuidataBar() {
   const soggetto = !!session && RUOLI_AVVIO_CLUB.includes(session.ruolo);
   const { nascosta, pronto_chiuso, esci, chiudi_pronto } = use_preferenze_procedura(club_id);
   const attiva = soggetto && !nascosta;
+  const { modalita: modalita_ghiaccio } = useModalitaArea("ghiaccio");
 
   // Rilettura ogni 25 s solo mentre la barra è visibile.
   const diagnosi = use_diagnosi_avvio(club_id, attiva, attiva ? 25_000 : false);
@@ -148,7 +150,7 @@ export default function ProceduraGuidataBar() {
     );
   }
 
-  const rotta = rotta_riga(mostrata);
+  const rotta = rotta_riga(mostrata, modalita_ghiaccio);
   const indice = righe_ordinate.findIndex((r) => r.passo === mostrata.passo);
   const e_corrente = !!corrente && corrente.passo === mostrata.passo;
   const vai_a_indice = (i: number) => {

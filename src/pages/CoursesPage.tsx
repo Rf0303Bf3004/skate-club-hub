@@ -332,6 +332,8 @@ const TabIscrizioni: React.FC<{
   // Optimistic: ID appena iscritti localmente, prima del refresh dal DB
   const [iscritti_ottimistici, set_iscritti_ottimistici] = useState<string[]>([]);
   const { modalita: modalita_fatturazione } = useModalitaArea("fatturazione");
+  // Il riquadro «crea dalla griglia» solo dove la griglia è attiva: altrove porterebbe su un rifiuto.
+  const { modalita: modalita_ghiaccio } = useModalitaArea("ghiaccio");
   const multi_rs = modalita_fatturazione === "multi_ragione_sociale";
 
   const ha_filtro_livello = livello_dichiarato(livello_richiesto) && !is_apertura_totale(livello_richiesto);
@@ -2870,7 +2872,7 @@ const CoursesPage: React.FC = () => {
           </div>
         </div>
 
-        {puo_gestire_sportivo && (
+        {puo_gestire_sportivo && modalita_ghiaccio === "griglia_giornaliera" && (
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3">
             <LayoutGrid className="w-5 h-5 text-primary flex-shrink-0" />
             <div className="flex-1 min-w-0">

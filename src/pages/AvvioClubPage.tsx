@@ -5,6 +5,7 @@ import { CheckCircle2, AlertTriangle, XCircle, ArrowRight, RefreshCw } from "luc
 import { avanzamento_avvio, rotta_riga, use_diagnosi_avvio, type RigaDiagnosi } from "@/lib/avvio-club";
 import { RiprendiProceduraButton } from "@/components/avvio/ProceduraGuidataBar";
 import { useAuth } from "@/lib/auth";
+import { useModalitaArea } from "@/hooks/useModalitaArea";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,6 +29,7 @@ export default function AvvioClubPage() {
   const { t } = useTranslation("onboarding");
   const { session } = useAuth();
   const club_id = session?.club_id;
+  const { modalita: modalita_ghiaccio } = useModalitaArea("ghiaccio");
 
   const { data: righe = [], isPending, isError, error, refetch, isRefetching } = use_diagnosi_avvio(club_id);
 
@@ -127,7 +129,7 @@ export default function AvvioClubPage() {
               <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">{area}</h2>
               <ul className="space-y-2">
                 {controlli.map((r) => {
-                  const rotta = rotta_riga(r);
+                  const rotta = rotta_riga(r, modalita_ghiaccio);
                   const ok = r.esito === "✓";
                   return (
                     <li
