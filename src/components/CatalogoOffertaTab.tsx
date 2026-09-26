@@ -342,16 +342,12 @@ const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
     }
   };
 
-  const add_livello = async () => {
-    // Scrittura decisa solo su letture riuscite: catalogo e livelli ufficiali.
-    if (!q_catalogo.isSuccess || !q_livelli.isSuccess || !q_paese.isSuccess) return;
-    const scelto = disponibili.find((l) => l.nome === nuovo_livello);
-    if (!scelto) return;
+  const inserisci_livello = async (nome: string) => {
     try {
       const { error } = await (supabase as any).from("catalogo_livelli").insert({
         club_id: resolved_club_id,
         stagione_id: stagione_id || null,
-        livello: scelto.nome,
+        livello: nome,
         iscritti_attuali: 0,
         max_atleti_pista: 30,
         max_per_monitrice: 8,
@@ -363,11 +359,32 @@ const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
         usa_corsie: false,
       });
       if (error) throw error;
-      toast({ title: t("catalogo.toast_level_added", { livello: scelto.nome }) });
+      toast({ title: t("catalogo.toast_level_added", { livello: nome }) });
     } catch (e: any) {
       toast({ title: t("catalogo.toast_add_error"), description: e?.message, variant: "destructive" });
     } finally {
       queryClient.invalidateQueries({ queryKey: ["catalogo_livelli"] });
+      queryClient.invalidateQueries({ queryKey: ["catalogo_atleti_per_livello"] });
+    }
+  };
+
+  const add_livello = async () => {
+    // Scrittura decisa solo su letture riuscite: catalogo e livelli ufficiali.
+    if (!q_catalogo.isSuccess || !q_livelli.isSuccess || !q_paese.isSuccess) return;
+    const scelto = disponibili.find((l) => l.nome === nuovo_livello);
+    if (!scelto) return;
+    await inserisci_livello(scelto.nome);
+  };
+
+  const aggiungi_mancante = async (nome: string) => {
+    // Il catalogo appena letto deve confermare che il livello manca davvero.
+    if (!q_catalogo.isSuccess || !q_atleti_livello.isSuccess) return;
+    if (q_catalogo.data.some((r) => r.livello === nome)) return;
+    set_aggiunta_in_corso(nome);
+    try {
+      await inserisci_livello(nome);
+    } finally {
+      set_aggiunta_in_corso(null);
     }
   };
 
