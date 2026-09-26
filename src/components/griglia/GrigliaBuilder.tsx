@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { get_current_club_id } from "@/lib/supabase";
 import {
   DndContext,
@@ -39,6 +40,7 @@ import {
   use_pubblica_blocco,
   use_disponibilita_giorno,
   use_ripeti_sessione,
+  use_fine_ricorrenze,
   use_assegna_gruppo_sessione,
   use_rimuovi_gruppo_sessione,
   use_sync_gruppo_sessione,
@@ -98,13 +100,17 @@ import ConfirmButton from "@/components/common/ConfirmButton";
 import NuovaPropostaDialog, { type ConfermaProposta } from "@/components/griglia/NuovaPropostaDialog";
 import { use_pool_proposte, use_crea_proposta } from "@/hooks/use-proposte";
 import { Link as RouterLink } from "react-router-dom";
-import { verifica_orario_disponibilita } from "@/lib/availability";
+import {
+  verifica_orario_disponibilita,
+  calcola_status_istruttori_per_slot,
+  istruttore_disponibile,
+} from "@/lib/availability";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2, GripVertical, HelpCircle, ChevronDown, ChevronRight, AlertTriangle, Repeat, Link2, RefreshCw, Package } from "lucide-react";
+import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2, GripVertical, HelpCircle, ChevronDown, ChevronRight, AlertTriangle, Repeat, Link2, RefreshCw, Package, Hand } from "lucide-react";
 
-import { format_data } from "@/lib/format-data";
+import { format_data, format_data_completa, format_giorno_esteso } from "@/lib/format-data";
 const DURATA_DEFAULT_MIN = 20;
 const ALTRO = "__altro__";
 
@@ -293,6 +299,10 @@ const GruppoDraggable: React.FC<{
 };
 
 
+// ─── Stato istruttore per l'orario in costruzione ─────────
+type StatoIstruttore = { tipo: "libero" | "fuori" | "occupato"; testo: string };
+const ORDINE_STATO: Record<StatoIstruttore["tipo"], number> = { libero: 0, fuori: 1, occupato: 2 };
+
 // ─── Box pool sorgente ─────────────────────────────────────
 const PoolBox: React.FC<{
   titolo: string;
@@ -302,7 +312,9 @@ const PoolBox: React.FC<{
   colore?: string | null;
   box_id?: string;
   neutro?: boolean;
-}> = ({ titolo, items, prefisso, variante_istruttori, colore, box_id, neutro }) => {
+  /** Stato di ogni istruttore per l'orario in costruzione (chi è libero sta in cima). */
+  stati_istruttori?: Record<string, StatoIstruttore>;
+}> = ({ titolo, items, prefisso, variante_istruttori, colore, box_id, neutro, stati_istruttori }) => {
   const [q, set_q] = useState("");
   const [aperto, set_aperto] = useState(true);
   const [gruppi_aperti, set_gruppi_aperti] = useState<Record<string, boolean>>({});
@@ -310,9 +322,12 @@ const PoolBox: React.FC<{
 
   const filtrati = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return items;
-    return items.filter((i) => `${i.nome} ${i.cognome}`.toLowerCase().includes(term));
-  }, [items, q]);
+    const base = term ? items.filter((i) => `${i.nome} ${i.cognome}`.toLowerCase().includes(term)) : items;
+    if (!stati_istruttori) return base;
+    // Nessuno si nasconde: si ordina soltanto, i liberi in cima.
+    const peso = (id: string) => ORDINE_STATO[stati_istruttori[id]?.tipo ?? "libero"];
+    return [...base].sort((a, b) => peso(a.id) - peso(b.id));
+  }, [items, q, stati_istruttori]);
 
   // Raggruppamento per livello (solo per gli atleti)
   const gruppi = useMemo(() => {
@@ -402,15 +417,37 @@ const PoolBox: React.FC<{
                 );
               })
 
-            : filtrati.map((i) => (
-                <PillolaDraggable
-                  key={i.id}
-                  drag_id={`istruttore:${i.id}`}
-                  label={`${i.nome} ${i.cognome}`}
-                  sigla={iniziali(i.nome, i.cognome)}
-                  is_istruttore
-                />
-              ))}
+            : filtrati.map((i) => {
+                const st = stati_istruttori?.[i.id];
+                const segnato = st && st.tipo !== "libero";
+                return (
+                  <div
+                    key={i.id}
+                    className={cn(
+                      "flex flex-col gap-0.5",
+                      st?.tipo === "fuori" && "rounded-lg border-l-4 border-amber-500 pl-1.5",
+                      st?.tipo === "occupato" && "rounded-lg border-l-4 border-destructive pl-1.5",
+                    )}
+                  >
+                    <PillolaDraggable
+                      drag_id={`istruttore:${i.id}`}
+                      label={`${i.nome} ${i.cognome}`}
+                      sigla={iniziali(i.nome, i.cognome)}
+                      is_istruttore
+                    />
+                    {segnato && (
+                      <p
+                        className={cn(
+                          "text-[11px] leading-tight pl-1",
+                          st.tipo === "fuori" ? "text-amber-700" : "text-destructive",
+                        )}
+                      >
+                        {st.testo}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
           {filtrati.length === 0 && <p className="text-xs text-muted-foreground py-1">Nessun risultato.</p>}
         </div>
       )}
@@ -1026,6 +1063,7 @@ interface Props {
 }
 
 const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
+  const { t } = useTranslation("planning");
   const { data: atleti = [] } = use_atleti();
   const { data: istruttori = [] } = use_istruttori();
   const { data: specialita = [] } = use_griglia_specialita();
@@ -1215,6 +1253,69 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const tab_corrente = tab_attivo ?? sessioni[0]?.id ?? null;
   const fonte_pool_attiva: "livello" | "proposta" =
     (tab_corrente && fonte_pool[tab_corrente]) || "livello";
+
+  // Stato degli istruttori per l'orario che si sta costruendo (sessione aperta,
+  // oppure l'intero blocco se non ha ancora sessioni). Stessa logica della
+  // pagina Corsi: `calcola_status_istruttori_per_slot`.
+  const sessione_aperta = sessioni.find((s) => s.id === tab_corrente) ?? null;
+  const slot_ora_inizio = sessione_aperta?.ora_inizio ?? blocco.ora_inizio;
+  const slot_ora_fine = sessione_aperta?.ora_fine ?? blocco.ora_fine;
+  const stati_istruttori = useMemo(() => {
+    if (!giorno_blocco || !slot_ora_inizio || !slot_ora_fine) return undefined;
+    const tutte = new Map<string, GrigliaSessione>();
+    for (const b of [...(blocchi_giorno ?? []), blocco]) {
+      for (const s of b.sessioni ?? []) tutte.set(s.id, s);
+    }
+    const etichette = new Map<string, string>();
+    const planning_slots: { corso_id: string; istruttore_id: string; ora_inizio: string; ora_fine: string }[] = [];
+    for (const s of tutte.values()) {
+      const nome = s.specialita_nome || s.specialita_testo_libero || t("griglia_guida.sessione_senza_nome");
+      etichette.set(s.id, `${nome} ${hhmm(s.ora_inizio)}–${hhmm(s.ora_fine)}`);
+      for (const i of s.istruttori ?? []) {
+        // `corso_id` qui identifica la sessione: serve solo a escludere quella aperta.
+        planning_slots.push({ corso_id: s.id, istruttore_id: i.istruttore_id, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine });
+      }
+    }
+    const status = calcola_status_istruttori_per_slot({
+      istruttori: pool_istruttori,
+      giorno: giorno_blocco,
+      ora_inizio: slot_ora_inizio,
+      ora_fine: slot_ora_fine,
+      planning_slots,
+      corso_id_corrente: sessione_aperta?.id ?? null,
+    });
+    const out: Record<string, StatoIstruttore> = {};
+    for (const st of status) {
+      const id = st.istruttore.id;
+      if (st.disponibile) {
+        out[id] = { tipo: "libero", testo: "" };
+      } else if (st.conflitto_corso_id) {
+        out[id] = {
+          tipo: "occupato",
+          testo: t("griglia_guida.istr_occupato", { attivita: etichette.get(st.conflitto_corso_id) ?? "—" }),
+        };
+      } else {
+        const r = istruttore_disponibile({
+          disponibilita_per_giorno: st.istruttore.disponibilita,
+          giorno: giorno_blocco,
+          ora_inizio: slot_ora_inizio,
+          ora_fine: slot_ora_fine,
+        });
+        out[id] = {
+          tipo: "fuori",
+          testo: r.fasce_label
+            ? t("griglia_guida.istr_solo_fasce", { giorno: giorno_blocco, fasce: r.fasce_label })
+            : t("griglia_guida.istr_nessuna", { giorno: giorno_blocco }),
+        };
+      }
+    }
+    return out;
+  }, [giorno_blocco, slot_ora_inizio, slot_ora_fine, blocchi_giorno, blocco, pool_istruttori, sessione_aperta?.id, t]);
+
+  // Fine della ricorrenza per le sessioni collegate a un corso.
+  const fine_ricorrenze = use_fine_ricorrenze(sessioni.map((s) => s.corso_id ?? "").filter(Boolean));
+  const giorno_settimana = blocco.data ? format_data(blocco.data, { weekday: "long" }) : "";
+  const sessione_vuota = !sessione_aperta || ((sessione_aperta.atleti?.length ?? 0) === 0 && (sessione_aperta.istruttori?.length ?? 0) === 0);
 
   /** Avvisa (non blocca) se la persona è già in un'altra sessione sovrapposta nello stesso giorno. */
   const avvisa_sovrapposizione = (
@@ -1958,6 +2059,22 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           </div>
         )}
 
+        {/* Come si costruisce: sempre presente, completo finché la sessione è vuota. */}
+        {sessione_vuota ? (
+          <div className="mb-3 rounded-xl border-2 border-primary/40 bg-primary/5 p-4 flex gap-3">
+            <Hand className="w-6 h-6 text-primary shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="text-base font-semibold">{t("griglia_guida.come_titolo")}</p>
+              <p className="text-sm">{t("griglia_guida.come_testo")}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 flex items-center gap-2 text-sm">
+            <Hand className="w-4 h-4 text-primary shrink-0" />
+            <span>{t("griglia_guida.come_breve")}</span>
+          </div>
+        )}
+
         {/* Fascia superiore: pool sorgente */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           {fonte_pool_attiva === "proposta" ? (
@@ -1978,7 +2095,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                   />
                 ))
               )}
-              <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori />
+              <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori stati_istruttori={stati_istruttori} />
             </>
           ) : (
             <>
@@ -2001,7 +2118,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
               {(modalita_esterni === "attivo" || pool_esterni.length > 0) && (
                 <PoolBox box_id="esterni" titolo="Esterni" items={pool_esterni} prefisso="atleta" colore={VERDE_ESTERNI} />
               )}
-              <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori />
+              <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori stati_istruttori={stati_istruttori} />
             </>
           )}
         </div>
@@ -2073,6 +2190,28 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
 
               {sessioni.map((s) => (
                 <TabsContent key={s.id} value={s.id} className="mt-3">
+                  <div className="mb-2 flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm">
+                    <Repeat className={cn("w-4 h-4 shrink-0", s.corso_id ? "text-primary" : "text-muted-foreground")} />
+                    {s.corso_id ? (
+                      <span className="font-medium">
+                        {fine_ricorrenze.isSuccess && fine_ricorrenze.data[s.corso_id]
+                          ? t("griglia_guida.ric_fino_al", {
+                              giorno: giorno_settimana,
+                              data: format_data_completa(fine_ricorrenze.data[s.corso_id]),
+                            })
+                          : t("griglia_guida.ric_generica")}
+                      </span>
+                    ) : (
+                      <>
+                        <span className="font-medium">
+                          {t("griglia_guida.ric_solo", { giorno: format_giorno_esteso(blocco.data) })}
+                        </span>
+                        <Button size="sm" variant="outline" className="h-7" onClick={() => set_ripeti_sessione(s)}>
+                          {t("griglia_guida.ric_ripeti", { giorno: giorno_settimana })}
+                        </Button>
+                      </>
+                    )}
+                  </div>
                   <SessioneBox
                     sessione={s}
                     specialita={specialita as any[]}

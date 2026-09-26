@@ -1,0 +1,26 @@
+{
+  "griglia_guida": {
+    "come_titolo": "Co construir",
+    "come_testo": "Prenda in num da la glista sutvart, tegna el smatgà e al porta en la sesida. Ti pos prender ina gruppa entira, per exempel «Pulcini», u in atlet a la giada. Ils instructurs portas ti a medem moda.",
+    "come_breve": "Per agiuntar insatgi: tegna smatgà in num e al porta en la sesida.",
+    "sessione_senza_nome": "Sesida",
+    "istr_occupato": "Gia occupà en: {{attivita}}",
+    "istr_nessuna": "Nagina disponibilitad declerada il {{giorno}}",
+    "istr_solo_fasce": "Il {{giorno}} disponibel mo {{fasce}}",
+    "disp_nessuna": "Nagina disponibilitad declerada il {{giorno}}.",
+    "disp_fuori_fascia": "{{orario}} è ordaifer la disponibilitad declerada dal {{giorno}} ({{fasce}}).",
+    "disp_generico": "Ordaifer la disponibilitad declerada.",
+    "forza_titolo": "Ordaifer la disponibilitad declerada",
+    "forza_puoi": "Ti pos cuntinuar tuttina: scriva il motiv, quel che vegn registrà cun tes num e la data.",
+    "forza_non_puoi": "Per cuntinuar ordaifer la disponibilitad declerada dovri il president u il directur tecnic. Dumonda els, u tscherna in auter urari u in'autra persuna.",
+    "forza_motivo_label": "Motiv *",
+    "forza_motivo_esempio": "P.ex. quella sonda è ella tuttina qua, accord cun la plazza da patinar",
+    "forza_annulla": "Interrumper",
+    "forza_procedi": "Cuntinuar cun quest motiv",
+    "forza_ho_capito": "Jau hai chapì",
+    "ric_solo": "Questa sesida vala mo per {{giorno}}",
+    "ric_ripeti": "La repeter mintga {{giorno}}",
+    "ric_fino_al": "Mintga {{giorno}} fin ils {{data}}",
+    "ric_generica": "Repetitiv"
+  }
+}

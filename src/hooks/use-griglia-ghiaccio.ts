@@ -3,6 +3,7 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { date_settimanali, genera_occorrenze_corso } from "@/lib/planning-occorrenze";
 import { format_data } from "@/lib/format-data";
+import i18n from "@/i18n";
 import {
   carica_stagione_attiva,
   date_fuori_stagione,
@@ -1108,7 +1109,7 @@ export interface EsitoDisponibilita {
 export class ErroreDisponibilitaIstruttore extends Error {
   esito: EsitoDisponibilita;
   constructor(esito: EsitoDisponibilita) {
-    super(esito.motivo ?? "Istruttore fuori disponibilità");
+    super(esito.motivo ?? i18n.t("planning:griglia_guida.disp_generico"));
     this.name = "ErroreDisponibilitaIstruttore";
     this.esito = esito;
   }
@@ -1132,12 +1133,14 @@ function _valuta_fasce(
   const fasce_label = fasce
     .map((f) => `${String(f.ora_inizio).slice(0, 5)}–${String(f.ora_fine).slice(0, 5)}`)
     .join(", ");
+  // Il testo descrive il fatto, non decide: se si può assegnare lo stesso
+  // lo dice la finestra di forzatura, in base a chi la sta guardando.
   if (fasce.length === 0) {
     return {
       ok: false,
       giorno,
       fasce_label: "",
-      motivo: `Nessuna disponibilità dichiarata il ${giorno}: l'assegnazione non è ammessa.`,
+      motivo: i18n.t("planning:griglia_guida.disp_nessuna", { giorno }),
     };
   }
   const s = _min(ora_inizio);
@@ -1148,7 +1151,11 @@ function _valuta_fasce(
     ok: false,
     giorno,
     fasce_label,
-    motivo: `${String(ora_inizio).slice(0, 5)}–${String(ora_fine).slice(0, 5)} non rientra nella disponibilità del ${giorno} (${fasce_label}).`,
+    motivo: i18n.t("planning:griglia_guida.disp_fuori_fascia", {
+      orario: `${String(ora_inizio).slice(0, 5)}–${String(ora_fine).slice(0, 5)}`,
+      giorno,
+      fasce: fasce_label,
+    }),
   };
 }
 
@@ -2074,6 +2081,34 @@ export function use_risincronizza_proposta() {
     onSuccess: () => {
       invalidate();
       qc.invalidateQueries({ queryKey: ["disallineamento_proposte"] });
+    },
+  });
+}
+
+// ─── Fine della ricorrenza (ultima occorrenza nel planning) ─────────
+/**
+ * Per ogni corso collegato a una sessione della griglia, l'ultima data NON
+ * annullata nel planning. Una lettura fallita resta un errore: chi la usa
+ * mostra «ricorrente» senza data, mai una data inventata.
+ */
+export function use_fine_ricorrenze(corso_ids: string[]) {
+  const ids = Array.from(new Set(corso_ids.filter(Boolean))).sort();
+  return useQuery({
+    queryKey: ["griglia_fine_ricorrenze", get_current_club_id(), ids],
+    enabled: ids.length > 0,
+    queryFn: async (): Promise<Record<string, string>> => {
+      const { data, error } = await supabase
+        .from("planning_corsi_settimana")
+        .select("corso_id,data")
+        .in("corso_id", ids)
+        .or("annullato.is.null,annullato.eq.false")
+        .not("data", "is", null);
+      if (error) throw error;
+      const out: Record<string, string> = {};
+      for (const r of (data ?? []) as { corso_id: string; data: string }[]) {
+        if (!out[r.corso_id] || r.data > out[r.corso_id]) out[r.corso_id] = r.data;
+      }
+      return out;
     },
   });
 }

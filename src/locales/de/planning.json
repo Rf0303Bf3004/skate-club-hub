@@ -4,5 +4,29 @@
   },
   "toolbar": {
     "title": "Planung"
+  },
+  "griglia_guida": {
+    "come_titolo": "So baust du die Einheit auf",
+    "come_testo": "Nimm einen Namen aus der Liste unten, halte ihn gedrückt und zieh ihn in die Einheit. Du kannst eine ganze Gruppe nehmen, zum Beispiel «Pulcini», oder eine Athletin nach der anderen. Trainerinnen und Trainer ziehst du genauso hinein.",
+    "come_breve": "Um jemanden hinzuzufügen: Halte einen Namen gedrückt und zieh ihn in die Einheit.",
+    "sessione_senza_nome": "Einheit",
+    "istr_occupato": "Bereits eingeteilt in: {{attivita}}",
+    "istr_nessuna": "Keine Verfügbarkeit angegeben am {{giorno}}",
+    "istr_solo_fasce": "Am {{giorno}} nur verfügbar {{fasce}}",
+    "disp_nessuna": "Keine Verfügbarkeit angegeben am {{giorno}}.",
+    "disp_fuori_fascia": "{{orario}} liegt ausserhalb der angegebenen Verfügbarkeit am {{giorno}} ({{fasce}}).",
+    "disp_generico": "Ausserhalb der angegebenen Verfügbarkeit.",
+    "forza_titolo": "Ausserhalb der angegebenen Verfügbarkeit",
+    "forza_puoi": "Du kannst trotzdem fortfahren: Gib den Grund an, er wird mit deinem Namen und dem Datum gespeichert.",
+    "forza_non_puoi": "Um ausserhalb der angegebenen Verfügbarkeit fortzufahren, braucht es den Präsidenten oder den Technischen Direktor. Frag sie, oder wähle eine andere Zeit oder eine andere Person.",
+    "forza_motivo_label": "Grund *",
+    "forza_motivo_esempio": "z. B. an diesem Samstag ist sie trotzdem da, Absprache mit der Eisbahn",
+    "forza_annulla": "Abbrechen",
+    "forza_procedi": "Mit diesem Grund fortfahren",
+    "forza_ho_capito": "Verstanden",
+    "ric_solo": "Diese Einheit gilt nur für {{giorno}}",
+    "ric_ripeti": "Jeden {{giorno}} wiederholen",
+    "ric_fino_al": "Jeden {{giorno}} bis {{data}}",
+    "ric_generica": "Wiederkehrend"
   }
 }
