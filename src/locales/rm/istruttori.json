@@ -1,4 +1,13 @@
 {
+  "modal": {
+    "avviso_dopo_creazione": "Suenter avair memorisà s'avra la fitgha da la persuna. Là pos ti agiuntar la disponibilitad emnila, l'indemnisaziun e l'access a l'app."
+  },
+  "dettaglio": {
+    "costo_lezioni": "Custs dal club per lecziuns privatas",
+    "costo_lezioni_ora_min": "Custs dal club per lecziuns privatas (ura · minuta)",
+    "contratto_compenso_fisso": "Contract cun indemnisaziun fixa",
+    "margine_minuto_sul_prezzo": "Marge/min (% dal pretsch da vendita)"
+  },
   "cosa_manca": {
     "titolo": "Tge che manca",
     "sottotitolo": "La fitgha è memorisada. Per ch'ella funcziunia dal tuttafatg mancan anc questas datas.",

@@ -26,7 +26,8 @@
     "ruolo_club": "Ruolo nel club",
     "ruolo_istruttore": "Istruttore",
     "ruolo_monitrice": "Monitrice",
-    "ruolo_aiuto_monitrice": "Aiuto monitrice"
+    "ruolo_aiuto_monitrice": "Aiuto monitrice",
+    "avviso_dopo_creazione": "Dopo il salvataggio si aprirà la scheda della persona, dove potrai aggiungere disponibilità settimanale, compenso e accesso all'app."
   },
   "ore": {
     "stato_presenza": "Presenza",
@@ -153,7 +154,11 @@
     "prezzo_vendita_min": "Prezzo vendita/min",
     "note": "Note",
     "slot": "Slot",
-    "nessuno_slot": "Nessuno slot"
+    "nessuno_slot": "Nessuno slot",
+    "costo_lezioni": "Costo club lezioni private",
+    "costo_lezioni_ora_min": "Costo club lezioni private (ora · minuto)",
+    "contratto_compenso_fisso": "Contratto a compenso fisso",
+    "margine_minuto_sul_prezzo": "Margine/min (% sul prezzo di vendita)"
   },
   "badge": {
     "monitrice": "Monitrice",
