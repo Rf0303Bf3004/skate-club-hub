@@ -26,6 +26,7 @@ import {
   livello_atleta_compatibile,
   livello_dichiarato,
   livello_da_sistemare,
+  livelli_fuori_catalogo,
   messaggio_livello_obbligatorio,
   parse_livelli_corso,
 } from "@/lib/livelli-corso";
