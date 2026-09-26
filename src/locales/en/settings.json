@@ -35,7 +35,10 @@
       "auguri_compleanno_orario": "Birthday wishes send time (Swiss local time)",
       "sigla": "Abbreviation",
       "federazione": "Federation",
-      "federazione_placeholder": "e.g. Swiss Ice Skating"
+      "federazione_placeholder": "e.g. Swiss Ice Skating",
+      "paese_seleziona": "— Select —",
+      "paese_ch": "Switzerland",
+      "paese_it": "Italy"
     },
     "pista": {
       "spiegazione": "The rink-side tablet signs in with this club code, not with a person's account. It only opens the rink: today's sessions, attendance and notes.",
@@ -81,7 +84,8 @@
     },
     "errori": {
       "federazione_lettura": "The club's federation can't be read: the field stays locked so it isn't overwritten.",
-      "federazione_salvataggio": "Federation not saved"
+      "federazione_salvataggio": "Federation not saved",
+      "paese_non_valido": "The Country field must be Switzerland or Italy: fix it and save again."
     },
     "risorse": {
       "nome_obbligatorio": "The name is required.",

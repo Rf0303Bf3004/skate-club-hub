@@ -97,7 +97,10 @@
       "giorni_preavviso": "Preavviso (giorni prima della scadenza)",
       "sigla": "Sigla",
       "federazione": "Federazione",
-      "federazione_placeholder": "es. Swiss Ice Skating"
+      "federazione_placeholder": "es. Swiss Ice Skating",
+      "paese_seleziona": "— Seleziona —",
+      "paese_ch": "Svizzera",
+      "paese_it": "Italia"
     },
     "testi": {
       "clausole_info": "Appare come Art. 12 nella pagina pubblica di iscrizione e nella scheda stampabile. Se vuoto, l'articolo non viene mostrato.",
@@ -199,7 +202,8 @@
     },
     "errori": {
       "federazione_lettura": "Non riesco a leggere la federazione del club: il campo resta bloccato per non sovrascriverla.",
-      "federazione_salvataggio": "Federazione non salvata"
+      "federazione_salvataggio": "Federazione non salvata",
+      "paese_non_valido": "Il campo Paese deve essere Svizzera o Italia: correggilo e salva di nuovo."
     },
     "risorse": {
       "nome_obbligatorio": "Il nome è obbligatorio.",

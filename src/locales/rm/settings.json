@@ -7,6 +7,14 @@
       "passo_procedura": "Pass da la procedura guidada",
       "campi_da_compilare_one": "{{count}} champ d'emplenir",
       "campi_da_compilare_other": "{{count}} champs d'emplenir"
+    },
+    "fields": {
+      "paese_seleziona": "— Tscherna —",
+      "paese_ch": "Svizra",
+      "paese_it": "Italia"
+    },
+    "errori": {
+      "paese_non_valido": "Il champ Pajais sto esser Svizra u Italia: correggia e memorisescha danovamain."
     }
   },
   "ghiaccio": {

@@ -35,7 +35,10 @@
       "auguri_compleanno_orario": "Sendezeit der Glückwünsche (Schweizer Ortszeit)",
       "sigla": "Kürzel",
       "federazione": "Verband",
-      "federazione_placeholder": "z. B. Swiss Ice Skating"
+      "federazione_placeholder": "z. B. Swiss Ice Skating",
+      "paese_seleziona": "— Auswählen —",
+      "paese_ch": "Schweiz",
+      "paese_it": "Italien"
     },
     "pista": {
       "spiegazione": "Das Tablet am Eisrand meldet sich mit diesem Vereinscode an, nicht mit dem Zugang einer Person. Es öffnet nur die Eisfläche: heutige Einheiten, Anwesenheit und Notizen.",
@@ -81,7 +84,8 @@
     },
     "errori": {
       "federazione_lettura": "Der Verband des Clubs kann nicht gelesen werden: Das Feld bleibt gesperrt, damit er nicht überschrieben wird.",
-      "federazione_salvataggio": "Verband nicht gespeichert"
+      "federazione_salvataggio": "Verband nicht gespeichert",
+      "paese_non_valido": "Das Feld Land muss Schweiz oder Italien sein: bitte korrigieren und erneut speichern."
     },
     "risorse": {
       "nome_obbligatorio": "Der Name ist obligatorisch.",
