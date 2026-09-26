@@ -97,6 +97,37 @@ function use_iscritti_per_livello(club_id: string | null, nomi: string[]) {
   });
 }
 
+/**
+ * Conteggio degli atleti del club per ogni livello_attuale, letto per pagine
+ * (nessun limite silenzioso di righe). Stessa regola del conteggio in tabella:
+ * tutti gli atleti del club con quel livello.
+ */
+function use_atleti_per_livello(club_id: string | null) {
+  return useQuery({
+    queryKey: ["catalogo_atleti_per_livello", club_id],
+    enabled: !!club_id,
+    queryFn: async () => {
+      const conteggi: Record<string, number> = {};
+      const pagina = 1000;
+      for (let da = 0; ; da += pagina) {
+        const { data, error } = await supabase
+          .from("atleti")
+          .select("livello_attuale")
+          .eq("club_id", club_id)
+          .order("id")
+          .range(da, da + pagina - 1);
+        if (error) throw error;
+        for (const r of (data ?? []) as { livello_attuale: string | null }[]) {
+          const nome = String(r.livello_attuale ?? "").trim();
+          if (nome) conteggi[nome] = (conteggi[nome] ?? 0) + 1;
+        }
+        if (!data || data.length < pagina) break;
+      }
+      return conteggi;
+    },
+  });
+}
+
 const minuti = (t: string) => {
   const [h, m] = String(t || "").split(":").map(Number);
   return (h || 0) * 60 + (m || 0);
@@ -212,6 +243,22 @@ const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
     () => ufficiali.filter((l) => !nomi_catalogo.includes(l.nome)),
     [ufficiali, nomi_catalogo],
   );
+
+  // Livelli che hanno atleti ma non sono nel catalogo: una persona vera non
+  // sparisce perché l'elenco non la prevede. Calcolato solo su letture riuscite.
+  const q_atleti_livello = use_atleti_per_livello(resolved_club_id);
+  const livelli_mancanti = useMemo(() => {
+    if (!q_atleti_livello.isSuccess || !q_catalogo.isSuccess) return [];
+    const nel_catalogo = new Set(q_catalogo.data.map((r) => r.livello));
+    return Object.entries(q_atleti_livello.data)
+      .filter(([nome, n]) => n > 0 && !nel_catalogo.has(nome))
+      .map(([nome, n]) => ({ nome, n, pos: per_nome.get(nome)?.pos ?? 999 }))
+      .sort((a, b) => a.pos - b.pos || a.nome.localeCompare(b.nome));
+  }, [q_atleti_livello.isSuccess, q_atleti_livello.data, q_catalogo.isSuccess, q_catalogo.data, per_nome]);
+  const [aggiunta_in_corso, set_aggiunta_in_corso] = useState<string | null>(null);
+  useEffect(() => {
+    if (q_atleti_livello.isError) segnala_errore("CatalogoOffertaTab", t("catalogo.errore_mancanti"), q_atleti_livello.error, undefined, "avviso");
+  }, [q_atleti_livello.isError]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!disponibili.some((l) => l.nome === nuovo_livello)) set_nuovo_livello(disponibili[0]?.nome ?? "");
   }, [disponibili, nuovo_livello]);
