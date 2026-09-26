@@ -15,6 +15,21 @@
     },
     "errori": {
       "paese_non_valido": "Il champ Pajais sto esser Svizra u Italia: correggia e memorisescha danovamain."
+    },
+    "esterni": {
+      "interruttore_label": "Il club retschaiva atletas externs",
+      "salvato": "Parameter memorisà",
+      "errore_salvataggio": "Parameter betg memorisà",
+      "errore_club": "Club betg disponibel: chargia danovamain la pagina.",
+      "errore_conteggio": "Jau na poss betg dumbrar ils atletas externs dal club.",
+      "riprova": "Empruvar danovamain",
+      "blocco_conteggio": "Betg deactivà: i n'è anc betg enconuschent quants atletas externs ch'i dat. Spetga in mument u emprova danovamain.",
+      "blocco_presenti_one": "Betg deactivà: i dat anc {{count}} atlet extern. Allontanescha l'emprim la chaschetta «atlet extern» da ses profil.",
+      "blocco_presenti_other": "Betg deactivà: i dat anc {{count}} atlets externs. Allontanescha l'emprim la chaschetta «atlet extern» da lur profils.",
+      "presenti_one": "Oz ha il club {{count}} atlet extern.",
+      "presenti_other": "Oz ha il club {{count}} atlets externs.",
+      "solo_presidente": "Mo il president u la presidenta dal club po midar questa tscherna.",
+      "spiegazione": "Sin il glatsch dal club pon esser trais sorts da persunas:\n1. Atlets dal club (e da sia academia): ils commembers.\n2. Giasts d'in champ: atlets d'in auter club, qua per curt temp, per exempel durant in champ. Els èn da passagi.\n3. Externs: persunas che na fan part da nagin club, ni da quest ni d'in auter, e vegnan a s'entrenar qua, savens u mintgatant.\nAttenziun: extern na vul betg dir «vegn d'ordaifer». In atlet d'in auter club en viadi è in giast, betg in extern.\nSch'il interruptur è deactivà, na cumpara la chaschetta «atlet extern» betg en il profil da l'atlet. Externs gia preschents restan visibels en la grilla."
     }
   },
   "ghiaccio": {

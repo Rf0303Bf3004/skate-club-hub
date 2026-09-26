@@ -34,6 +34,7 @@ import FatturazioneTab from "@/components/FatturazioneTab";
 import TariffeTestSection from "@/components/setup/TariffeTestSection";
 import { RegoleComunicazioniSection } from "@/components/comunicazioni/RegoleComunicazioniSection";
 import ModalitaGestioneSection from "@/components/setup/ModalitaGestioneSection";
+import AtletiEsterniSection from "@/components/setup/AtletiEsterniSection";
 import RagioniSocialiSection from "@/components/setup/RagioniSocialiSection";
 import FatturaLayoutSection from "@/components/setup/FatturaLayoutSection";
 import RisorseSection from "@/components/setup/RisorseSection";
@@ -1236,6 +1237,7 @@ const ClubSetupPage: React.FC = () => {
               { value: "multi_ragione_sociale", label: t("club.opzioni.fatturazione_multi") },
             ]}
           />
+          <AtletiEsterniSection />
         </SetupSection>
 
         </TabsContent>

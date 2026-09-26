@@ -1,3 +1,4 @@
+import { useModalitaArea } from "@/hooks/useModalitaArea";
 import FatturazioneAtletaFields from "@/components/atleti/FatturazioneAtletaFields";
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -133,6 +134,8 @@ const AtletaModal: React.FC<{
   deleting: boolean;
 }> = ({ atleta, on_close, on_save, on_delete, saving, deleting }) => {
   const { t } = useTranslation("atleti");
+  // Spento: la casella non si offre, salvo per chi è già esterno (così si può togliere).
+  const { modalita: modalita_esterni } = useModalitaArea("atleti_esterni");
   const livello_iniziale =
     atleta?.livello_attuale || atleta?.percorso_amatori || atleta?.livello_amatori || "Pulcini";
 
@@ -383,6 +386,7 @@ const AtletaModal: React.FC<{
           </div>
 
           {/* Atleta esterno */}
+          {(modalita_esterni === "attivo" || form.atleta_esterno) && (
           <div className="space-y-2">
             <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
               <input
@@ -398,6 +402,7 @@ const AtletaModal: React.FC<{
               </label>
             </div>
           </div>
+          )}
 
           <FatturazioneAtletaFields
             ragione_sociale_id={form.ragione_sociale_id}

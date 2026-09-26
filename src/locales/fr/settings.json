@@ -97,6 +97,21 @@
       "passo_procedura": "Étape de la procédure guidée",
       "campi_da_compilare_one": "{{count}} champ à remplir",
       "campi_da_compilare_other": "{{count}} champs à remplir"
+    },
+    "esterni": {
+      "interruttore_label": "Le club accueille des athlètes externes",
+      "salvato": "Réglage enregistré",
+      "errore_salvataggio": "Réglage non enregistré",
+      "errore_club": "Club non disponible : recharge la page.",
+      "errore_conteggio": "Impossible de compter les athlètes externes du club.",
+      "riprova": "Réessayer",
+      "blocco_conteggio": "Pas désactivé : on ne sait pas encore combien d'athlètes externes il y a. Attends un instant ou réessaie.",
+      "blocco_presenti_one": "Pas désactivé : il reste {{count}} athlète externe. Décoche d'abord la case « athlète externe » dans sa fiche.",
+      "blocco_presenti_other": "Pas désactivé : il reste {{count}} athlètes externes. Décoche d'abord la case « athlète externe » dans leurs fiches.",
+      "presenti_one": "Aujourd'hui, le club a {{count}} athlète externe.",
+      "presenti_other": "Aujourd'hui, le club a {{count}} athlètes externes.",
+      "solo_presidente": "Seul le président ou la présidente du club peut modifier ce choix.",
+      "spiegazione": "Sur la glace du club, il peut y avoir trois types de personnes :\n1. Les athlètes du club (et de son académie) : les membres.\n2. Les invités d'un camp : athlètes d'un autre club, ici pour peu de temps, par exemple pendant un camp. Ils sont de passage.\n3. Les externes : personnes qui ne font partie d'aucun club, ni de celui-ci ni d'un autre, et qui viennent s'entraîner ici, souvent ou de temps en temps.\nAttention : externe ne veut pas dire « vient d'ailleurs ». Un athlète d'un autre club en déplacement est un invité, pas un externe.\nSi l'interrupteur est désactivé, la case « athlète externe » n'apparaît pas dans la fiche athlète. Les externes déjà présents restent visibles dans la grille."
     }
   },
   "seasons": {

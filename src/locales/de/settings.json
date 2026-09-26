@@ -97,6 +97,21 @@
       "passo_procedura": "Schritt der geführten Einrichtung",
       "campi_da_compilare_one": "{{count}} Feld auszufüllen",
       "campi_da_compilare_other": "{{count}} Felder auszufüllen"
+    },
+    "esterni": {
+      "interruttore_label": "Der Club nimmt externe Athletinnen und Athleten auf",
+      "salvato": "Einstellung gespeichert",
+      "errore_salvataggio": "Einstellung nicht gespeichert",
+      "errore_club": "Club nicht verfügbar: Seite neu laden.",
+      "errore_conteggio": "Die externen Athletinnen und Athleten des Clubs können nicht gezählt werden.",
+      "riprova": "Erneut versuchen",
+      "blocco_conteggio": "Nicht ausgeschaltet: Die Anzahl externer Athletinnen und Athleten ist noch nicht bekannt. Einen Moment warten oder erneut versuchen.",
+      "blocco_presenti_one": "Nicht ausgeschaltet: Es gibt noch {{count}} externe Person. Zuerst das Kästchen «Externe Athletin/externer Athlet» in ihrem Profil entfernen.",
+      "blocco_presenti_other": "Nicht ausgeschaltet: Es gibt noch {{count}} externe Personen. Zuerst das Kästchen «Externe Athletin/externer Athlet» in ihren Profilen entfernen.",
+      "presenti_one": "Der Club hat heute {{count}} externe Person.",
+      "presenti_other": "Der Club hat heute {{count}} externe Personen.",
+      "solo_presidente": "Diese Einstellung kann nur die Clubpräsidentin oder der Clubpräsident ändern.",
+      "spiegazione": "Auf dem Eis des Clubs gibt es drei Arten von Personen:\n1. Athletinnen und Athleten des Clubs (und seiner Akademie): die Mitglieder.\n2. Gäste eines Camps: Athletinnen und Athleten eines anderen Clubs, nur kurz hier, zum Beispiel während eines Camps. Sie sind auf der Durchreise.\n3. Externe: Personen, die zu keinem Club gehören, weder zu diesem noch zu einem anderen, und hier trainieren, regelmässig oder ab und zu.\nAchtung: Extern heisst nicht «kommt von auswärts». Eine Athletin eines anderen Clubs auf Reisen ist ein Gast, keine Externe.\nIst der Schalter aus, erscheint im Athletenprofil kein Kästchen «Externe Athletin/externer Athlet». Bereits vorhandene Externe bleiben im Raster sichtbar."
     }
   },
   "seasons": {

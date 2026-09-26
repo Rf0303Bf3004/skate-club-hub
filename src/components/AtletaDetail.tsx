@@ -53,6 +53,7 @@ import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import ProgrammiMusicaliSection from "@/components/atleti/ProgrammiMusicaliSection";
 import { format_local_iso } from "@/lib/planning-occorrenze";
+import { useModalitaArea } from "@/hooks/useModalitaArea";
 
 interface Props {
   atleta: any;
@@ -270,6 +271,7 @@ const MigraModal: React.FC<{
 const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const { t } = useI18n();
   const { t: td } = useTranslation("atleti");
+  const { modalita: modalita_esterni } = useModalitaArea("atleti_esterni");
   const upsert = use_upsert_atleta();
   const migra = use_migra_atleta();
   const [show_migra, set_show_migra] = useState(false);
@@ -1208,7 +1210,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 )}
               </div>
 
-              {/* ─── Sezione Atleta esterno ─── */}
+              {/* ─── Sezione Atleta esterno ─── (spento: non si offre, salvo chi è già esterno) */}
+              {(modalita_esterni === "attivo" || !!form.atleta_esterno) && (
               <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
                 <h3 className="text-sm font-bold text-foreground">{td("detail.external_section")}</h3>
                 <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
@@ -1224,6 +1227,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   </label>
                 </div>
               </div>
+              )}
 
               {/* ─── Sezione Fatturazione (solo modalità multi ragione sociale) ─── */}
               <FatturazioneAtletaFields
