@@ -97,6 +97,37 @@ function use_iscritti_per_livello(club_id: string | null, nomi: string[]) {
   });
 }
 
+/**
+ * Conteggio degli atleti del club per ogni livello_attuale, letto per pagine
+ * (nessun limite silenzioso di righe). Stessa regola del conteggio in tabella:
+ * tutti gli atleti del club con quel livello.
+ */
+function use_atleti_per_livello(club_id: string | null) {
+  return useQuery({
+    queryKey: ["catalogo_atleti_per_livello", club_id],
+    enabled: !!club_id,
+    queryFn: async () => {
+      const conteggi: Record<string, number> = {};
+      const pagina = 1000;
+      for (let da = 0; ; da += pagina) {
+        const { data, error } = await supabase
+          .from("atleti")
+          .select("livello_attuale")
+          .eq("club_id", club_id)
+          .order("id")
+          .range(da, da + pagina - 1);
+        if (error) throw error;
+        for (const r of (data ?? []) as { livello_attuale: string | null }[]) {
+          const nome = String(r.livello_attuale ?? "").trim();
+          if (nome) conteggi[nome] = (conteggi[nome] ?? 0) + 1;
+        }
+        if (!data || data.length < pagina) break;
+      }
+      return conteggi;
+    },
+  });
+}
+
 const minuti = (t: string) => {
   const [h, m] = String(t || "").split(":").map(Number);
   return (h || 0) * 60 + (m || 0);
@@ -212,6 +243,22 @@ const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
     () => ufficiali.filter((l) => !nomi_catalogo.includes(l.nome)),
     [ufficiali, nomi_catalogo],
   );
+
+  // Livelli che hanno atleti ma non sono nel catalogo: una persona vera non
+  // sparisce perché l'elenco non la prevede. Calcolato solo su letture riuscite.
+  const q_atleti_livello = use_atleti_per_livello(resolved_club_id);
+  const livelli_mancanti = useMemo(() => {
+    if (!q_atleti_livello.isSuccess || !q_catalogo.isSuccess) return [];
+    const nel_catalogo = new Set(q_catalogo.data.map((r) => r.livello));
+    return Object.entries(q_atleti_livello.data)
+      .filter(([nome, n]) => n > 0 && !nel_catalogo.has(nome))
+      .map(([nome, n]) => ({ nome, n, pos: per_nome.get(nome)?.pos ?? 999 }))
+      .sort((a, b) => a.pos - b.pos || a.nome.localeCompare(b.nome));
+  }, [q_atleti_livello.isSuccess, q_atleti_livello.data, q_catalogo.isSuccess, q_catalogo.data, per_nome]);
+  const [aggiunta_in_corso, set_aggiunta_in_corso] = useState<string | null>(null);
+  useEffect(() => {
+    if (q_atleti_livello.isError) segnala_errore("CatalogoOffertaTab", t("catalogo.errore_mancanti"), q_atleti_livello.error, undefined, "avviso");
+  }, [q_atleti_livello.isError]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!disponibili.some((l) => l.nome === nuovo_livello)) set_nuovo_livello(disponibili[0]?.nome ?? "");
   }, [disponibili, nuovo_livello]);
@@ -295,16 +342,12 @@ const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
     }
   };
 
-  const add_livello = async () => {
-    // Scrittura decisa solo su letture riuscite: catalogo e livelli ufficiali.
-    if (!q_catalogo.isSuccess || !q_livelli.isSuccess || !q_paese.isSuccess) return;
-    const scelto = disponibili.find((l) => l.nome === nuovo_livello);
-    if (!scelto) return;
+  const inserisci_livello = async (nome: string) => {
     try {
       const { error } = await (supabase as any).from("catalogo_livelli").insert({
         club_id: resolved_club_id,
         stagione_id: stagione_id || null,
-        livello: scelto.nome,
+        livello: nome,
         iscritti_attuali: 0,
         max_atleti_pista: 30,
         max_per_monitrice: 8,
@@ -316,11 +359,32 @@ const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
         usa_corsie: false,
       });
       if (error) throw error;
-      toast({ title: t("catalogo.toast_level_added", { livello: scelto.nome }) });
+      toast({ title: t("catalogo.toast_level_added", { livello: nome }) });
     } catch (e: any) {
       toast({ title: t("catalogo.toast_add_error"), description: e?.message, variant: "destructive" });
     } finally {
       queryClient.invalidateQueries({ queryKey: ["catalogo_livelli"] });
+      queryClient.invalidateQueries({ queryKey: ["catalogo_atleti_per_livello"] });
+    }
+  };
+
+  const add_livello = async () => {
+    // Scrittura decisa solo su letture riuscite: catalogo e livelli ufficiali.
+    if (!q_catalogo.isSuccess || !q_livelli.isSuccess || !q_paese.isSuccess) return;
+    const scelto = disponibili.find((l) => l.nome === nuovo_livello);
+    if (!scelto) return;
+    await inserisci_livello(scelto.nome);
+  };
+
+  const aggiungi_mancante = async (nome: string) => {
+    // Il catalogo appena letto deve confermare che il livello manca davvero.
+    if (!q_catalogo.isSuccess || !q_atleti_livello.isSuccess) return;
+    if (q_catalogo.data.some((r) => r.livello === nome)) return;
+    set_aggiunta_in_corso(nome);
+    try {
+      await inserisci_livello(nome);
+    } finally {
+      set_aggiunta_in_corso(null);
     }
   };
 
@@ -537,6 +601,36 @@ const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
               </Button>
             </div>
           </>
+        )}
+
+        {q_atleti_livello.isError && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 flex items-center justify-between gap-3 flex-wrap">
+            <span>{t("catalogo.errore_mancanti")}</span>
+            <Button size="sm" variant="outline" onClick={() => q_atleti_livello.refetch()}>{t("catalogo.riprova")}</Button>
+          </div>
+        )}
+
+        {livelli_mancanti.length > 0 && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 space-y-3">
+            <div>
+              <h3 className="text-sm font-bold text-amber-900">{t("catalogo.mancanti_titolo")}</h3>
+              <p className="text-xs text-amber-900 mt-1">{t("catalogo.mancanti_spiegazione")}</p>
+            </div>
+            <ul className="divide-y divide-amber-200">
+              {livelli_mancanti.map((m) => (
+                <li key={m.nome} className="flex items-center justify-between gap-3 py-2">
+                  <span className="flex items-center gap-2 text-sm text-foreground">
+                    <span className={`w-3 h-3 rounded-full flex-shrink-0 ${colore_fase(per_nome.get(m.nome)?.fase)}`} />
+                    <span className="font-medium">{m.nome}</span>
+                    <span className="text-muted-foreground">{t("catalogo.mancanti_atleti", { count: m.n })}</span>
+                  </span>
+                  <Button size="sm" variant="outline" onClick={() => aggiungi_mancante(m.nome)} disabled={aggiunta_in_corso !== null}>
+                    {aggiunta_in_corso === m.nome ? <Loader2 className="w-4 h-4 animate-spin" /> : t("catalogo.mancanti_aggiungi")}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
     </div>

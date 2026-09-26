@@ -2,13 +2,15 @@ import React, { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
 import { use_stagioni } from "@/hooks/use-supabase-data";
-import { use_upsert_stagione, use_elimina_stagione } from "@/hooks/use-supabase-mutations";
+import { use_elimina_stagione, use_archivia_stagione } from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
+import { segnala_errore } from "@/lib/errori";
+import { conta_dipendenze_stagione, type DipendenzaStagione } from "@/lib/stagione-dipendenze";
 
 import { format_data } from "@/lib/format-data";
 const input_cls =
@@ -28,6 +30,7 @@ const StagioneModal: React.FC<{
   const { t } = useTranslation("settings");
   const qc = useQueryClient();
   const elimina = use_elimina_stagione();
+  const archivia = use_archivia_stagione();
 
   const TIPI_STAGIONE = [
     { value: "Regolare", label: t("seasons.type_regolare") },
@@ -44,7 +47,12 @@ const StagioneModal: React.FC<{
     attiva: stagione?.attiva ?? true,
   });
   const [saving, set_saving] = useState(false);
-  const [confirm_delete, set_confirm_delete] = useState(false);
+  const [dip, set_dip] = useState<
+    | { stato: "chiuso" }
+    | { stato: "caricamento" }
+    | { stato: "errore" }
+    | { stato: "pronto"; voci: DipendenzaStagione[] }
+  >({ stato: "chiuso" });
 
   const set_val = (k: string, v: any) => set_form((p) => ({ ...p, [k]: v }));
 
@@ -92,13 +100,45 @@ const StagioneModal: React.FC<{
     }
   };
 
+  // Prima di cancellare si conta, letto adesso, cosa è collegato alla stagione.
+  // Lettura fallita o non arrivata = nessuna cancellazione.
+  const verifica_dipendenze = async () => {
+    set_dip({ stato: "caricamento" });
+    try {
+      const voci = await conta_dipendenze_stagione(stagione.id);
+      set_dip({ stato: "pronto", voci });
+    } catch (err) {
+      set_dip({ stato: "errore" });
+      segnala_errore("SeasonsPage", t("seasons.dip_errore"), err, { stagione_id: stagione.id }, "avviso");
+    }
+  };
+
   const handle_delete = async () => {
+    if (dip.stato !== "pronto" || dip.voci.length > 0) return;
     try {
       await elimina.mutateAsync(stagione.id);
       toast({ title: t("seasons.deleted_toast") });
       on_close();
     } catch (err: any) {
-      toast({ title: t("seasons.delete_error_title"), description: err?.message, variant: "destructive" });
+      const rifiuto_fk = err?.code === "23503";
+      // Mai il testo tecnico: una frase comprensibile, e il dettaglio va nel registro.
+      segnala_errore(
+        "SeasonsPage",
+        t("seasons.delete_error_title"),
+        rifiuto_fk ? { message: t("seasons.delete_rifiutata") } : err,
+        { stagione_id: stagione.id, codice: err?.code ?? null, raw_message: err?.message ?? null },
+      );
+      if (rifiuto_fk) verifica_dipendenze();
+    }
+  };
+
+  const handle_archivia = async () => {
+    try {
+      await archivia.mutateAsync(stagione.id);
+      toast({ title: t("seasons.archiviata_toast") });
+      on_close();
+    } catch (err) {
+      segnala_errore("SeasonsPage", t("seasons.archivia_errore"), err, { stagione_id: stagione.id });
     }
   };
 
@@ -173,19 +213,58 @@ const StagioneModal: React.FC<{
               {saving ? t("seasons.saving") : t("seasons.save")}
             </Button>
           </div>
-          {stagione?.id && !confirm_delete && (
+          {stagione?.id && dip.stato === "chiuso" && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => set_confirm_delete(true)}
+              onClick={verifica_dipendenze}
               className="w-full text-destructive hover:bg-destructive/10"
             >
               {t("seasons.delete_season")}
             </Button>
           )}
-          {confirm_delete && (
+          {dip.stato === "caricamento" && (
+            <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-2">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t("seasons.dip_verifica")}
+            </p>
+          )}
+          {dip.stato === "errore" && (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 space-y-2">
+              <p>{t("seasons.dip_errore")}</p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => set_dip({ stato: "chiuso" })} className="flex-1">
+                  {t("seasons.cancel")}
+                </Button>
+                <Button variant="outline" size="sm" onClick={verifica_dipendenze} className="flex-1">
+                  {t("seasons.dip_riprova")}
+                </Button>
+              </div>
+            </div>
+          )}
+          {dip.stato === "pronto" && dip.voci.length > 0 && (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 space-y-2">
+              <p className="font-medium">{t("seasons.dip_intro")}</p>
+              <ul className="list-disc pl-5 space-y-0.5">
+                {dip.voci.map((v) => (
+                  <li key={v.categoria}>{t(`seasons.dip_cat_${v.categoria}`, { count: v.totale })}</li>
+                ))}
+              </ul>
+              <p>{stagione?.attiva ? t("seasons.dip_blocco") : t("seasons.dip_gia_archiviata")}</p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => set_dip({ stato: "chiuso" })} className="flex-1">
+                  {t("seasons.cancel")}
+                </Button>
+                {stagione?.attiva && (
+                  <Button size="sm" onClick={handle_archivia} disabled={archivia.isPending} className="flex-1">
+                    {archivia.isPending ? t("seasons.saving") : t("seasons.archivia")}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+          {dip.stato === "pronto" && dip.voci.length === 0 && (
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
+              <Button variant="outline" size="sm" onClick={() => set_dip({ stato: "chiuso" })} className="flex-1">
                 {t("seasons.cancel")}
               </Button>
               <Button
