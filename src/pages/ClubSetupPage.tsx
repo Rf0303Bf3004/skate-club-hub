@@ -322,6 +322,13 @@ const ClubSetupPage: React.FC = () => {
   };
 
   const handle_save = async () => {
+    // Controllo prima di salvare: il database accetta solo CH/IT (clubs_paese_check).
+    // Se il valore non è valido non si tenta nemmeno il salvataggio, e il messaggio nomina il campo.
+    const paese_val = "paese" in form ? form.paese : club?.paese;
+    if (paese_val !== null && paese_val !== undefined && paese_val !== "" && paese_val !== "CH" && paese_val !== "IT") {
+      toast({ title: t("club.errori.paese_non_valido"), variant: "destructive" });
+      return;
+    }
     set_saving(true);
     try {
       const club_id = get_current_club_id();
@@ -343,6 +350,8 @@ const ClubSetupPage: React.FC = () => {
       if (Object.keys(club_payload).length > 0) {
         const { error } = await supabase.from("clubs").update(club_payload).eq("id", club_id);
         if (error) throw error;
+        // Senza questa la pagina continuerebbe a mostrare i valori vecchi dalla cache.
+        await queryClient.invalidateQueries({ queryKey: ["club"] });
       }
 
       const setup_payload: Record<string, any> = {};
@@ -832,7 +841,16 @@ const ClubSetupPage: React.FC = () => {
               <Input value={get_val("nome")} onChange={(e) => set_val("nome", e.target.value)} />
             </Field>
             <Field label={t_old("paese")} icon={<Globe className="w-3.5 h-3.5" />}>
-              <Input value={get_val("paese")} onChange={(e) => set_val("paese", e.target.value)} placeholder="CH" />
+              {/* Il database accetta solo CH/IT (clubs_paese_check): menù chiuso, mai testo libero. */}
+              <select
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={get_val("paese") || ""}
+                onChange={(e) => set_val("paese", e.target.value || null)}
+              >
+                <option value="">{t("club.fields.paese_seleziona")}</option>
+                <option value="CH">{t("club.fields.paese_ch")}</option>
+                <option value="IT">{t("club.fields.paese_it")}</option>
+              </select>
             </Field>
           </div>
           <div className="grid gap-4" style={{ gridTemplateColumns: "60% 15% 25%" }}>

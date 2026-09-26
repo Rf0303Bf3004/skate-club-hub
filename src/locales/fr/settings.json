@@ -35,7 +35,10 @@
       "auguri_compleanno_orario": "Heure d'envoi des vœux (heure locale suisse)",
       "sigla": "Sigle",
       "federazione": "Fédération",
-      "federazione_placeholder": "p. ex. Swiss Ice Skating"
+      "federazione_placeholder": "p. ex. Swiss Ice Skating",
+      "paese_seleziona": "— Sélectionner —",
+      "paese_ch": "Suisse",
+      "paese_it": "Italie"
     },
     "pista": {
       "spiegazione": "La tablette au bord de la glace se connecte avec ce code du club, et non avec le compte d'une personne. Elle n'ouvre que la piste : séances du jour, appel et notes.",
@@ -81,7 +84,8 @@
     },
     "errori": {
       "federazione_lettura": "Impossible de lire la fédération du club : le champ reste bloqué pour ne pas l'écraser.",
-      "federazione_salvataggio": "Fédération non enregistrée"
+      "federazione_salvataggio": "Fédération non enregistrée",
+      "paese_non_valido": "Le champ Pays doit être Suisse ou Italie : corrigez-le et enregistrez à nouveau."
     },
     "risorse": {
       "nome_obbligatorio": "Le nom est obligatoire.",
