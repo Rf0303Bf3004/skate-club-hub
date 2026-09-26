@@ -332,8 +332,6 @@ const TabIscrizioni: React.FC<{
   // Optimistic: ID appena iscritti localmente, prima del refresh dal DB
   const [iscritti_ottimistici, set_iscritti_ottimistici] = useState<string[]>([]);
   const { modalita: modalita_fatturazione } = useModalitaArea("fatturazione");
-  // Il riquadro «crea dalla griglia» solo dove la griglia è attiva: altrove porterebbe su un rifiuto.
-  const { modalita: modalita_ghiaccio } = useModalitaArea("ghiaccio");
   const multi_rs = modalita_fatturazione === "multi_ragione_sociale";
 
   const ha_filtro_livello = livello_dichiarato(livello_richiesto) && !is_apertura_totale(livello_richiesto);
@@ -2463,6 +2461,8 @@ const FilterBar: React.FC<{
 // ─── Main Page ─────────────────────────────────────────────
 const CoursesPage: React.FC = () => {
   const { puo_gestire_sportivo } = usePermessiAzione();
+  // Il riquadro «crea dalla griglia» solo dove la griglia è attiva: altrove porterebbe su un rifiuto.
+  const { modalita: modalita_ghiaccio } = useModalitaArea("ghiaccio");
   const { t } = useTranslation("corsi");
   const { t: t_common } = useTranslation("common");
   const navigate = useNavigate();
