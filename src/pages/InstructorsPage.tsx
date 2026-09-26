@@ -2257,6 +2257,7 @@ const InstructorsPage: React.FC = () => {
                     ? "border border-amber-500 ring-2 ring-amber-500/60 animate-evidenzia-passo motion-reduce:animate-none"
                     : ""
                 }`}
+              >
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
                     {t("disponibilita")}
