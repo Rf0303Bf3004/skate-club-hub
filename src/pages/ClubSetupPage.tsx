@@ -322,6 +322,13 @@ const ClubSetupPage: React.FC = () => {
   };
 
   const handle_save = async () => {
+    // Controllo prima di salvare: il database accetta solo CH/IT (clubs_paese_check).
+    // Se il valore non è valido non si tenta nemmeno il salvataggio, e il messaggio nomina il campo.
+    const paese_val = "paese" in form ? form.paese : club?.paese;
+    if (paese_val !== null && paese_val !== undefined && paese_val !== "" && paese_val !== "CH" && paese_val !== "IT") {
+      toast({ title: t("club.errori.paese_non_valido"), variant: "destructive" });
+      return;
+    }
     set_saving(true);
     try {
       const club_id = get_current_club_id();
