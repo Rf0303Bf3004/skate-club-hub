@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { useModalitaArea } from "@/hooks/useModalitaArea";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import ConfirmButton from "@/components/common/ConfirmButton";
+import { IbanInput } from "@/components/forms/IbanInput";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import {
   use_ragioni_sociali,
@@ -454,7 +455,7 @@ const RagioneSocialeDialog: React.FC<{
           <div>
 
             <Label className="text-xs text-muted-foreground">IBAN</Label>
-            <Input value={form.iban} onChange={(e) => set_val("iban", e.target.value)} />
+            <IbanInput value={form.iban} onChange={(v) => set_val("iban", v)} paese={paese === "IT" ? "IT" : "CH"} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
