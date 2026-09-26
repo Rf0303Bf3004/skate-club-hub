@@ -53,6 +53,7 @@ import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import ProgrammiMusicaliSection from "@/components/atleti/ProgrammiMusicaliSection";
 import { format_local_iso } from "@/lib/planning-occorrenze";
+import { useModalitaArea } from "@/hooks/useModalitaArea";
 
 interface Props {
   atleta: any;
@@ -270,6 +271,7 @@ const MigraModal: React.FC<{
 const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const { t } = useI18n();
   const { t: td } = useTranslation("atleti");
+  const { modalita: modalita_esterni } = useModalitaArea("atleti_esterni");
   const upsert = use_upsert_atleta();
   const migra = use_migra_atleta();
   const [show_migra, set_show_migra] = useState(false);
