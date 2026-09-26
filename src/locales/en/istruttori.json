@@ -4,7 +4,14 @@
     "ruolo_istruttore": "Instructor",
     "ruolo_monitrice": "Monitor",
     "ruolo_aiuto_monitrice": "Assistant monitor",
-    "hint_utente_collegato": "Required to receive Activity grid call-ups in the app."
+    "hint_utente_collegato": "Required to receive Activity grid call-ups in the app.",
+    "avviso_dopo_creazione": "After saving, the person's record will open. There you can add weekly availability, compensation and app access."
+  },
+  "dettaglio": {
+    "costo_lezioni": "Club cost for private lessons",
+    "costo_lezioni_ora_min": "Club cost for private lessons (hour · minute)",
+    "contratto_compenso_fisso": "Fixed-compensation contract",
+    "margine_minuto_sul_prezzo": "Margin/min (% of selling price)"
   },
   "gs": {
     "titolo": "Gioventù e Sport (G+S)",

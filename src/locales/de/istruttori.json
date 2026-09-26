@@ -4,7 +4,14 @@
     "ruolo_istruttore": "Instruktor",
     "ruolo_monitrice": "Leiterin",
     "ruolo_aiuto_monitrice": "Hilfsleiterin",
-    "hint_utente_collegato": "Erforderlich, um Aufgebote aus dem Aktivitätenraster in der App zu erhalten."
+    "hint_utente_collegato": "Erforderlich, um Aufgebote aus dem Aktivitätenraster in der App zu erhalten.",
+    "avviso_dopo_creazione": "Nach dem Speichern öffnet sich das Profil der Person. Dort kannst du die wöchentliche Verfügbarkeit, die Vergütung und den App-Zugang ergänzen."
+  },
+  "dettaglio": {
+    "costo_lezioni": "Clubkosten Privatlektionen",
+    "costo_lezioni_ora_min": "Clubkosten Privatlektionen (Stunde · Minute)",
+    "contratto_compenso_fisso": "Vertrag mit fixer Vergütung",
+    "margine_minuto_sul_prezzo": "Marge/Min. (% des Verkaufspreises)"
   },
   "gs": {
     "titolo": "Gioventù e Sport (G+S)",

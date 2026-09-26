@@ -1,6 +1,6 @@
 import TariffeRagioniSocialiSection from "@/components/istruttori/TariffeRagioniSocialiSection";
 import CodiceIstruttoreCard from "@/components/CodiceIstruttoreCard";
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
@@ -510,6 +510,12 @@ const IstruttoreModal: React.FC<{
               className={`${input_cls} resize-none`}
             />
           </Field>
+
+          {!istruttore?.id && (
+            <p className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+              {t("modal.avviso_dopo_creazione")}
+            </p>
+          )}
         </div>
 
         <div className="px-6 py-4 border-t border-border space-y-2">
@@ -1696,7 +1702,31 @@ const InstructorsPage: React.FC = () => {
   const [active_filter, set_active_filter] = useState<"tutti" | "istruttore" | "monitrice" | "aiuto_monitrice">("tutti");
   const [search_istruttori, set_search_istruttori] = useState("");
   const [accesso_target, set_accesso_target] = useState<any>(null);
+  const [destinazione_evidenziata, set_destinazione_evidenziata] = useState<
+    "disponibilita" | "compenso" | "accesso" | null
+  >(null);
+  const destinazione_ref = useRef<HTMLDivElement | null>(null);
   const { data: email_accessi } = use_email_utenti_club();
+
+  useEffect(() => {
+    if (!destinazione_evidenziata) return;
+    if (destinazione_evidenziata === "disponibilita" && tab_dettaglio !== "disponibilita") return;
+    if (destinazione_evidenziata === "compenso" && tab_dettaglio !== "compenso") return;
+    if (destinazione_evidenziata === "accesso" && tab_dettaglio !== "info") return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const riduci_movimento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      destinazione_ref.current?.scrollIntoView({
+        behavior: riduci_movimento ? "auto" : "smooth",
+        block: "center",
+      });
+    });
+    const timer = window.setTimeout(() => set_destinazione_evidenziata(null), 3600);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [destinazione_evidenziata, tab_dettaglio]);
 
 
   // Lookup atleti by id per resolver dei linked_atleta_id
@@ -1886,6 +1916,7 @@ const InstructorsPage: React.FC = () => {
           open={!!accesso_target}
           on_close={() => set_accesso_target(null)}
           istruttore={accesso_target}
+          evidenziato={destinazione_evidenziata === "accesso"}
         />
         {modal_open && (
 
@@ -1977,9 +2008,17 @@ const InstructorsPage: React.FC = () => {
               data_nascita: puo_gestire_sportivo,
             }}
             on_vai={(campo: CampoMancanteIstruttore) => {
-              if (campo === "disponibilita") set_tab_dettaglio("disponibilita");
-              else if (campo === "tariffa_oraria") set_tab_dettaglio("compenso");
-              else if (campo === "accesso_app" && puo_creare_accessi) set_accesso_target(selected);
+              if (campo === "disponibilita") {
+                set_destinazione_evidenziata("disponibilita");
+                set_tab_dettaglio("disponibilita");
+              } else if (campo === "tariffa_oraria") {
+                set_destinazione_evidenziata("compenso");
+                set_tab_dettaglio("compenso");
+              } else if (campo === "accesso_app" && puo_creare_accessi) {
+                set_destinazione_evidenziata("accesso");
+                set_tab_dettaglio("info");
+                set_accesso_target(selected);
+              }
               else {
                 set_selected_modal(selected);
                 set_modal_open(true);
@@ -2001,10 +2040,15 @@ const InstructorsPage: React.FC = () => {
                 const ha_accesso = !!selected.user_id;
                 return (
                   <div
+                    ref={destinazione_evidenziata === "accesso" ? destinazione_ref : undefined}
                     className={`max-w-lg rounded-xl border px-4 py-3 flex items-center justify-between gap-3 ${
                       ha_accesso
                         ? "border-border bg-card"
                         : "border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700"
+                    } ${
+                      destinazione_evidenziata === "accesso"
+                        ? "border-amber-500 ring-2 ring-amber-500/60 animate-evidenzia-passo motion-reduce:animate-none"
+                        : ""
                     }`}
                   >
                     <div className="min-w-0">
@@ -2128,6 +2172,44 @@ const InstructorsPage: React.FC = () => {
                     <span className="text-foreground">{value}</span>
                   </div>
                 ))}
+                {puo_vedere_costi_istruttori && selected.costi_visibili && (
+                  selected.tipo_contratto !== "orario" ? (
+                    <div className="flex justify-between gap-4 text-sm">
+                      <span className="text-muted-foreground">{ti("dettaglio.costo_lezioni")}</span>
+                      <span className="text-right text-foreground">{ti("dettaglio.contratto_compenso_fisso")}</span>
+                    </div>
+                  ) : (() => {
+                    const prezzo_vendita = Number(selected.costo_minuto || 0);
+                    const costo_orario = Number(selected.costo_orario_lezioni || 0);
+                    const costo_minuto = costo_orario > 0 ? costo_orario / 60 : null;
+                    const margine = costo_minuto !== null && prezzo_vendita > 0 ? prezzo_vendita - costo_minuto : null;
+                    const percentuale = margine !== null ? (margine / prezzo_vendita) * 100 : null;
+                    return (
+                      <>
+                        <div className="flex justify-between gap-4 text-sm">
+                          <span className="text-muted-foreground">{ti("dettaglio.costo_lezioni_ora_min")}</span>
+                          <span className="text-right text-foreground tabular-nums">
+                            {costo_minuto === null
+                              ? "—"
+                              : `CHF ${costo_orario.toFixed(2)}/h · CHF ${costo_minuto.toFixed(2)}/min`}
+                          </span>
+                        </div>
+                        <div className="flex justify-between gap-4 text-sm">
+                          <span className="text-muted-foreground">{ti("dettaglio.margine_minuto_sul_prezzo")}</span>
+                          <span
+                            className={`text-right tabular-nums ${
+                              margine !== null && margine < 0 ? "text-destructive font-semibold" : "text-foreground"
+                            }`}
+                          >
+                            {margine === null || percentuale === null
+                              ? "—"
+                              : `CHF ${margine.toFixed(2)}/min · ${percentuale.toFixed(1)}%`}
+                          </span>
+                        </div>
+                      </>
+                    );
+                  })()
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t("stato")}</span>
                   <span
@@ -2144,7 +2226,14 @@ const InstructorsPage: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="compenso" className="mt-6">
-              <div className="space-y-6">
+              <div
+                ref={destinazione_evidenziata === "compenso" ? destinazione_ref : undefined}
+                className={`space-y-6 scroll-mt-32 rounded-xl ${
+                  destinazione_evidenziata === "compenso"
+                    ? "ring-2 ring-amber-500/60 animate-evidenzia-passo motion-reduce:animate-none"
+                    : ""
+                }`}
+              >
                 <TabCompenso
                   istruttore={selected}
                   lezioni={lezioni}
@@ -2161,7 +2250,13 @@ const InstructorsPage: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="disponibilita" className="mt-6">
-              <div className="bg-card rounded-xl shadow-card p-6">
+              <div
+                ref={destinazione_evidenziata === "disponibilita" ? destinazione_ref : undefined}
+                className={`bg-card rounded-xl shadow-card p-6 scroll-mt-32 ${
+                  destinazione_evidenziata === "disponibilita"
+                    ? "border border-amber-500 ring-2 ring-amber-500/60 animate-evidenzia-passo motion-reduce:animate-none"
+                    : ""
+                }`}
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
                     {t("disponibilita")}
