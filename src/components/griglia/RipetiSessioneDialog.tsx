@@ -7,6 +7,7 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { format_local_iso } from "@/lib/planning-occorrenze";
 import { settimane_fra } from "@/lib/stagione-attiva";
 import { Repeat, CalendarRange, CalendarDays } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { format_data } from "@/lib/format-data";
 interface Props {
@@ -40,6 +41,7 @@ const RipetiSessioneDialog: React.FC<Props> = ({
   in_corso,
   on_conferma,
 }) => {
+  const { t } = useTranslation();
   const [n_settimane, set_n_settimane] = useState(8);
   const [fine_stagione, set_fine_stagione] = useState<string | null>(null);
 
@@ -77,7 +79,7 @@ const RipetiSessioneDialog: React.FC<Props> = ({
           <DialogDescription>
             {gia_ricorrente
               ? "La sessione è già ricorrente: puoi estenderne la durata, non verranno creati duplicati."
-              : `Genera automaticamente la stessa sessione ogni ${giorno}.`}
+              : t("griglia_guida.ric_ripeti_descrizione")}
           </DialogDescription>
         </DialogHeader>
 
