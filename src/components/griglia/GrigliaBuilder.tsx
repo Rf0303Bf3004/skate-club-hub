@@ -258,7 +258,7 @@ const GruppoDraggable: React.FC<{
 }> = ({ drag_id, livello, atleta_ids, box_id, colore, aperto, on_toggle }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: drag_id,
-    data: trascinabile_gruppo(box_id ?? "", livello, atleta_ids).data,
+    data: trascinabile_gruppo(box_id, "", livello, atleta_ids).data,
   });
   const down_ref = React.useRef<{ x: number; y: number } | null>(null);
   return (
@@ -312,8 +312,8 @@ function raggruppa_per_livello<T extends { livello_attuale?: string | null }>(it
 }
 
 /** Identità del gruppo trascinabile: la stessa per trascinamento e pannello. */
-function trascinabile_gruppo(box_id: string, livello: string, atleta_ids: string[]) {
-  return { id: `gruppo:${box_id}:${livello}`, data: { tipo: "gruppo", atleta_ids, livello, box_id } };
+function trascinabile_gruppo(box_id: string | undefined, titolo: string, livello: string, atleta_ids: string[]) {
+  return { id: `gruppo:${box_id ?? titolo}:${livello}`, data: { tipo: "gruppo", atleta_ids, livello, box_id } };
 }
 function trascinabile_proposta(proposta_id: string, titolo: string, corso_id: string | null, atleta_ids: string[]) {
   return {
@@ -408,7 +408,7 @@ const PoolBox: React.FC<{
                 return (
                 <div key={livello} className="flex flex-col gap-1">
                   <GruppoDraggable
-                    drag_id={`gruppo:${box_id ?? titolo}:${livello}`}
+                    drag_id={trascinabile_gruppo(box_id, titolo, livello, []).id}
                     livello={livello}
                     atleta_ids={membri.map((m) => m.id)}
                     box_id={box_id}
