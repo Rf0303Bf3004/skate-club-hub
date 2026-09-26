@@ -97,6 +97,21 @@
       "passo_procedura": "Guided setup step",
       "campi_da_compilare_one": "{{count}} field to fill in",
       "campi_da_compilare_other": "{{count}} fields to fill in"
+    },
+    "esterni": {
+      "interruttore_label": "The club hosts external athletes",
+      "salvato": "Setting saved",
+      "errore_salvataggio": "Setting not saved",
+      "errore_club": "Club not available: reload the page.",
+      "errore_conteggio": "Unable to count the club's external athletes.",
+      "riprova": "Retry",
+      "blocco_conteggio": "Not turned off: the number of external athletes is not known yet. Wait a moment or retry.",
+      "blocco_presenti_one": "Not turned off: there is still {{count}} external athlete. First untick «external athlete» on their profile.",
+      "blocco_presenti_other": "Not turned off: there are still {{count}} external athletes. First untick «external athlete» on their profiles.",
+      "presenti_one": "The club currently has {{count}} external athlete.",
+      "presenti_other": "The club currently has {{count}} external athletes.",
+      "solo_presidente": "Only the club president can change this setting.",
+      "spiegazione": "Three kinds of people can be on the club's ice:\n1. Club athletes (and those of its academy): the members.\n2. Camp guests: athletes from another club, here for a short time, for example during a camp. They are passing through.\n3. External athletes: people who belong to no club at all, neither this one nor another, and come to train here, regularly or now and then.\nNote: external does not mean «comes from elsewhere». An athlete from another club who is visiting is a guest, not an external athlete.\nWhen the switch is off, the «external athlete» box does not appear on the athlete profile. External athletes already registered stay visible in the grid."
     }
   },
   "seasons": {

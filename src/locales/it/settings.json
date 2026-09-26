@@ -215,6 +215,21 @@
       "passo_procedura": "Passo della procedura guidata",
       "campi_da_compilare_one": "{{count}} campo da compilare",
       "campi_da_compilare_other": "{{count}} campi da compilare"
+    },
+    "esterni": {
+      "interruttore_label": "Il club ospita atleti esterni",
+      "salvato": "Impostazione salvata",
+      "errore_salvataggio": "Impostazione non salvata",
+      "errore_club": "Club non disponibile: ricarica la pagina.",
+      "errore_conteggio": "Non riesco a contare gli atleti esterni del club.",
+      "riprova": "Riprova",
+      "blocco_conteggio": "Non spengo: non so ancora quanti atleti esterni ci sono. Aspetta un momento o riprova.",
+      "blocco_presenti_one": "Non spengo: c'è ancora {{count}} atleta esterno. Togli prima la casella «atleta esterno» dalla sua scheda.",
+      "blocco_presenti_other": "Non spengo: ci sono ancora {{count}} atleti esterni. Togli prima la casella «atleta esterno» dalle loro schede.",
+      "presenti_one": "Oggi il club ha {{count}} atleta esterno.",
+      "presenti_other": "Oggi il club ha {{count}} atleti esterni.",
+      "solo_presidente": "Questa scelta la può cambiare solo il presidente del club.",
+      "spiegazione": "Sul ghiaccio del club possono esserci tre tipi di persone:\n1. Atleti del club (e della sua accademia): sono i tesserati.\n2. Ospiti di campo: atleti di un altro club, qui per poco tempo, per esempio durante un campo. Sono di passaggio.\n3. Esterni: persone che non fanno parte di nessun club, né di questo né di un altro, e vengono ad allenarsi qui, spesso o ogni tanto.\nAttenzione: esterno non vuol dire «viene da fuori». Un atleta di un altro club in trasferta è un ospite, non un esterno.\nSe l'interruttore è spento, nella scheda atleta non compare la casella «atleta esterno». Se ci sono già atleti esterni, restano visibili nella griglia."
     }
   },
   "seasons": {
