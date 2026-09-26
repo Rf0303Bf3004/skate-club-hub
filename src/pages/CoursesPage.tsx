@@ -2489,6 +2489,28 @@ const CoursesPage: React.FC = () => {
   const [vista, set_vista] = useState<"giorno" | "istruttore">("giorno");
   const [duplica_open, set_duplica_open] = useState(false);
 
+  // Catalogo livelli del club: serve a segnalare i corsi il cui livello
+  // dichiarato non esiste nel catalogo (confronto esatto lato database).
+  const club_id = get_current_club_id();
+  const { data: nomi_catalogo, isSuccess: catalogo_ok, error: catalogo_errore } = useQuery({
+    queryKey: ["catalogo_livelli_nomi", club_id],
+    enabled: !!club_id,
+    retry: 1,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("catalogo_livelli")
+        .select("nome")
+        .eq("club_id", club_id);
+      if (error) throw error;
+      return (data ?? []).map((r: any) => String(r.nome));
+    },
+  });
+  useEffect(() => {
+    if (catalogo_errore) {
+      segnala_errore("CoursesPage", t("livelli.errore_caricamento"), catalogo_errore, undefined, "avviso");
+    }
+  }, [catalogo_errore, t]);
+
   const { data: stagioni = [] } = use_stagioni();
   const stagione_corrente_id = useMemo(() => {
     const attiva = (stagioni ?? []).find((s: any) => s.attiva);
