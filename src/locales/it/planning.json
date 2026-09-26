@@ -295,5 +295,29 @@
     "venerdi": "Venerdì",
     "sabato": "Sabato",
     "domenica": "Domenica"
+  },
+  "griglia_guida": {
+    "come_titolo": "Come si costruisce",
+    "come_testo": "Prendi un nome dall'elenco qui sotto, tienilo premuto e portalo dentro la sessione. Puoi prendere un intero gruppo, per esempio «Pulcini», oppure un atleta alla volta. Gli istruttori si portano allo stesso modo.",
+    "come_breve": "Per aggiungere qualcuno: tieni premuto un nome dell'elenco e portalo dentro la sessione.",
+    "sessione_senza_nome": "Sessione",
+    "istr_occupato": "Già impegnato in: {{attivita}}",
+    "istr_nessuna": "Nessuna disponibilità dichiarata il {{giorno}}",
+    "istr_solo_fasce": "Il {{giorno}} è disponibile solo {{fasce}}",
+    "disp_nessuna": "Nessuna disponibilità dichiarata il {{giorno}}.",
+    "disp_fuori_fascia": "{{orario}} non rientra nella disponibilità dichiarata del {{giorno}} ({{fasce}}).",
+    "disp_generico": "Fuori dalla disponibilità dichiarata.",
+    "forza_titolo": "Fuori dalla disponibilità dichiarata",
+    "forza_puoi": "Puoi procedere lo stesso: scrivi il motivo, che resta registrato con il tuo nome e la data.",
+    "forza_non_puoi": "Per procedere fuori dalla disponibilità dichiarata serve il Presidente o il Direttore Tecnico. Chiedi a loro, oppure scegli un altro orario o un'altra persona.",
+    "forza_motivo_label": "Motivo *",
+    "forza_motivo_esempio": "Es. quel sabato c'è comunque, accordo con la gestione della pista",
+    "forza_annulla": "Annulla",
+    "forza_procedi": "Procedi con questo motivo",
+    "forza_ho_capito": "Ho capito",
+    "ric_solo": "Questa sessione vale solo per {{giorno}}",
+    "ric_ripeti": "Ripetila ogni {{giorno}}",
+    "ric_fino_al": "Ogni {{giorno}} fino al {{data}}",
+    "ric_generica": "Ricorrente"
   }
 }

@@ -4,5 +4,29 @@
   },
   "toolbar": {
     "title": "Planning"
+  },
+  "griglia_guida": {
+    "come_titolo": "Comment construire la séance",
+    "come_testo": "Prends un nom dans la liste ci-dessous, garde-le appuyé et amène-le dans la séance. Tu peux prendre un groupe entier, par exemple « Pulcini », ou un athlète à la fois. Les entraîneurs se déplacent de la même façon.",
+    "come_breve": "Pour ajouter quelqu'un : garde un nom appuyé et amène-le dans la séance.",
+    "sessione_senza_nome": "Séance",
+    "istr_occupato": "Déjà occupé dans : {{attivita}}",
+    "istr_nessuna": "Aucune disponibilité déclarée le {{giorno}}",
+    "istr_solo_fasce": "Le {{giorno}}, disponible seulement {{fasce}}",
+    "disp_nessuna": "Aucune disponibilité déclarée le {{giorno}}.",
+    "disp_fuori_fascia": "{{orario}} est en dehors de la disponibilité déclarée du {{giorno}} ({{fasce}}).",
+    "disp_generico": "En dehors de la disponibilité déclarée.",
+    "forza_titolo": "En dehors de la disponibilité déclarée",
+    "forza_puoi": "Tu peux quand même continuer : indique le motif, qui est enregistré avec ton nom et la date.",
+    "forza_non_puoi": "Pour continuer en dehors de la disponibilité déclarée, il faut le Président ou le Directeur technique. Demande-leur, ou choisis un autre horaire ou une autre personne.",
+    "forza_motivo_label": "Motif *",
+    "forza_motivo_esempio": "Ex. elle est quand même là ce samedi, accord avec la patinoire",
+    "forza_annulla": "Annuler",
+    "forza_procedi": "Continuer avec ce motif",
+    "forza_ho_capito": "J'ai compris",
+    "ric_solo": "Cette séance vaut seulement pour {{giorno}}",
+    "ric_ripeti": "La répéter chaque {{giorno}}",
+    "ric_fino_al": "Chaque {{giorno}} jusqu'au {{data}}",
+    "ric_generica": "Récurrente"
   }
 }

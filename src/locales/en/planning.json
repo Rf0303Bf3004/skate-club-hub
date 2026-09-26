@@ -4,5 +4,29 @@
   },
   "toolbar": {
     "title": "Planning"
+  },
+  "griglia_guida": {
+    "come_titolo": "How to build it",
+    "come_testo": "Pick a name from the list below, keep it pressed and carry it into the session. You can take a whole group, for example “Pulcini”, or one athlete at a time. Coaches are moved the same way.",
+    "come_breve": "To add someone: keep a name pressed and carry it into the session.",
+    "sessione_senza_nome": "Session",
+    "istr_occupato": "Already busy in: {{attivita}}",
+    "istr_nessuna": "No availability declared on {{giorno}}",
+    "istr_solo_fasce": "On {{giorno}} only available {{fasce}}",
+    "disp_nessuna": "No availability declared on {{giorno}}.",
+    "disp_fuori_fascia": "{{orario}} is outside the availability declared for {{giorno}} ({{fasce}}).",
+    "disp_generico": "Outside the declared availability.",
+    "forza_titolo": "Outside the declared availability",
+    "forza_puoi": "You can go ahead anyway: write the reason, which is recorded with your name and the date.",
+    "forza_non_puoi": "To go ahead outside the declared availability you need the President or the Technical Director. Ask them, or choose another time or another person.",
+    "forza_motivo_label": "Reason *",
+    "forza_motivo_esempio": "E.g. she is there that Saturday anyway, agreed with the rink",
+    "forza_annulla": "Cancel",
+    "forza_procedi": "Go ahead with this reason",
+    "forza_ho_capito": "Got it",
+    "ric_solo": "This session is only for {{giorno}}",
+    "ric_ripeti": "Repeat it every {{giorno}}",
+    "ric_fino_al": "Every {{giorno}} until {{data}}",
+    "ric_generica": "Recurring"
   }
 }

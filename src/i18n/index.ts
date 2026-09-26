@@ -79,6 +79,7 @@ import rm_aiuto from '@/locales/rm/aiuto.json';
 import rm_onboarding from '@/locales/rm/onboarding.json';
 import rm_settings from '@/locales/rm/settings.json';
 import rm_istruttori from '@/locales/rm/istruttori.json';
+import rm_planning from '@/locales/rm/planning.json';
 
 export const NAMESPACES = [
   'common',
@@ -131,7 +132,7 @@ const resources = {
     events: en_events, mobile: en_mobile, validation: en_validation, errors: en_errors,
     portale: en_portale, istruttori: en_istruttori, planning: en_planning, calendario: en_calendario, aiuto: en_aiuto,
   },
-  rm: { common: rm_common, onboarding: rm_onboarding, portale: rm_portale, settings: rm_settings, istruttori: rm_istruttori, aiuto: rm_aiuto },
+  rm: { common: rm_common, onboarding: rm_onboarding, portale: rm_portale, settings: rm_settings, istruttori: rm_istruttori, planning: rm_planning, aiuto: rm_aiuto },
 };
 
 /**
