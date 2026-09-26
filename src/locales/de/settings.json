@@ -260,5 +260,19 @@
     "vuoto_risorse_per_disponibilita": "Füge zuerst oben eine Eisfläche oder eine Turnhalle hinzu: Ein Zeitfenster muss angeben, zu welcher Anlage es gehört.",
     "errore_risorse_per_disponibilita": "Die Eisflächen und Turnhallen des Clubs können nicht gelesen werden, deshalb bleibt die Verfügbarkeit gesperrt.",
     "lettura_risorse_in_corso": "Die Eisflächen und Turnhallen des Clubs werden gerade gelesen…"
+  },
+  "catalogo": {
+    "errore_catalogo": "Der Katalog oder die offizielle Liste der Stufen kann nicht gelesen werden, daher bleibt die Seite gesperrt.",
+    "errore_iscritti": "Die Athletinnen und Athleten pro Stufe können nicht gezählt werden: Gruppen und Stunden werden nicht berechnet.",
+    "errore_ore": "Die Eisverfügbarkeiten können nicht gelesen werden.",
+    "riprova": "Erneut versuchen",
+    "vuoto_livelli_paese": "Für das Land des Clubs ({{paese}}) sind in der offiziellen Liste keine Stufen eingerichtet. Sie müssen ergänzt werden, bevor der Katalog ausgefüllt werden kann.",
+    "scegli_livello": "Hinzuzufügende Stufe",
+    "livello_non_ufficiale": "Diese Stufe ist nicht in der offiziellen Liste des Clublandes enthalten.",
+    "iscritti_calcolati": "Athletinnen und Athleten des Clubs mit dieser Stufe, aus den Stammdaten gezählt.",
+    "vuoto_ore": "Eisverfügbarkeit nicht erfasst.",
+    "ore_da_risorse": "Aus: {{risorse}}",
+    "surplus_senza_ore": "Ohne erfasste Verfügbarkeit nicht berechenbar.",
+    "surplus_senza_iscritti": "Ohne Zählung der Angemeldeten nicht berechenbar."
   }
 }

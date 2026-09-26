@@ -688,7 +688,19 @@
     "toast_packages_saved": "✅ Pacchetti opzionali salvati",
     "toast_save_error": "Errore salvataggio",
     "toast_level_added": "✅ Livello \"{{livello}}\" aggiunto",
-    "toast_add_error": "Errore aggiunta livello"
+    "toast_add_error": "Errore aggiunta livello",
+    "errore_catalogo": "Non riesco a leggere il catalogo o l'elenco ufficiale dei livelli, quindi la pagina resta ferma.",
+    "errore_iscritti": "Non riesco a contare gli atleti per livello: gruppi e ore non vengono calcolati.",
+    "errore_ore": "Non riesco a leggere le disponibilità del ghiaccio.",
+    "riprova": "Riprova",
+    "vuoto_livelli_paese": "Per il paese del club ({{paese}}) non ci sono livelli configurati nell'elenco ufficiale. Vanno aggiunti prima di poter compilare il catalogo.",
+    "scegli_livello": "Livello da aggiungere",
+    "livello_non_ufficiale": "Questo livello non compare nell'elenco ufficiale del paese del club.",
+    "iscritti_calcolati": "Atleti del club con questo livello, contati dall'anagrafica.",
+    "vuoto_ore": "Disponibilità del ghiaccio non dichiarata.",
+    "ore_da_risorse": "Da: {{risorse}}",
+    "surplus_senza_ore": "Non calcolabile senza disponibilità dichiarata.",
+    "surplus_senza_iscritti": "Non calcolabile senza il conteggio degli iscritti."
   },
   "ghiaccio": {
     "vuoto_risorse_per_disponibilita": "Prima aggiungi una pista o una palestra qui sopra: una fascia oraria deve dire a quale struttura si riferisce.",

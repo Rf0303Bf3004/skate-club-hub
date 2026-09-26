@@ -260,5 +260,19 @@
     "vuoto_risorse_per_disponibilita": "Ajoute d’abord une patinoire ou une salle ci-dessus : une plage horaire doit indiquer à quelle installation elle se rapporte.",
     "errore_risorse_per_disponibilita": "Impossible de lire les patinoires et les salles du club : la disponibilité reste bloquée.",
     "lettura_risorse_in_corso": "Lecture en cours des patinoires et des salles du club…"
+  },
+  "catalogo": {
+    "errore_catalogo": "Impossible de lire le catalogue ou la liste officielle des niveaux, la page reste donc bloquée.",
+    "errore_iscritti": "Impossible de compter les athlètes par niveau : groupes et heures ne sont pas calculés.",
+    "errore_ore": "Impossible de lire les disponibilités de glace.",
+    "riprova": "Réessayer",
+    "vuoto_livelli_paese": "Aucun niveau n'est configuré dans la liste officielle pour le pays du club ({{paese}}). Il faut les ajouter avant de pouvoir remplir le catalogue.",
+    "scegli_livello": "Niveau à ajouter",
+    "livello_non_ufficiale": "Ce niveau ne figure pas dans la liste officielle du pays du club.",
+    "iscritti_calcolati": "Athlètes du club avec ce niveau, comptés à partir des fiches.",
+    "vuoto_ore": "Disponibilité de glace non déclarée.",
+    "ore_da_risorse": "Source : {{risorse}}",
+    "surplus_senza_ore": "Non calculable sans disponibilité déclarée.",
+    "surplus_senza_iscritti": "Non calculable sans le décompte des inscrits."
   }
 }
