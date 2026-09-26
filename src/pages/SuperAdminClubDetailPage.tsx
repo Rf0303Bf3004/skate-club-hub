@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 import { AnagraficaTerritoriale } from "@/components/AnagraficaTerritoriale";
+import { IbanInput } from "@/components/forms/IbanInput";
 import {
   isValidPartitaIVA,
   isValidIBAN,
@@ -263,7 +264,7 @@ const SuperAdminClubDetailPage: React.FC = () => {
               )}
               <div className="space-y-1">
                 <Label className="text-xs">IBAN</Label>
-                <Input value={anag.iban ?? ""} onChange={(e) => set_a("iban", e.target.value.toUpperCase().replace(/[^A-Z0-9\s]/g, ""))} placeholder={getIBANPlaceholder(paese)} maxLength={paese === "CH" ? 26 : 31} />
+                <IbanInput value={anag.iban ?? ""} onChange={(v) => set_a("iban", v)} placeholder={getIBANPlaceholder(paese)} paese={paese} />
                 {!iban_valido && (<p className="text-xs text-destructive">{paese === "CH" ? "IBAN svizzero: inizia con CH, 21 caratteri" : "IBAN italiano: inizia con IT, 27 caratteri"}</p>)}
               </div>
               <div className="space-y-1">

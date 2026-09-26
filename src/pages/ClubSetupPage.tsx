@@ -9,6 +9,7 @@ import { use_club, use_setup_club, use_stagioni, use_atleti, use_istruttori } fr
 import CodicePistaSection from "@/components/setup/CodicePistaSection";
 import CalendarioPubblicoSection from "@/components/setup/CalendarioPubblicoSection";
 import { Input } from "@/components/ui/input";
+import { IbanInput } from "@/components/forms/IbanInput";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -984,17 +985,13 @@ const ClubSetupPage: React.FC = () => {
         <SetupSection id="banca" evidenziata={evidenzia === "banca"} titolo={t("club.sezioni.dati_bancari")} mancanti={mancanti.banca}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label={t("club.fields.iban")} icon={<Hash className="w-3.5 h-3.5" />}>
-              <Input
+              <IbanInput
                 value={get_val("iban")}
-                onChange={(e) => {
-                  const v = e.target.value.toUpperCase().replace(/[^A-Z0-9\s]/g, "");
-                  set_val("iban", v);
-                }}
+                onChange={(v) => set_val("iban", v)}
                 placeholder="CH56 0483 5012 3456 7800 9"
-                maxLength={26}
               />
               {(() => {
-                const iban = get_val("iban", "").replace(/\s/g, "");
+                const iban = get_val("iban", "");
                 if (iban && (!iban.startsWith("CH") || iban.length !== 21)) {
                   return <p className="text-xs text-destructive mt-1">{t("club.testi.iban_invalido")}</p>;
                 }

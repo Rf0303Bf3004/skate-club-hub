@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Save, X, RefreshCw, Upload, ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { AnagraficaTerritoriale } from "@/components/AnagraficaTerritoriale";
+import { IbanInput } from "@/components/forms/IbanInput";
 import {
   isValidPartitaIVA,
   isValidIBAN,
@@ -251,7 +252,7 @@ const SuperAdminNewClubPage: React.FC = () => {
           )}
           <div>
             <label className="text-xs text-muted-foreground">IBAN</label>
-            <Input value={iban} onChange={(e) => set_iban(e.target.value.toUpperCase())} placeholder={getIBANPlaceholder(paese_code)} />
+            <IbanInput value={iban} onChange={set_iban} placeholder={getIBANPlaceholder(paese_code)} paese={paese_code} />
             {iban && !isValidIBAN(paese_code, iban) && (
               <p className="text-xs text-destructive mt-1">{paese_code === "CH" ? "IBAN CH: 21 caratteri" : "IBAN IT: 27 caratteri"}</p>
             )}
