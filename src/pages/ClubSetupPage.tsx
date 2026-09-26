@@ -9,6 +9,7 @@ import { use_club, use_setup_club, use_stagioni, use_atleti, use_istruttori } fr
 import CodicePistaSection from "@/components/setup/CodicePistaSection";
 import CalendarioPubblicoSection from "@/components/setup/CalendarioPubblicoSection";
 import { Input } from "@/components/ui/input";
+import { IbanInput } from "@/components/forms/IbanInput";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
